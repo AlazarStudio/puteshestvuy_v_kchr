@@ -5,6 +5,17 @@
   left: 0;
   right: 0;
   z-index: 1000;
+  transition: backdrop-filter 0.3s ease, background-color 0.3s ease;
+}
+
+/* Blur появляется сразу при любом скролле */
+.headerBlurred {
+  backdrop-filter: blur(20px);
+}
+
+/* Фон появляется только при переходе в темные цвета */
+.headerDark {
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
 /* Черные цвета для header на странице 404 */

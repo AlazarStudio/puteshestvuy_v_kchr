@@ -9,6 +9,8 @@ import styles from './Header.module.css'
 export default function Header() {
   const pathname = usePathname()
   const [isNotFound, setIsNotFound] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [hasBlur, setHasBlur] = useState(false)
 
   useEffect(() => {
     // Проверяем, есть ли класс not-found-page на body
@@ -33,8 +35,34 @@ export default function Header() {
     }
   }, [])
 
+  useEffect(() => {
+    // Отслеживаем скролл для изменения стилей header
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY || window.pageYOffset
+      const screenHeight = window.innerHeight - 200
+
+      // Blur появляется сразу при любом скролле
+      setHasBlur(scrollPosition > 0)
+
+      // Темные цвета появляются при прокрутке больше одного экрана
+      setIsScrolled(scrollPosition > screenHeight)
+    }
+
+    // Проверяем начальную позицию
+    handleScroll()
+
+    // Добавляем слушатель скролла
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  const isDarkMode = isNotFound || isScrolled
+
   return (
-    <header className={`${styles.header} ${isNotFound ? styles.headerDark : ''}`} role="banner">
+    <header className={`${styles.header} ${hasBlur ? styles.headerBlurred : ''} ${isDarkMode ? styles.headerDark : ''}`} role="banner">
       <div className={styles.container}>
         <div className={styles.containerBotLine} aria-hidden="true"></div>
 
@@ -44,7 +72,7 @@ export default function Header() {
           className={styles.logo}
           aria-label="Карачаево-Черкесия - Главная страница"
         >
-          {isNotFound ? <Image
+          {isDarkMode ? <Image
             src="/color_logo.png"
             alt="Логотип Карачаево-Черкесии"
             width={232}

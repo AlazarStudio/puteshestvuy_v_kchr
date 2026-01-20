@@ -3,5 +3,17 @@
   height: 100vh;
   position: relative;
   margin-top: 0;
-  /* Изображение начинается с самого верха, header накладывается поверх */
+}
+
+.content{
+  display: flex;
+  flex-direction: column;
+  gap: 90px;
+  margin: 90px 0;
+}
+
+.flexBlock{
+  display: flex;
+  justify-content: space-between;
+  
 }

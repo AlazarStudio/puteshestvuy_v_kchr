@@ -45,6 +45,16 @@ const SLIDES = [
     description:
       'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
   },
+  {
+    id: 5,
+    image: '/slider2.png',
+    place: '​Зеленчукский район',
+    title: 'ЛЕДНИК АЛИБЕК',
+    topic: 'ANIMAL',
+    rating: '4.8',
+    description:
+      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
+  },
 ]
 
 const TIME_RUNNING = 500

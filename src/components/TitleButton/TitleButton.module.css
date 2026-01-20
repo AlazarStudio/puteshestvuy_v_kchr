@@ -1,0 +1,31 @@
+.titleButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+
+.titleButton .title {
+    font-weight: 700;
+    font-size: 60px;
+}
+
+.titleButton .line {
+    flex: 1;
+    height: 1px;
+    background-color: #1E1E1E;
+}
+
+.titleButton .button {
+    font-weight: 500;
+    font-size: 16px;
+    border-radius: 30px;
+    border: 1px solid;
+    padding: 18px 50px;
+    transition: all 0.3s ease-in-out;
+}
+
+.titleButton .button:hover{
+    background-color: #1E1E1E;
+    color: #fff;
+}
