@@ -93,6 +93,11 @@ export default function SliderFullScreen() {
     .filter(Boolean)
     .join(' ')
 
+  // Находим текущий слайд (первый в массиве slides) в исходном массиве SLIDES
+  const currentSlideIndex = SLIDES.findIndex((slide) => slide.id === slides[0]?.id)
+  const currentSlideNumber = currentSlideIndex >= 0 ? currentSlideIndex + 1 : 1
+  const formattedSlideNumber = String(currentSlideNumber).padStart(2, '0')
+
   return (
     <section className={carouselClassNames}>
       {/* Основной список */}
@@ -152,9 +157,7 @@ export default function SliderFullScreen() {
         <div className={styles.line}>
           <div className={styles.time}></div>
         </div>
-        <div className={styles.slidesNum}>01</div>
-
-        {/*  */}
+        <div className={styles.slidesNum}>{formattedSlideNumber}</div>
       </div>
 
       {/* Полоса времени/анимация — можно анимировать через CSS по классу .next/.prev */}
