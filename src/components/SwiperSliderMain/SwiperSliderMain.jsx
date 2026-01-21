@@ -1,0 +1,143 @@
+'use client'
+
+import { motion, useMotionValue, useSpring } from 'framer-motion'
+import styles from './SwiperSliderMain.module.css'
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+
+import { Navigation } from 'swiper/modules';
+import Link from 'next/link';
+import TitleButton from '../TitleButton/TitleButton';
+import { useRef } from 'react';
+
+function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
+  const ref = useRef(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  // Плавность движения
+  const xSpring = useSpring(x, { stiffness: 160, damping: 18, mass: 0.5 })
+  const ySpring = useSpring(y, { stiffness: 160, damping: 18, mass: 0.5 })
+
+  const handleMouseMove = (e) => {
+    const el = ref.current
+    if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    const px = (e.clientX - rect.left) / rect.width // 0..1
+    const py = (e.clientY - rect.top) / rect.height // 0..1
+
+    // -0.5..0.5 (центр = 0)
+    const dx = px - 0.5
+    const dy = py - 0.5
+
+    const maxOffset = 10 // px
+    x.set(dx * maxOffset)
+    y.set(dy * maxOffset)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+  }
+
+  return (
+    <Link
+      ref={ref}
+      href={slide.href}
+      className={styles.slide}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={styles.img}>
+        <motion.img
+          src={slide.imgSrc}
+          alt={slide.title}
+          style={{ x: xSpring, y: ySpring }}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+      </div>
+
+      <div className={styles.infoBlock}>
+        <div className={`${styles.title} ${!isEven ? styles.evenChangeTitle : ''}`}>
+          {slide.title}
+        </div>
+        <div className={`${styles.pattern} ${!isEven ? styles.evenChangePattern : ''}`}>
+          {renderPattern(patternColor)}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+export default function SwiperSliderMain() {
+  const slides = [
+    {
+      id: 1,
+      href: '/#',
+      imgSrc: '/new1.png',
+      title: 'Этикет региона: дресс-код и культура',
+    },
+    {
+      id: 2,
+      href: '/#',
+      imgSrc: '/new2.png',
+      title: 'Дресс-код гор Карачаево-Черкесии',
+    },
+    {
+      id: 3,
+      href: '/#',
+      imgSrc: '/new1.png',
+      title: 'Этикет региона: дресс-код и культура',
+    },
+    {
+      id: 4,
+      href: '/#',
+      imgSrc: '/new2.png',
+      title: 'Дресс-код гор Карачаево-Черкесии',
+    },
+  ]
+
+  const renderPattern = (patternColor) => (
+    <svg width="255" height="256" viewBox="0 0 255 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M60.7386 120.114H114.036C119.316 120.114 121.477 118.192 121.477 114.59V5.52411C121.477 1.9217 119.316 2.28882e-05 114.518 2.28882e-05H70.8226C65.3019 2.28882e-05 62.6591 1.9217 62.6591 5.28316C62.6591 8.64463 65.5427 9.84936 70.8226 15.1325L72.7431 17.0542C81.6289 25.9456 86.4272 37.7166 86.4272 55.0117V72.0659C86.4272 91.7646 75.8616 104.499 58.3365 104.499C43.93 104.499 33.3704 95.6079 33.3704 80.4755C33.3704 70.1442 38.1745 61.4996 48.2526 57.6562C56.6569 54.5357 64.5796 55.2527 70.1002 54.5357C73.2188 54.0538 74.6635 52.3731 74.6635 49.4935C74.6635 36.9997 60.7386 26.1924 43.2135 26.1924C16.5618 26.1924 -8.39233e-05 45.1683 -8.39233e-05 72.3186C-8.39233e-05 102.108 17.0434 120.125 60.7386 120.125V120.114Z" fill={patternColor} />
+      <path d="M6.60813 255.444H40.3418C45.2336 255.444 47.4283 253.522 47.4283 249.92C47.4283 246.317 45.4728 244.155 43.5173 240.793L41.807 237.908C39.3611 233.823 35.6953 228.058 35.6953 219.649V217.486C35.6953 202.595 47.1831 186.258 65.518 186.258C79.942 186.258 84.3434 196.589 84.3434 208.601C84.3434 221.812 81.6523 230.944 78.4769 238.149L76.7666 241.992C75.5467 244.637 73.8304 247.516 73.8304 250.402C73.8304 253.287 75.5407 255.444 79.6969 255.444H113.437C118.083 255.444 120.039 253.522 120.039 249.92V195.625C120.039 174.963 109.526 157.427 81.168 157.427C59.1672 157.427 45.4788 170.161 40.0967 190.336H30.3192C32.7651 175.444 39.3671 164.149 48.6542 154.059L50.6097 151.897C55.9858 146.132 59.8968 144.451 59.8968 140.848C59.8968 137.246 57.2057 135.324 51.5844 135.324H6.84733C2.2008 135.324 0.00012207 137.246 0.00012207 140.848V249.914C0.00012207 253.516 1.95561 255.438 6.60214 255.438L6.60813 255.444Z" fill={patternColor} />
+      <path d="M135.038 226.854C135.038 244.872 148 255.444 170.329 255.444C184.977 255.444 197.938 249.438 197.938 243.914C197.938 235.504 171.527 239.829 171.527 220.613C171.527 209.8 181.13 202.836 195.536 202.836C212.345 202.836 219.064 211.486 219.064 222.293C219.064 235.263 212.339 244.637 212.339 249.438C212.339 252.558 214.019 254.245 217.378 254.245H247.16C252.199 254.239 254.12 252.317 254.12 248.715V139.649C254.12 136.047 252.199 134.125 247.395 134.125H214.506C210.424 134.125 208.745 136.288 208.745 139.168C208.745 142.047 210.424 144.933 211.628 147.577L213.308 151.421C215.951 157.667 218.829 171.842 218.829 189.86V191.059H208.986L208.745 188.896C204.422 150.222 181.136 134.125 142.961 134.125C138.157 134.125 136.237 135.565 136.237 139.89V180.011C136.237 184.095 137.435 186.975 141.276 186.975C147.759 186.975 151.841 177.125 171.046 177.125C183.52 177.125 191.877 183.143 194.585 191.059H189.534C157.843 191.059 135.038 204.27 135.038 226.854Z" fill={patternColor} />
+    </svg>
+  )
+
+  return (
+    <section className={styles.slider}>
+      <TitleButton title="" buttonLink="/#" />
+
+      <Swiper
+        navigation={true}
+        modules={[Navigation]}
+        slidesPerView={2}
+        spaceBetween={60}
+        // loop={true}
+        className="mySwiper"
+      >
+        {slides.map((slide, index) => {
+          const isEven = index % 2 === 0
+          const patternColor = isEven ? '#73BFE7' : '#DB224A'
+
+          return (
+            <SwiperSlide key={slide.id}>
+              <ParallaxSlide
+                slide={slide}
+                isEven={isEven}
+                patternColor={patternColor}
+                renderPattern={renderPattern}
+              />
+            </SwiperSlide>
+          )
+        })}
+      </Swiper>
+    </section>
+  )
+}

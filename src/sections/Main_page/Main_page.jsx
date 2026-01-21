@@ -6,6 +6,7 @@ import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 import TitleButton from '@/components/TitleButton/TitleButton'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import RouteSeasoneBanner from '@/components/RouteSeasoneBanner/RouteSeasoneBanner'
+import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
 
 
 export default function Main_page() {
@@ -25,6 +26,17 @@ export default function Main_page() {
             <RouteSeasoneBanner showFrom={'left'} routeLink={'/#'} bgColor={'#66D7CA'} patternColor={'#156A60'} title={'Лето'} logo={'logoPattern3.png'} />
             <RouteSeasoneBanner showFrom={'right'} routeLink={'/#'} bgColor={'#CD8A67'} patternColor={'#7C4B42'} title={'Осень'} logo={'logoPattern4.png'} />
           </section>
+        </CenterBlock>
+
+        <CenterBlock>
+          <TitleButton
+            title="ВПЕРВЫЕ В КЧР?"
+            desc="Специально для вас мы создали раздел, в котором собрали всю полезную информацию, чтобы помочь сделать ваше путешествие по нашей удивительной республике комфортным, интересным и незабываемым!"
+          />
+        </CenterBlock>
+
+        <CenterBlock>
+          <SwiperSliderMain />
         </CenterBlock>
 
         <CenterBlock>
