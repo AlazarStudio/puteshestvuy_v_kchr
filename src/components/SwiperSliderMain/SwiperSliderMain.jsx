@@ -79,25 +79,25 @@ export default function SwiperSliderMain() {
     {
       id: 1,
       href: '/#',
-      imgSrc: '/new1.png',
+      imgSrc: '/helpfull1.png',
       title: 'Этикет региона: дресс-код и культура',
     },
     {
       id: 2,
       href: '/#',
-      imgSrc: '/new2.png',
+      imgSrc: '/helpfull2.png',
       title: 'Дресс-код гор Карачаево-Черкесии',
     },
     {
       id: 3,
       href: '/#',
-      imgSrc: '/new1.png',
+      imgSrc: '/helpfull1.png',
       title: 'Этикет региона: дресс-код и культура',
     },
     {
       id: 4,
       href: '/#',
-      imgSrc: '/new2.png',
+      imgSrc: '/helpfull2.png',
       title: 'Дресс-код гор Карачаево-Черкесии',
     },
   ]

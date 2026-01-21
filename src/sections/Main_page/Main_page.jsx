@@ -7,6 +7,7 @@ import TitleButton from '@/components/TitleButton/TitleButton'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import RouteSeasoneBanner from '@/components/RouteSeasoneBanner/RouteSeasoneBanner'
 import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
+import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 
 
 export default function Main_page() {
@@ -39,9 +40,7 @@ export default function Main_page() {
           <SwiperSliderMain />
         </CenterBlock>
 
-        <CenterBlock>
-          <TitleButton title="Маршруты" buttonLink="/#" />
-        </CenterBlock>
+        <NewsFullBlock />
       </div>
     </main>
   )
