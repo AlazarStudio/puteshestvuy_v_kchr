@@ -8,6 +8,7 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import RouteSeasoneBanner from '@/components/RouteSeasoneBanner/RouteSeasoneBanner'
 import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
+import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 
 
 export default function Main_page() {
@@ -41,6 +42,16 @@ export default function Main_page() {
         </CenterBlock>
 
         <NewsFullBlock />
+
+        <CenterBlock>
+          <TitleButton title="СЕРВИС И УСЛУГИ" buttonLink="/#" />
+        </CenterBlock>
+
+        <CenterBlock>
+          <ServiceTabBlock />
+        </CenterBlock>
+
+        
       </div>
     </main>
   )
