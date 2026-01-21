@@ -1,0 +1,47 @@
+.moveLines {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.line {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+    flex-wrap: nowrap;
+    will-change: transform;
+}
+
+.lineReverse {
+    flex-direction: row-reverse;
+}
+
+.item {
+    width: 100%;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: 0%;
+    border-radius: 30px;
+    padding: 18px 35px;
+    border: 1px solid #000;
+    text-align: center;
+}
+
+.slider{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sliderLine{
+    width: 100%;
+}
+
+.sliderLine :global(.swiper-wrapper){
+    transition-timing-function: linear !important;
+}

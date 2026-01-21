@@ -1,6 +1,5 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import styles from './Main_page.module.css'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 import TitleButton from '@/components/TitleButton/TitleButton'
@@ -9,6 +8,7 @@ import RouteSeasoneBanner from '@/components/RouteSeasoneBanner/RouteSeasoneBann
 import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
+import MoveLines from '@/components/MoveLines/MoveLines'
 
 
 export default function Main_page() {
@@ -51,7 +51,7 @@ export default function Main_page() {
           <ServiceTabBlock />
         </CenterBlock>
 
-        
+        <MoveLines />
       </div>
     </main>
   )
