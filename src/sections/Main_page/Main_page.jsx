@@ -9,6 +9,7 @@ import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
+import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 
 
 export default function Main_page() {
@@ -51,7 +52,25 @@ export default function Main_page() {
           <ServiceTabBlock />
         </CenterBlock>
 
+        {/* Переделать */}
         <MoveLines />
+
+        <CenterBlock>
+          <TitleButton title="КУДА ПОЕХАТЬ?" buttonLink="/#" />
+        </CenterBlock>
+
+        <CenterBlock>
+          <section className={styles.flexBlock}>
+            <PlaceBlock rating={"5.0"} feedback={"1 отзыв"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
+            <PlaceBlock rating={"5.0"} feedback={"2 отзыва"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
+            <PlaceBlock rating={"5.0"} feedback={"3 отзыва"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
+            <PlaceBlock rating={"5.0"} feedback={"4 отзыва"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
+          </section>
+        </CenterBlock>
+
+        <div className={styles.imgBG}>
+          <img src="/mountainBG.png" alt="" />
+        </div>
       </div>
     </main>
   )

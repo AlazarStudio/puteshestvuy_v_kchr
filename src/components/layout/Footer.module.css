@@ -1,0 +1,168 @@
+.footer {
+  width: 100%;
+  background-color: #06101C;
+  color: #fff;
+  padding: 50px 0;
+}
+
+.footer a{
+  width: fit-content;
+  border-bottom: 1px solid transparent;
+  transition: all 0.3s ease-in-out;
+}
+
+.footer a:hover{
+  border-bottom: 1px solid #fff;
+}
+
+.footerTop {
+  display: flex;
+  justify-content: space-between;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 30%;
+}
+
+.img {
+  width: 232px;
+  height: 49px;
+  margin-bottom: 20px;
+}
+
+.img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.social {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+
+.footer .imgBlock {
+  width: 34px;
+  height: 34px;
+  background-color: #FFFFFF33;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 8px;
+}
+
+.footer .imgBlock img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  margin-top: 2px;
+}
+
+.phone,
+.text {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.textTitle {
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  margin-bottom: 20px;
+}
+
+.column form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.column form input {
+  border-radius: 20px;
+  padding: 20px 24px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 21px;
+  letter-spacing: 0px;
+  color: #767B78;
+  outline: none;
+}
+
+.column form button {
+  width: 50%;
+  border-radius: 30px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fff;
+  background-color: transparent;
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+  margin-top: 20px;
+}
+
+.column form button:hover {
+  background-color: #fff;
+  color: #06101C;
+}
+
+.line {
+  width: 100%;
+  height: 1px;
+  background-color: #fff;
+  margin: 45px 0;
+}
+
+
+.orgInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.partners {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.partners a{
+  width: 30%;
+  height: 45px;
+  border: none;
+}
+
+.partners a:hover{
+  border: none;
+}
+
+.partners a img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.infoCol {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.links{
+  display: flex;
+  gap: 15px;
+}

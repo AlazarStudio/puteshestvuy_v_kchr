@@ -1,6 +1,5 @@
 .main {
   width: 100%;
-  height: 100vh;
   position: relative;
   margin-top: 0;
 }
@@ -9,11 +8,33 @@
   display: flex;
   flex-direction: column;
   gap: 90px;
-  margin: 90px 0;
+  margin: 90px 0 0;
 }
 
 .flexBlock{
   display: flex;
   justify-content: space-between;
-  
+}
+
+.imgBG{
+  width: 100%;
+  height: fit-content;
+  margin-top: -150px;
+  position: relative;
+}
+
+.imgBG::before{
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(6, 16, 28, 0) 0%, #06101C 100%);
+}
+
+.imgBG img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
