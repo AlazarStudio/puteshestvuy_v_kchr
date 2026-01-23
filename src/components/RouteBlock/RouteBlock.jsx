@@ -12,13 +12,17 @@ import 'swiper/css/navigation';
 // import required modules
 import { Navigation, Autoplay } from 'swiper/modules';
 import Link from 'next/link';
+import { generateSlug } from '@/utils/transliterate';
 
-export default function RouteBlock({ routeId = '1' }) {
+export default function RouteBlock({ title = 'На границе регионов: Кисловодск - Медовые водопады' }) {
   function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
+  
+  const slug = generateSlug(title)
+  
   return (
-    <Link href={`/routes/${routeId}`} className={styles.route}>
+    <Link href={`/routes/${slug}`} className={styles.route}>
 
       <div className={styles.routeSlider}>
         <Swiper
@@ -63,7 +67,7 @@ export default function RouteBlock({ routeId = '1' }) {
           </div>
         </div>
         <div className={styles.title}>
-          На границе регионов: Кисловодск - Медовые водопады
+          {title}
         </div>
         <div className={styles.desc}>
           Летом эти места обязательны к посещению, ведь с июня по сентябрь водопады достигают максимальной полноводности.

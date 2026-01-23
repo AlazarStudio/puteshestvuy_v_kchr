@@ -12,7 +12,7 @@ export default function Footer() {
       <CenterBlock>
         <div className={styles.footerTop}>
           <div className={styles.column}>
-            <div className={styles.img}><img src="white_logo.png" alt="" /></div>
+            <div className={styles.img}><img src="/white_logo.png" alt="" /></div>
             <div className={styles.social}>
               <Link href={"/#"} target='_blank' className={styles.imgBlock}><img src="/tg.png" alt="" /></Link>
               <Link href={"/#"} target='_blank' className={styles.imgBlock}><img src="/vk.png" alt="" /></Link>

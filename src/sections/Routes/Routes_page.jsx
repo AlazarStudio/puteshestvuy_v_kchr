@@ -120,9 +120,9 @@ export default function Routes_page() {
             </div>
             
             <div className={styles.routesShow}>
-              <RouteBlock routeId="1" />
-              <RouteBlock routeId="2" />
-              <RouteBlock routeId="3" />
+              <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
+              <RouteBlock title="Горные вершины Карачаево-Черкесии" />
+              <RouteBlock title="Водопады и озера региона" />
             </div>
           </div>
         </section>
