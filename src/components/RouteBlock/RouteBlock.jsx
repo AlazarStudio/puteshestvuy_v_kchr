@@ -13,12 +13,12 @@ import 'swiper/css/navigation';
 import { Navigation, Autoplay } from 'swiper/modules';
 import Link from 'next/link';
 
-export default function RouteBlock() {
+export default function RouteBlock({ routeId = '1' }) {
   function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
   return (
-    <Link href={"/"} className={styles.route}>
+    <Link href={`/routes/${routeId}`} className={styles.route}>
 
       <div className={styles.routeSlider}>
         <Swiper

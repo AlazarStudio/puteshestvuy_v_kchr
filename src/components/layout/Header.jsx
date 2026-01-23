@@ -6,11 +6,102 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import styles from './Header.module.css'
 
+// Конфигурация для каждой страницы
+const pageConfig = [
+  {
+    path: '/',
+    initialColor: 'white',
+    scrollThreshold: 100, // пикселей
+    enableScrollChange: true,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)', 
+  },
+  {
+    path: '/routes',
+    initialColor: 'white',
+    scrollThreshold: 100,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/routes/*', // Динамические маршруты
+    initialColor: 'black',
+    scrollThreshold: 1, // Фон появится при скролле больше этого значения
+    enableScrollChange: false,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/region',
+    initialColor: 'white',
+    scrollThreshold: 300,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/places',
+    initialColor: 'white',
+    scrollThreshold: 200,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/news',
+    initialColor: 'white',
+    scrollThreshold: 200,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/measures',
+    initialColor: 'white',
+    scrollThreshold: 200,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/help',
+    initialColor: 'white',
+    scrollThreshold: 200,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+]
+
+// Функция для поиска конфигурации страницы
+const getPageConfig = (pathname) => {
+  if (!pathname) return null
+
+  // Сначала ищем точное совпадение
+  let config = pageConfig.find(item => item.path === pathname)
+
+  // Если не найдено, ищем паттерны с *
+  if (!config) {
+    config = pageConfig.find(item => {
+      if (item.path.includes('*')) {
+        const pattern = item.path.replace('*', '')
+        return pathname.startsWith(pattern)
+      }
+      return false
+    })
+  }
+
+  // Если ничего не найдено, возвращаем дефолтную конфигурацию
+  return config || {
+    path: pathname,
+    initialColor: 'white',
+    scrollThreshold: 200,
+    enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  }
+}
+
 export default function Header() {
   const pathname = usePathname()
   const [isNotFound, setIsNotFound] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [hasBlur, setHasBlur] = useState(false)
+  
+  // Получаем конфигурацию для текущей страницы
+  const currentConfig = getPageConfig(pathname)
 
   useEffect(() => {
     // Проверяем, есть ли класс not-found-page на body
@@ -36,16 +127,31 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
+    if (!currentConfig) return
+
     // Отслеживаем скролл для изменения стилей header
     const handleScroll = () => {
       const scrollPosition = window.scrollY || window.pageYOffset
-      const screenHeight = window.innerHeight - 200
 
-      // Blur появляется сразу при любом скролле
-      setHasBlur(scrollPosition > 0)
+      // Для страниц с черным header без изменения при скролле
+      // Blur и фон появляются при скролле больше scrollThreshold
+      if (currentConfig.initialColor === 'black' && !currentConfig.enableScrollChange) {
+        const shouldShowBackground = scrollPosition > currentConfig.scrollThreshold
+        setHasBlur(shouldShowBackground)
+        setIsScrolled(shouldShowBackground)
+      } else {
+        // Blur появляется сразу при любом скролле
+        setHasBlur(scrollPosition > 0)
 
-      // Темные цвета появляются при прокрутке больше одного экрана
-      setIsScrolled(scrollPosition > screenHeight)
+        // Проверяем, нужно ли менять цвет при скролле
+        if (currentConfig.enableScrollChange) {
+          // Темные цвета появляются при прокрутке больше порога
+          setIsScrolled(scrollPosition > currentConfig.scrollThreshold)
+        } else {
+          // Если изменение при скролле отключено, используем начальный цвет
+          setIsScrolled(false)
+        }
+      }
     }
 
     // Проверяем начальную позицию
@@ -57,12 +163,51 @@ export default function Header() {
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [currentConfig])
 
-  const isDarkMode = isNotFound || isScrolled
+  // Определяем, должен ли header быть темным
+  const isDarkMode = (() => {
+    if (isNotFound) return true
+    
+    if (!currentConfig) return false
+
+    // Если начальный цвет черный, header всегда темный
+    if (currentConfig.initialColor === 'black') {
+      return true
+    }
+
+    // Если начальный цвет белый и включено изменение при скролле
+    if (currentConfig.initialColor === 'white' && currentConfig.enableScrollChange) {
+      return isScrolled
+    }
+
+    return false
+  })()
+
+  // Определяем, нужен ли фон для header
+  // Для страниц с черным header без изменения при скролле фон появляется при скролле больше scrollThreshold
+  // Для остальных страниц фон появляется когда isDarkMode = true
+  const needsBackground = (() => {
+    if (!currentConfig) return false
+    
+    if (currentConfig.initialColor === 'black' && !currentConfig.enableScrollChange) {
+      // Для черных страниц без изменения при скролле фон появляется при скролле
+      return isScrolled
+    }
+    
+    // Для остальных страниц фон появляется когда header темный
+    return isDarkMode
+  })()
+
+  // Получаем цвет фона из конфигурации или используем дефолтный
+  const backgroundColor = currentConfig?.backgroundColor || '#f1f3f8b7'
 
   return (
-    <header className={`${styles.header} ${hasBlur ? styles.headerBlurred : ''} ${isDarkMode ? styles.headerDark : ''}`} role="banner">
+    <header 
+      className={`${styles.header} ${hasBlur && needsBackground ? styles.headerBlurred : ''} ${isDarkMode && needsBackground ? styles.headerDark : ''} ${isDarkMode && !needsBackground ? styles.headerDarkNoBg : ''}`} 
+      style={needsBackground ? { backgroundColor } : {}}
+      role="banner"
+    >
       <div className={styles.container}>
         <div className={styles.containerBotLine} aria-hidden="true"></div>
 
@@ -102,7 +247,7 @@ export default function Header() {
           </Link>
           <Link
             href="/routes"
-            className={`${styles.navLink} ${pathname === '/routes' ? styles.navLink_active : ''}`}
+            className={`${styles.navLink} ${pathname === '/routes' || (pathname?.startsWith('/routes/') && pathname !== '/routes') ? styles.navLink_active : ''}`}
             title="Туристические маршруты"
           >
             Маршруты

@@ -120,9 +120,9 @@ export default function Routes_page() {
             </div>
             
             <div className={styles.routesShow}>
-              <RouteBlock />
-              <RouteBlock />
-              <RouteBlock />
+              <RouteBlock routeId="1" />
+              <RouteBlock routeId="2" />
+              <RouteBlock routeId="3" />
             </div>
           </div>
         </section>

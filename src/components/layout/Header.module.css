@@ -15,8 +15,42 @@
 }
 
 /* Фон появляется только при переходе в темные цвета */
+/* Цвет фона теперь задается через inline стили из конфигурации */
 .headerDark {
-  background-color: rgba(255, 255, 255, 0.7);
+  /* background-color задается динамически через style prop */
+}
+
+/* Темный header без фона (для страниц маршрутов) */
+.headerDarkNoBg {
+  background-color: transparent;
+}
+
+.headerDarkNoBg .navLink {
+  color: #000000 !important;
+}
+
+.headerDarkNoBg .navLink:hover {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDarkNoBg .navLink_active {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDarkNoBg .dropdownIcon {
+  color: #000000 !important;
+}
+
+.headerDarkNoBg .iconButton {
+  color: #000000 !important;
+}
+
+.headerDarkNoBg .iconButton img {
+  filter: brightness(0) !important;
+}
+
+.headerDarkNoBg .containerBotLine {
+  background-color: #000000C2 !important;
 }
 
 /* Черные цвета для header на странице 404 */
