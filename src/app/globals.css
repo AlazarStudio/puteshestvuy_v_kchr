@@ -23,6 +23,7 @@
   padding: 0;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  outline: none;
   /* Использование CSS переменной из next/font */
   font-family: var(--font-montserrat), 'Montserrat', sans-serif;
 }
@@ -98,4 +99,27 @@ a {
 
 .mySwiper .swiper-navigation-icon {
   display: none;
+}
+
+.routeSlider .swiper-button-prev,
+.routeSlider .swiper-button-next {
+  transition: all 0.2s ease-in-out;
+  color: #fff;
+  opacity: 0;
+}
+
+.routeSlider .swiper-button-prev svg,
+.routeSlider .swiper-button-next svg {
+  width: 30px;
+  height: 30px;
+}
+
+.routeSlider:hover .swiper-button-prev,
+.routeSlider:hover .swiper-button-next {
+  opacity: 1;
+}
+
+.mySwiper .swiper-button-prev:hover,
+.mySwiper .swiper-button-next:hover {
+  opacity: 1;
 }

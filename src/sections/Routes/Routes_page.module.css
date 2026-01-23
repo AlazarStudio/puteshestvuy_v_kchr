@@ -1,0 +1,54 @@
+.main {
+  background-color: #F1F3F8;
+}
+
+.flexBlock {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.routes {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.routesShow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.routesSort {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.routesSortSort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selectWrapper {
+  min-width: 200px;
+}
+
+.routesSortSort .title {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.routesSortFind {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
