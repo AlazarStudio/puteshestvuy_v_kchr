@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Select, MenuItem, FormControl } from '@mui/material'
-import { motion, AnimatePresence } from 'framer-motion'
 import styles from './Places_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
+import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import { generateSlug } from '@/utils/transliterate'
 
 
@@ -28,11 +28,11 @@ export default function Places_page() {
   const handlePlaceClick = (place) => {
     // Сохраняем позицию скролла перед открытием модалки
     scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-    
+
     setSelectedPlace(place)
     setIsModalOpen(true)
     isClosingRef.current = false
-    
+
     // Изменяем URL без перезагрузки страницы используя history API
     const slug = generateSlug(place.title)
     window.history.pushState({ place: slug }, '', `/places/${slug}`)
@@ -41,32 +41,36 @@ export default function Places_page() {
   const closeModal = () => {
     isClosingRef.current = true
     setIsModalOpen(false)
-    setSelectedPlace(null)
-    
+
     // Возвращаем URL обратно используя history API
     window.history.pushState({}, '', '/places')
+
+    // Очищаем selectedPlace после завершения анимации
+    setTimeout(() => {
+      setSelectedPlace(null)
+    }, 300) // Время анимации
   }
 
   const places = [
     {
       id: 1,
       rating: "5.0",
-      feedback: "1 отзыв",
-      place: "Теберда",
-      title: "Центральная усадьба Тебердинского национального парка",
-      desc: "Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;",
-      img: "/placeImg1.png",
-      fullDesc: "Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками; административные здания парка. Это отличное место для начала знакомства с природой и историей Тебердинского заповедника."
-    },
-    {
-      id: 2,
-      rating: "5.0",
       feedback: "2 отзыва",
       place: "Архыз",
       title: "Софийские водопады",
       desc: "Каскад из нескольких водопадов, расположенных в живописной долине. Особенно красив весной и летом, когда тает снег в горах.",
-      img: "/placeImg1.png",
+      img: "/routeGalery2.png",
       fullDesc: "Каскад из нескольких водопадов, расположенных в живописной долине. Особенно красив весной и летом, когда тает снег в горах. Водопады образуют несколько каскадов разной высоты, создавая потрясающее зрелище. К водопадам ведет удобная тропа, подходящая для туристов разного уровня подготовки."
+    },
+    {
+      id: 2,
+      rating: "5.0",
+      feedback: "1 отзыв",
+      place: "​Зеленчукский район",
+      title: "ЛЕДНИК АЛИБЕК",
+      desc: "Путь к леднику лежит через одноимённое ущелье Алибек, которое расположено в Тебердинском заповеднике и является пограничной",
+      img: "/routeGalery8.png",
+      fullDesc: "Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками; административные здания парка. Это отличное место для начала знакомства с природой и историей Тебердинского заповедника."
     },
     {
       id: 3,
@@ -115,10 +119,10 @@ export default function Places_page() {
     const updatePath = () => {
       setCurrentPath(window.location.pathname)
     }
-    
+
     updatePath()
     window.addEventListener('popstate', updatePath)
-    
+
     return () => {
       window.removeEventListener('popstate', updatePath)
     }
@@ -136,7 +140,7 @@ export default function Places_page() {
     const path = window.location.pathname
     const pathParts = path.split('/').filter(Boolean)
     const placeSlug = pathParts[pathParts.length - 1]
-    
+
     // Если это не просто /places, значит есть slug
     if (placeSlug && placeSlug !== 'places' && !isModalOpen) {
       // Находим место по slug
@@ -187,7 +191,7 @@ export default function Places_page() {
       // Сохраняем текущую позицию скролла
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop
       scrollPositionRef.current = currentScroll
-      
+
       // Блокируем скролл, сохраняя позицию
       document.body.style.position = 'fixed'
       document.body.style.top = `-${currentScroll}px`
@@ -200,7 +204,7 @@ export default function Places_page() {
       document.body.style.top = ''
       document.body.style.width = ''
       document.body.style.overflow = ''
-      
+
       // Восстанавливаем позицию скролла точно такую же, как была до открытия
       if (scrollY !== undefined) {
         // Используем setTimeout для корректного восстановления после изменения стилей
@@ -316,7 +320,7 @@ export default function Places_page() {
                       },
                     }}
                   >
-                    <MenuItem 
+                    <MenuItem
                       value="popularity"
                       sx={{
                         fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
@@ -327,7 +331,7 @@ export default function Places_page() {
                     >
                       По популярности
                     </MenuItem>
-                    <MenuItem 
+                    <MenuItem
                       value="rating"
                       sx={{
                         fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
@@ -342,10 +346,10 @@ export default function Places_page() {
                 </FormControl>
               </div>
             </div>
-            
+
             <div className={styles.placesShow}>
               {places.map((place) => (
-                <PlaceBlock 
+                <PlaceBlock
                   key={place.id}
                   rating={place.rating}
                   feedback={place.feedback}
@@ -362,65 +366,11 @@ export default function Places_page() {
       </CenterBlock>
 
       {/* Модалка с детальной информацией о месте */}
-      <AnimatePresence>
-        {isModalOpen && selectedPlace && (
-          <motion.div
-            className={styles.modal}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeModal}
-          >
-            <motion.div
-              className={styles.modalContent}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button className={styles.modalClose} onClick={closeModal}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-
-              <div className={styles.modalBody}>
-                <div className={styles.modalImage}>
-                  <img src={selectedPlace.img} alt={selectedPlace.title} />
-                </div>
-                
-                <div className={styles.modalInfo}>
-                  <div className={styles.modalTitle}>{selectedPlace.title}</div>
-                  
-                  <div className={styles.modalDetails}>
-                    <div className={styles.modalDetailItem}>
-                      <div className={styles.modalDetailLabel}>Местоположение</div>
-                      <div className={styles.modalDetailValue}>{selectedPlace.place}</div>
-                    </div>
-                    <div className={styles.modalDetailItem}>
-                      <div className={styles.modalDetailLabel}>Рейтинг</div>
-                      <div className={styles.modalDetailValue}>
-                        <img src="/star.png" alt="" />
-                        {selectedPlace.rating}
-                      </div>
-                    </div>
-                    <div className={styles.modalDetailItem}>
-                      <div className={styles.modalDetailLabel}>Отзывы</div>
-                      <div className={styles.modalDetailValue}>{selectedPlace.feedback}</div>
-                    </div>
-                  </div>
-
-                  <div className={styles.modalDescription}>
-                    <div className={styles.modalDescriptionTitle}>Описание</div>
-                    <div className={styles.modalDescriptionText}>{selectedPlace.fullDesc}</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PlaceModal
+        isOpen={isModalOpen}
+        place={selectedPlace}
+        onClose={closeModal}
+      />
     </main >
   )
 }
