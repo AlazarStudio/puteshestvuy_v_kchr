@@ -31,6 +31,7 @@ export default function RouteDetail({ }) {
   const [reviewName, setReviewName] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
+  const [activeAnchor, setActiveAnchor] = useState('main')
   const [reviews, setReviews] = useState([
     {
       id: 1,
@@ -217,6 +218,59 @@ export default function RouteDetail({ }) {
     setRating(0)
   }
 
+  const anchors = [
+    { id: 'main', label: 'Основное' },
+    { id: 'route', label: 'Маршрут' },
+    { id: 'map', label: 'Карта' },
+    { id: 'what-to-take', label: 'Что взять с собой' },
+    { id: 'description', label: 'Описание маршрута' },
+    { id: 'important', label: 'Важно знать' },
+    { id: 'guides', label: 'Гиды' },
+    { id: 'reviews', label: 'Отзывы' },
+    { id: 'places', label: 'Места рядом с этим маршрутом' },
+    { id: 'similar', label: 'Похожие маршруты' }
+  ]
+
+  const scrollToAnchor = (anchorId) => {
+    const element = document.getElementById(anchorId)
+    if (element) {
+      const offset = 100 // Отступ сверху для sticky header
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
+  }
+
+  // Отслеживание активного якоря при прокрутке
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 150 // Отступ для учета sticky header
+
+      for (let i = anchors.length - 1; i >= 0; i--) {
+        const element = document.getElementById(anchors[i].id)
+        if (element) {
+          const elementTop = element.offsetTop
+          if (scrollPosition >= elementTop) {
+            setActiveAnchor(anchors[i].id)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Вызываем сразу для установки начального активного якоря
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <main className={styles.main}>
       <CenterBlock>
@@ -286,7 +340,7 @@ export default function RouteDetail({ }) {
 
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
-              <div className={styles.title}>На границе регионов: <br />Кисловодск - Медовые водопады</div>
+              <div id="main" className={styles.title}>На границе регионов: <br />Кисловодск - Медовые водопады</div>
               <div className={styles.information}>
                 <div className={styles.item}>
                   <img src="/routeInfoContentIcon1.png" alt="" />
@@ -344,7 +398,7 @@ export default function RouteDetail({ }) {
                 </div>
               </div>
 
-              <div className={styles.title}>Маршрут</div>
+              <div id="route" className={styles.title}>Маршрут</div>
               <div className={styles.forSlider}>
                 <div className={styles.slider}>
                   <Swiper
@@ -403,10 +457,10 @@ export default function RouteDetail({ }) {
                 </div>
               </div>
 
-              <div className={styles.title}>Карта</div>
+              <div id="map" className={styles.title}>Карта</div>
               <div className={styles.map}><img src="/map.png" alt="" /></div>
 
-              <div className={styles.title}>Что взять с собой</div>
+              <div id="what-to-take" className={styles.title}>Что взять с собой</div>
               <div className={styles.infoTable}>
                 <div className={styles.infoTable_blocks}>
                   <div className={styles.infoTable_blocks_title}>
@@ -450,7 +504,7 @@ export default function RouteDetail({ }) {
                 </div>
               </div>
 
-              <div className={styles.title}>Описание маршрута</div>
+              <div id="description" className={styles.title}>Описание маршрута</div>
               <div className={styles.tabs}>
                 <div className={styles.tabsList}>
                   <button
@@ -499,13 +553,13 @@ export default function RouteDetail({ }) {
                 </div>
               </div>
 
-              <div className={styles.title}>Важно знать</div>
+              <div id="important" className={styles.title}>Важно знать</div>
               <div className={styles.text}>
                 При посещении горных районов возможны перепады давления,
                 рекомендуем вам обратить на это внимание
               </div>
 
-              <div className={styles.title}>Помогут покорить маршрут</div>
+              <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
               <div className={styles.guides}>
                 <Link href={'/#'} className={styles.guide_man}>
                   <div className={styles.guide_man_img}>
@@ -572,7 +626,7 @@ export default function RouteDetail({ }) {
                 </Link>
               </div>
 
-              <div className={styles.title}>Отзывы</div>
+              <div id="reviews" className={styles.title}>Отзывы</div>
               <div className={styles.feedback}>
                 <form className={styles.feedbackForm} onSubmit={handleSubmitReview}>
                   <div className={styles.feedbackFormRating}>
@@ -706,13 +760,13 @@ export default function RouteDetail({ }) {
                 </div>
               </div>
 
-              <div className={styles.title}>Места рядом с этим маршрутом</div>
+              <div id="places" className={styles.title}>Места рядом с этим маршрутом</div>
               <div className={styles.places}>
                 <PlaceBlock width='336px' rating={"5.0"} feedback={"1 отзыв"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
                 <PlaceBlock width='336px' rating={"5.0"} feedback={"2 отзыва"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
               </div>
 
-              <div className={styles.title}>Похожие маршруты</div>
+              <div id="similar" className={styles.title}>Похожие маршруты</div>
               <div className={styles.anotherRoutes}>
                 <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
                 <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
@@ -720,7 +774,27 @@ export default function RouteDetail({ }) {
               </div>
             </div>
 
-            <div className={styles.routeBlock_anchors}></div>
+            <div className={styles.routeBlock_anchors}>
+              <div className={styles.anchorsList}>
+                {anchors.map((anchor) => (
+                  <button
+                    key={anchor.id}
+                    className={`${styles.anchorItem} ${activeAnchor === anchor.id ? styles.anchorItemActive : ''}`}
+                    onClick={() => scrollToAnchor(anchor.id)}
+                  >
+                    {anchor.label}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.anchorsButtons}>
+                <button className={styles.anchorButton}>
+                  Скачать маршрут в PDF
+                </button>
+                <button className={styles.anchorButton}>
+                  Забронировать
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </CenterBlock>
