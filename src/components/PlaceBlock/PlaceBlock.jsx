@@ -5,9 +5,9 @@ import styles from './PlaceBlock.module.css'
 import Link from 'next/link'
 
 
-export default function PlaceBlock({img, place, title, desc, link, rating, feedback }) {
+export default function PlaceBlock({img, place, title, desc, link, rating, feedback, width = '336px' }) {
   return (
-    <Link href={link} className={styles.place}>
+    <Link href={link} className={styles.place} style={{width:`${width} !important`}}>
       <div className={styles.img}>
         <img src={img} alt="" />
         </div>

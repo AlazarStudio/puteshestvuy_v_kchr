@@ -460,7 +460,496 @@
   transition: all 0.3s ease-in-out;
 }
 
-.slideBtn:hover{
+.slideBtn:hover {
   background-color: #000;
   color: #fff;
+}
+
+.infoTable {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 50px;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.infoTable_blocks_title {
+  font-weight: 600;
+}
+
+.infoTable_blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 50%;
+}
+
+.infoTable_blocks_block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.infoTable_blocks_block img {
+  max-width: 30px;
+  max-height: 30px;
+  object-fit: contain;
+}
+
+.infoTable_blocks_block_img {
+  width: 30px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tabsList {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 12px 24px;
+  border: 1px solid #00000033;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.tab:hover {
+  background-color: #ffffff;
+}
+
+.tabActive {
+  border: 1px solid #ffffff;
+  background-color: #FFFFFF;
+  color: #000000;
+}
+
+.tabActive:hover {
+  background-color: #FFFFFF;
+}
+
+.tabsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.tabsContentTitle {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 120%;
+  letter-spacing: 0%;
+}
+
+.tabsContentList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tabsContentList li {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  position: relative;
+  padding-left: 20px;
+}
+
+.tabsContentList li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+}
+
+
+.text {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+/* Feedback */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.feedbackForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.feedbackFormRating {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.starButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.starButton:hover {
+  transform: scale(1.1);
+}
+
+.feedbackFormInput,
+.feedbackFormTextarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.feedbackFormInput:focus,
+.feedbackFormTextarea:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.feedbackFormTextarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.feedbackSubmitButton {
+  padding: 12px 30px;
+  border: 1px solid #00000033;
+  border-radius: 30px;
+  background: #fff;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  align-self: flex-start;
+}
+
+.feedbackSubmitButton:hover {
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.feedbackItem {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.feedbackItem:last-child {
+  border-bottom: none;
+}
+
+.feedbackItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.feedbackItemLeft {
+  display: flex;
+  gap: 15px;
+  flex: 1;
+}
+
+.feedbackAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.feedbackItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.feedbackItemNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feedbackItemName {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.feedbackItemDate {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  color: #999999;
+}
+
+.feedbackItemRating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.feedbackItemRating svg {
+  width: 16px;
+  height: 16px;
+}
+
+.feedbackItemMenu {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.feedbackItemMenu:hover {
+  opacity: 1;
+}
+
+.feedbackItemText {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  color: #333333;
+  margin-left: 65px;
+}
+
+.feedbackExpandButton {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #666666;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 10px;
+  margin-left: 65px;
+  transition: color 0.2s ease;
+}
+
+.feedbackExpandButton:hover {
+  color: #000;
+}
+
+.feedbackExpandButton svg {
+  transition: transform 0.2s ease;
+}
+
+.feedbackItemActions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: 65px;
+}
+
+.feedbackLikeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.feedbackLikeButton:hover {
+  transform: scale(1.1);
+}
+
+.feedbackLikeButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.feedbackReplyButton {
+  background: none;
+  border: none;
+  color: #666666;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.feedbackReplyButton:hover {
+  color: #000;
+}
+
+.feedbackShowAll {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.feedbackShowAllButton {
+  padding: 12px 30px;
+  border: 1px solid #00000033;
+  border-radius: 30px;
+  background: #fff;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.feedbackShowAllButton:hover {
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.places {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.anotherRoutes {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.guides {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.guide_man {
+  width: 48%;
+  display: flex;
+  gap: 30px;
+}
+
+.guide_man_img {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.guide_man_img_avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.guide_man_img_verification {
+  position: absolute;
+  top: 4px;
+  right: 13px;
+}
+
+.guide_man_desc {
+  width: calc(100% - 180px);
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide_man_title {
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 100%;
+  letter-spacing: 0%;
+}
+
+.guide_man_rating_feedback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide_man_rating_feedback_item {
+  padding: 5px 10px;
+  background-color: #fff;
+  border-radius: 35px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 5%;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.guide_man_rating_feedback_item img{
+  width: 15px;
 }
