@@ -14,7 +14,7 @@ import { Navigation, Autoplay } from 'swiper/modules';
 import Link from 'next/link';
 import { generateSlug } from '@/utils/transliterate';
 
-export default function RouteBlock({ title = 'На границе регионов: Кисловодск - Медовые водопады' }) {
+export default function RouteBlock({ title }) {
   function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }

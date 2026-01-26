@@ -1,0 +1,221 @@
+.main {
+  background-color: #F1F3F8;
+}
+
+.flexBlock {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.places {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.placesShow {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.placesSort {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.placesSortSort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selectWrapper {
+  min-width: 200px;
+}
+
+.placesSortSort .title {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.placesSortFind {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.modalContent {
+  position: relative;
+  width: 100%;
+  height: 90%;
+  max-width: 100%;
+  background-color: #fff;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  cursor: pointer;
+  z-index: 10000;
+  padding: 10px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #fff;
+}
+
+.modalClose:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.modalBody {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.modalImage {
+  width: 100%;
+  height: 400px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.modalImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modalInfo {
+  flex: 1;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.modalTitle {
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 120%;
+  letter-spacing: 0%;
+}
+
+.modalDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.modalDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background-color: #F1F3F8;
+  padding: 16px;
+  border-radius: 10px;
+  min-width: 200px;
+}
+
+.modalDetailLabel {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: #666;
+}
+
+.modalDetailValue {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.modalDetailValue img {
+  width: 16px;
+  height: 16px;
+}
+
+.modalDescription {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modalDescriptionTitle {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 120%;
+  letter-spacing: 0%;
+}
+
+.modalDescriptionText {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    height: 95%;
+  }
+
+  .modalImage {
+    height: 250px;
+  }
+
+  .modalInfo {
+    padding: 20px;
+  }
+
+  .modalTitle {
+    font-size: 24px;
+  }
+}

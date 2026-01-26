@@ -1,11 +1,12 @@
 .place {
-    width: 336px;
+    width: 330px;
     height: 520px;
     position: relative;
     overflow: hidden;
     border-radius: 25px;
     border-bottom: 1px solid #0000001A;
     display: flex;
+    cursor: pointer;
 }
 
 .img {
@@ -32,7 +33,7 @@
 
 .info {
     position: absolute;
-    bottom: -2px;
+    bottom: 0px;
     left: 0;
     width: 100%;
     height: fit-content;
@@ -40,9 +41,8 @@
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease-in-out;
-    transform: translateY(140px);
+    transform: translateY(90px);
 }
-
 
 .ratingFeedback {
     display: flex;
@@ -82,9 +82,9 @@
 
 .text {
     width: 100%;
-    height: fit-content;
+    height: 100%;
     background-color: #fff;
-    padding: 28px 37px;
+    padding: 20px 25px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -102,9 +102,10 @@
 
 .title {
     font-weight: 600;
-    font-size: 22px;
+    font-size: 20px;
     line-height: 130%;
     letter-spacing: 0%;
+    text-transform: uppercase;
 }
 
 .desc {
@@ -134,7 +135,7 @@
 }
 
 .place:hover .info {
-    transform: translateY(5px);
+    transform: translateY(0px);
 }
 
 .place:hover .desc {

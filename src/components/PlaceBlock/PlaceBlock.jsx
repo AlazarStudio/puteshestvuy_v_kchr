@@ -2,15 +2,17 @@
 
 import { motion } from 'framer-motion'
 import styles from './PlaceBlock.module.css'
-import Link from 'next/link'
 
-
-export default function PlaceBlock({img, place, title, desc, link, rating, feedback, width = '336px' }) {
+export default function PlaceBlock({ img, place, title, desc, rating, feedback, width = '330px', onClick }) {
   return (
-    <Link href={link} className={styles.place} style={{width:`${width} !important`}}>
+    <div 
+      className={styles.place} 
+      style={{ width: `${width} !important` }}
+      onClick={onClick}
+    >
       <div className={styles.img}>
         <img src={img} alt="" />
-        </div>
+      </div>
       <div className={styles.info}>
         <div className={styles.ratingFeedback}>
           <div className={styles.rating}>
@@ -32,6 +34,6 @@ export default function PlaceBlock({img, place, title, desc, link, rating, feedb
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
