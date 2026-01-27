@@ -1,10 +1,52 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import styles from './Header.module.css'
+
+// Данные для выпадающего меню "На помощь туристу"
+const dropdownMenuData = {
+  articles: {
+    title: 'Статьи',
+    items: [
+      { title: 'Советы от местных: 5 непопсовых смотровых на Эльбрус', href: '/articles/elbrus-views' },
+      { title: 'Зимний Архыз без горнолыжки', href: '/articles/winter-arkhyz' },
+      { title: 'Рассказы походника: Как оправдалась надежда подняться на гору Надежда', href: '/articles/nadezhda-mountain' },
+    ],
+    viewAllHref: '/articles',
+  },
+  services: {
+    title: 'Сервис',
+    columns: [
+      [
+        { title: 'Гиды', href: '/services/guides' },
+        { title: 'Активности', href: '/services/activities' },
+        { title: 'Прокат оборудования', href: '/services/equipment-rental' },
+        { title: 'Пункты придорожного сервиса', href: '/services/roadside-service' },
+        { title: 'Торговые точки', href: '/services/shops' },
+        { title: 'Сувениры', href: '/services/souvenirs' },
+      ],
+      [
+        { title: 'Гостиницы', href: '/services/hotels' },
+        { title: 'Кафе и рестораны', href: '/services/restaurants' },
+        { title: 'Трансфер', href: '/services/transfer' },
+        { title: 'АЗС', href: '/services/gas-stations' },
+        { title: 'Санитарные узлы', href: '/services/restrooms' },
+      ],
+    ],
+    viewAllHref: '/services',
+  },
+  emergency: {
+    title: 'Экстренные службы',
+    items: [
+      { title: 'Пункты медпомощи', href: '/services/medical' },
+      { title: 'МВД', href: '/services/police' },
+      { title: 'Пожарная охрана', href: '/services/fire-department' },
+    ],
+  },
+}
 
 // Конфигурация для каждой страницы
 const pageConfig = [
@@ -106,6 +148,9 @@ export default function Header() {
   const [isNotFound, setIsNotFound] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [hasBlur, setHasBlur] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+  const dropdownTriggerRef = useRef(null)
   
   // Получаем конфигурацию для текущей страницы
   const currentConfig = getPageConfig(pathname)
@@ -209,10 +254,13 @@ export default function Header() {
   // Получаем цвет фона из конфигурации или используем дефолтный
   const backgroundColor = currentConfig?.backgroundColor || '#f1f3f8b7'
 
+  // Определяем, нужен ли белый фон при открытом dropdown
+  const isDropdownActive = isDropdownOpen
+
   return (
     <header 
-      className={`${styles.header} ${hasBlur && needsBackground ? styles.headerBlurred : ''} ${isDarkMode && needsBackground ? styles.headerDark : ''} ${isDarkMode && !needsBackground ? styles.headerDarkNoBg : ''}`} 
-      style={needsBackground ? { backgroundColor } : {}}
+      className={`${styles.header} ${hasBlur && needsBackground && !isDropdownActive ? styles.headerBlurred : ''} ${isDarkMode && needsBackground && !isDropdownActive ? styles.headerDark : ''} ${isDarkMode && !needsBackground && !isDropdownActive ? styles.headerDarkNoBg : ''} ${isDropdownActive ? styles.headerDropdownActive : ''}`} 
+      style={needsBackground && !isDropdownActive ? { backgroundColor } : {}}
       role="banner"
     >
       <div className={styles.container}>
@@ -224,7 +272,7 @@ export default function Header() {
           className={styles.logo}
           aria-label="Карачаево-Черкесия - Главная страница"
         >
-          {isDarkMode ? <Image
+          {(isDarkMode || isDropdownActive) ? <Image
             src="/color_logo.png"
             alt="Логотип Карачаево-Черкесии"
             width={232}
@@ -280,7 +328,12 @@ export default function Header() {
           >
             Мерч
           </Link>
-          <div className={styles.navDropdown}>
+          <div 
+            className={styles.navDropdown}
+            ref={dropdownTriggerRef}
+            onMouseEnter={() => setIsDropdownOpen(true)}
+            onMouseLeave={() => setIsDropdownOpen(false)}
+          >
             <Link
               href="/services"
               className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
@@ -289,7 +342,7 @@ export default function Header() {
               На помощь туристу
             </Link>
             <svg
-              className={styles.dropdownIcon}
+              className={`${styles.dropdownIcon} ${isDropdownOpen ? styles.dropdownIconRotated : ''}`}
               width="12"
               height="12"
               viewBox="0 0 12 12"
@@ -305,6 +358,71 @@ export default function Header() {
                 strokeLinejoin="round"
               />
             </svg>
+
+            {/* Выпадающее меню */}
+            <div 
+              ref={dropdownRef}
+              className={`${styles.dropdownMenu} ${isDropdownOpen ? styles.dropdownMenuOpen : ''}`}
+            >
+              <div className={styles.dropdownContent}>
+                {/* Изображение-превью слева */}
+                <div className={styles.dropdownImageWrapper}>
+                  <div className={styles.dropdownImage}></div>
+                </div>
+
+                {/* Статьи */}
+                <div className={styles.dropdownSection}>
+                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.articles.title}</h3>
+                  <ul className={styles.dropdownList}>
+                    {dropdownMenuData.articles.items.map((item, index) => (
+                      <li key={index}>
+                        <Link href={item.href} className={styles.dropdownLink}>
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={dropdownMenuData.articles.viewAllHref} className={styles.dropdownViewAll}>
+                    Смотреть все
+                  </Link>
+                </div>
+
+                {/* Сервис */}
+                <div className={styles.dropdownSection}>
+                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.services.title}</h3>
+                  <div className={styles.dropdownColumns}>
+                    {dropdownMenuData.services.columns.map((column, colIndex) => (
+                      <ul key={colIndex} className={styles.dropdownList}>
+                        {column.map((item, index) => (
+                          <li key={index}>
+                            <Link href={item.href} className={styles.dropdownLink}>
+                              {item.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                  <Link href={dropdownMenuData.services.viewAllHref} className={styles.dropdownViewAll}>
+                    Смотреть все
+                  </Link>
+                </div>
+
+                {/* Экстренные службы */}
+                <div className={styles.dropdownSection}>
+                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.emergency.title}</h3>
+                  <ul className={styles.dropdownList}>
+                    {dropdownMenuData.emergency.items.map((item, index) => (
+                      <li key={index}>
+                        <Link href={item.href} className={styles.dropdownLink}>
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </nav>
 

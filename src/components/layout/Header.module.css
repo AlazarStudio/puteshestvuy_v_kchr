@@ -25,6 +25,41 @@
   background-color: transparent;
 }
 
+/* Header при открытом dropdown меню */
+.headerDropdownActive {
+  background-color: #FFFFFF !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.headerDropdownActive .navLink {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .navLink:hover {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDropdownActive .navLink_active {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDropdownActive .dropdownIcon {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .iconButton {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .iconButton img {
+  filter: brightness(0) !important;
+}
+
+.headerDropdownActive .containerBotLine {
+  background-color: transparent !important;
+}
+
 .headerDarkNoBg .navLink {
   color: #000000 !important;
 }
@@ -165,6 +200,115 @@
   color: white;
   width: 12px;
   height: 12px;
+  transition: transform 0.3s ease;
+}
+
+.dropdownIconRotated {
+  transform: rotate(180deg);
+}
+
+/* Выпадающее меню - полноэкранное */
+.dropdownMenu {
+  position: fixed;
+  top: 85px;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  background: #FFFFFF;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 999;
+  border-top: 1px solid #E5E7EB;
+}
+
+.dropdownMenuOpen {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdownContent {
+  display: flex;
+  gap: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.dropdownImageWrapper {
+  flex-shrink: 0;
+}
+
+.dropdownImage {
+  width: 200px;
+  height: 200px;
+  background: #E5E7EB;
+  border-radius: 8px;
+}
+
+.dropdownSection {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+.dropdownSection:first-child {
+  min-width: 300px;
+  border-right: 1px solid #E5E7EB;
+  padding-right: 40px;
+}
+
+.dropdownSection:nth-child(2) {
+  border-right: 1px solid #E5E7EB;
+  padding-right: 40px;
+}
+
+.dropdownSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.dropdownList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dropdownColumns {
+  display: flex;
+  gap: 32px;
+}
+
+.dropdownLink {
+  font-size: 0.9375rem;
+  color: #4B5563;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  line-height: 1.4;
+  display: block;
+}
+
+.dropdownLink:hover {
+  color: #009688;
+  text-decoration: underline;
+}
+
+.dropdownViewAll {
+  font-size: 0.9375rem;
+  color: #6B7280;
+  text-decoration: none;
+  margin-top: 16px;
+  transition: color 0.2s ease;
+}
+
+.dropdownViewAll:hover {
+  color: #009688;
 }
 
 /* Иконки справа */
@@ -192,6 +336,22 @@
 }
 
 /* Адаптивность */
+@media (max-width: 1200px) {
+  .dropdownContent {
+    padding: 32px 20px;
+    gap: 24px;
+  }
+
+  .dropdownSection:first-child {
+    min-width: 240px;
+    padding-right: 24px;
+  }
+
+  .dropdownSection:nth-child(2) {
+    padding-right: 24px;
+  }
+}
+
 @media (max-width: 1024px) {
   .nav {
     gap: 1.5rem;
@@ -199,6 +359,41 @@
 
   .navLink {
     font-size: 0.875rem;
+  }
+
+  .dropdownImageWrapper {
+    display: none;
+  }
+
+  .dropdownContent {
+    padding: 24px 20px;
+    gap: 20px;
+  }
+
+  .dropdownSection {
+    min-width: 150px;
+  }
+
+  .dropdownSection:first-child {
+    min-width: 200px;
+    padding-right: 20px;
+  }
+
+  .dropdownSection:nth-child(2) {
+    padding-right: 20px;
+  }
+
+  .dropdownSectionTitle {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .dropdownLink {
+    font-size: 0.875rem;
+  }
+
+  .dropdownColumns {
+    gap: 20px;
   }
 }
 
