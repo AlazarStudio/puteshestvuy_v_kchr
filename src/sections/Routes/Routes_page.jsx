@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Routes_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -8,6 +8,7 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 
+const SCROLL_KEY = 'routes_scroll_position'
 
 export default function Routes_page() {
   const [sortBy, setSortBy] = useState('popularity')
@@ -15,6 +16,45 @@ export default function Routes_page() {
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
   }
+
+  // Восстанавливаем позицию скролла при возврате на страницу
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem(SCROLL_KEY)
+    if (savedScroll) {
+      // Используем setTimeout для гарантии восстановления после рендера
+      setTimeout(() => {
+        window.scrollTo({
+          top: parseInt(savedScroll, 10),
+          behavior: 'instant'
+        })
+      }, 0)
+      // Очищаем сохранённую позицию
+      sessionStorage.removeItem(SCROLL_KEY)
+    }
+  }, [])
+
+  // Сохраняем позицию скролла перед уходом со страницы
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem(SCROLL_KEY, window.scrollY.toString())
+    }
+
+    // Сохраняем скролл при клике на ссылку маршрута
+    const handleClick = (e) => {
+      const link = e.target.closest('a[href^="/routes/"]')
+      if (link) {
+        sessionStorage.setItem(SCROLL_KEY, window.scrollY.toString())
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('click', handleClick)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('click', handleClick)
+    }
+  }, [])
 
   return (
     <main className={styles.main}>

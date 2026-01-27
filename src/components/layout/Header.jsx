@@ -51,7 +51,7 @@ const pageConfig = [
     backgroundColor: '#f1f3f8b7',
   },
   {
-    path: '/measures',
+    path: '/merch',
     initialColor: 'white',
     scrollThreshold: 200,
     enableScrollChange: true,
@@ -267,11 +267,11 @@ export default function Header() {
             Новости
           </Link>
           <Link
-            href="/measures"
-            className={`${styles.navLink} ${pathname === '/measures' ? styles.navLink_active : ''}`}
-            title="Меры поддержки туризма"
+            href="/merch"
+            className={`${styles.navLink} ${pathname === '/merch' ? styles.navLink_active : ''}`}
+            title="Мерч поддержки туризма"
           >
-            Меры
+            Мерч
           </Link>
           <div className={styles.navDropdown}>
             <Link

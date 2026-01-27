@@ -39,7 +39,7 @@ export default function RouteDetail({ }) {
       date: '12 сентября 2025',
       rating: 5.0,
       text: 'Остался в полном восторге от экскурсии «На границе регионов: Кисловодск-Медовые водопады»! Маршрут продуман идеально: сначала прогулка по Кисловодску с его целебным воздухом и архитектурными жемчужинами, а потом – резкий переход к дикой природе. Медовые водопады поразили мощью и красотой: шум воды, брызги, изумрудные оттенки реки – словно другая планета. Особенно запомнился самый высокий из каскадов: стоя у подножия, чувствуешь себя крошечным перед силой природы. Гид рассказывал увлекательно, не перегружая датами, но делясь интересными легендами. Время пролетело незаметно, а впечатлений – на год вперёд. Однозначно рекомендую тем, кто хочет увидеть контраст курортной элегантности и первозданной природы!',
-      avatar: '/profile.png',
+      avatar: '/avatar_feedback.png',
       isLong: false
     },
     {
@@ -48,7 +48,7 @@ export default function RouteDetail({ }) {
       date: '12 сентября 2025',
       rating: 5.0,
       text: 'Экскурсия «На границе регионов: Кисловодск-Медовые водопады» оставила приятное впечатление. Программа сбалансирована: Кисловодск: обзор ключевых точек (Курортный парк, Нарзанная галерея) без спешки, достаточно времени для фото и самостоятельного изучения. Переезд к водопадам комфортный, дорога живописная. Медовые водопады – это отдельная история: каскады разной высоты, каждый со своим характером. Особенно понравилось, что гид не торопился, давал время насладиться каждым местом. Единственный момент – на водопадах довольно скользко, так что обувь действительно важна. В целом, отличный вариант для первого знакомства с регионом.',
-      avatar: '/profile.png',
+      avatar: '',
       isLong: true
     },
     {
@@ -57,7 +57,7 @@ export default function RouteDetail({ }) {
       date: '12 сентября 2025',
       rating: 5.0,
       text: 'Решилась на экскурсию «На границе регионов» и не пожалела! Делюсь нюансами, которые пригодятся: Что взять: удобную обувь (на водопадах каменистые тропы), воду и перекус (в программе есть паузы, но магазинов рядом мало). Что понравилось: структура экскурсии – не устаешь, есть время отдохнуть между локациями. Гид знающий, отвечал на все вопросы. Водопады впечатляют даже в пасмурную погоду. Что учесть: в Кисловодске много туристов, особенно в выходные, но гид нашел менее людные места для рассказа. В целом, рекомендую как для новичков, так и для тех, кто уже бывал в регионе – всегда найдется что-то новое.',
-      avatar: '/profile.png',
+      avatar: '',
       isLong: true
     }
   ])
@@ -682,7 +682,12 @@ export default function RouteDetail({ }) {
                       <div key={review.id} className={styles.feedbackItem}>
                         <div className={styles.feedbackItemHeader}>
                           <div className={styles.feedbackItemLeft}>
-                            <img src={review.avatar} alt={review.name} className={styles.feedbackAvatar} />
+                            <img 
+                              src={review.avatar || '/no-avatar.png'} 
+                              alt={review.name} 
+                              className={styles.feedbackAvatar}
+                              onError={(e) => { e.target.src = '/no-avatar.png' }}
+                            />
                             <div className={styles.feedbackItemInfo}>
                               <div className={styles.feedbackItemNameRow}>
                                 <div className={styles.feedbackItemName}>{review.name}</div>
@@ -703,13 +708,6 @@ export default function RouteDetail({ }) {
                               </div>
                             </div>
                           </div>
-                          <button className={styles.feedbackItemMenu}>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                              <circle cx="10" cy="5" r="1.5" fill="#666" />
-                              <circle cx="10" cy="10" r="1.5" fill="#666" />
-                              <circle cx="10" cy="15" r="1.5" fill="#666" />
-                            </svg>
-                          </button>
                         </div>
                         <div className={styles.feedbackItemText}>
                           {isExpanded ? review.text : shortText}
@@ -720,9 +718,6 @@ export default function RouteDetail({ }) {
                             onClick={() => toggleReview(review.id)}
                           >
                             Показать полностью
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M4 6L8 10L12 6" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
                           </button>
                         )}
                         {isExpanded && review.text.length > 200 && (
@@ -731,25 +726,8 @@ export default function RouteDetail({ }) {
                             onClick={() => toggleReview(review.id)}
                           >
                             Свернуть
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: 'rotate(180deg)' }}>
-                              <path d="M4 6L8 10L12 6" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
                           </button>
                         )}
-                        <div className={styles.feedbackItemActions}>
-                          <button className={styles.feedbackLikeButton}>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                              <path
-                                d="M17.3663 3.84172C16.9405 3.41589 16.4352 3.0781 15.8793 2.84763C15.3234 2.61715 14.7271 2.49805 14.1247 2.49805C13.5223 2.49805 12.926 2.61715 12.3701 2.84763C11.8142 3.0781 11.3089 3.41589 10.8831 3.84172L9.99969 4.72506L9.11636 3.84172C8.25869 2.98406 7.09036 2.49849 5.87469 2.49849C4.65902 2.49849 3.49069 2.98406 2.63302 3.84172C1.77536 4.69939 1.28979 5.86772 1.28979 7.08339C1.28979 8.29906 1.77536 9.46739 2.63302 10.3251L3.51636 11.2084L9.99969 17.6917L16.483 11.2084L17.3663 10.3251C17.7922 9.89922 18.13 9.39395 18.3604 8.83806C18.5909 8.28217 18.71 7.68589 18.71 7.08339C18.71 6.48089 18.5909 5.88461 18.3604 5.32872C18.13 4.77283 17.7922 4.26756 17.3663 3.84172Z"
-                                stroke="#666"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          <button className={styles.feedbackReplyButton}>Ответить</button>
-                        </div>
                       </div>
                     )
                   })}

@@ -33,6 +33,11 @@ body {
   height: 100%;
 }
 
+/* Скрываем скролл до загрузки (JS потом уберёт когда загрузится) */
+body.loading {
+  overflow: hidden;
+}
+
 body {
   /* Убираем padding-top, так как header должен накладываться поверх контента */
   /* padding-top: 80px; */

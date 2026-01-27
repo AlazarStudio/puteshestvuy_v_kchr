@@ -5,8 +5,8 @@ import styles from './PlaceBlock.module.css'
 
 export default function PlaceBlock({ img, place, title, desc, rating, feedback, width = '330px', onClick }) {
   return (
-    <div 
-      className={styles.place} 
+    <div
+      className={styles.place}
       style={{ width: `${width} !important` }}
       onClick={onClick}
     >
@@ -34,6 +34,7 @@ export default function PlaceBlock({ img, place, title, desc, rating, feedback, 
           </div>
         </div>
       </div>
+      <div className={styles.text_hide}></div>
     </div>
   )
 }

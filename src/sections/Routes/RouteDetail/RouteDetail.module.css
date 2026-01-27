@@ -128,7 +128,7 @@
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.9);
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -418,6 +418,7 @@
   line-height: 120%;
   letter-spacing: 0%;
   margin-top: 20px;
+  z-index: 10;
 }
 
 .information {
@@ -679,13 +680,16 @@
 .feedback {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 25px;
 }
 
 .feedbackForm {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 15px;
 }
 
 .feedbackFormRating {
@@ -726,7 +730,7 @@
 .feedbackFormInput:focus,
 .feedbackFormTextarea:focus {
   outline: none;
-  border-color: #000;
+  border-color: #156A60;
 }
 
 .feedbackFormTextarea {
@@ -736,100 +740,85 @@
 
 .feedbackSubmitButton {
   padding: 12px 30px;
-  border: 1px solid #00000033;
+  border: none;
   border-radius: 30px;
-  background: #fff;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 150%;
-  letter-spacing: 0%;
+  background: #156A60;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
   align-self: flex-start;
 }
 
 .feedbackSubmitButton:hover {
-  background-color: #000;
-  color: #fff;
-  border-color: #000;
+  background-color: #0d4a44;
 }
 
 .feedbackList {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 15px;
 }
 
 .feedbackItem {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding-bottom: 25px;
-  border-bottom: 1px solid #E5E5E5;
-}
-
-.feedbackItem:last-child {
-  border-bottom: none;
+  gap: 12px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 15px;
 }
 
 .feedbackItemHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 15px;
 }
 
 .feedbackItemLeft {
   display: flex;
-  gap: 15px;
-  flex: 1;
+  gap: 12px;
 }
 
 .feedbackAvatar {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
+  border: 2px solid #E5E5E5;
+  background-color: #F1F3F8;
 }
 
 .feedbackItemInfo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
+  gap: 6px;
 }
 
 .feedbackItemNameRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .feedbackItemName {
   font-weight: 600;
-  font-size: 16px;
-  line-height: 150%;
-  letter-spacing: 0%;
+  font-size: 15px;
 }
 
 .feedbackItemDate {
   font-weight: 400;
-  font-size: 14px;
-  line-height: 150%;
-  letter-spacing: 0%;
-  color: #999999;
+  font-size: 13px;
+  color: #999;
 }
 
 .feedbackItemRating {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 150%;
-  letter-spacing: 0%;
+  gap: 4px;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .feedbackItemRating svg {
@@ -855,33 +844,25 @@
 
 .feedbackItemText {
   font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 150%;
-  letter-spacing: 0%;
-  color: #333333;
-  margin-left: 65px;
+  color: #333;
 }
 
 .feedbackExpandButton {
-  display: flex;
-  align-items: center;
-  gap: 5px;
   background: none;
   border: none;
-  color: #666666;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 150%;
-  letter-spacing: 0%;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
   padding: 0;
-  margin-top: 10px;
-  margin-left: 65px;
   transition: color 0.2s ease;
+  align-self: flex-start;
 }
 
 .feedbackExpandButton:hover {
-  color: #000;
+  color: #0d4a44;
 }
 
 .feedbackExpandButton svg {
@@ -892,7 +873,6 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-left: 65px;
 }
 
 .feedbackLikeButton {
@@ -940,21 +920,19 @@
 
 .feedbackShowAllButton {
   padding: 12px 30px;
-  border: 1px solid #00000033;
+  border: 1px solid #156A60;
   border-radius: 30px;
   background: #fff;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 150%;
-  letter-spacing: 0%;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
 }
 
 .feedbackShowAllButton:hover {
-  background-color: #000;
+  background-color: #156A60;
   color: #fff;
-  border-color: #000;
 }
 
 .places {

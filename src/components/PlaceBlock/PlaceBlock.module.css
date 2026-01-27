@@ -90,6 +90,7 @@
     gap: 10px;
     border-radius: 25px;
     border: 1px solid #0000001A;
+    position: relative;
 }
 
 .placeName {
@@ -111,7 +112,7 @@
 .desc {
     display: flex;
     align-items: flex-end;
-    opacity: 0;
+    /* opacity: 0; */
     transition: all 0.3s ease-in-out;
 }
 
@@ -121,11 +122,28 @@
     font-size: 14px;
     line-height: 120%;
     letter-spacing: 0%;
+    overflow: hidden;
+    max-height: 50px; /* примерно 3 строки */
+    transition: max-height 0.2s ease-in-out;
 }
 
 .readMore {
     width: 39px;
     height: 39px;
+    position: absolute;
+    bottom: 120px;
+    right: 20px;
+}
+
+.text_hide {
+    width: 100%;
+    height: 20px;
+    background-color: #fff;
+    position: absolute;
+    bottom: 0;
+    z-index: 999;
+    transition: all 0.2s ease-in-out;
+    pointer-events: none;
 }
 
 .readMore img {
@@ -138,6 +156,10 @@
     transform: translateY(100px);
 }
 
-.place:hover .desc {
-    opacity: 1;
+.place:hover .text_hide {
+    transform: translateY(20px);
+}
+
+.place:hover .descText {
+    max-height: 300px; /* конкретное значение для анимации */
 }

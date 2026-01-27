@@ -20,7 +20,6 @@
   width: 100%;
   height: 90%;
   max-width: 100%;
-  /* background-color: #fff; */
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
@@ -58,19 +57,17 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
-  /* Firefox */
   -ms-overflow-style: none;
-  /* IE and Edge */
 }
 
 .modalBody::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Opera */
 }
 
+/* Главное изображение */
 .modalImage {
   width: 100%;
-  height: calc(100vh - 10%);
+  height: 700px;
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
@@ -80,7 +77,7 @@
   content: "";
   width: 100%;
   height: 100%;
-  background-color: #00000050;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
   position: absolute;
   top: 0;
   left: 0;
@@ -96,8 +93,7 @@
 
 .modalImage_text {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 60px;
   width: 100%;
   z-index: 2;
   color: #fff;
@@ -106,104 +102,722 @@
 .modalImage_text_block {
   display: flex;
   flex-direction: column;
-  gap: 50px;
+  gap: 15px;
 }
 
 .modalImage_text_place {
   font-weight: 400;
-  font-size: 20px;
+  font-size: 16px;
   line-height: 150%;
-  letter-spacing: 0%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalImage_text_place>img {
+  width: 16px;
+}
+
+.modalImage_text_title {
+  font-weight: 700;
+  font-size: 64px;
+  line-height: 110%;
+  text-transform: uppercase;
+}
+
+/* Контент */
+.modalInfo {
+  flex: 1;
+  padding: 50px 0;
+  background-color: #F1F3F8;
+}
+
+.contentWrapper {
+  display: flex;
+  gap: 40px;
+}
+
+.contentMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  max-width: calc(100% - 380px);
+}
+
+.title {
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 120%;
+  margin-top: 15px;
+}
+
+.title:first-child {
+  margin-top: 0;
+}
+
+/* Галерея */
+.gallery {
+  display: flex;
+  gap: 10px;
+  height: 300px;
+}
+
+.galleryMain {
+  flex: 1;
+  cursor: pointer;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+}
+
+.galleryMain img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryMain:hover img {
+  transform: scale(1.03);
+}
+
+.galleryGrid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.galleryItem {
+  position: relative;
+  cursor: pointer;
+  border-radius: 15px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.galleryItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryItem:hover>img {
+  transform: scale(1.03);
+}
+
+.galleryGridRow {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.galleryItemLast {
+  position: relative;
+}
+
+.moreButton {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 400;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.75);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.moreButton img {
+  width: 18px;
+  height: 18px;
+}
+
+/* Описание */
+.descriptionText {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 160%;
+  color: #333;
+}
+
+/* Карта */
+.mapImage {
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.mapImage img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Аудио */
+.audioBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.audioItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.audioIcon {
+  font-size: 28px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F1F3F8;
+  border-radius: 50%;
+}
+
+.audioInfo {
+  flex: 1;
+}
+
+.audioTitle {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.audioDesc {
+  font-weight: 400;
+  font-size: 14px;
+  color: #666;
+}
+
+.audioButton {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: #156A60;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.audioButton:hover {
+  background-color: #0d4a44;
+  transform: scale(1.05);
+}
+
+/* Видео */
+.videoBlock {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.videoBlock img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.videoPlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #156A60;
+  transition: all 0.2s ease;
+}
+
+.videoBlock:hover .videoPlay {
+  transform: translate(-50%, -50%) scale(1.1);
+  background-color: #fff;
+}
+
+/* Отзывы */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.feedbackForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 15px;
+}
+
+.feedbackFormRating {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.starButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.starButton:hover {
+  transform: scale(1.1);
+}
+
+.feedbackFormInput,
+.feedbackFormTextarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 150%;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.feedbackFormInput:focus,
+.feedbackFormTextarea:focus {
+  outline: none;
+  border-color: #156A60;
+}
+
+.feedbackFormTextarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.feedbackSubmitButton {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 30px;
+  background: #156A60;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  align-self: flex-start;
+}
+
+.feedbackSubmitButton:hover {
+  background-color: #0d4a44;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.feedbackItem {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 15px;
+}
+
+.feedbackItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.feedbackItemLeft {
+  display: flex;
+  gap: 12px;
+}
+
+.feedbackAvatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.feedbackItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedbackItemNameRow {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.modalImage_text_place>img {
-  width: 18px;
+.feedbackItemName {
+  font-weight: 600;
+  font-size: 15px;
 }
 
-.modalImage_text_title {
-  font-weight: 700;
-  font-size: 128px;
-  line-height: 120%;
-  letter-spacing: 0%;
-}
-
-.modalInfo {
-  flex: 1;
-  padding: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  background-color: #fff;
-}
-
-.modalTitle {
-  font-weight: 700;
-  font-size: 32px;
-  line-height: 120%;
-  letter-spacing: 0%;
-}
-
-.modalDetails {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.modalDetailItem {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background-color: #F1F3F8;
-  padding: 16px;
-  border-radius: 10px;
-  min-width: 200px;
-}
-
-.modalDetailLabel {
+.feedbackItemDate {
   font-weight: 400;
-  font-size: 12px;
-  line-height: 100%;
-  letter-spacing: 0%;
-  color: #666;
+  font-size: 13px;
+  color: #999;
 }
 
-.modalDetailValue {
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 100%;
-  letter-spacing: 0%;
+.feedbackItemRating {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  font-weight: 500;
+  font-size: 14px;
 }
 
-.modalDetailValue img {
-  width: 16px;
-  height: 16px;
+.feedbackItemText {
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 150%;
+  color: #333;
 }
 
-.modalDescription {
+.feedbackExpandButton {
+  background: none;
+  border: none;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+  align-self: flex-start;
+}
+
+.feedbackExpandButton:hover {
+  color: #0d4a44;
+}
+
+/* Отели */
+.hotelsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.hotelCard {
+  background-color: #fff;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.hotelCard img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.hotelInfo {
+  padding: 15px;
+}
+
+.hotelName {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.hotelPrice {
+  font-weight: 400;
+  font-size: 14px;
+  color: #156A60;
+}
+
+/* Маршруты */
+.routesList {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
-.modalDescriptionTitle {
+/* Боковая панель - Места рядом */
+.sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+}
+
+.sidebarTitle {
   font-weight: 700;
   font-size: 24px;
   line-height: 120%;
-  letter-spacing: 0%;
+  margin-bottom: 20px;
 }
 
-.modalDescriptionText {
+.sidebarPlaces {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.sidebarPlaceCard {
+  display: flex;
+  gap: 15px;
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebarPlaceCard:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.sidebarPlaceImg {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sidebarPlaceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.sidebarPlaceRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.sidebarPlaceRating img {
+  width: 14px;
+}
+
+.sidebarPlaceTitle {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 130%;
+}
+
+.sidebarPlaceLocation {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-weight: 400;
-  font-size: 18px;
-  line-height: 150%;
-  letter-spacing: 0%;
-  color: #333;
+  font-size: 13px;
+  color: #666;
+}
+
+.sidebarPlaceLocation img {
+  width: 12px;
+  opacity: 0.5;
+}
+
+/* Модалка галереи */
+.galleryModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.galleryModalContent {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 90vh;
+  max-height: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.galleryModalClose {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  cursor: pointer;
+  z-index: 10011;
+  padding: 10px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.galleryModalClose:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.galleryModalMain {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.galleryModalSwiper {
+  width: 100%;
+  height: 100%;
+}
+
+.galleryModalSlide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.galleryModalSlide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.galleryModalThumbnails {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  overflow-x: auto;
+  justify-content: center;
+}
+
+.thumbnail {
+  min-width: 80px;
+  width: 80px;
+  height: 60px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.thumbnail:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.thumbnailActive {
+  border-color: white;
+  opacity: 1;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Стили для навигации Swiper */
+.galleryModalSwiper :global(.swiper-button-next),
+.galleryModalSwiper :global(.swiper-button-prev) {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  width: 50px;
+  height: 50px;
+  background: none;
+  transition: opacity 0.2s ease;
+}
+
+.galleryModalSwiper :global(.swiper-button-next:hover),
+.galleryModalSwiper :global(.swiper-button-prev:hover) {
+  opacity: 0.7;
+}
+
+.galleryModalSwiper :global(.swiper-button-prev) {
+  left: 30px;
+}
+
+.galleryModalSwiper :global(.swiper-button-next) {
+  right: 30px;
+}
+
+.galleryModalSwiper :global(.swiper-button-next::after),
+.galleryModalSwiper :global(.swiper-button-prev::after) {
+  font-size: 32px;
+}
+
+/* Адаптив */
+@media (max-width: 1200px) {
+  .contentWrapper {
+    flex-direction: column;
+  }
+
+  .contentMain {
+    max-width: 100%;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .sidebarPlaces {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidebarPlaceCard {
+    width: calc(50% - 8px);
+  }
 }
 
 @media (max-width: 768px) {
@@ -212,14 +826,39 @@
   }
 
   .modalImage {
-    height: 250px;
+    height: 300px;
+  }
+
+  .modalImage_text_title {
+    font-size: 36px;
   }
 
   .modalInfo {
-    padding: 20px;
+    padding: 30px 0;
   }
 
-  .modalTitle {
-    font-size: 24px;
+  .title {
+    font-size: 22px;
+  }
+
+  .gallery {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .galleryMain {
+    height: 200px;
+  }
+
+  .galleryGrid {
+    height: 150px;
+  }
+
+  .hotelsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarPlaceCard {
+    width: 100%;
   }
 }

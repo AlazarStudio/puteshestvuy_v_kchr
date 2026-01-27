@@ -1,6 +1,5 @@
 import { Inter, Montserrat } from 'next/font/google'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+import LayoutWrapper from '@/components/layout/LayoutWrapper'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
@@ -20,10 +19,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ru" className={montserrat.variable}>
-      <body className={inter.className} suppressHydrationWarning>
-        <Header />
-        {children}
-        <Footer />
+      <body className={`${inter.className} loading`} suppressHydrationWarning>
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
       </body>
     </html>
   )
