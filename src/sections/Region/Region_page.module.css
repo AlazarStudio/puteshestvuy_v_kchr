@@ -1,0 +1,649 @@
+.main {
+  background-color: #F1F3F8;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.heroImg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.heroImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%);
+  z-index: 2;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  color: #fff;
+  padding: 0 20px;
+  max-width: 900px;
+}
+
+.heroTitle {
+  font-weight: 700;
+  font-size: 72px;
+  line-height: 100%;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.heroSubtitle {
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 150%;
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
+
+.heroButton {
+  display: inline-block;
+  padding: 16px 40px;
+  background-color: #156A60;
+  color: #fff;
+  font-weight: 500;
+  font-size: 18px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.heroButton:hover {
+  background-color: #0d4a44;
+  transform: translateY(-2px);
+}
+
+.scrollIndicator {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.scrollIcon {
+  color: #fff;
+  opacity: 0.7;
+}
+
+/* Page Content */
+.pageContent {
+  display: flex;
+  gap: 40px;
+  padding: 60px 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.sidebarSticky {
+  position: sticky;
+  top: 100px;
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.anchorsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.anchorItem {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 12px 0;
+  padding-left: 20px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  color: #999999;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.anchorItem:hover {
+  color: #666666;
+}
+
+.anchorItemActive {
+  font-weight: 700;
+  color: #000000;
+  border-left-color: #156A60;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Section */
+.section {
+  margin-bottom: 80px;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 120%;
+  margin-bottom: 30px;
+  color: #000;
+}
+
+/* Intro Section */
+.introGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.introText {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.introText p {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 170%;
+  color: #333;
+}
+
+.introImage {
+  border-radius: 20px;
+  overflow: hidden;
+  height: 400px;
+}
+
+.introImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Facts Section */
+.factsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.factCard {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 30px 20px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.factCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.factNumber {
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 100%;
+  color: #156A60;
+  margin-bottom: 10px;
+}
+
+.factDescription {
+  font-weight: 500;
+  font-size: 16px;
+  color: #666;
+}
+
+/* History Section */
+.historyIntro {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 170%;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #156A60;
+  border-radius: 3px;
+}
+
+.timelineItem {
+  position: relative;
+  margin-bottom: 40px;
+  padding-left: 30px;
+}
+
+.timelineItem::before {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 5px;
+  width: 14px;
+  height: 14px;
+  background-color: #156A60;
+  border-radius: 50%;
+  border: 3px solid #F1F3F8;
+}
+
+.timelineYear {
+  font-weight: 700;
+  font-size: 14px;
+  color: #156A60;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.timelineContent {
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 20px 25px;
+}
+
+.timelineTitle {
+  font-weight: 600;
+  font-size: 20px;
+  color: #000;
+  margin-bottom: 10px;
+}
+
+.timelineDescription {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 160%;
+  color: #666;
+}
+
+/* Nature Section */
+.natureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.natureCard {
+  background-color: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.natureCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.natureCardImg {
+  height: 200px;
+  overflow: hidden;
+}
+
+.natureCardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.natureCard:hover .natureCardImg img {
+  transform: scale(1.05);
+}
+
+.natureCardContent {
+  padding: 25px;
+}
+
+.natureCardContent h3 {
+  font-weight: 600;
+  font-size: 22px;
+  margin-bottom: 12px;
+  color: #000;
+}
+
+.natureCardContent p {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 160%;
+  color: #666;
+}
+
+/* Culture Section */
+.cultureIntro {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 170%;
+  color: #333;
+  margin-bottom: 40px;
+}
+
+.culturesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.cultureCard {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cultureCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.cultureName {
+  font-weight: 700;
+  font-size: 24px;
+  color: #000;
+  margin-bottom: 15px;
+}
+
+.cultureDescription {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 160%;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.cultureTraditions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.traditionsLabel {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.traditionsTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.traditionTag {
+  display: inline-block;
+  padding: 6px 14px;
+  background-color: #F1F3F8;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #156A60;
+}
+
+/* Places Section */
+.placesGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.placesMore {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.placesMoreButton {
+  display: inline-block;
+  padding: 14px 40px;
+  border: 2px solid #156A60;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.placesMoreButton:hover {
+  background-color: #156A60;
+  color: #fff;
+}
+
+/* CTA Section */
+.ctaSection {
+  position: relative;
+  padding: 100px 0;
+  background-image: url('/mountainBG.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.ctaOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(21, 106, 96, 0.9) 0%, rgba(13, 74, 68, 0.95) 100%);
+}
+
+.ctaContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 20px;
+  color: #fff;
+}
+
+.ctaTitle {
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 120%;
+  margin-bottom: 20px;
+}
+
+.ctaText {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 160%;
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaButtonPrimary {
+  display: inline-block;
+  padding: 16px 40px;
+  background-color: #fff;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonPrimary:hover {
+  background-color: #F1F3F8;
+  transform: translateY(-2px);
+}
+
+.ctaButtonSecondary {
+  display: inline-block;
+  padding: 16px 40px;
+  background-color: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonSecondary:hover {
+  background-color: #fff;
+  color: #156A60;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .heroTitle {
+    font-size: 56px;
+  }
+
+  .factsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pageContent {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebarSticky {
+    position: static;
+  }
+
+  .anchorsList {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .anchorItem {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 10px 15px;
+  }
+
+  .anchorItemActive {
+    border-bottom-color: #156A60;
+  }
+}
+
+@media (max-width: 992px) {
+  .introGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .introImage {
+    order: -1;
+    height: 300px;
+  }
+
+  .natureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .culturesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: 40px;
+    letter-spacing: 2px;
+  }
+
+  .heroSubtitle {
+    font-size: 18px;
+  }
+
+  .sectionTitle {
+    font-size: 28px;
+  }
+
+  .factsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .factCard {
+    padding: 25px 20px;
+  }
+
+  .factNumber {
+    font-size: 28px;
+  }
+
+  .timeline {
+    padding-left: 30px;
+  }
+
+  .timeline::before {
+    left: 10px;
+  }
+
+  .timelineItem::before {
+    left: -20px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .ctaTitle {
+    font-size: 28px;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+}
