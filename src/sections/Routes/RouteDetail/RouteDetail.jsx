@@ -276,11 +276,15 @@ export default function RouteDetail({ }) {
       <CenterBlock>
         <div className={styles.routePage}>
           <div className={styles.bread_crumbs}>
-            <Link href={"/"}>Главная</Link>
-            <p>→</p>
-            <Link href={"/routes"}>Маршруты</Link>
-            <p>→</p>
-            <p>На границе регионов: Кисловодск - Медовые водопады</p>
+            <Link href="/">Главная</Link>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <Link href="/routes">Маршруты</Link>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>На границе регионов: Кисловодск - Медовые водопады</span>
           </div>
 
           <div className={styles.gallery}>

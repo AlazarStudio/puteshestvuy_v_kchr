@@ -405,7 +405,7 @@
   border: 1px solid #E5E5E5;
   border-radius: 10px;
   font-weight: 400;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 150%;
   font-family: inherit;
   transition: border-color 0.3s ease;
@@ -429,7 +429,7 @@
   background: #156A60;
   color: #fff;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
   align-self: flex-start;
@@ -486,7 +486,7 @@
 
 .feedbackItemName {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .feedbackItemDate {
@@ -505,7 +505,7 @@
 
 .feedbackItemText {
   font-weight: 400;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 150%;
   color: #333;
 }
@@ -551,7 +551,7 @@
 
 .hotelName {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
   margin-bottom: 5px;
 }
 
@@ -634,7 +634,7 @@
 
 .sidebarPlaceTitle {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 130%;
 }
 
@@ -834,7 +834,7 @@
   }
 
   .modalInfo {
-    padding: 30px 0;
+    padding: 20px 0;
   }
 
   .title {

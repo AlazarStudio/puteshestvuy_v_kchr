@@ -254,14 +254,14 @@ export default function Header() {
           </Link>
           <Link
             href="/places"
-            className={`${styles.navLink} ${pathname === '/places' ? styles.navLink_active : ''}`}
+            className={`${styles.navLink} ${pathname === '/places' || pathname?.startsWith('/places/') ? styles.navLink_active : ''}`}
             title="Интересные места для посещения"
           >
             Интересные места
           </Link>
           <Link
             href="/news"
-            className={`${styles.navLink} ${pathname === '/news' ? styles.navLink_active : ''}`}
+            className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
             title="Новости и события"
           >
             Новости
