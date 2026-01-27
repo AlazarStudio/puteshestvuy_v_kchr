@@ -1,0 +1,218 @@
+.main {
+  background-color: #F1F3F8;
+}
+
+.flexBlock {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.services {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.servicesGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.servicesSort {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.servicesSortSort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.selectWrapper {
+  min-width: 200px;
+}
+
+.servicesSortSort .title {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+.servicesSortFind {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+}
+
+/* Service Card */
+.serviceCard {
+  width: 100%;
+  height: 420px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.serviceCard:hover {
+  transform: translateY(-5px);
+}
+
+.serviceCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.6) 100%);
+  z-index: 2;
+}
+
+.serviceCardImg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.serviceCardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.serviceCard:hover .serviceCardImg img {
+  transform: scale(1.05);
+}
+
+.serviceCardTopLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  z-index: 3;
+}
+
+.serviceCardVerification,
+.serviceCardLike {
+  width: 28px;
+  height: 28px;
+}
+
+.serviceCardVerification img,
+.serviceCardLike img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.serviceCardInfo {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  color: #fff;
+  z-index: 3;
+}
+
+.serviceCardCategory {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 12px;
+  background-color: #156A60;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 150%;
+}
+
+.serviceCardRating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.serviceCardStars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #fff;
+  color: #000;
+  border-radius: 35px;
+  padding: 5px 10px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 5%;
+}
+
+.serviceCardStars img {
+  width: 14px;
+  height: 12px;
+}
+
+.serviceCardFeedback {
+  border-radius: 35px;
+  padding: 5px 10px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 5%;
+  border: 2px solid #FFFFFF;
+}
+
+.serviceCardName {
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 120%;
+  letter-spacing: 0%;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .servicesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .flexBlock {
+    flex-direction: column;
+  }
+
+  .services {
+    width: 100%;
+  }
+
+  .servicesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .servicesSort {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+}

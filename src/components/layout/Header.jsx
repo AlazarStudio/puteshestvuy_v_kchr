@@ -58,10 +58,17 @@ const pageConfig = [
     backgroundColor: '#f1f3f8b7',
   },
   {
-    path: '/help',
+    path: '/services',
     initialColor: 'white',
     scrollThreshold: 200,
     enableScrollChange: true,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/services/*',
+    initialColor: 'black',
+    scrollThreshold: 1,
+    enableScrollChange: false,
     backgroundColor: '#f1f3f8b7',
   },
 ]
@@ -275,9 +282,9 @@ export default function Header() {
           </Link>
           <div className={styles.navDropdown}>
             <Link
-              href="/help"
-              className={`${styles.navLink} ${pathname === '/help' ? styles.navLink_active : ''}`}
-              title="Помощь туристам"
+              href="/services"
+              className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
+              title="Услуги и сервисы для туристов"
             >
               На помощь туристу
             </Link>
