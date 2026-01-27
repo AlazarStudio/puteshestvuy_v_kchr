@@ -11,29 +11,41 @@ const dropdownMenuData = {
   articles: {
     title: 'Статьи',
     items: [
-      { title: 'Советы от местных: 5 непопсовых смотровых на Эльбрус', href: '/articles/elbrus-views' },
-      { title: 'Зимний Архыз без горнолыжки', href: '/articles/winter-arkhyz' },
-      { title: 'Рассказы походника: Как оправдалась надежда подняться на гору Надежда', href: '/articles/nadezhda-mountain' },
+      { 
+        title: 'Советы от местных: 5 непопсовых смотровых на Эльбрус', 
+        href: '/news/elbrus-views',
+        image: '/new1.png'
+      },
+      { 
+        title: 'Зимний Архыз без горнолыжки', 
+        href: '/news/winter-arkhyz',
+        image: '/new2.png'
+      },
+      { 
+        title: 'Рассказы походника: Как оправдалась надежда подняться на гору Надежда', 
+        href: '/news/nadezhda-mountain',
+        image: '/slider1.png'
+      },
     ],
-    viewAllHref: '/articles',
+    viewAllHref: '/news',
   },
   services: {
     title: 'Сервис',
     columns: [
       [
-        { title: 'Гиды', href: '/services/guides' },
-        { title: 'Активности', href: '/services/activities' },
-        { title: 'Прокат оборудования', href: '/services/equipment-rental' },
-        { title: 'Пункты придорожного сервиса', href: '/services/roadside-service' },
-        { title: 'Торговые точки', href: '/services/shops' },
-        { title: 'Сувениры', href: '/services/souvenirs' },
+        { title: 'Гиды', href: '/services?filter=guides' },
+        { title: 'Активности', href: '/services?filter=activities' },
+        { title: 'Прокат оборудования', href: '/services?filter=equipment-rental' },
+        { title: 'Пункты придорожного сервиса', href: '/services?filter=roadside-service' },
+        { title: 'Торговые точки', href: '/services?filter=shops' },
+        { title: 'Сувениры', href: '/services?filter=souvenirs' },
       ],
       [
-        { title: 'Гостиницы', href: '/services/hotels' },
-        { title: 'Кафе и рестораны', href: '/services/restaurants' },
-        { title: 'Трансфер', href: '/services/transfer' },
-        { title: 'АЗС', href: '/services/gas-stations' },
-        { title: 'Санитарные узлы', href: '/services/restrooms' },
+        { title: 'Гостиницы', href: '/services?filter=hotels' },
+        { title: 'Кафе и рестораны', href: '/services?filter=restaurants' },
+        { title: 'Трансфер', href: '/services?filter=transfer' },
+        { title: 'АЗС', href: '/services?filter=gas-stations' },
+        { title: 'Санитарные узлы', href: '/services?filter=restrooms' },
       ],
     ],
     viewAllHref: '/services',
@@ -41,9 +53,9 @@ const dropdownMenuData = {
   emergency: {
     title: 'Экстренные службы',
     items: [
-      { title: 'Пункты медпомощи', href: '/services/medical' },
-      { title: 'МВД', href: '/services/police' },
-      { title: 'Пожарная охрана', href: '/services/fire-department' },
+      { title: 'Пункты медпомощи', href: '/services?filter=medical' },
+      { title: 'МВД', href: '/services?filter=police' },
+      { title: 'Пожарная охрана', href: '/services?filter=fire-department' },
     ],
   },
 }
@@ -149,8 +161,23 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [hasBlur, setHasBlur] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [activeArticleIndex, setActiveArticleIndex] = useState(0)
+  const [isArticleHovered, setIsArticleHovered] = useState(false)
   const dropdownRef = useRef(null)
   const dropdownTriggerRef = useRef(null)
+
+  // Автоматическая смена активной статьи
+  useEffect(() => {
+    if (!isDropdownOpen || isArticleHovered) return
+
+    const interval = setInterval(() => {
+      setActiveArticleIndex((prev) => 
+        (prev + 1) % dropdownMenuData.articles.items.length
+      )
+    }, 3000) // Смена каждые 3 секунды
+
+    return () => clearInterval(interval)
+  }, [isDropdownOpen, isArticleHovered])
   
   // Получаем конфигурацию для текущей страницы
   const currentConfig = getPageConfig(pathname)
@@ -367,16 +394,30 @@ export default function Header() {
               <div className={styles.dropdownContent}>
                 {/* Изображение-превью слева */}
                 <div className={styles.dropdownImageWrapper}>
-                  <div className={styles.dropdownImage}></div>
+                  <Image
+                    src={dropdownMenuData.articles.items[activeArticleIndex]?.image || '/new1.png'}
+                    alt="Превью статьи"
+                    width={200}
+                    height={200}
+                    className={styles.dropdownImage}
+                  />
                 </div>
 
                 {/* Статьи */}
-                <div className={styles.dropdownSection}>
+                <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionArticles}`}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.articles.title}</h3>
                   <ul className={styles.dropdownList}>
                     {dropdownMenuData.articles.items.map((item, index) => (
                       <li key={index}>
-                        <Link href={item.href} className={styles.dropdownLink}>
+                        <Link 
+                          href={item.href} 
+                          className={`${styles.dropdownLink} ${activeArticleIndex === index ? styles.dropdownLinkActive : ''}`}
+                          onMouseEnter={() => {
+                            setIsArticleHovered(true)
+                            setActiveArticleIndex(index)
+                          }}
+                          onMouseLeave={() => setIsArticleHovered(false)}
+                        >
                           {item.title}
                         </Link>
                       </li>
@@ -388,7 +429,7 @@ export default function Header() {
                 </div>
 
                 {/* Сервис */}
-                <div className={styles.dropdownSection}>
+                <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionServices}`}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.services.title}</h3>
                   <div className={styles.dropdownColumns}>
                     {dropdownMenuData.services.columns.map((column, colIndex) => (

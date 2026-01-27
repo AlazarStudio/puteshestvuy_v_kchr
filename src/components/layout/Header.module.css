@@ -238,9 +238,18 @@
 
 .dropdownImageWrapper {
   flex-shrink: 0;
+  width: 200px;
+  height: 200px;
 }
 
 .dropdownImage {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.dropdownImagePlaceholder {
   width: 200px;
   height: 200px;
   background: #E5E7EB;
@@ -253,15 +262,20 @@
   min-width: 200px;
 }
 
-.dropdownSection:first-child {
-  min-width: 300px;
+/* Секция с разделителем справа */
+.dropdownSectionBorder {
   border-right: 1px solid #E5E7EB;
   padding-right: 40px;
 }
 
-.dropdownSection:nth-child(2) {
-  border-right: 1px solid #E5E7EB;
-  padding-right: 40px;
+/* Секция Статьи */
+.dropdownSectionArticles {
+  min-width: 300px;
+}
+
+/* Секция Сервис */
+.dropdownSectionServices {
+  min-width: auto;
 }
 
 .dropdownSectionTitle {
@@ -296,19 +310,23 @@
 
 .dropdownLink:hover {
   color: #009688;
-  text-decoration: underline;
+}
+
+.dropdownLinkActive {
+  color: #009688;
 }
 
 .dropdownViewAll {
   font-size: 0.9375rem;
-  color: #6B7280;
+  color: #009688;
   text-decoration: none;
-  margin-top: 16px;
-  transition: color 0.2s ease;
+  margin-top: 20px;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .dropdownViewAll:hover {
-  color: #009688;
+  color: #00796B;
 }
 
 /* Иконки справа */
@@ -342,12 +360,11 @@
     gap: 24px;
   }
 
-  .dropdownSection:first-child {
+  .dropdownSectionArticles {
     min-width: 240px;
-    padding-right: 24px;
   }
 
-  .dropdownSection:nth-child(2) {
+  .dropdownSectionBorder {
     padding-right: 24px;
   }
 }
@@ -374,12 +391,11 @@
     min-width: 150px;
   }
 
-  .dropdownSection:first-child {
+  .dropdownSectionArticles {
     min-width: 200px;
-    padding-right: 20px;
   }
 
-  .dropdownSection:nth-child(2) {
+  .dropdownSectionBorder {
     padding-right: 20px;
   }
 
