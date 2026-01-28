@@ -12,6 +12,9 @@ export default function LayoutWrapper({ children }) {
   const pathname = usePathname()
   const isFirstLoad = useRef(true)
   const prevPathname = useRef(pathname)
+  
+  // Проверяем, находимся ли мы в админке
+  const isAdminPage = pathname?.startsWith('/admin')
 
   // Блокируем скролл во время загрузки (useLayoutEffect для синхронного выполнения)
   useLayoutEffect(() => {
@@ -71,6 +74,11 @@ export default function LayoutWrapper({ children }) {
     
     prevPathname.current = pathname
   }, [pathname])
+
+  // Для админки показываем только children без Header/Footer и прелоадера
+  if (isAdminPage) {
+    return <>{children}</>
+  }
 
   return (
     <>

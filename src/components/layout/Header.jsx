@@ -348,13 +348,13 @@ export default function Header() {
           >
             Новости
           </Link>
-          <Link
+          {/* <Link
             href="/merch"
             className={`${styles.navLink} ${pathname === '/merch' ? styles.navLink_active : ''}`}
             title="Мерч поддержки туризма"
           >
             Мерч
-          </Link>
+          </Link> */}
           <div 
             className={styles.navDropdown}
             ref={dropdownTriggerRef}
@@ -469,7 +469,7 @@ export default function Header() {
 
         {/* Иконки справа */}
         <div className={styles.icons} aria-label="Дополнительные действия">
-          <Link
+          {/* <Link
             href="/tours"
             className={styles.iconButton}
             aria-label="Конструктор туров"
@@ -481,7 +481,7 @@ export default function Header() {
               width={20}
               height={20}
             />
-          </Link>
+          </Link> */}
 
           <Link
             href="/search"
@@ -497,7 +497,7 @@ export default function Header() {
             />
           </Link>
 
-          <Link
+          {/* <Link
             href="/accessibility"
             className={styles.iconButton}
             aria-label="Версия для слабовидящих"
@@ -523,7 +523,7 @@ export default function Header() {
               width={16}
               height={18}
             />
-          </Link>
+          </Link> */}
         </div>
       </div>
     </header>
