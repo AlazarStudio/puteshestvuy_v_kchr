@@ -18,8 +18,8 @@ import styles from './admin.module.css';
 
 const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard },
-  { href: '/admin/routes', label: 'Маршруты', icon: Map },
   { href: '/admin/places', label: 'Места', icon: MapPin },
+  { href: '/admin/routes', label: 'Маршруты', icon: Map },
   { href: '/admin/news', label: 'Новости', icon: Newspaper },
   { href: '/admin/services', label: 'Услуги', icon: Building2 },
   { href: '/admin/reviews', label: 'Отзывы', icon: Star },
@@ -91,7 +91,7 @@ export default function AdminLayout({ children }) {
     <div className={styles.adminContainer}>
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <h2 className={styles.logo}>КЧР Админ</h2>
+          <Link href={"/"} target='_blank' className={styles.logo}>КЧР Админ</Link>
           <button 
             className={styles.toggleBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}

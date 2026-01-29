@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import Footer from './Footer'
@@ -9,20 +9,25 @@ import styles from './LayoutWrapper.module.css'
 
 export default function LayoutWrapper({ children }) {
   const [isLoading, setIsLoading] = useState(true)
+  const [isNavigating, setIsNavigating] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const isFirstLoad = useRef(true)
-  const prevPathname = useRef(pathname)
+  const prevRoute = useRef(null)
 
   // Проверяем, находимся ли мы в админке
   const isAdminPage = pathname?.startsWith('/admin')
 
-  // Управление классом loading на body: в админке всегда снимаем, на сайте — по isLoading
+  // Показываем прелоадер при первой загрузке или при переходе по ссылке
+  const showPreloader = isLoading || isNavigating
+
+  // Управление классом loading на body: в админке всегда снимаем, на сайте — по showPreloader
   useLayoutEffect(() => {
     if (isAdminPage) {
       document.body.classList.remove('loading')
       return
     }
-    if (isLoading) {
+    if (showPreloader) {
       document.body.classList.add('loading')
     } else {
       document.body.classList.remove('loading')
@@ -30,7 +35,7 @@ export default function LayoutWrapper({ children }) {
     return () => {
       document.body.classList.remove('loading')
     }
-  }, [isLoading, isAdminPage])
+  }, [showPreloader, isAdminPage])
 
   // Первоначальная загрузка страницы
   useEffect(() => {
@@ -52,28 +57,50 @@ export default function LayoutWrapper({ children }) {
     }
   }, [])
 
-  // Отслеживаем SPA-навигацию между страницами (только для основного сайта)
+  // При клике по внутренней ссылке — сразу показываем прелоадер
   useEffect(() => {
     if (isAdminPage) return
-    if (isFirstLoad.current) return
 
-    const getBasePath = (path) => {
-      const parts = path.split('/').filter(Boolean)
-      return parts[0] || ''
+    const handleClick = (e) => {
+      const link = e.target.closest('a[href^="/"]')
+      if (!link) return
+      // Пропускаем внешние ссылки (//), открытие в новой вкладке, якоря без смены страницы
+      const href = link.getAttribute('href') || ''
+      if (href.startsWith('//') || link.target === '_blank') return
+      // Не показываем прелоадер при клике по текущей странице (тот же path + query)
+      const pathAndQuery = href.split('#')[0]
+      const currentRoute = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')
+      if (pathAndQuery === currentRoute || pathAndQuery === '' || pathAndQuery === pathname) return
+      setIsNavigating(true)
     }
 
-    const currentBase = getBasePath(pathname)
-    const prevBase = getBasePath(prevPathname.current)
+    document.addEventListener('click', handleClick, true)
+    return () => document.removeEventListener('click', handleClick, true)
+  }, [isAdminPage, pathname, searchParams])
 
-    if (currentBase !== prevBase) {
-      setIsLoading(true)
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 500)
+  // Когда pathname или searchParams изменились — страница/фильтр загрузились, скрываем прелоадер
+  useEffect(() => {
+    if (isAdminPage) return
+
+    const search = searchParams.toString()
+    const currentRoute = pathname + (search ? '?' + search : '')
+    const prev = prevRoute.current
+
+    if (prev === null) {
+      prevRoute.current = currentRoute
+      return
     }
 
-    prevPathname.current = pathname
-  }, [pathname, isAdminPage])
+    if (currentRoute !== prev) {
+      prevRoute.current = currentRoute
+      const timer = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsNavigating(false)
+        })
+      })
+      return () => cancelAnimationFrame(timer)
+    }
+  }, [pathname, searchParams, isAdminPage])
 
   // Для админки показываем только children без Header/Footer и прелоадера
   if (isAdminPage) {
@@ -83,7 +110,7 @@ export default function LayoutWrapper({ children }) {
   return (
     <>
       <AnimatePresence mode="wait">
-        {isLoading && (
+        {showPreloader && (
           <motion.div
             key="preloader"
             className={styles.preloader}
@@ -106,7 +133,7 @@ export default function LayoutWrapper({ children }) {
         )}
       </AnimatePresence>
 
-      <div style={{ opacity: isLoading ? 0 : 1, transition: 'opacity 0.3s ease' }}>
+      <div style={{ opacity: showPreloader ? 0 : 1, transition: 'opacity 0.3s ease' }}>
         <Header />
         {children}
         <Footer />
