@@ -292,7 +292,7 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                         </div>
 
                         {/* Как добраться */}
-                        <div className={styles.title}>Как добраться</div>
+                        <div className={styles.title}>Карта</div>
                         <div className={styles.mapImage}>
                           <img src="/map.png" alt="Карта" />
                         </div>

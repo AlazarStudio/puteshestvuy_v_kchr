@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Star, Check, X, Trash2, Map, MapPin, Building2 } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
+import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function ReviewsPage() {
@@ -10,6 +11,8 @@ export default function ReviewsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [filter, setFilter] = useState('all');
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
   const fetchReviews = async (page = 1) => {
     setIsLoading(true);
@@ -35,32 +38,52 @@ export default function ReviewsPage() {
       fetchReviews(pagination.page);
     } catch (error) {
       console.error('Ошибка одобрения:', error);
-      alert('Ошибка одобрения отзыва');
+      setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка одобрения отзыва' });
     }
   };
 
-  const handleReject = async (id) => {
-    if (!confirm('Вы уверены, что хотите отклонить этот отзыв?')) return;
-    
-    try {
-      await reviewsAPI.update(id, { status: 'rejected' });
-      fetchReviews(pagination.page);
-    } catch (error) {
-      console.error('Ошибка отклонения:', error);
-      alert('Ошибка отклонения отзыва');
-    }
+  const handleRejectClick = (id) => {
+    setConfirmModal({
+      title: 'Отклонить отзыв?',
+      message: 'Вы уверены, что хотите отклонить этот отзыв?',
+      confirmLabel: 'Отклонить',
+      cancelLabel: 'Отмена',
+      variant: 'default',
+      onConfirm: async () => {
+        try {
+          await reviewsAPI.update(id, { status: 'rejected' });
+          setConfirmModal(null);
+          fetchReviews(pagination.page);
+        } catch (error) {
+          console.error('Ошибка отклонения:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка отклонения отзыва' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить этот отзыв?')) return;
-    
-    try {
-      await reviewsAPI.delete(id);
-      fetchReviews(pagination.page);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Ошибка удаления отзыва');
-    }
+  const handleDeleteClick = (id) => {
+    setConfirmModal({
+      title: 'Удалить отзыв?',
+      message: 'Вы уверены, что хотите удалить этот отзыв? Действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      cancelLabel: 'Отмена',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await reviewsAPI.delete(id);
+          setConfirmModal(null);
+          fetchReviews(pagination.page);
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка удаления отзыва' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
   const formatDate = (dateString) => {
@@ -199,7 +222,7 @@ export default function ReviewsPage() {
                           <Check size={16} />
                         </button>
                         <button
-                          onClick={() => handleReject(review.id)}
+                          onClick={() => handleRejectClick(review.id)}
                           className={styles.editBtn}
                           title="Отклонить"
                         >
@@ -208,7 +231,7 @@ export default function ReviewsPage() {
                       </>
                     )}
                     <button
-                      onClick={() => handleDelete(review.id)}
+                      onClick={() => handleDeleteClick(review.id)}
                       className={styles.deleteBtn}
                       title="Удалить"
                     >
@@ -249,6 +272,23 @@ export default function ReviewsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        confirmLabel={confirmModal?.confirmLabel}
+        cancelLabel={confirmModal?.cancelLabel}
+        variant={confirmModal?.variant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={confirmModal?.onCancel}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Pencil, Trash2, MapPin, Star } from 'lucide-react';
 import { placesAPI, getImageUrl } from '@/lib/api';
+import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function PlacesPage() {
@@ -11,6 +12,8 @@ export default function PlacesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
   const fetchPlaces = async (page = 1) => {
     setIsLoading(true);
@@ -30,16 +33,26 @@ export default function PlacesPage() {
     fetchPlaces();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить это место?')) return;
-    
-    try {
-      await placesAPI.delete(id);
-      fetchPlaces(pagination.page);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Ошибка удаления места');
-    }
+  const handleDeleteClick = (id) => {
+    setConfirmModal({
+      title: 'Удалить место?',
+      message: 'Вы уверены, что хотите удалить это место? Действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      cancelLabel: 'Отмена',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await placesAPI.delete(id);
+          setConfirmModal(null);
+          fetchPlaces(pagination.page);
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка удаления места' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
   const handleSearch = (e) => {
@@ -89,7 +102,7 @@ export default function PlacesPage() {
                 <th>Название</th>
                 <th>Локация</th>
                 <th>Рейтинг</th>
-                <th>Статус</th>
+                <th>Опубликовано</th>
                 <th>Действия</th>
               </tr>
             </thead>
@@ -108,7 +121,7 @@ export default function PlacesPage() {
                   <td><Star size={14} style={{ marginRight: 4 }} /> {place.rating || '—'}</td>
                   <td>
                     <span className={`${styles.badge} ${styles[place.isActive ? 'active' : 'inactive']}`}>
-                      {place.isActive ? 'Активно' : 'Скрыто'}
+                      {place.isActive ? 'Опубликовано' : 'Не опубликовано'}
                     </span>
                   </td>
                   <td className={styles.actions}>
@@ -116,7 +129,7 @@ export default function PlacesPage() {
                       <Pencil size={16} />
                     </Link>
                     <button
-                      onClick={() => handleDelete(place.id)}
+                      onClick={() => handleDeleteClick(place.id)}
                       className={styles.deleteBtn}
                     >
                       <Trash2 size={16} />
@@ -156,6 +169,23 @@ export default function PlacesPage() {
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        confirmLabel={confirmModal?.confirmLabel}
+        cancelLabel={confirmModal?.cancelLabel}
+        variant={confirmModal?.variant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={confirmModal?.onCancel}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
     </div>
   );
 }

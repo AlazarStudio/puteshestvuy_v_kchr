@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Pencil, Trash2, Newspaper } from 'lucide-react';
 import { newsAPI, getImageUrl } from '@/lib/api';
+import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function NewsPage() {
@@ -11,6 +12,8 @@ export default function NewsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
   const fetchNews = async (page = 1) => {
     setIsLoading(true);
@@ -30,16 +33,26 @@ export default function NewsPage() {
     fetchNews();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить эту новость?')) return;
-    
-    try {
-      await newsAPI.delete(id);
-      fetchNews(pagination.page);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Ошибка удаления новости');
-    }
+  const handleDeleteClick = (id) => {
+    setConfirmModal({
+      title: 'Удалить новость?',
+      message: 'Вы уверены, что хотите удалить эту новость? Действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      cancelLabel: 'Отмена',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await newsAPI.delete(id);
+          setConfirmModal(null);
+          fetchNews(pagination.page);
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка удаления новости' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
   const handleSearch = (e) => {
@@ -129,7 +142,7 @@ export default function NewsPage() {
                       <Pencil size={16} />
                     </Link>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => handleDeleteClick(item.id)}
                       className={styles.deleteBtn}
                     >
                       <Trash2 size={16} />
@@ -169,6 +182,23 @@ export default function NewsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        confirmLabel={confirmModal?.confirmLabel}
+        cancelLabel={confirmModal?.cancelLabel}
+        variant={confirmModal?.variant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={confirmModal?.onCancel}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
     </div>
   );
 }

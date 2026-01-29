@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Pencil, Trash2, Building2, Star, CheckCircle, XCircle } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
+import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function ServicesPage() {
@@ -11,6 +12,8 @@ export default function ServicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
   const fetchServices = async (page = 1) => {
     setIsLoading(true);
@@ -30,16 +33,26 @@ export default function ServicesPage() {
     fetchServices();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить эту услугу?')) return;
-    
-    try {
-      await servicesAPI.delete(id);
-      fetchServices(pagination.page);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Ошибка удаления услуги');
-    }
+  const handleDeleteClick = (id) => {
+    setConfirmModal({
+      title: 'Удалить услугу?',
+      message: 'Вы уверены, что хотите удалить эту услугу? Действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      cancelLabel: 'Отмена',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await servicesAPI.delete(id);
+          setConfirmModal(null);
+          fetchServices(pagination.page);
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка удаления услуги' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
   const handleSearch = (e) => {
@@ -128,7 +141,7 @@ export default function ServicesPage() {
                       <Pencil size={16} />
                     </Link>
                     <button
-                      onClick={() => handleDelete(service.id)}
+                      onClick={() => handleDeleteClick(service.id)}
                       className={styles.deleteBtn}
                     >
                       <Trash2 size={16} />
@@ -168,6 +181,23 @@ export default function ServicesPage() {
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        confirmLabel={confirmModal?.confirmLabel}
+        cancelLabel={confirmModal?.cancelLabel}
+        variant={confirmModal?.variant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={confirmModal?.onCancel}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
     </div>
   );
 }

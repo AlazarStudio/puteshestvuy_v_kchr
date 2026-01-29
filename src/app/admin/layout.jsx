@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -15,6 +15,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import styles from './admin.module.css';
+
+export const AdminHeaderRightContext = createContext(null);
 
 const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard },
@@ -31,6 +33,7 @@ export default function AdminLayout({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [headerRight, setHeaderRight] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -103,11 +106,14 @@ export default function AdminLayout({ children }) {
         <nav className={styles.nav}>
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = item.href === '/admin'
+              ? pathname === '/admin'
+              : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`${styles.navItem} ${pathname === item.href ? styles.active : ''}`}
+                className={`${styles.navItem} ${isActive ? styles.active : ''}`}
               >
                 <span className={styles.navIcon}><Icon size={20} /></span>
                 {sidebarOpen && <span className={styles.navLabel}>{item.label}</span>}
@@ -141,10 +147,13 @@ export default function AdminLayout({ children }) {
               </span>
             ))}
           </div>
+          {headerRight && <div className={styles.headerRight}>{headerRight}</div>}
         </header>
         
         <div className={styles.content}>
-          {children}
+          <AdminHeaderRightContext.Provider value={{ setHeaderRight }}>
+            {children}
+          </AdminHeaderRightContext.Provider>
         </div>
       </main>
     </div>

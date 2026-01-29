@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Pencil, Trash2, Map } from 'lucide-react';
 import { routesAPI, getImageUrl } from '@/lib/api';
+import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function RoutesPage() {
@@ -11,6 +12,8 @@ export default function RoutesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
   const fetchRoutes = async (page = 1) => {
     setIsLoading(true);
@@ -30,16 +33,26 @@ export default function RoutesPage() {
     fetchRoutes();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Вы уверены, что хотите удалить этот маршрут?')) return;
-    
-    try {
-      await routesAPI.delete(id);
-      fetchRoutes(pagination.page);
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      alert('Ошибка удаления маршрута');
-    }
+  const handleDeleteClick = (id) => {
+    setConfirmModal({
+      title: 'Удалить маршрут?',
+      message: 'Вы уверены, что хотите удалить этот маршрут? Действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      cancelLabel: 'Отмена',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await routesAPI.delete(id);
+          setConfirmModal(null);
+          fetchRoutes(pagination.page);
+        } catch (error) {
+          console.error('Ошибка удаления:', error);
+          setConfirmModal(null);
+          setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка удаления маршрута' });
+        }
+      },
+      onCancel: () => setConfirmModal(null),
+    });
   };
 
   const handleSearch = (e) => {
@@ -118,7 +131,7 @@ export default function RoutesPage() {
                       <Pencil size={16} />
                     </Link>
                     <button
-                      onClick={() => handleDelete(route.id)}
+                      onClick={() => handleDeleteClick(route.id)}
                       className={styles.deleteBtn}
                     >
                       <Trash2 size={16} />
@@ -158,6 +171,23 @@ export default function RoutesPage() {
           </button>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        confirmLabel={confirmModal?.confirmLabel}
+        cancelLabel={confirmModal?.cancelLabel}
+        variant={confirmModal?.variant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={confirmModal?.onCancel}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
     </div>
   );
 }
