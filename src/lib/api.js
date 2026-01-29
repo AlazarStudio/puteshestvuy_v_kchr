@@ -62,13 +62,20 @@ export const routesAPI = {
   delete: (id) => api.delete(`/admin/routes/${id}`),
 };
 
-// Places API
+// Places API (admin)
 export const placesAPI = {
   getAll: (params) => api.get('/admin/places', { params }),
   getById: (id) => api.get(`/admin/places/${id}`),
   create: (data) => api.post('/admin/places', data),
   update: (id, data) => api.put(`/admin/places/${id}`, data),
   delete: (id) => api.delete(`/admin/places/${id}`),
+}
+
+// Places API (public, для страницы «Интересные места»)
+export const publicPlacesAPI = {
+  getAll: (params) => api.get('/places', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/places/${idOrSlug}`),
+  createReview: (placeId, data) => api.post(`/places/${placeId}/reviews`, data),
 };
 
 // News API

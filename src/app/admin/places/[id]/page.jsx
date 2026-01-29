@@ -128,6 +128,24 @@ export default function PlaceEditPage() {
     }));
   };
 
+  const handleAudioGuideChange = (e) => {
+    let value = e.target.value.trim();
+    if (value.includes('<iframe') && value.includes('src=')) {
+      const match = value.match(/src=["']([^"']+)["']/);
+      if (match) value = match[1];
+    }
+    setFormData((prev) => ({ ...prev, audioGuide: value }));
+  };
+
+  const handleVideoChange = (e) => {
+    let value = e.target.value.trim();
+    if (value.includes('<iframe') && value.includes('src=')) {
+      const match = value.match(/src=["']([^"']+)["']/);
+      if (match) value = match[1];
+    }
+    setFormData((prev) => ({ ...prev, video: value }));
+  };
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     
@@ -152,6 +170,16 @@ export default function PlaceEditPage() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+  };
+
+  /** Сделать картинку по индексу главной (переместить на первое место) */
+  const setMainImage = (index) => {
+    if (index === 0) return;
+    setFormData((prev) => {
+      const img = prev.images[index];
+      const rest = prev.images.filter((_, i) => i !== index);
+      return { ...prev, images: [img, ...rest] };
+    });
   };
 
   const removeNearbyPlace = (placeId) => {
@@ -301,26 +329,38 @@ export default function PlaceEditPage() {
 
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Ссылка на аудиогид</label>
+            <label className={styles.formLabel}>Аудиогид (Яндекс.Музыка)</label>
+            <div className={styles.formHintBox}>
+              <span className={styles.formHintIcon}>💡</span>
+              <span className={styles.formHintText}>
+                Вставьте ссылку из кода встраивания (атрибут <code>src</code> из iframe) или вставьте весь код iframe — ссылка подставится автоматически.
+              </span>
+            </div>
             <input
-              type="url"
+              type="text"
               name="audioGuide"
               value={formData.audioGuide}
-              onChange={handleChange}
+              onChange={handleAudioGuideChange}
               className={styles.formInput}
-              placeholder="https://..."
+              placeholder="https://music.yandex.ru/iframe/playlist/..."
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Ссылка на видео</label>
+            <label className={styles.formLabel}>Видео (VK Video)</label>
+            <div className={styles.formHintBox}>
+              <span className={styles.formHintIcon}>🎬</span>
+              <span className={styles.formHintText}>
+                Вставьте ссылку из кода встраивания (атрибут <code>src</code> из iframe) или вставьте весь код iframe — ссылка подставится автоматически.
+              </span>
+            </div>
             <input
-              type="url"
+              type="text"
               name="video"
               value={formData.video}
-              onChange={handleChange}
+              onChange={handleVideoChange}
               className={styles.formInput}
-              placeholder="https://youtube.com/..."
+              placeholder="https://vkvideo.ru/video_ext.php?..."
             />
           </div>
         </div>
@@ -393,20 +433,36 @@ export default function PlaceEditPage() {
           </div>
           
           {formData.images.length > 0 && (
-            <div className={styles.imagePreview}>
-              {formData.images.map((img, index) => (
-                <div key={index} className={styles.previewItem}>
-                  <img src={getImageUrl(img)} alt={`Preview ${index}`} />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className={styles.removeImage}
+            <>
+              <div className={styles.imagePreview}>
+                {formData.images.map((img, index) => (
+                  <div
+                    key={index}
+                    className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
+                    onClick={() => setMainImage(index)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
+                    aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
+                    title={index === 0 ? 'Главное фото' : 'Сделать главным'}
                   >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <img src={getImageUrl(img)} alt={`Preview ${index}`} />
+                    {index === 0 && <span className={styles.previewItemBadge}>Главная</span>}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeImage(index); }}
+                      className={styles.removeImage}
+                      aria-label="Удалить"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className={styles.imageHint}>
+                Первая картинка отображается как главная (обложка) в карточке места и в модалке. Нажмите на любую другую картинку, чтобы сделать её главной.
+              </p>
+            </>
           )}
         </div>
 

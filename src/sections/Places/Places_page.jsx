@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Places_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -9,14 +8,17 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
-import { generateSlug } from '@/utils/transliterate'
-
+import { publicPlacesAPI } from '@/lib/api'
+import { getImageUrl } from '@/lib/api'
 
 export default function Places_page() {
-  const router = useRouter()
   const [sortBy, setSortBy] = useState('popularity')
+  const [places, setPlaces] = useState([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalLoading, setModalLoading] = useState(false)
   const scrollPositionRef = useRef(0)
   const isClosingRef = useRef(false)
   const [currentPath, setCurrentPath] = useState('')
@@ -25,17 +27,23 @@ export default function Places_page() {
     setSortBy(event.target.value)
   }
 
-  const handlePlaceClick = (place) => {
-    // Сохраняем позицию скролла перед открытием модалки
+  const handlePlaceClick = async (place) => {
     scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-
-    setSelectedPlace(place)
-    setIsModalOpen(true)
     isClosingRef.current = false
+    setModalLoading(true)
+    setIsModalOpen(true)
+    setSelectedPlace(null)
 
-    // Изменяем URL без перезагрузки страницы используя history API
-    const slug = generateSlug(place.title)
-    window.history.pushState({ place: slug }, '', `/places/${slug}`)
+    try {
+      const { data } = await publicPlacesAPI.getByIdOrSlug(place.id)
+      setSelectedPlace(data)
+      window.history.pushState({ place: data.slug }, '', `/places/${data.slug}`)
+    } catch (err) {
+      setIsModalOpen(false)
+      console.error(err)
+    } finally {
+      setModalLoading(false)
+    }
   }
 
   const closeModal = () => {
@@ -51,38 +59,51 @@ export default function Places_page() {
     }, 300) // Время анимации
   }
 
-  const places = [
-    {
-      id: 1,
-      rating: "5.0",
-      feedback: "2 отзыва",
-      place: "Архыз",
-      title: "Софийские водопады",
-      desc: "Каскад из нескольких водопадов, расположенных в живописной долине. Особенно красив весной и летом, когда тает снег в горах.",
-      img: "/routeGalery2.png",
-      fullDesc: "Каскад из нескольких водопадов, расположенных в живописной долине. Особенно красив весной и летом, когда тает снег в горах. Водопады образуют несколько каскадов разной высоты, создавая потрясающее зрелище. К водопадам ведет удобная тропа, подходящая для туристов разного уровня подготовки."
-    },
-    {
-      id: 2,
-      rating: "5.0",
-      feedback: "1 отзыв",
-      place: "​Зеленчукский район",
-      title: "ЛЕДНИК АЛИБЕК",
-      desc: "Путь к леднику лежит через одноимённое ущелье Алибек, которое расположено в Тебердинском заповеднике и является пограничной",
-      img: "/routeGalery8.png",
-      fullDesc: "Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками; административные здания парка. Это отличное место для начала знакомства с природой и историей Тебердинского заповедника."
-    },
-    {
-      id: 3,
-      rating: "4.8",
-      feedback: "5 отзывов",
-      place: "Домбай",
-      title: "Гора Мусса-Ачитара",
-      desc: "Горная вершина с потрясающим видом на Главный Кавказский хребет. Подъем на канатной дороге и пешие тропы для любителей активного отдыха.",
-      img: "/placeImg1.png",
-      fullDesc: "Горная вершина с потрясающим видом на Главный Кавказский хребет. Подъем на канатной дороге и пешие тропы для любителей активного отдыха. С вершины открывается панорамный вид на окружающие горы и долины. Это одно из самых популярных мест для фотографирования в регионе."
+  /** Закрыть модалку и открыть другое место (например, из блока «Места рядом») */
+  const handleOpenPlaceById = (placeId) => {
+    closeModal()
+    setTimeout(() => {
+      scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
+      setModalLoading(true)
+      setIsModalOpen(true)
+      setSelectedPlace(null)
+      publicPlacesAPI.getByIdOrSlug(placeId)
+        .then(({ data }) => {
+          setSelectedPlace(data)
+          window.history.pushState({ place: data.slug }, '', `/places/${data.slug}`)
+        })
+        .catch((err) => {
+          console.error(err)
+          setIsModalOpen(false)
+        })
+        .finally(() => setModalLoading(false))
+    }, 320)
+  }
+
+  // Загрузка мест с API
+  useEffect(() => {
+    let cancelled = false
+    async function fetchPlaces() {
+      setLoading(true)
+      try {
+        const { data } = await publicPlacesAPI.getAll({ limit: 100 })
+        if (!cancelled) {
+          setPlaces(data.items || [])
+          setTotal(data.pagination?.total ?? 0)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setPlaces([])
+          setTotal(0)
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
-  ]
+    fetchPlaces()
+    return () => { cancelled = true }
+  }, [])
 
   // Отслеживаем изменения пути
   useEffect(() => {
@@ -112,20 +133,23 @@ export default function Places_page() {
     const placeSlug = pathParts[pathParts.length - 1]
 
     // Если это не просто /places, значит есть slug
-    if (placeSlug && placeSlug !== 'places' && !isModalOpen) {
-      // Находим место по slug
-      const place = places.find(p => generateSlug(p.title) === placeSlug)
+    if (placeSlug && placeSlug !== 'places' && !isModalOpen && places.length > 0) {
+      const place = places.find((p) => p.slug === placeSlug)
       if (place) {
         scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-        setSelectedPlace(place)
-        setIsModalOpen(true)
+        publicPlacesAPI.getByIdOrSlug(place.id)
+          .then(({ data }) => {
+            setSelectedPlace(data)
+            setIsModalOpen(true)
+          })
+          .catch(console.error)
       }
-    } else if (path === '/places' && isModalOpen) {
-      // Если вернулись на /places, закрываем модалку
+    } else if (path === '/places' && isModalOpen && !modalLoading) {
+      // Если вернулись на /places, закрываем модалку (не закрываем во время загрузки нового места — URL ещё /places)
       setIsModalOpen(false)
       setSelectedPlace(null)
     }
-  }, [currentPath, isModalOpen, places])
+  }, [currentPath, isModalOpen, places.length, modalLoading])
 
   // Обработка навигации браузера (назад/вперед)
   useEffect(() => {
@@ -135,12 +159,16 @@ export default function Places_page() {
       const placeSlug = pathParts[pathParts.length - 1]
 
       if (placeSlug && placeSlug !== 'places') {
-        const place = places.find(p => generateSlug(p.title) === placeSlug)
+        const place = places.find((p) => p.slug === placeSlug)
         if (place) {
           scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-          setSelectedPlace(place)
-          setIsModalOpen(true)
-          isClosingRef.current = false
+          publicPlacesAPI.getByIdOrSlug(place.id)
+            .then(({ data }) => {
+              setSelectedPlace(data)
+              setIsModalOpen(true)
+              isClosingRef.current = false
+            })
+            .catch(console.error)
         }
       } else {
         setIsModalOpen(false)
@@ -228,7 +256,10 @@ export default function Places_page() {
           <div className={styles.places}>
             <div className={styles.placesSort}>
               <div className={styles.placesSortFind}>
-                Найдено 46 мест
+                {loading
+                  ? 'Загрузка...'
+                  : `Найдено ${total} ${total === 1 ? 'место' : total >= 2 && total <= 4 ? 'места' : 'мест'}`
+                }
               </div>
               <div className={styles.placesSortSort}>
                 <div className={styles.title}>Сортировать:</div>
@@ -321,12 +352,18 @@ export default function Places_page() {
               {places.map((place) => (
                 <PlaceBlock
                   key={place.id}
-                  rating={place.rating}
-                  feedback={place.feedback}
-                  place={place.place}
+                  rating={place.rating != null ? String(place.rating) : '—'}
+                  feedback={
+                    place.reviewsCount === 1
+                      ? '1 отзыв'
+                      : place.reviewsCount >= 2 && place.reviewsCount <= 4
+                        ? `${place.reviewsCount} отзыва`
+                        : `${place.reviewsCount || 0} отзывов`
+                  }
+                  place={place.location || '—'}
                   title={place.title}
-                  desc={place.desc}
-                  img={place.img}
+                  desc={place.shortDescription || place.description || ''}
+                  img={getImageUrl(place.image)}
                   onClick={() => handlePlaceClick(place)}
                 />
               ))}
@@ -340,6 +377,8 @@ export default function Places_page() {
         isOpen={isModalOpen}
         place={selectedPlace}
         onClose={closeModal}
+        onOpenPlace={handleOpenPlaceById}
+        isLoading={modalLoading}
       />
     </main >
   )

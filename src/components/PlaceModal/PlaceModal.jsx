@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
@@ -8,50 +8,34 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import styles from './PlaceModal.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
-import PlaceBlock from '../PlaceBlock/PlaceBlock'
-import RouteBlock from '../RouteBlock/RouteBlock'
+import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 
-export default function PlaceModal({ isOpen, place, onClose }) {
-  const photos = [
-    { src: "/routeGalery1.png" },
-    { src: "/routeGalery2.png" },
-    { src: "/routeGalery3.png" },
-    { src: "/routeGalery4.png" },
-    { src: "/routeGalery5.png" },
-    { src: "/routeGalery6.png" },
-    { src: "/routeGalery7.png" },
-    { src: "/routeGalery8.png" },
-  ]
+const formatReviewDate = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+}
 
-  const nearbyPlaces = [
-    {
-      id: 1,
-      rating: "5.0",
-      feedback: "3 отзыва",
-      place: "Архыз",
-      title: "Озеро Любви",
-      desc: "Живописное горное озеро",
-      img: "/routeGalery3.png"
-    },
-    {
-      id: 2,
-      rating: "4.9",
-      feedback: "5 отзывов",
-      place: "Домбай",
-      title: "Алибекский водопад",
-      desc: "Красивейший водопад региона",
-      img: "/routeGalery4.png"
-    },
-    {
-      id: 3,
-      rating: "4.8",
-      feedback: "2 отзыва",
-      place: "Теберда",
-      title: "Бадукские озёра",
-      desc: "Каскад горных озёр",
-      img: "/routeGalery5.png"
-    },
-  ]
+export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoading = false }) {
+  const photos = useMemo(() => {
+    if (!place?.images?.length) return [{ src: getImageUrl(place?.images?.[0]) || '/placeholder.jpg' }]
+    return place.images.map((url) => ({ src: getImageUrl(url) }))
+  }, [place?.images])
+
+  const nearbyPlaces = useMemo(() => place?.nearbyPlaces ?? [], [place?.nearbyPlaces])
+
+  const reviewsFromApi = useMemo(() => {
+    if (!place?.reviews?.length) return []
+    return place.reviews.map((r) => ({
+      id: r.id,
+      name: r.authorName || 'Гость',
+      date: formatReviewDate(r.createdAt),
+      rating: r.rating,
+      text: r.text,
+      avatar: r.authorAvatar ? getImageUrl(r.authorAvatar) : '',
+    }))
+  }, [place?.reviews])
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -59,24 +43,13 @@ export default function PlaceModal({ isOpen, place, onClose }) {
   const [reviewName, setReviewName] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'Михаил',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Остался в полном восторге от экскурсии «На границе регионов: Кисловодск — Медовые водопады»! Маршрут продуман идеально: сначала прогулка по Кисловодску с его целебным воздухом и архитектурными жемчужинами, а потом — резкий переход к дикой природе. Медовые водопады поразили мощью и красотой: шум воды, брызги, изумрудные оттенки реки — словно другая планета.Особенно запомнился самый высокий из каскадов: стоя у подножия, чувствуешь себя крошечным перед силой природы.Гид рассказывал увлекательно, не перегружая датами, но делясь интересными легендами.Время пролетело незаметно, а впечатлений — на год вперёд.Однозначно рекомендую тем, кто хочет увидеть контраст курортной элегантности и первозданной природы!',
-      avatar: '/avatar_feedback.png',
-    },
-    {
-      id: 2,
-      name: 'Андрей',
-      date: '10 сентября 2025',
-      rating: 5.0,
-      text: 'Отличное место для отдыха! Красивые пейзажи, свежий воздух. Дорога к месту немного сложная, но оно того стоит. Взяли с собой термос с чаем и бутерброды — провели замечательный день. Советую приезжать утром, пока мало туристов.',
-      avatar: '',
-    },
-  ])
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState('idle') // idle | sending | success | error
+  const reviews = reviewsFromApi
+
+  useEffect(() => {
+    setReviewSubmitStatus('idle')
+  }, [place?.id])
+
   const swiperRef = useRef(null)
   const modalBodyRef = useRef(null)
 
@@ -140,44 +113,36 @@ export default function PlaceModal({ isOpen, place, onClose }) {
     setRating(starIndex + 1)
   }
 
-  const formatDate = (date) => {
-    const months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-    ]
-    const day = date.getDate()
-    const month = months[date.getMonth()]
-    const year = date.getFullYear()
-    return `${day} ${month} ${year}`
-  }
-
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault()
 
     if (!reviewName.trim() || !reviewText.trim() || rating === 0) {
       alert('Пожалуйста, заполните все поля и выберите рейтинг')
       return
     }
+    if (!place?.id) return
 
-    const newReview = {
-      id: reviews.length > 0 ? Math.max(...reviews.map(r => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating: rating,
-      text: reviewText.trim(),
-      avatar: '/profile.png',
+    setReviewSubmitStatus('sending')
+    try {
+      await publicPlacesAPI.createReview(place.id, {
+        authorName: reviewName.trim(),
+        rating,
+        text: reviewText.trim(),
+      })
+      setReviewSubmitStatus('success')
+      setReviewName('')
+      setReviewText('')
+      setRating(0)
+    } catch (err) {
+      console.error(err)
+      setReviewSubmitStatus('error')
     }
-
-    setReviews(prev => [newReview, ...prev])
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
   }
 
   return (
     <>
       <AnimatePresence mode="wait">
-        {isOpen && place && (
+        {isOpen && (place || isLoading) && (
           <motion.div
             key="modal"
             className={styles.modal}
@@ -202,15 +167,19 @@ export default function PlaceModal({ isOpen, place, onClose }) {
               </button>
 
               <div className={styles.modalBody} ref={modalBodyRef}>
+                {isLoading ? (
+                  <div className={styles.modalLoading}>Загрузка...</div>
+                ) : place ? (
+                  <>
                 {/* Главное изображение */}
                 <div className={styles.modalImage}>
-                  <img src={place.img} alt={place.title} />
+                  <img src={getImageUrl(place.images?.[0])} alt={place.title} />
                   <div className={styles.modalImage_text}>
                     <CenterBlock>
                       <div className={styles.modalImage_text_block}>
                         <div className={styles.modalImage_text_place}>
                           <img src="/place.png" alt="" />
-                          {place.place}
+                          {place.location}
                         </div>
                         <div className={styles.modalImage_text_title}>
                           {place.title}
@@ -223,7 +192,7 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                 {/* Контент */}
                 <div className={styles.modalInfo}>
                   <CenterBlock>
-                    <div className={styles.contentWrapper}>
+                    <div className={`${styles.contentWrapper} ${nearbyPlaces.length === 0 ? styles.contentWrapperFullWidth : ''}`}>
                       {/* Левая колонка - основной контент */}
                       <div className={styles.contentMain}>
                         {/* Фотогалерея */}
@@ -283,39 +252,47 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                         {/* Описание */}
                         <div className={styles.title}>Описание</div>
                         <div className={styles.descriptionText}>
-                          {place.fullDesc}
-                        </div>
-                        <div className={styles.descriptionText}>
-                          Это место привлекает туристов со всего мира своей уникальной природой и живописными видами.
-                          Здесь можно насладиться чистым горным воздухом, полюбоваться панорамами и сделать незабываемые фотографии.
-                          Рекомендуем посещать в утренние или вечерние часы, когда освещение особенно красивое.
+                          {place.description}
                         </div>
 
-                        {/* Как добраться */}
+                        {/* Карта */}
                         <div className={styles.title}>Карта</div>
                         <div className={styles.mapImage}>
-                          <img src="/map.png" alt="Карта" />
+                          <img src={place.mapUrl || '/map.png'} alt="Карта" />
                         </div>
 
-                        {/* Аудио */}
-                        <div className={styles.title}>Аудио</div>
-                        <div className={styles.audioBlock}>
-                          <div className={styles.audioItem}>
-                            <div className={styles.audioIcon}>🎧</div>
-                            <div className={styles.audioInfo}>
-                              <div className={styles.audioTitle}>Аудиогид</div>
-                              <div className={styles.audioDesc}>Слушать аудио экскурсию по месту</div>
+                        {/* Аудиогид — встраивание Яндекс.Музыки */}
+                        {place?.audioGuide && (
+                          <>
+                            <div className={styles.title}>Аудиогид</div>
+                            <div className={styles.audioEmbed}>
+                              <iframe
+                                title="Аудиогид — Яндекс.Музыка"
+                                src={place.audioGuide}
+                                frameBorder="0"
+                                allow="clipboard-write"
+                                style={{ border: 'none', width: '100%', maxWidth: '100%', height: 556 }}
+                              />
                             </div>
-                            <button className={styles.audioButton}>▶</button>
-                          </div>
-                        </div>
+                          </>
+                        )}
 
-                        {/* Видео */}
-                        <div className={styles.title}>Видео</div>
-                        <div className={styles.videoBlock}>
-                          <img src="/routeGalery6.png" alt="Видео" />
-                          <div className={styles.videoPlay}>▶</div>
-                        </div>
+                        {/* Видео — встраивание VK Video */}
+                        {place?.video && (
+                          <>
+                            <div className={styles.title}>Видео</div>
+                            <div className={styles.videoEmbed}>
+                              <iframe
+                                title="Видео — VK Video"
+                                src={place.video}
+                                frameBorder="0"
+                                allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock"
+                                allowFullScreen
+                                style={{ border: 'none', width: '100%', maxWidth: 1280, aspectRatio: '16/9', height: 'auto' }}
+                              />
+                            </div>
+                          </>
+                        )}
 
                         {/* Отзывы */}
                         <div className={styles.title}>Отзывы</div>
@@ -358,9 +335,19 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                               onChange={(e) => setReviewText(e.target.value)}
                               rows="4"
                             />
-                            <button type="submit" className={styles.feedbackSubmitButton}>
-                              Оставить отзыв
+                            <button
+                              type="submit"
+                              className={styles.feedbackSubmitButton}
+                              disabled={reviewSubmitStatus === 'sending'}
+                            >
+                              {reviewSubmitStatus === 'sending' ? 'Отправка...' : 'Оставить отзыв'}
                             </button>
+                            {reviewSubmitStatus === 'success' && (
+                              <p className={styles.feedbackSuccess}>Спасибо! Отзыв отправлен на модерацию и появится на сайте после проверки.</p>
+                            )}
+                            {reviewSubmitStatus === 'error' && (
+                              <p className={styles.feedbackError}>Не удалось отправить отзыв. Попробуйте позже.</p>
+                            )}
                           </form>
 
                           <div className={styles.feedbackList}>
@@ -412,46 +399,24 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                           </div>
                         </div>
 
-                        {/* Отели по близости */}
-                        <div className={styles.title}>Отели по близости</div>
-                        <div className={styles.hotelsGrid}>
-                          <div className={styles.hotelCard}>
-                            <img src="/routeGalery7.png" alt="Отель" />
-                            <div className={styles.hotelInfo}>
-                              <div className={styles.hotelName}>Гостиница "Горная"</div>
-                              <div className={styles.hotelPrice}>от 3 500 ₽/ночь</div>
-                            </div>
-                          </div>
-                          <div className={styles.hotelCard}>
-                            <img src="/routeGalery8.png" alt="Отель" />
-                            <div className={styles.hotelInfo}>
-                              <div className={styles.hotelName}>Отель "Архыз"</div>
-                              <div className={styles.hotelPrice}>от 4 200 ₽/ночь</div>
-                            </div>
-                          </div>
-                          <div className={styles.hotelCard}>
-                            <img src="/routeGalery6.png" alt="Отель" />
-                            <div className={styles.hotelInfo}>
-                              <div className={styles.hotelName}>Гостиница "Бермамыт"</div>
-                              <div className={styles.hotelPrice}>от 6 500 ₽/ночь</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Маршруты с этим местом */}
-                        <div className={styles.title}>Маршруты с этим местом</div>
-                        <div className={styles.routesList}>
-                          <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
-                        </div>
                       </div>
 
-                      {/* Правая колонка - места рядом */}
+                      {/* Правая колонка - места рядом (только если есть) */}
+                      {nearbyPlaces.length > 0 && (
                       <div className={styles.sidebar}>
                         <div className={styles.sidebarTitle}>Места рядом</div>
                         <div className={styles.sidebarPlaces}>
                           {nearbyPlaces.map((nearbyPlace) => (
-                            <div key={nearbyPlace.id} className={styles.sidebarPlaceCard}>
-                              <img src={nearbyPlace.img} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
+                            <div
+                              key={nearbyPlace.id}
+                              className={styles.sidebarPlaceCard}
+                              onClick={() => onOpenPlace?.(nearbyPlace.id)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenPlace?.(nearbyPlace.id); } }}
+                              aria-label={`Открыть: ${nearbyPlace.title}`}
+                            >
+                              <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
                               <div className={styles.sidebarPlaceInfo}>
                                 <div className={styles.sidebarPlaceRating}>
                                   <img src="/star.png" alt="" />
@@ -460,16 +425,19 @@ export default function PlaceModal({ isOpen, place, onClose }) {
                                 <div className={styles.sidebarPlaceTitle}>{nearbyPlace.title}</div>
                                 <div className={styles.sidebarPlaceLocation}>
                                   <img src="/place_black.png" alt="" />
-                                  {nearbyPlace.place}
+                                  {nearbyPlace.location}
                                 </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
+                      )}
                     </div>
                   </CenterBlock>
                 </div>
+              </>
+                ) : null}
               </div>
             </motion.div>
 

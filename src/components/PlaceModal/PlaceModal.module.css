@@ -64,6 +64,15 @@
   display: none;
 }
 
+.modalLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 18px;
+  color: var(--color-text-secondary, #666);
+}
+
 /* Главное изображение */
 .modalImage {
   width: 100%;
@@ -135,6 +144,14 @@
 .contentWrapper {
   display: flex;
   gap: 40px;
+}
+
+.contentWrapperFullWidth .contentMain {
+  max-width: 100%;
+}
+
+.contentWrapperFullWidth .gallery {
+  height: 500px;
 }
 
 .contentMain {
@@ -262,7 +279,14 @@
   object-fit: cover;
 }
 
-/* Аудио */
+/* Аудио / Аудиогид (Яндекс.Музыка iframe) */
+.audioEmbed {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
 .audioBlock {
   display: flex;
   flex-direction: column;
@@ -326,6 +350,18 @@
 }
 
 /* Видео */
+/* Видео — встраивание VK Video iframe */
+.videoEmbed {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.videoEmbed iframe {
+  display: block;
+}
+
 .videoBlock {
   position: relative;
   border-radius: 15px;
@@ -437,6 +473,31 @@
 
 .feedbackSubmitButton:hover {
   background-color: #0d4a44;
+}
+
+.feedbackSubmitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.feedbackSuccess {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(21, 106, 96, 0.12);
+  color: #0d4a44;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.feedbackError {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .feedbackList {

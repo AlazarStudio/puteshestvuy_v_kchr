@@ -6,10 +6,18 @@ import { reviewsAPI } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
+const ENTITY_TABS = [
+  { value: 'all', label: 'Все', icon: null },
+  { value: 'route', label: 'Маршруты', icon: Map },
+  { value: 'place', label: 'Места', icon: MapPin },
+  { value: 'service', label: 'Услуги', icon: Building2 },
+];
+
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [entityTypeTab, setEntityTypeTab] = useState('all');
   const [filter, setFilter] = useState('all');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
@@ -17,7 +25,10 @@ export default function ReviewsPage() {
   const fetchReviews = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await reviewsAPI.getAll({ page, limit: 10, status: filter !== 'all' ? filter : undefined });
+      const params = { page, limit: 10 };
+      if (filter !== 'all') params.status = filter;
+      if (entityTypeTab !== 'all') params.entityType = entityTypeTab;
+      const response = await reviewsAPI.getAll(params);
       setReviews(response.data.items);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -30,7 +41,7 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     fetchReviews();
-  }, [filter]);
+  }, [filter, entityTypeTab]);
 
   const handleApprove = async (id) => {
     try {
@@ -139,6 +150,20 @@ export default function ReviewsPage() {
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Модерация отзывов</h1>
+      </div>
+
+      <div className={styles.reviewTabs}>
+        {ENTITY_TABS.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            className={`${styles.reviewTab} ${entityTypeTab === value ? styles.reviewTabActive : ''}`}
+            onClick={() => setEntityTypeTab(value)}
+          >
+            {Icon && <Icon size={18} style={{ marginRight: 6 }} />}
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className={styles.searchBar}>
