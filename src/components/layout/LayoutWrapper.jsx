@@ -12,27 +12,29 @@ export default function LayoutWrapper({ children }) {
   const pathname = usePathname()
   const isFirstLoad = useRef(true)
   const prevPathname = useRef(pathname)
-  
+
   // Проверяем, находимся ли мы в админке
   const isAdminPage = pathname?.startsWith('/admin')
 
-  // Блокируем скролл во время загрузки (useLayoutEffect для синхронного выполнения)
+  // Управление классом loading на body: в админке всегда снимаем, на сайте — по isLoading
   useLayoutEffect(() => {
+    if (isAdminPage) {
+      document.body.classList.remove('loading')
+      return
+    }
     if (isLoading) {
       document.body.classList.add('loading')
     } else {
       document.body.classList.remove('loading')
     }
-
     return () => {
       document.body.classList.remove('loading')
     }
-  }, [isLoading])
+  }, [isLoading, isAdminPage])
 
   // Первоначальная загрузка страницы
   useEffect(() => {
     const handleLoad = () => {
-      // Задержка перед исчезновением прелоадера
       setTimeout(() => {
         setIsLoading(false)
         isFirstLoad.current = false
@@ -50,30 +52,28 @@ export default function LayoutWrapper({ children }) {
     }
   }, [])
 
-  // Отслеживаем SPA-навигацию между страницами
+  // Отслеживаем SPA-навигацию между страницами (только для основного сайта)
   useEffect(() => {
-    // Пропускаем первую загрузку и изменения внутри той же страницы (например, модалки)
+    if (isAdminPage) return
     if (isFirstLoad.current) return
-    
-    // Получаем базовый путь без slug (для модалок типа /places/slug)
+
     const getBasePath = (path) => {
       const parts = path.split('/').filter(Boolean)
       return parts[0] || ''
     }
-    
+
     const currentBase = getBasePath(pathname)
     const prevBase = getBasePath(prevPathname.current)
-    
-    // Показываем прелоадер только при переходе между разными разделами
+
     if (currentBase !== prevBase) {
       setIsLoading(true)
       setTimeout(() => {
         setIsLoading(false)
       }, 500)
     }
-    
+
     prevPathname.current = pathname
-  }, [pathname])
+  }, [pathname, isAdminPage])
 
   // Для админки показываем только children без Header/Footer и прелоадера
   if (isAdminPage) {
@@ -105,7 +105,7 @@ export default function LayoutWrapper({ children }) {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <div style={{ opacity: isLoading ? 0 : 1, transition: 'opacity 0.3s ease' }}>
         <Header />
         {children}

@@ -162,8 +162,10 @@
   margin-left: 260px;
   transition: margin-left 0.3s ease;
   min-height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar.closed ~ .mainContent {
@@ -190,6 +192,8 @@
 .content {
   flex: 1;
   padding: 30px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Dashboard Styles */
