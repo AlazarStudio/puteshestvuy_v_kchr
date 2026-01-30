@@ -256,7 +256,10 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                         <RichTextContent html={place.description} className={styles.descriptionText} />
 
                         {/* Карта */}
-                        <div className={styles.title}>Карта</div>
+                        <div className={styles.title}>Как добраться</div>
+
+                        <RichTextContent html={place.howToGet} className={styles.descriptionText} />
+
                         {place.latitude != null && place.longitude != null && Number(place.latitude) && Number(place.longitude) ? (
                           <YandexMapPlace
                             latitude={place.latitude}
