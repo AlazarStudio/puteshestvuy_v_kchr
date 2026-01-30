@@ -25,6 +25,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
   const [scriptReady, setScriptReady] = useState(false);
   const [error, setError] = useState(null);
   const geocodeDebounceRef = useRef(null);
+  const isFirstGeocodeRunRef = useRef(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -58,6 +59,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
         mapRef.current = null;
       }
       placemarkRef.current = null;
+      isFirstGeocodeRunRef.current = true;
     };
   }, []);
 
@@ -111,10 +113,17 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
     mapRef.current.setCenter(coords);
   }, [visible, scriptReady, latitude, longitude]);
 
-  // геокодирование по названию/локации: автоматически после паузы ввода (800 ms)
+  // Геокодирование при изменении названия (после паузы 800 ms). Первый запуск при открытии формы пропускаем — не слать запрос просто из‑за открытия страницы.
   useEffect(() => {
+    if (!scriptReady || !window.ymaps) return;
+
     const query = (geocodeQuery || '').trim();
-    if (!query || !scriptReady || !window.ymaps) return;
+    if (!query) return;
+
+    if (isFirstGeocodeRunRef.current) {
+      isFirstGeocodeRunRef.current = false;
+      return;
+    }
 
     if (geocodeDebounceRef.current) clearTimeout(geocodeDebounceRef.current);
     geocodeDebounceRef.current = setTimeout(() => {
