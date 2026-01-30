@@ -1,16 +1,42 @@
 'use client';
 
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
 import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff, Eye } from 'lucide-react';
 import { placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
+import ConfirmModal from '../../components/ConfirmModal';
 import { AdminHeaderRightContext } from '../../layout';
 import styles from '../../admin.module.css';
 
 const LOCATION_DEBOUNCE_MS = 400;
+const TOAST_DURATION_MS = 3000;
+
+/** Нормализованный снимок формы для сравнения (dirty check). */
+function getFormSnapshot(data) {
+  return {
+    title: data.title ?? '',
+    location: data.location ?? '',
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+    description: data.description ?? '',
+    shortDescription: data.shortDescription ?? '',
+    howToGet: data.howToGet ?? '',
+    mapUrl: data.mapUrl ?? '',
+    audioGuide: data.audioGuide ?? '',
+    video: data.video ?? '',
+    rating: Number(data.rating) || 0,
+    reviewsCount: Number(data.reviewsCount) || 0,
+    isActive: !!data.isActive,
+    images: Array.isArray(data.images) ? [...data.images] : [],
+    nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? [...data.nearbyPlaceIds].sort((a, b) => String(a).localeCompare(String(b))) : [],
+  };
+}
+
+function formSnapshotsEqual(a, b) {
+  return JSON.stringify(getFormSnapshot(a)) === JSON.stringify(getFormSnapshot(b));
+}
 
 export default function PlaceEditPage() {
   const router = useRouter();
@@ -44,7 +70,29 @@ export default function PlaceEditPage() {
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const savedFormDataRef = useRef(null);
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
+
+  const isDirty = useMemo(() => {
+    if (isNew) return false;
+    if (!savedFormDataRef.current) return false;
+    return !formSnapshotsEqual(formData, savedFormDataRef.current);
+  }, [isNew, formData]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    router.push('/admin/places');
+  }, [router]);
+
+  const handleCancelClick = useCallback(() => {
+    if (isDirty) {
+      setLeaveModalOpen(true);
+    } else {
+      router.push('/admin/places');
+    }
+  }, [isDirty, router]);
 
   useEffect(() => {
     if (!isNew) {
@@ -58,6 +106,17 @@ export default function PlaceEditPage() {
 
   useEffect(() => {
     if (!setHeaderRight) return;
+    const submitLabel = isSaving
+      ? 'Сохранение...'
+      : isNew
+        ? 'Создать место'
+        : isDirty
+          ? 'Сохранить изменения'
+          : 'Сохранено';
+    const submitClassName = [
+      styles.headerSubmitBtn,
+      !isNew && !isDirty && !isSaving && styles.headerSubmitBtnSaved,
+    ].filter(Boolean).join(' ');
     setHeaderRight(
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <label className={styles.visibilityToggle}>
@@ -76,21 +135,25 @@ export default function PlaceEditPage() {
             Видимость
           </span>
         </label>
-        <Link href="/admin/places" className={styles.headerCancelBtn}>
-          Отмена
-        </Link>
+        <button
+          type="button"
+          onClick={handleCancelClick}
+          className={styles.headerCancelBtn}
+        >
+          Назад
+        </button>
         <button
           type="submit"
           form="place-form"
-          className={styles.headerSubmitBtn}
+          className={submitClassName}
           disabled={isSaving}
         >
-          {isSaving ? 'Сохранение...' : (isNew ? 'Создать место' : 'Сохранить изменения')}
+          {submitLabel}
         </button>
       </div>
     );
     return () => setHeaderRight(null);
-  }, [setHeaderRight, formData.isActive, isSaving, isNew]);
+  }, [setHeaderRight, formData.isActive, isSaving, isNew, isDirty, handleCancelClick]);
 
   const fetchAllPlaces = useCallback(async () => {
     try {
@@ -104,11 +167,12 @@ export default function PlaceEditPage() {
   const fetchPlace = async () => {
     try {
       const data = await placesAPI.getById(params.id).then((r) => r.data);
-      setFormData((prev) => ({
-        ...prev,
+      const next = {
         ...data,
         nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? data.nearbyPlaceIds : [],
-      }));
+      };
+      setFormData((prev) => ({ ...prev, ...next }));
+      savedFormDataRef.current = next;
     } catch (error) {
       console.error('Ошибка загрузки места:', error);
       setError('Место не найдено');
@@ -246,12 +310,19 @@ export default function PlaceEditPage() {
 
     try {
       if (isNew) {
-        await placesAPI.create(formData);
+        const res = await placesAPI.create(formData);
+        const created = res.data;
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
+        if (created?.id) {
+          router.replace(`/admin/places/${created.id}`);
+        }
       } else {
         await placesAPI.update(params.id, formData);
+        savedFormDataRef.current = { ...formData, images: [...(formData.images || [])], nearbyPlaceIds: [...(formData.nearbyPlaceIds || [])] };
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
-      
-      router.push('/admin/places');
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setError(error.response?.data?.message || 'Ошибка сохранения места');
@@ -259,6 +330,15 @@ export default function PlaceEditPage() {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
   if (isLoading) {
     return (
@@ -310,6 +390,7 @@ export default function PlaceEditPage() {
               type="button"
               onClick={() => setLocationEditable((v) => !v)}
               className={locationEditable ? styles.viewBtn : styles.editBtn}
+              style={{ padding: 15 }}
               title={locationEditable ? 'Заблокировать редактирование локации' : 'Разрешить редактирование локации'}
               aria-label={locationEditable ? 'Заблокировать локацию' : 'Разблокировать локацию'}
             >
@@ -319,6 +400,7 @@ export default function PlaceEditPage() {
               type="button"
               onClick={() => setMapVisible((v) => !v)}
               className={mapVisible ? styles.viewBtn : styles.editBtn}
+              style={{ padding: 15 }}
               title={mapVisible ? 'Скрыть карту' : 'Показать карту'}
               aria-label={mapVisible ? 'Скрыть карту' : 'Показать карту'}
             >
@@ -632,6 +714,26 @@ export default function PlaceEditPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Модалка: уход с несохранёнными изменениями */}
+      <ConfirmModal
+        open={leaveModalOpen}
+        title="Несохранённые изменения"
+        message="Есть несохранённые изменения. Вы уверены, что хотите уйти? Они будут потеряны."
+        cancelLabel="Остаться"
+        confirmLabel="Уйти без сохранения"
+        variant="danger"
+        dialogStyle={{ maxWidth: 500 }}
+        onCancel={() => setLeaveModalOpen(false)}
+        onConfirm={goToList}
+      />
+
+      {/* Toast: успешно сохранено */}
+      {showToast && (
+        <div className={styles.toast} role="status">
+          Изменения успешно сохранены
         </div>
       )}
     </div>

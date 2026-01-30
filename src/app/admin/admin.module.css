@@ -306,6 +306,46 @@
   box-shadow: none;
 }
 
+.headerSubmitBtnSaved {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%) !important;
+  border-color: #94a3b8 !important;
+  color: #fff !important;
+  cursor: default;
+  box-shadow: none;
+}
+
+.headerSubmitBtnSaved:hover {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%) !important;
+  box-shadow: none;
+}
+
+/* Toast: успешно сохранено (низ справа) */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 20px;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  animation: toastIn 0.25s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .breadcrumb {
   font-size: 0.9rem;
   color: #6b7280;
