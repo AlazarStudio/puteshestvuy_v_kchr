@@ -1,69 +1,53 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import styles from './SliderFullScreen.module.css'
+import { publicPlacesAPI, getImageUrl } from '@/lib/api'
+import RichTextContent from '@/components/RichTextContent/RichTextContent'
 
-// Данные слайдов — вместо жёстко забитой верстки
-const SLIDES = [
-  {
-    id: 1,
-    image: '/slider1.png',
-    place: 'Архыз',
-    title: 'СОФИЙСКИЕ ОЗЕРА',
-    topic: 'ANIMAL',
-    rating: '4.8',
-    description:
-      'Ярко-голубая вода, в которой отражаются бегущие по небу облака и зеленая, сочная трава среди обломков камней – такие краски ожидают каждого, кто решится посетить Софийские озера в Архызе. Это место идеально подходит для незабываемых фотосессий. Да и душе есть, где разгуляться – посещение этого чуда природы наполняет грудь особым воздухом свободы, которого так не хватает в ежедневной рутине.',
-  },
-  {
-    id: 2,
-    image: '/slider2.png',
-    place: '​Зеленчукский район',
-    title: 'ЛЕДНИК АЛИБЕК',
-    topic: 'ANIMAL',
-    rating: '4.8',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
-  },
-  {
-    id: 3,
-    image: '/slider3.png',
-    place: 'Малокарачаевский район',
-    title: 'ПЛАТО БЕРМАМЫТ',
-    topic: 'ANIMAL',
-    rating: '4.8',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
-  },
-  {
-    id: 4,
-    image: '/slider4.png',
-    place: '​с. Красный Курган, Малокарачаевский район',
-    title: 'МЕДОВЫЕ ВОДОПАДЫ',
-    topic: 'ANIMAL',
-    rating: '4.8',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
-  },
-  {
-    id: 5,
-    image: '/slider2.png',
-    place: '​Зеленчукский район',
-    title: 'ЛЕДНИК АЛИБЕК',
-    topic: 'ANIMAL',
-    rating: '4.8',
-    description:
-      'Lorem ipsum dolor sit amet consectetur adipisicing elit. Consectetur assumenda odio molestiae! Accusamus deserunt reiciendis quibusdam porro? Qui reiciendis ratione cum commodi quam sit quo hic, eos, perspiciatis dolorum libero.',
-  },
-]
-
+const SLIDER_LIMIT = 6
 const TIME_RUNNING = 500
 
+function placeToSlide(place) {
+  const description = place.shortDescription || place.description || ''
+  return {
+    id: place.id,
+    slug: place.slug,
+    image: getImageUrl(place.image),
+    place: place.location || '',
+    title: place.title || '',
+    rating: place.rating != null && place.rating !== '' ? String(place.rating) : '—',
+    description,
+  }
+}
+
 export default function SliderFullScreen() {
-  // порядок элементов в основном списке/превью
-  const [slides, setSlides] = useState(SLIDES)
-  // направление анимации: 'next' | 'prev' | null — вместо add/remove className
+  const [slides, setSlides] = useState([])
+  const initialSlidesRef = useRef([])
+  const [isLoading, setIsLoading] = useState(true)
   const [direction, setDirection] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
+      .then((res) => {
+        if (cancelled) return
+        const items = res.data?.items || res.data || []
+        const list = items.map(placeToSlide)
+        if (list.length > 0) {
+          setSlides(list)
+          initialSlidesRef.current = list
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSlides([])
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const handleNext = () => {
     setSlides((prev) => {
@@ -103,10 +87,46 @@ export default function SliderFullScreen() {
     .filter(Boolean)
     .join(' ')
 
-  // Находим текущий слайд (первый в массиве slides) в исходном массиве SLIDES
-  const currentSlideIndex = SLIDES.findIndex((slide) => slide.id === slides[0]?.id)
+  // Номер текущего слайда (первый в массиве slides) по исходному списку
+  const initialList = initialSlidesRef.current
+  const currentSlideIndex = initialList.findIndex((s) => s.id === slides[0]?.id)
   const currentSlideNumber = currentSlideIndex >= 0 ? currentSlideIndex + 1 : 1
   const formattedSlideNumber = String(currentSlideNumber).padStart(2, '0')
+
+  const placeHref = (slide) => `/places/${slide.slug || slide.id}`
+
+  if (isLoading) {
+    return (
+      <section className={styles.carousel}>
+        <div className={styles.list}>
+          <div className={styles.item}>
+            <div className={styles.image} />
+            <div className={styles.content}>
+              <div className={styles.place} />
+              <div className={styles.title} style={{ width: '60%', height: '2rem', background: 'rgba(255,255,255,0.2)', borderRadius: 4 }} />
+              <div className={styles.des} style={{ width: '80%', height: '4rem', background: 'rgba(255,255,255,0.15)', borderRadius: 4, marginTop: 12 }} />
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (slides.length === 0) {
+    return (
+      <section className={styles.carousel}>
+        <div className={styles.list}>
+          <div className={styles.item}>
+            <div className={styles.image} />
+            <div className={styles.content}>
+              <div className={styles.title}>Интересные места не найдены</div>
+              <div className={styles.des}>Попробуйте обновить страницу позже.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className={carouselClassNames}>
@@ -132,9 +152,17 @@ export default function SliderFullScreen() {
                   {slide.rating}
                 </div>
               </div>
-              <div className={styles.des}>{slide.description}</div>
+              <div className={styles.des}>
+                {slide.description ? (
+                  <RichTextContent html={slide.description} />
+                ) : (
+                  'Интересное место в Карачаево-Черкесии.'
+                )}
+              </div>
               <div className={styles.buttons}>
-                <button>Начать путешествие</button>
+                <Link href={placeHref(slide)} className={styles.ctaLink}>
+                  Начать путешествие
+                </Link>
               </div>
             </div>
           </div>
@@ -144,13 +172,13 @@ export default function SliderFullScreen() {
       {/* Превью (thumbnail) */}
       <div className={styles.thumbnail}>
         {thumbnailSlides.map((slide) => (
-          <div key={slide.id} className={styles.item}>
+          <Link href={placeHref(slide)} key={slide.id} className={styles.item}>
             <img src={slide.image} alt={slide.title} />
             <div className={styles.content}>
               <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
               <div className={styles.title}>{slide.title}</div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
