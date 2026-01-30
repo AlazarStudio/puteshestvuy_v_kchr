@@ -9,6 +9,7 @@ import 'swiper/css/navigation'
 import styles from './PlaceModal.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import YandexMapPlace from '../YandexMapPlace'
+import RichTextContent from '../RichTextContent'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 
 const formatReviewDate = (dateStr) => {
@@ -252,9 +253,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
 
                         {/* Описание */}
                         <div className={styles.title}>Описание</div>
-                        <div className={styles.descriptionText}>
-                          {place.description}
-                        </div>
+                        <RichTextContent html={place.description} className={styles.descriptionText} />
 
                         {/* Карта */}
                         <div className={styles.title}>Карта</div>

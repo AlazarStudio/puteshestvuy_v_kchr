@@ -10,6 +10,7 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import { publicPlacesAPI } from '@/lib/api'
 import { getImageUrl } from '@/lib/api'
+import { stripHtml } from '@/lib/utils'
 
 export default function Places_page() {
   const [sortBy, setSortBy] = useState('popularity')
@@ -362,7 +363,7 @@ export default function Places_page() {
                   }
                   place={place.location || '—'}
                   title={place.title}
-                  desc={place.shortDescription || place.description || ''}
+                  desc={stripHtml(place.shortDescription || place.description || '')}
                   img={getImageUrl(place.image)}
                   onClick={() => handlePlaceClick(place)}
                 />

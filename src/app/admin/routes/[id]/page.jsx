@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, X, MapPin, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { routesAPI, placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import RichTextEditor from '@/components/RichTextEditor';
 import styles from '../../admin.module.css';
 
 const seasons = ['Зима', 'Весна', 'Лето', 'Осень'];
@@ -207,25 +208,21 @@ export default function RouteEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Краткое описание</label>
-          <textarea
-            name="shortDescription"
+          <RichTextEditor
             value={formData.shortDescription}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, shortDescription: value }))}
             placeholder="Краткое описание для карточки маршрута"
-            rows={3}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Полное описание</label>
-          <textarea
-            name="description"
+          <RichTextEditor
             value={formData.description}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
             placeholder="Подробное описание маршрута"
-            rows={6}
+            minHeight={300}
           />
         </div>
 
@@ -524,25 +521,21 @@ export default function RouteEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Что взять с собой</label>
-          <textarea
-            name="whatToBring"
+          <RichTextEditor
             value={formData.whatToBring}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, whatToBring: value }))}
             placeholder="Список необходимых вещей"
-            rows={4}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Важная информация</label>
-          <textarea
-            name="importantInfo"
+          <RichTextEditor
             value={formData.importantInfo}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, importantInfo: value }))}
             placeholder="Важные предупреждения и рекомендации"
-            rows={4}
+            minHeight={300}
           />
         </div>
 

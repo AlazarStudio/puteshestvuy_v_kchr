@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, X } from 'lucide-react';
+import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import styles from '../../admin.module.css';
 
@@ -185,25 +186,21 @@ export default function NewsEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Краткое описание</label>
-          <textarea
-            name="shortDescription"
+          <RichTextEditor
             value={formData.shortDescription}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, shortDescription: value }))}
             placeholder="Краткое описание для превью"
-            rows={3}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Содержание</label>
-          <textarea
-            name="content"
+          <RichTextEditor
             value={formData.content}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
             placeholder="Полное содержание новости"
-            rows={12}
+            minHeight={300}
           />
         </div>
 

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff } from 'lucide-react';
 import { placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
+import RichTextEditor from '@/components/RichTextEditor';
 import { AdminHeaderRightContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -334,37 +335,31 @@ export default function PlaceEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Краткое описание</label>
-          <textarea
-            name="shortDescription"
+          <RichTextEditor
             value={formData.shortDescription}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, shortDescription: value }))}
             placeholder="Краткое описание для карточки"
-            rows={3}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Полное описание</label>
-          <textarea
-            name="description"
+          <RichTextEditor
             value={formData.description}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
             placeholder="Подробное описание места"
-            rows={6}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Как добраться (текст)</label>
-          <textarea
-            name="howToGet"
+          <RichTextEditor
             value={formData.howToGet}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, howToGet: value }))}
             placeholder="Инструкции как добраться до места"
-            rows={4}
+            minHeight={300}
           />
         </div>
 

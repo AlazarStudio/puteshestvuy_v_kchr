@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, X, Plus } from 'lucide-react';
+import RichTextEditor from '@/components/RichTextEditor';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import styles from '../../admin.module.css';
 
@@ -241,25 +242,21 @@ export default function ServiceEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Краткое описание</label>
-          <textarea
-            name="shortDescription"
+          <RichTextEditor
             value={formData.shortDescription}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, shortDescription: value }))}
             placeholder="Краткое описание для карточки"
-            rows={3}
+            minHeight={300}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Полное описание</label>
-          <textarea
-            name="description"
+          <RichTextEditor
             value={formData.description}
-            onChange={handleChange}
-            className={styles.formTextarea}
+            onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
             placeholder="Подробное описание услуги"
-            rows={6}
+            minHeight={300}
           />
         </div>
 

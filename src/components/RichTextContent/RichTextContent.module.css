@@ -1,0 +1,59 @@
+.root {
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* .root p {
+  margin: 0 0 0.75em;
+} */
+
+.root p:last-child {
+  margin-bottom: 0;
+}
+
+.root ul,
+.root ol {
+  /* margin: 0 0 0.75em; */
+  padding-left: 1.5em;
+}
+
+.root li {
+  list-style: disc !important;
+  /* margin-bottom: 0.25em; */
+}
+
+.root h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  /* margin: 1em 0 0.5em; */
+}
+
+.root h2:first-child {
+  margin-top: 0;
+}
+
+.root h3,
+.root h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  /* margin: 0.75em 0 0.4em; */
+}
+
+.root a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.root a:hover {
+  opacity: 0.85;
+}
+
+.root strong,
+.root b {
+  font-weight: 600;
+}
+
+.root em,
+.root i {
+  font-style: italic;
+}
