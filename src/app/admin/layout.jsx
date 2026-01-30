@@ -17,6 +17,7 @@ import {
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
+export const AdminBreadcrumbContext = createContext(null);
 
 const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard },
@@ -34,6 +35,7 @@ export default function AdminLayout({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [headerRight, setHeaderRight] = useState(null);
+  const [breadcrumbLabel, setBreadcrumbLabel] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -133,26 +135,39 @@ export default function AdminLayout({ children }) {
       <main className={styles.mainContent}>
         <header className={styles.header}>
           <div className={styles.breadcrumb}>
-            {pathname.split('/').filter(Boolean).map((part, index, arr) => (
-              <span key={part}>
-                {index > 0 && ' / '}
-                <span className={index === arr.length - 1 ? styles.currentPage : ''}>
-                  {part === 'admin' ? 'Админ панель' : 
-                   part === 'routes' ? 'Маршруты' :
-                   part === 'places' ? 'Места' :
-                   part === 'news' ? 'Новости' :
-                   part === 'services' ? 'Услуги' :
-                   part === 'reviews' ? 'Отзывы' : part}
+            {pathname.split('/').filter(Boolean).map((part, index, arr) => {
+              const isLast = index === arr.length - 1;
+              const label = isLast && breadcrumbLabel != null && breadcrumbLabel !== ''
+                ? breadcrumbLabel
+                : part === 'admin' ? 'Админ панель' :
+                  part === 'routes' ? 'Маршруты' :
+                  part === 'places' ? 'Места' :
+                  part === 'news' ? 'Новости' :
+                  part === 'services' ? 'Услуги' :
+                  part === 'reviews' ? 'Отзывы' : part;
+              const href = '/' + arr.slice(0, index + 1).join('/');
+              return (
+                <span key={index}>
+                  {index > 0 && ' / '}
+                  <Link
+                    href={href}
+                    className={isLast ? styles.currentPage : ''}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                  >
+                    {label}
+                  </Link>
                 </span>
-              </span>
-            ))}
+              );
+            })}
           </div>
           {headerRight && <div className={styles.headerRight}>{headerRight}</div>}
         </header>
         
         <div className={styles.content}>
           <AdminHeaderRightContext.Provider value={{ setHeaderRight }}>
-            {children}
+            <AdminBreadcrumbContext.Provider value={{ setBreadcrumbLabel }}>
+              {children}
+            </AdminBreadcrumbContext.Provider>
           </AdminHeaderRightContext.Provider>
         </div>
       </main>

@@ -11,7 +11,7 @@
 
 .img {
     width: 100%;
-    height: calc(100vh - 25px);
+    height: calc(100% - 140px);
 }
 
 .img::before {

@@ -133,7 +133,7 @@
 
 /* Sidebar Footer */
 .sidebarFooter {
-  padding: 20px;
+  padding: 10px;
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -349,6 +349,11 @@
 .breadcrumb {
   font-size: 0.9rem;
   color: #6b7280;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+  color: #2563eb;
 }
 
 .currentPage {
