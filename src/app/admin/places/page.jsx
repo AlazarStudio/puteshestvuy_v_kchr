@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Pencil, Trash2, MapPin, Star } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MapPin, Star, Eye, EyeOff } from 'lucide-react';
 import { placesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
@@ -14,8 +14,13 @@ export default function PlacesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
+  const [togglingId, setTogglingId] = useState(null);
+  const searchDebounceRef = useRef(null);
+
+  const MIN_LOADING_MS = 500;
 
   const fetchPlaces = async (page = 1) => {
+    const start = Date.now();
     setIsLoading(true);
     try {
       const response = await placesAPI.getAll({ page, limit: 10, search: searchQuery });
@@ -25,13 +30,21 @@ export default function PlacesPage() {
       console.error('Ошибка загрузки мест:', error);
       setPlaces([]);
     } finally {
-      setIsLoading(false);
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
+      setTimeout(() => setIsLoading(false), remaining);
     }
   };
 
   useEffect(() => {
-    fetchPlaces();
-  }, []);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchPlaces(1);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   const handleDeleteClick = (id) => {
     setConfirmModal({
@@ -55,9 +68,24 @@ export default function PlacesPage() {
     });
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchPlaces(1);
+  const handleTogglePublish = async (place) => {
+    const nextActive = !place.isActive;
+    setTogglingId(place.id);
+    try {
+      await placesAPI.update(place.id, { isActive: nextActive });
+      setPlaces((prev) =>
+        prev.map((p) => (p.id === place.id ? { ...p, isActive: nextActive } : p))
+      );
+    } catch (error) {
+      console.error('Ошибка изменения публикации:', error);
+      setAlertModal({
+        open: true,
+        title: 'Ошибка',
+        message: 'Не удалось изменить статус публикации',
+      });
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   return (
@@ -69,18 +97,19 @@ export default function PlacesPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSearch} className={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Поиск мест..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={styles.searchInput}
-        />
-        <button type="submit" className={styles.filterBtn}>
-          <Search size={18} /> Найти
-        </button>
-      </form>
+      <div className={styles.searchBar}>
+        <div className={styles.searchWrap}>
+          <input
+            type="text"
+            placeholder="Поиск мест..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+            aria-label="Поиск мест"
+          />
+          <Search size={18} className={styles.searchIcon} aria-hidden />
+        </div>
+      </div>
 
       <div className={styles.tableContainer}>
         {isLoading ? (
@@ -109,31 +138,71 @@ export default function PlacesPage() {
             <tbody>
               {places.map((place) => (
                 <tr key={place.id}>
-                  <td>
-                    <img
-                      src={getImageUrl(place.image)}
-                      alt={place.title}
-                      className={styles.tableImage}
-                    />
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <img
+                        src={getImageUrl(place.image)}
+                        alt={place.title}
+                        className={styles.tableImage}
+                      />
+                    </div>
                   </td>
-                  <td>{place.title}</td>
-                  <td>{place.location}</td>
-                  <td><Star size={14} style={{ marginRight: 4 }} /> {place.rating || '—'}</td>
-                  <td>
-                    <span className={`${styles.badge} ${styles[place.isActive ? 'active' : 'inactive']}`}>
-                      {place.isActive ? 'Опубликовано' : 'Не опубликовано'}
-                    </span>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>{place.title}</div>
                   </td>
-                  <td className={styles.actions}>
-                    <Link href={`/admin/places/${place.id}`} className={styles.editBtn}>
-                      <Pencil size={16} />
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteClick(place.id)}
-                      className={styles.deleteBtn}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>{place.location}</div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.ratingCell}`}>
+                    <div className={styles.cellInner}>
+                      {place.rating != null && place.rating !== '' ? (
+                        <>
+                          <Star size={14} />
+                          <span>{Number(place.rating)}</span>
+                          <span className={styles.ratingReviews}>({place.reviewsCount ?? 0})</span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <span className={`${styles.badge} ${styles[place.isActive ? 'active' : 'inactive']}`}>
+                        {place.isActive ? 'Опубликовано' : 'Не опубликовано'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.actionsCell}`}>
+                    <div className={styles.cellInner}>
+                    <div className={styles.actions}>
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePublish(place)}
+                        disabled={togglingId === place.id}
+                        className={place.isActive ? styles.deleteBtn : styles.viewBtn}
+                        title={place.isActive ? 'Снять с публикации' : 'Опубликовать'}
+                        aria-label={place.isActive ? 'Снять с публикации' : 'Опубликовать'}
+                      >
+                        {place.isActive ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                      <Link href={`/admin/places/${place.id}`} className={styles.editBtn} title="Редактировать">
+                        <Pencil size={16} />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClick(place.id)}
+                        className={styles.deleteBtn}
+                        title="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    </div>
                   </td>
                 </tr>
               ))}

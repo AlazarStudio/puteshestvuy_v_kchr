@@ -8,6 +8,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import styles from './PlaceModal.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
+import YandexMapPlace from '../YandexMapPlace'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 
 const formatReviewDate = (dateStr) => {
@@ -257,9 +258,37 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
 
                         {/* Карта */}
                         <div className={styles.title}>Карта</div>
-                        <div className={styles.mapImage}>
-                          <img src={place.mapUrl || '/map.png'} alt="Карта" />
-                        </div>
+                        {place.latitude != null && place.longitude != null && Number(place.latitude) && Number(place.longitude) ? (
+                          <YandexMapPlace
+                            latitude={place.latitude}
+                            longitude={place.longitude}
+                            title={place.title}
+                            location={place.location}
+                          />
+                        ) : (
+                          <>
+                            {place.mapUrl && (
+                              <div className={styles.mapImage}>
+                                <img src={place.mapUrl} alt="Карта" />
+                              </div>
+                            )}
+                            {place.location && (
+                              <a
+                                href={`https://yandex.ru/maps/?text=${encodeURIComponent(place.location)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.mapLinkButton}
+                              >
+                                Открыть в Яндекс.Картах
+                              </a>
+                            )}
+                            {!place.mapUrl && !place.location && (
+                              <div className={styles.mapImage}>
+                                <img src="/map.png" alt="Карта" />
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         {/* Аудиогид — встраивание Яндекс.Музыки */}
                         {place?.audioGuide && (

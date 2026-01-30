@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, X, MapPin, Plus, Search } from 'lucide-react';
+import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff } from 'lucide-react';
 import { placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import YandexMapPicker from '@/components/YandexMapPicker';
 import { AdminHeaderRightContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -18,6 +19,8 @@ export default function PlaceEditPage() {
   const [formData, setFormData] = useState({
     title: '',
     location: '',
+    latitude: null,
+    longitude: null,
     description: '',
     shortDescription: '',
     howToGet: '',
@@ -35,6 +38,8 @@ export default function PlaceEditPage() {
   const [addPlacesModalOpen, setAddPlacesModalOpen] = useState(false);
   const [addPlacesSearch, setAddPlacesSearch] = useState('');
   const [addPlacesSelected, setAddPlacesSelected] = useState(new Set());
+  const [locationEditable, setLocationEditable] = useState(false);
+  const [mapVisible, setMapVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -269,15 +274,63 @@ export default function PlaceEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Локация</label>
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            className={styles.formInput}
-            placeholder="Город, район"
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              readOnly={!locationEditable}
+              className={styles.formInput}
+              placeholder="Город, район (подставится по названию места)"
+              style={{ flex: 1, ...(!locationEditable && { backgroundColor: '#f1f5f9', cursor: 'not-allowed' }) }}
+            />
+            <button
+              type="button"
+              onClick={() => setLocationEditable((v) => !v)}
+              className={locationEditable ? styles.viewBtn : styles.editBtn}
+              title={locationEditable ? 'Заблокировать редактирование локации' : 'Разрешить редактирование локации'}
+              aria-label={locationEditable ? 'Заблокировать локацию' : 'Разблокировать локацию'}
+            >
+              {locationEditable ? <Lock size={18} /> : <Unlock size={18} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapVisible((v) => !v)}
+              className={mapVisible ? styles.viewBtn : styles.editBtn}
+              title={mapVisible ? 'Скрыть карту' : 'Показать карту'}
+              aria-label={mapVisible ? 'Скрыть карту' : 'Показать карту'}
+            >
+              {mapVisible ? <EyeOff size={18} /> : <Map size={18} />}
+            </button>
+          </div>
         </div>
+
+        {/* Карта всегда смонтирована, чтобы геокодирование подставляло локацию при вводе названия; блок с картой показывается только при mapVisible */}
+        {mapVisible ? (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Местоположение на карте</label>
+            <YandexMapPicker
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              geocodeQuery={formData.title?.trim() || ''}
+              onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+              onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+              visible={true}
+              height={500}
+            />
+          </div>
+        ) : (
+          <YandexMapPicker
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            geocodeQuery={formData.title?.trim() || ''}
+            onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+            onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+            visible={false}
+            height={500}
+          />
+        )}
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Краткое описание</label>
@@ -312,18 +365,6 @@ export default function PlaceEditPage() {
             className={styles.formTextarea}
             placeholder="Инструкции как добраться до места"
             rows={4}
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Карта (ссылка на изображение карты)</label>
-          <input
-            type="url"
-            name="mapUrl"
-            value={formData.mapUrl}
-            onChange={handleChange}
-            className={styles.formInput}
-            placeholder="https://... или загрузите карту в Изображения и вставьте URL"
           />
         </div>
 
