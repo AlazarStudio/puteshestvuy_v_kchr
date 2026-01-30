@@ -77,11 +77,11 @@ export default function PlacesPage() {
         prev.map((p) => (p.id === place.id ? { ...p, isActive: nextActive } : p))
       );
     } catch (error) {
-      console.error('Ошибка изменения публикации:', error);
+      console.error('Ошибка изменения видимости:', error);
       setAlertModal({
         open: true,
         title: 'Ошибка',
-        message: 'Не удалось изменить статус публикации',
+        message: 'Не удалось изменить видимость',
       });
     } finally {
       setTogglingId(null);
@@ -131,7 +131,7 @@ export default function PlacesPage() {
                 <th>Название</th>
                 <th>Локация</th>
                 <th>Рейтинг</th>
-                <th>Опубликовано</th>
+                <th>Видимость</th>
                 <th>Действия</th>
               </tr>
             </thead>
@@ -169,7 +169,7 @@ export default function PlacesPage() {
                   <td className={styles.tableCell}>
                     <div className={styles.cellInner}>
                       <span className={`${styles.badge} ${styles[place.isActive ? 'active' : 'inactive']}`}>
-                        {place.isActive ? 'Опубликовано' : 'Не опубликовано'}
+                        {place.isActive ? 'Включено' : 'Скрыто'}
                       </span>
                     </div>
                   </td>
@@ -181,8 +181,8 @@ export default function PlacesPage() {
                         onClick={() => handleTogglePublish(place)}
                         disabled={togglingId === place.id}
                         className={place.isActive ? styles.deleteBtn : styles.viewBtn}
-                        title={place.isActive ? 'Снять с публикации' : 'Опубликовать'}
-                        aria-label={place.isActive ? 'Снять с публикации' : 'Опубликовать'}
+                        title={place.isActive ? 'Скрыть' : 'Показать'}
+                        aria-label={place.isActive ? 'Скрыть' : 'Показать'}
                       >
                         {place.isActive ? (
                           <EyeOff size={16} />

@@ -194,7 +194,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                 {/* Контент */}
                 <div className={styles.modalInfo}>
                   <CenterBlock>
-                    <div className={`${styles.contentWrapper} ${nearbyPlaces.length === 0 ? styles.contentWrapperFullWidth : ''}`}>
+                    <div className={styles.contentWrapper}>
                       {/* Левая колонка - основной контент */}
                       <div className={styles.contentMain}>
                         {/* Фотогалерея */}
@@ -429,38 +429,40 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
 
                       </div>
 
-                      {/* Правая колонка - места рядом (только если есть) */}
-                      {nearbyPlaces.length > 0 && (
+                      {/* Правая колонка - места рядом (всегда видна) */}
                       <div className={styles.sidebar}>
                         <div className={styles.sidebarTitle}>Места рядом</div>
-                        <div className={styles.sidebarPlaces}>
-                          {nearbyPlaces.map((nearbyPlace) => (
-                            <div
-                              key={nearbyPlace.id}
-                              className={styles.sidebarPlaceCard}
-                              onClick={() => onOpenPlace?.(nearbyPlace.id)}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenPlace?.(nearbyPlace.id); } }}
-                              aria-label={`Открыть: ${nearbyPlace.title}`}
-                            >
-                              <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
-                              <div className={styles.sidebarPlaceInfo}>
-                                <div className={styles.sidebarPlaceRating}>
-                                  <img src="/star.png" alt="" />
-                                  {nearbyPlace.rating}
-                                </div>
-                                <div className={styles.sidebarPlaceTitle}>{nearbyPlace.title}</div>
-                                <div className={styles.sidebarPlaceLocation}>
-                                  <img src="/place_black.png" alt="" />
-                                  {nearbyPlace.location}
+                        {nearbyPlaces.length > 0 ? (
+                          <div className={styles.sidebarPlaces}>
+                            {nearbyPlaces.map((nearbyPlace) => (
+                              <div
+                                key={nearbyPlace.id}
+                                className={styles.sidebarPlaceCard}
+                                onClick={() => onOpenPlace?.(nearbyPlace.id)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenPlace?.(nearbyPlace.id); } }}
+                                aria-label={`Открыть: ${nearbyPlace.title}`}
+                              >
+                                <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
+                                <div className={styles.sidebarPlaceInfo}>
+                                  <div className={styles.sidebarPlaceRating}>
+                                    <img src="/star.png" alt="" />
+                                    {nearbyPlace.rating}
+                                  </div>
+                                  <div className={styles.sidebarPlaceTitle}>{nearbyPlace.title}</div>
+                                  <div className={styles.sidebarPlaceLocation}>
+                                    <img src="/place_black.png" alt="" />
+                                    {nearbyPlace.location}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={styles.sidebarEmpty}>Места рядом не найдены</p>
+                        )}
                       </div>
-                      )}
                     </div>
                   </CenterBlock>
                 </div>

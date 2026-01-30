@@ -185,6 +185,125 @@
 
 .headerRight {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Переключатель «Видимость» в шапке */
+.visibilityToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.visibilityToggle:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.visibilityToggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.visibilitySwitch {
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.visibilitySwitch::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.visibilityToggle input:checked + .visibilitySwitch {
+  background: #22c55e;
+}
+
+.visibilityToggle input:checked + .visibilitySwitch::after {
+  transform: translateX(20px);
+}
+
+.visibilityLabel {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  user-select: none;
+}
+
+/* Кнопки в шапке (в одном стиле с «Видимость») */
+.headerCancelBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.headerCancelBtn:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.headerSubmitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border: 1px solid #1d4ed8;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.headerSubmitBtn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.headerSubmitBtn:disabled {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+  border-color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .breadcrumb {

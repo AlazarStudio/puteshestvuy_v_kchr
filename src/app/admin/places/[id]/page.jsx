@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff } from 'lucide-react';
+import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff, Eye } from 'lucide-react';
 import { placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -59,18 +59,38 @@ export default function PlaceEditPage() {
   useEffect(() => {
     if (!setHeaderRight) return;
     setHeaderRight(
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, color: '#374151' }}>
-        <input
-          type="checkbox"
-          checked={!!formData.isActive}
-          onChange={() => setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))}
-          style={{ width: 18, height: 18 }}
-        />
-        Опубликовать
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label className={styles.visibilityToggle}>
+          <input
+            type="checkbox"
+            checked={!!formData.isActive}
+            onChange={() => setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))}
+          />
+          <span className={styles.visibilitySwitch} />
+          <span className={styles.visibilityLabel}>
+            {formData.isActive ? (
+              <Eye size={16} style={{ marginRight: 6, flexShrink: 0 }} />
+            ) : (
+              <EyeOff size={16} style={{ marginRight: 6, flexShrink: 0, opacity: 0.7 }} />
+            )}
+            Видимость
+          </span>
+        </label>
+        <Link href="/admin/places" className={styles.headerCancelBtn}>
+          Отмена
+        </Link>
+        <button
+          type="submit"
+          form="place-form"
+          className={styles.headerSubmitBtn}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Сохранение...' : (isNew ? 'Создать место' : 'Сохранить изменения')}
+        </button>
+      </div>
     );
     return () => setHeaderRight(null);
-  }, [setHeaderRight, formData.isActive]);
+  }, [setHeaderRight, formData.isActive, isSaving, isNew]);
 
   const fetchAllPlaces = useCallback(async () => {
     try {
@@ -257,7 +277,7 @@ export default function PlaceEditPage() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.formContainer}>
+      <form id="place-form" onSubmit={handleSubmit} className={styles.formContainer}>
         {error && <div className={styles.error}>{error}</div>}
 
         <div className={styles.formGroup}>
@@ -502,18 +522,6 @@ export default function PlaceEditPage() {
           )}
         </div>
 
-        <div className={styles.formActions}>
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Сохранение...' : (isNew ? 'Создать место' : 'Сохранить изменения')}
-          </button>
-          <Link href="/admin/places" className={styles.cancelBtn}>
-            Отмена
-          </Link>
-        </div>
       </form>
 
       {/* Модалка: выбор мест для «Места рядом» */}

@@ -663,6 +663,14 @@
   margin-bottom: 20px;
 }
 
+.sidebarEmpty {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 16px 0;
+}
+
 .sidebarPlaces {
   display: flex;
   flex-direction: column;
