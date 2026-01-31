@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Upload, X, MapPin, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
+import { Upload, X, MapPin, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
 import { routesAPI, placesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -124,6 +124,9 @@ function getCurrentValueForGroup(formData, groupKey, groupType) {
 function getFormSnapshot(data) {
   const cf = data.customFilters && typeof data.customFilters === 'object' ? data.customFilters : {};
   const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
+  const points = Array.isArray(data.points)
+    ? data.points.map((p) => ({ title: p.title ?? '', description: p.description ?? '' }))
+    : [];
   return {
     title: data.title ?? '',
     description: data.description ?? '',
@@ -140,6 +143,7 @@ function getFormSnapshot(data) {
     isActive: !!data.isActive,
     images: Array.isArray(data.images) ? [...data.images] : [],
     placeIds: Array.isArray(data.placeIds) ? [...data.placeIds] : [],
+    points,
   };
 }
 
@@ -170,7 +174,9 @@ export default function RouteEditPage() {
     isActive: true,
     images: [],
     placeIds: [],
+    points: [],
   });
+  const [activePointIndex, setActivePointIndex] = useState(0);
 
   const [allPlaces, setAllPlaces] = useState([]);
   const [filterOptions, setFilterOptions] = useState({
@@ -276,13 +282,21 @@ export default function RouteEditPage() {
         isFamilyOptions: Array.isArray(raw.isFamilyOptions) ? raw.isFamilyOptions : (response.data.isFamily ? ['Да'] : []),
         hasOvernightOptions: Array.isArray(raw.hasOvernightOptions) ? raw.hasOvernightOptions : (response.data.hasOvernight ? ['Да'] : []),
       };
+      const points = Array.isArray(response.data.points)
+        ? response.data.points
+            .slice()
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((p) => ({ id: p.id, title: p.title ?? '', description: p.description ?? '', image: p.image ?? null, order: p.order ?? 0 }))
+        : [];
       const next = {
         ...response.data,
         placeIds: response.data.placeIds || [],
         customFilters,
+        points,
       };
       setFormData(next);
       savedFormDataRef.current = next;
+      setActivePointIndex(0);
     } catch (error) {
       console.error('Ошибка загрузки маршрута:', error);
       setError('Маршрут не найден');
@@ -430,6 +444,14 @@ export default function RouteEditPage() {
     try {
       const cf = formData.customFilters && typeof formData.customFilters === 'object' ? formData.customFilters : {};
       const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
+      const pointsPayload = Array.isArray(formData.points)
+        ? formData.points.map((p, index) => ({
+            title: p.title ?? '',
+            description: p.description ?? '',
+            image: p.image ?? null,
+            order: index,
+          }))
+        : [];
       const dataToSend = {
         ...formData,
         season: first('seasons') ?? formData.season ?? '',
@@ -440,6 +462,7 @@ export default function RouteEditPage() {
         hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || formData.hasOvernight,
         distance: null,
         elevationGain: null,
+        points: pointsPayload,
         customFilters: {
           distance: first('distanceOptions') ?? cf.distance ?? null,
           elevationGain: first('elevationOptions') ?? cf.elevationGain ?? null,
@@ -468,6 +491,7 @@ export default function RouteEditPage() {
           ...dataToSend,
           images: [...(formData.images || [])],
           placeIds: [...(formData.placeIds || [])],
+          points: formData.points?.length ? formData.points.map((p) => ({ ...p })) : [],
           customFilters: formData.customFilters && typeof formData.customFilters === 'object' ? { ...formData.customFilters } : {},
         };
         setShowToast(true);
@@ -533,14 +557,133 @@ export default function RouteEditPage() {
           />
         </div>
 
+        {/* Описание маршрута — табы (точки маршрута): название + редактор описания */}
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Полное описание</label>
-          <RichTextEditor
-            value={formData.description}
-            onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
-            placeholder="Подробное описание маршрута"
-            minHeight={300}
-          />
+          <label className={styles.formLabel}>Описание маршрута</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Каждый таб — пункт маршрута (день или отрезок). Название таба и описание отображаются на странице маршрута.
+          </p>
+          <div className={styles.routeDescTabs}>
+            <div className={styles.routeDescTabsList} role="tablist">
+              {formData.points.map((point, index) => (
+                <div key={point.id ?? point._tempId ?? `point-${index}`} className={styles.routeDescTabWrap}>
+                  <button
+                    type="button"
+                    className={styles.routeDescTabArrow}
+                    onClick={() => {
+                      if (index > 0) {
+                        setFormData((prev) => {
+                          const next = [...prev.points];
+                          [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                          return { ...prev, points: next };
+                        });
+                        setActivePointIndex((i) => (i === index ? index - 1 : i === index - 1 ? index : i));
+                      }
+                    }}
+                    disabled={index === 0}
+                    aria-label="Сдвинуть влево"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activePointIndex === index}
+                    className={`${styles.routeDescTab} ${activePointIndex === index ? styles.routeDescTabActive : ''}`}
+                    onClick={() => setActivePointIndex(index)}
+                  >
+                    <span className={styles.routeDescTabLabel}>{point.title?.trim() || `Пункт ${index + 1}`}</span>
+                    <span
+                      className={styles.routeDescTabDelete}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFormData((prev) => ({ ...prev, points: prev.points.filter((_, i) => i !== index) }));
+                        setActivePointIndex((i) => Math.min(i, Math.max(0, formData.points.length - 2)));
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.click()}
+                      aria-label="Удалить пункт"
+                      title="Удалить пункт"
+                    >
+                      <X size={14} />
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.routeDescTabArrow}
+                    onClick={() => {
+                      if (index < formData.points.length - 1) {
+                        setFormData((prev) => {
+                          const next = [...prev.points];
+                          [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                          return { ...prev, points: next };
+                        });
+                        setActivePointIndex((i) => (i === index ? index + 1 : i === index + 1 ? index : i));
+                      }
+                    }}
+                    disabled={index === formData.points.length - 1}
+                    aria-label="Сдвинуть вправо"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className={styles.routeDescTabAdd}
+                onClick={() => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    points: [...prev.points, { title: '', description: '', order: prev.points.length, _tempId: `t-${Date.now()}` }],
+                  }));
+                  setActivePointIndex(formData.points.length);
+                }}
+                aria-label="Добавить пункт"
+              >
+                <Plus size={18} /> Добавить пункт
+              </button>
+            </div>
+            {formData.points.length > 0 && activePointIndex >= 0 && activePointIndex < formData.points.length && (
+              <div className={styles.routeDescTabPanel} role="tabpanel">
+                <div className={styles.routeDescTabPanelContent} key={formData.points[activePointIndex]?.id ?? formData.points[activePointIndex]?._tempId ?? activePointIndex}>
+                  <div className={styles.routeDescTabRow}>
+                    <label className={styles.formLabel} style={{ marginBottom: 6 }}>Название таба</label>
+                    <input
+                      type="text"
+                      value={formData.points[activePointIndex].title ?? ''}
+                      onChange={(e) => {
+                        const idx = activePointIndex;
+                        const newTitle = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          points: prev.points.map((p, i) => (i === idx ? { ...p, title: newTitle } : p)),
+                        }));
+                      }}
+                      className={styles.formInput}
+                      placeholder="Например: 1 день или Выезд из Кисловодска"
+                    />
+                  </div>
+                  <div className={styles.routeDescTabRow}>
+                    <label className={styles.formLabel} style={{ marginBottom: 6 }}>Описание</label>
+                    <RichTextEditor
+                      key={`route-point-${activePointIndex}-${formData.points[activePointIndex]?.id ?? formData.points[activePointIndex]?._tempId ?? activePointIndex}`}
+                      value={formData.points[activePointIndex].description ?? ''}
+                      onChange={(value) => {
+                        const idx = activePointIndex;
+                        setFormData((prev) => ({
+                          ...prev,
+                          points: prev.points.map((p, i) => (i === idx ? { ...p, description: value } : p)),
+                        }));
+                      }}
+                      placeholder="Текст описания пункта маршрута"
+                      minHeight={280}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Параметры маршрута: в модалке только выбор группы, значения выбираются здесь (можно несколько) */}
