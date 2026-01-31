@@ -89,6 +89,8 @@ export default function RoutesPage() {
     }
   };
 
+  console.log(routes)
+
   return (
     <div>
       <div className={styles.pageHeader}>
@@ -162,12 +164,17 @@ export default function RoutesPage() {
                   <td className={styles.tableCell}>
                     <div className={styles.cellInner}>{route.title}</div>
                   </td>
+                  {/* Сезон, сложность, расстояние — из полей маршрута; сезон: все из customFilters.seasons, иначе route.season */}
                   <td className={styles.tableCell}>
-                    <div className={styles.cellInner}>{route.season ?? '—'}</div>
+                    <div className={styles.cellInner}>
+                      {Array.isArray(route.customFilters?.seasons) && route.customFilters.seasons.length > 0
+                        ? route.customFilters.seasons.join(', ')
+                        : (route.season ?? '—')}
+                    </div>
                   </td>
                   <td className={styles.tableCell}>
                     <div className={styles.cellInner}>
-                      {route.difficulty != null ? `${route.difficulty}/5` : '—'}
+                      {route.difficulty != null ? `${route.difficulty}` : '—'}
                     </div>
                   </td>
                   <td className={styles.tableCell}>

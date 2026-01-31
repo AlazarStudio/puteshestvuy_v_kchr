@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Upload, X, MapPin, GripVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
-import { routesAPI, placesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
+import { Upload, X, MapPin, GripVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Search } from 'lucide-react';
+import { routesAPI, placesAPI, servicesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
+import YandexMapRoute from '@/components/YandexMapRoute';
 import ConfirmModal from '../../components/ConfirmModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
@@ -122,9 +123,34 @@ function getCurrentValueForGroup(formData, groupKey, groupType) {
   return formData.customFilters?.[groupKey] || [];
 }
 
+/** Парсит whatToBring (JSON-строка массива { iconType, icon, text }) в массив объектов для формы. */
+function parseWhatToBring(str) {
+  if (!str || typeof str !== 'string') return [];
+  try {
+    const parsed = JSON.parse(str);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((i) => ({
+      iconType: i?.iconType ?? 'mui',
+      icon: i?.icon ?? '',
+      text: i?.text ?? '',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Значение сложности из customFilters: массив [0] или строка (например "1" или "1/10"). */
+function getDifficultyFromFilters(cf) {
+  const v = cf?.difficultyLevels;
+  if (Array.isArray(v) && v[0] != null) return v[0];
+  if (typeof v === 'string' && v.trim() !== '') return v.trim();
+  return null;
+}
+
 function getFormSnapshot(data) {
   const cf = data.customFilters && typeof data.customFilters === 'object' ? data.customFilters : {};
   const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
+  const difficultyRaw = getDifficultyFromFilters(cf) ?? data.difficulty;
   const points = Array.isArray(data.points)
     ? data.points.map((p) => ({ title: p.title ?? '', description: p.description ?? '' }))
     : [];
@@ -134,7 +160,7 @@ function getFormSnapshot(data) {
     shortDescription: data.shortDescription ?? '',
     season: first('seasons') ?? data.season ?? '',
     duration: first('durationOptions') ?? data.duration ?? '',
-    difficulty: Number(first('difficultyLevels') || data.difficulty) || 3,
+    difficulty: (() => { const n = parseInt(difficultyRaw, 10); return Number.isFinite(n) ? n : 3; })(),
     transport: first('transport') ?? data.transport ?? '',
     customFilters: cf,
     isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || !!data.isFamily,
@@ -147,6 +173,9 @@ function getFormSnapshot(data) {
     isActive: !!data.isActive,
     images: Array.isArray(data.images) ? [...data.images] : [],
     placeIds: Array.isArray(data.placeIds) ? [...data.placeIds] : [],
+    nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? [...data.nearbyPlaceIds] : [],
+    guideIds: Array.isArray(data.guideIds) ? [...data.guideIds] : [],
+    similarRouteIds: Array.isArray(data.similarRouteIds) ? [...data.similarRouteIds] : [],
     points,
   };
 }
@@ -179,11 +208,16 @@ export default function RouteEditPage() {
     isActive: true,
     images: [],
     placeIds: [],
+    nearbyPlaceIds: [],
+    guideIds: [],
+    similarRouteIds: [],
     points: [],
   });
   const [activePointIndex, setActivePointIndex] = useState(0);
 
   const [allPlaces, setAllPlaces] = useState([]);
+  const [allGuides, setAllGuides] = useState([]);
+  const [allRoutes, setAllRoutes] = useState([]);
   const [filterOptions, setFilterOptions] = useState({
     seasons: [],
     transport: [],
@@ -199,6 +233,13 @@ export default function RouteEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [placesSearch, setPlacesSearch] = useState('');
+  const [guidesSearch, setGuidesSearch] = useState('');
+  const [addNearbyPlacesModalOpen, setAddNearbyPlacesModalOpen] = useState(false);
+  const [addNearbyPlacesSearch, setAddNearbyPlacesSearch] = useState('');
+  const [addNearbyPlacesSelected, setAddNearbyPlacesSelected] = useState(new Set());
+  const [addSimilarRoutesModalOpen, setAddSimilarRoutesModalOpen] = useState(false);
+  const [addSimilarRoutesSearch, setAddSimilarRoutesSearch] = useState('');
+  const [addSimilarRoutesSelected, setAddSimilarRoutesSelected] = useState(new Set());
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [addFilterModalOpen, setAddFilterModalOpen] = useState(false);
@@ -207,11 +248,13 @@ export default function RouteEditPage() {
   const [whatToBringIconPickerIndex, setWhatToBringIconPickerIndex] = useState(null);
   const [whatToBringIconGroup, setWhatToBringIconGroup] = useState('all');
   const savedFormDataRef = useRef(null);
+  /** Снимок формы на момент последнего сохранения — для точного сравнения isDirty. */
+  const savedSnapshotRef = useRef(null);
 
   const isDirty = useMemo(() => {
     if (isNew) return false;
-    if (!savedFormDataRef.current) return false;
-    return !formSnapshotsEqual(formData, savedFormDataRef.current);
+    if (savedSnapshotRef.current == null) return false;
+    return JSON.stringify(getFormSnapshot(formData)) !== JSON.stringify(savedSnapshotRef.current);
   }, [isNew, formData]);
 
   const goToList = useCallback(() => {
@@ -242,6 +285,25 @@ export default function RouteEditPage() {
     }
   }, []);
 
+  const fetchGuides = useCallback(async () => {
+    try {
+      const response = await servicesAPI.getAll({ limit: 500 });
+      const items = response.data.items || [];
+      setAllGuides(items.filter((s) => (s.category || '').toLowerCase() === 'гид'));
+    } catch (error) {
+      console.error('Ошибка загрузки гидов:', error);
+    }
+  }, []);
+
+  const fetchRoutes = useCallback(async () => {
+    try {
+      const response = await routesAPI.getAll({ limit: 500 });
+      setAllRoutes(response.data.items || []);
+    } catch (error) {
+      console.error('Ошибка загрузки маршрутов:', error);
+    }
+  }, []);
+
   const fetchFilterOptions = useCallback(async () => {
     try {
       const res = await routeFiltersAPI.get();
@@ -265,8 +327,10 @@ export default function RouteEditPage() {
 
   useEffect(() => {
     fetchPlaces();
+    fetchGuides();
+    fetchRoutes();
     fetchFilterOptions();
-  }, [fetchPlaces, fetchFilterOptions]);
+  }, [fetchPlaces, fetchGuides, fetchRoutes, fetchFilterOptions]);
 
   useEffect(() => {
     if (isNew) return;
@@ -278,16 +342,20 @@ export default function RouteEditPage() {
     try {
       const response = await routesAPI.getById(params.id);
       const raw = response.data.customFilters && typeof response.data.customFilters === 'object' ? response.data.customFilters : {};
+      const r = response.data;
+      // Единый источник: плоские поля маршрута (difficulty, distance, elevationGain). customFilters заполняем из них для отображения в форме.
       const customFilters = {
         ...raw,
-        seasons: Array.isArray(raw.seasons) ? raw.seasons : (response.data.season ? [response.data.season] : []),
-        transport: Array.isArray(raw.transport) ? raw.transport : (response.data.transport ? [response.data.transport] : []),
-        durationOptions: Array.isArray(raw.durationOptions) ? raw.durationOptions : (response.data.duration ? [response.data.duration] : []),
-        difficultyLevels: Array.isArray(raw.difficultyLevels) ? raw.difficultyLevels : (response.data.difficulty != null ? [String(response.data.difficulty)] : []),
-        distanceOptions: Array.isArray(raw.distanceOptions) ? raw.distanceOptions : (raw.distance ? [raw.distance] : []),
-        elevationOptions: Array.isArray(raw.elevationOptions) ? raw.elevationOptions : (raw.elevationGain ? [raw.elevationGain] : []),
-        isFamilyOptions: Array.isArray(raw.isFamilyOptions) ? raw.isFamilyOptions : (response.data.isFamily ? ['Да'] : []),
-        hasOvernightOptions: Array.isArray(raw.hasOvernightOptions) ? raw.hasOvernightOptions : (response.data.hasOvernight ? ['Да'] : []),
+        seasons: Array.isArray(raw.seasons) ? raw.seasons : (r.season ? [r.season] : []),
+        transport: Array.isArray(raw.transport) ? raw.transport : (r.transport ? [r.transport] : []),
+        durationOptions: Array.isArray(raw.durationOptions) ? raw.durationOptions : (r.duration ? [r.duration] : []),
+        difficultyLevels: Array.isArray(raw.difficultyLevels) ? raw.difficultyLevels : (r.difficulty != null ? [String(r.difficulty)] : []),
+        distanceOptions: Array.isArray(raw.distanceOptions) ? raw.distanceOptions : (r.distance != null && r.distance !== '' ? [r.distance] : []),
+        elevationOptions: Array.isArray(raw.elevationOptions) ? raw.elevationOptions : (r.elevationGain != null && r.elevationGain !== '' ? [r.elevationGain] : []),
+        isFamilyOptions: Array.isArray(raw.isFamilyOptions) ? raw.isFamilyOptions : (r.isFamily ? ['Да'] : []),
+        hasOvernightOptions: Array.isArray(raw.hasOvernightOptions) ? raw.hasOvernightOptions : (r.hasOvernight ? ['Да'] : []),
+        distance: r.distance != null && r.distance !== '' ? (typeof r.distance === 'number' ? `${r.distance} км` : String(r.distance)) : (raw.distance ?? ''),
+        elevationGain: r.elevationGain != null && r.elevationGain !== '' ? (typeof r.elevationGain === 'number' ? `${r.elevationGain} м` : String(r.elevationGain)) : (raw.elevationGain ?? ''),
       };
       const points = Array.isArray(response.data.points)
         ? response.data.points
@@ -299,16 +367,22 @@ export default function RouteEditPage() {
       const next = {
         ...response.data,
         placeIds: response.data.placeIds || [],
+        nearbyPlaceIds: response.data.nearbyPlaceIds || [],
+        guideIds: response.data.guideIds || [],
+        similarRouteIds: response.data.similarRouteIds || [],
         customFilters,
         points,
         whatToBringItems,
       };
       setFormData(next);
       savedFormDataRef.current = next;
+      savedSnapshotRef.current = getFormSnapshot(next);
       setActivePointIndex(0);
     } catch (error) {
       console.error('Ошибка загрузки маршрута:', error);
-      setError('Маршрут не найден');
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
+      setError(status === 404 ? 'Маршрут не найден' : message || 'Ошибка загрузки маршрута');
     } finally {
       setIsLoading(false);
     }
@@ -449,11 +523,125 @@ export default function RouteEditPage() {
 
   const getPlaceById = (id) => allPlaces.find((p) => p.id === id);
 
+  // Локации мест маршрута (для фильтра «места рядом с маршрутом»)
+  const routeLocations = useMemo(() => {
+    const locs = new Set();
+    formData.placeIds.forEach((id) => {
+      const place = getPlaceById(id);
+      if (place?.location && String(place.location).trim()) {
+        locs.add(String(place.location).trim().toLowerCase());
+      }
+    });
+    return locs;
+  }, [formData.placeIds, allPlaces]);
+
   const filteredPlaces = allPlaces.filter(
     (place) =>
       !formData.placeIds.includes(place.id) &&
       place.title.toLowerCase().includes(placesSearch.toLowerCase())
   );
+
+  const addGuide = (guideId) => {
+    if (!formData.guideIds.includes(guideId)) {
+      setFormData((prev) => ({
+        ...prev,
+        guideIds: [...prev.guideIds, guideId],
+      }));
+    }
+  };
+
+  const removeGuide = (guideId) => {
+    setFormData((prev) => ({
+      ...prev,
+      guideIds: prev.guideIds.filter((id) => id !== guideId),
+    }));
+  };
+
+  const getGuideById = (id) => allGuides.find((g) => g.id === id);
+
+  const filteredGuides = allGuides.filter(
+    (guide) =>
+      !formData.guideIds.includes(guide.id) &&
+      (guide.title || '').toLowerCase().includes(guidesSearch.toLowerCase())
+  );
+
+  const removeNearbyPlace = (placeId) => {
+    setFormData((prev) => ({
+      ...prev,
+      nearbyPlaceIds: (prev.nearbyPlaceIds || []).filter((id) => id !== placeId),
+    }));
+  };
+
+  const openAddNearbyPlacesModal = () => {
+    setAddNearbyPlacesSearch('');
+    setAddNearbyPlacesSelected(new Set());
+    setAddNearbyPlacesModalOpen(true);
+  };
+
+  const toggleAddNearbyPlaceSelection = (placeId) => {
+    setAddNearbyPlacesSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(placeId)) next.delete(placeId);
+      else next.add(placeId);
+      return next;
+    });
+  };
+
+  const addSelectedNearbyPlaces = () => {
+    const ids = Array.from(addNearbyPlacesSelected);
+    setFormData((prev) => ({
+      ...prev,
+      nearbyPlaceIds: [...new Set([...(prev.nearbyPlaceIds || []), ...ids])],
+    }));
+    setAddNearbyPlacesModalOpen(false);
+  };
+
+  const getRouteById = (id) => allRoutes.find((r) => r.id === id);
+
+  // Похожесть маршрута = число общих мест с текущим маршрутом (для сортировки в модалке)
+  const routesWithSimilarity = useMemo(() => {
+    const currentPlaceSet = new Set(formData.placeIds || []);
+    const excludeIds = new Set([...(formData.similarRouteIds || []), params.id].filter(Boolean));
+    return allRoutes
+      .filter((r) => r.id && !excludeIds.has(r.id))
+      .map((r) => {
+        const otherPlaceIds = Array.isArray(r.placeIds) ? r.placeIds : [];
+        const sharedCount = otherPlaceIds.filter((id) => currentPlaceSet.has(id)).length;
+        return { route: r, sharedPlaceCount: sharedCount };
+      })
+      .sort((a, b) => b.sharedPlaceCount - a.sharedPlaceCount);
+  }, [allRoutes, formData.placeIds, formData.similarRouteIds, params.id]);
+
+  const removeSimilarRoute = (routeId) => {
+    setFormData((prev) => ({
+      ...prev,
+      similarRouteIds: (prev.similarRouteIds || []).filter((id) => id !== routeId),
+    }));
+  };
+
+  const openAddSimilarRoutesModal = () => {
+    setAddSimilarRoutesSearch('');
+    setAddSimilarRoutesSelected(new Set());
+    setAddSimilarRoutesModalOpen(true);
+  };
+
+  const toggleAddSimilarRouteSelection = (routeId) => {
+    setAddSimilarRoutesSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(routeId)) next.delete(routeId);
+      else next.add(routeId);
+      return next;
+    });
+  };
+
+  const addSelectedSimilarRoutes = () => {
+    const ids = Array.from(addSimilarRoutesSelected);
+    setFormData((prev) => ({
+      ...prev,
+      similarRouteIds: [...new Set([...(prev.similarRouteIds || []), ...ids])],
+    }));
+    setAddSimilarRoutesModalOpen(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -463,6 +651,22 @@ export default function RouteEditPage() {
     try {
       const cf = formData.customFilters && typeof formData.customFilters === 'object' ? formData.customFilters : {};
       const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
+      // Сложность: только из customFilters.difficultyLevels или formData.difficulty (одно место)
+      const difficultyRaw = getDifficultyFromFilters(cf) ?? formData.difficulty ?? 3;
+      const difficultyNum = (() => { const n = parseInt(difficultyRaw, 10); return Number.isFinite(n) ? n : 3; })();
+      // Расстояние: из поля ввода customFilters.distance, иначе из distanceOptions/формы
+      const distanceFromForm = cf.distance ?? first('distanceOptions') ?? formData.distance;
+      const distanceNum = (() => {
+        if (distanceFromForm == null || distanceFromForm === '') return null;
+        const num = typeof distanceFromForm === 'number' ? distanceFromForm : parseFloat(String(distanceFromForm).replace(/\s*км.*/i, '').trim());
+        return Number.isFinite(num) ? num : null;
+      })();
+      const elevationFromForm = cf.elevationGain ?? first('elevationOptions') ?? formData.elevationGain;
+      const elevationNum = (() => {
+        if (elevationFromForm == null || elevationFromForm === '') return null;
+        const num = typeof elevationFromForm === 'number' ? elevationFromForm : parseFloat(String(elevationFromForm).replace(/\s*м.*/i, '').trim());
+        return Number.isFinite(num) ? num : null;
+      })();
       const pointsPayload = Array.isArray(formData.points)
         ? formData.points.map((p, index) => ({
             title: p.title ?? '',
@@ -471,27 +675,43 @@ export default function RouteEditPage() {
             order: index,
           }))
         : [];
+      // customFilters для API: те же значения, что уходят в плоских полях (difficulty, distance, elevationGain)
+      const customFiltersPayload = {
+        ...cf,
+        seasons: Array.isArray(cf.seasons) ? cf.seasons : (formData.season ? [formData.season] : []),
+        transport: Array.isArray(cf.transport) ? cf.transport : (formData.transport ? [formData.transport] : []),
+        durationOptions: Array.isArray(cf.durationOptions) ? cf.durationOptions : (formData.duration ? [formData.duration] : []),
+        difficultyLevels: [String(difficultyNum)],
+        distanceOptions: distanceNum != null ? [distanceNum] : (Array.isArray(cf.distanceOptions) ? cf.distanceOptions : []),
+        elevationOptions: elevationNum != null ? [elevationNum] : (Array.isArray(cf.elevationOptions) ? cf.elevationOptions : []),
+        isFamilyOptions: Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : (formData.isFamily ? ['Да'] : []),
+        hasOvernightOptions: Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : (formData.hasOvernight ? ['Да'] : []),
+        distance: distanceNum != null ? distanceNum : (cf.distance ?? null),
+        elevationGain: elevationNum != null ? elevationNum : (cf.elevationGain ?? null),
+      };
       const dataToSend = {
-        ...formData,
+        title: formData.title ?? '',
+        shortDescription: formData.shortDescription ?? null,
+        description: formData.description ?? null,
         season: first('seasons') ?? formData.season ?? '',
         transport: first('transport') ?? formData.transport ?? '',
         duration: first('durationOptions') ?? formData.duration ?? '',
-        difficulty: parseInt(first('difficultyLevels') || formData.difficulty, 10) || 3,
+        difficulty: difficultyNum,
         isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || formData.isFamily,
         hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || formData.hasOvernight,
-        distance: null,
-        elevationGain: null,
-        points: pointsPayload,
+        distance: distanceNum,
+        elevationGain: elevationNum,
         whatToBring: JSON.stringify(formData.whatToBringItems ?? []),
-        customFilters: {
-          distance: first('distanceOptions') ?? cf.distance ?? null,
-          elevationGain: first('elevationOptions') ?? cf.elevationGain ?? null,
-          ...Object.fromEntries(
-            Object.entries(cf).filter(
-              ([k]) => !['seasons', 'transport', 'durationOptions', 'difficultyLevels', 'distanceOptions', 'elevationOptions', 'isFamilyOptions', 'hasOvernightOptions'].includes(k)
-            )
-          ),
-        },
+        importantInfo: formData.importantInfo ?? null,
+        mapUrl: formData.mapUrl ?? null,
+        isActive: formData.isActive !== false,
+        images: Array.isArray(formData.images) ? formData.images : [],
+        placeIds: Array.isArray(formData.placeIds) ? formData.placeIds : [],
+        nearbyPlaceIds: Array.isArray(formData.nearbyPlaceIds) ? formData.nearbyPlaceIds : [],
+        guideIds: Array.isArray(formData.guideIds) ? formData.guideIds : [],
+        similarRouteIds: Array.isArray(formData.similarRouteIds) ? formData.similarRouteIds : [],
+        customFilters: customFiltersPayload,
+        points: pointsPayload,
       };
 
       if (isNew) {
@@ -505,22 +725,58 @@ export default function RouteEditPage() {
           router.push('/admin/routes');
         }
       } else {
-        await routesAPI.update(params.id, dataToSend);
-        savedFormDataRef.current = {
-          ...formData,
-          ...dataToSend,
-          images: [...(formData.images || [])],
-          placeIds: [...(formData.placeIds || [])],
-          points: formData.points?.length ? formData.points.map((p) => ({ ...p })) : [],
-          whatToBringItems: formData.whatToBringItems?.length ? formData.whatToBringItems.map((i) => ({ ...i })) : [],
-          customFilters: formData.customFilters && typeof formData.customFilters === 'object' ? { ...formData.customFilters } : {},
-        };
+        const res = await routesAPI.update(params.id, dataToSend);
+        let updated = res?.data;
+        if (!updated && res?.status === 200) {
+          const refetch = await routesAPI.getById(params.id);
+          updated = refetch?.data;
+        }
+        if (updated) {
+          const raw = updated.customFilters && typeof updated.customFilters === 'object' ? updated.customFilters : {};
+          // После сохранения заполняем customFilters из плоских полей ответа (то же правило, что при загрузке)
+          const customFilters = {
+            ...raw,
+            seasons: Array.isArray(raw.seasons) ? raw.seasons : (updated.season ? [updated.season] : []),
+            transport: Array.isArray(raw.transport) ? raw.transport : (updated.transport ? [updated.transport] : []),
+            durationOptions: Array.isArray(raw.durationOptions) ? raw.durationOptions : (updated.duration ? [updated.duration] : []),
+            difficultyLevels: Array.isArray(raw.difficultyLevels) ? raw.difficultyLevels : (updated.difficulty != null ? [String(updated.difficulty)] : []),
+            distanceOptions: Array.isArray(raw.distanceOptions) ? raw.distanceOptions : (updated.distance != null && updated.distance !== '' ? [updated.distance] : []),
+            elevationOptions: Array.isArray(raw.elevationOptions) ? raw.elevationOptions : (updated.elevationGain != null && updated.elevationGain !== '' ? [updated.elevationGain] : []),
+            isFamilyOptions: Array.isArray(raw.isFamilyOptions) ? raw.isFamilyOptions : (updated.isFamily ? ['Да'] : []),
+            hasOvernightOptions: Array.isArray(raw.hasOvernightOptions) ? raw.hasOvernightOptions : (updated.hasOvernight ? ['Да'] : []),
+            distance: updated.distance != null && updated.distance !== '' ? (typeof updated.distance === 'number' ? `${updated.distance} км` : String(updated.distance)) : (raw.distance ?? ''),
+            elevationGain: updated.elevationGain != null && updated.elevationGain !== '' ? (typeof updated.elevationGain === 'number' ? `${updated.elevationGain} м` : String(updated.elevationGain)) : (raw.elevationGain ?? ''),
+          };
+          const points = Array.isArray(updated.points)
+            ? updated.points.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((p) => ({ id: p.id, title: p.title ?? '', description: p.description ?? '', image: p.image ?? null, order: p.order ?? 0 }))
+            : [];
+          const whatToBringItems = parseWhatToBring(updated.whatToBring ?? '');
+          const next = {
+            ...updated,
+            placeIds: Array.isArray(updated.placeIds) ? updated.placeIds : [],
+            nearbyPlaceIds: Array.isArray(updated.nearbyPlaceIds) ? updated.nearbyPlaceIds : [],
+            guideIds: Array.isArray(updated.guideIds) ? updated.guideIds : [],
+            similarRouteIds: Array.isArray(updated.similarRouteIds) ? updated.similarRouteIds : [],
+            customFilters,
+            points,
+            whatToBringItems,
+          };
+          setFormData(next);
+          savedFormDataRef.current = next;
+          savedSnapshotRef.current = getFormSnapshot(next);
+        } else {
+          savedFormDataRef.current = { ...formData };
+          savedSnapshotRef.current = getFormSnapshot(formData);
+        }
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      setError(error.response?.data?.message || 'Ошибка сохранения маршрута');
+      const status = error.response?.status;
+      const msg = error.response?.data?.message ?? error.message ?? 'Ошибка сохранения маршрута';
+      const fullMsg = status ? `[${status}] ${msg}` : msg;
+      setError(fullMsg);
     } finally {
       setIsSaving(false);
     }
@@ -855,7 +1111,7 @@ export default function RouteEditPage() {
         {/* Секция выбора мест маршрута — тот же стиль, что и «Места рядом» в форме места */}
         <div className={styles.formGroup} style={{ marginTop: 30 }}>
           <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <MapPin size={18} />
+            {/* <MapPin size={18} /> */}
             <span>Места на маршруте ({formData.placeIds.length})</span>
           </label>
 
@@ -990,6 +1246,202 @@ export default function RouteEditPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Карта маршрута: точки мест в порядке следования и маршрут между ними */}
+        <div className={styles.formGroup} style={{ marginTop: 24 }}>
+          <label className={styles.formLabel}>Карта маршрута</label>
+          <YandexMapRoute
+            places={formData.placeIds
+              .map((id) => getPlaceById(id))
+              .filter(Boolean)
+              .map((p) => ({
+                id: p.id,
+                title: p.title,
+                latitude: p.latitude,
+                longitude: p.longitude,
+              }))}
+            height={400}
+          />
+        </div>
+
+        {/* Места рядом с маршрутом — места с той же локацией, что и места маршрута (как в форме места) */}
+        <div className={styles.formGroup} style={{ marginTop: 30 }}>
+          <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <MapPin size={18} />
+            <span>Места рядом с маршрутом</span>
+          </label>
+          <p className={styles.formListHint} style={{ marginBottom: 12 }}>
+            Добавляйте места, у которых локация совпадает с локацией любого места из маршрута. В списке для добавления показываются только такие места.
+          </p>
+          <button type="button" onClick={openAddNearbyPlacesModal} className={styles.addBtn} style={{ marginBottom: 12 }}>
+            <Plus size={18} /> Добавить места
+          </button>
+          {(formData.nearbyPlaceIds || []).length > 0 && (
+            <div className={styles.formCardList}>
+              {(formData.nearbyPlaceIds || []).map((placeId) => {
+                const place = getPlaceById(placeId) || { id: placeId, title: '…', location: '' };
+                return (
+                  <div key={placeId} className={styles.formCardRow}>
+                    {place.image && (
+                      <img src={getImageUrl(place.image)} alt="" />
+                    )}
+                    <div className={styles.formCardRowContent}>
+                      <div className={styles.formCardRowTitle}>{place.title}</div>
+                      {place.location && (
+                        <div className={styles.formCardRowSub}>{place.location}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeNearbyPlace(placeId)}
+                      className={styles.deleteBtn}
+                      title="Удалить"
+                      aria-label="Удалить"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Помогут покорить маршрут — выбор гидов с поиском */}
+        <div className={styles.formGroup} style={{ marginTop: 30 }}>
+          <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Помогут покорить маршрут ({formData.guideIds.length})</span>
+          </label>
+
+          {formData.guideIds.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div className={styles.formCardList}>
+                {formData.guideIds.map((guideId) => {
+                  const guide = getGuideById(guideId);
+                  if (!guide) return null;
+                  return (
+                    <div key={guideId} className={styles.formCardRow}>
+                      {(guide.image || guide.images?.[0]) ? (
+                        <img src={getImageUrl(guide.image || guide.images[0])} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#eee', flexShrink: 0 }} />
+                      )}
+                      <div className={styles.formCardRowContent} style={{ flex: 1 }}>
+                        <div className={styles.formCardRowTitle}>{guide.title}</div>
+                        {(guide.rating != null || guide.reviewsCount != null) && (
+                          <div className={styles.formCardRowSub}>
+                            {guide.rating != null && `${Number(guide.rating).toFixed(1)}`}
+                            {guide.reviewsCount != null && guide.reviewsCount > 0 && ` · ${guide.reviewsCount} отзывов`}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeGuide(guideId)}
+                        className={styles.deleteBtn}
+                        title="Удалить"
+                        aria-label="Удалить"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.formAddPlaceWrap}>
+            <div className={styles.formAddPlaceSearch}>
+              <input
+                type="text"
+                placeholder="Поиск гидов для добавления..."
+                value={guidesSearch}
+                onChange={(e) => setGuidesSearch(e.target.value)}
+                className={styles.formInput}
+                aria-label="Поиск гидов"
+              />
+            </div>
+            {filteredGuides.length > 0 ? (
+              <div className={styles.formAddPlaceList}>
+                {filteredGuides.map((guide) => (
+                  <div
+                    key={guide.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => addGuide(guide.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && addGuide(guide.id)}
+                    className={styles.formAddPlaceItem}
+                  >
+                    {(guide.image || guide.images?.[0]) ? (
+                      <img src={getImageUrl(guide.image || guide.images[0])} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#eee', flexShrink: 0 }} />
+                    )}
+                    <div className={styles.formAddPlaceItemTitle}>
+                      <div>{guide.title}</div>
+                      {(guide.rating != null || guide.reviewsCount != null) && (
+                        <div className={styles.formAddPlaceItemSub}>
+                          {guide.rating != null && `★ ${Number(guide.rating).toFixed(1)}`}
+                          {guide.reviewsCount != null && guide.reviewsCount > 0 && ` · ${guide.reviewsCount} отзывов`}
+                        </div>
+                      )}
+                    </div>
+                    <span className={styles.formAddPlaceLabel}>+ Добавить</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.formEmptyHint}>
+                {allGuides.length === 0
+                  ? 'Нет гидов. Добавьте услуги с категорией «Гид» в разделе Услуги.'
+                  : 'Все гиды уже добавлены или нет совпадений по поиску'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Похожие маршруты — чем больше общих мест, тем выше в списке */}
+        <div className={styles.formGroup} style={{ marginTop: 30 }}>
+          <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Похожие маршруты</span>
+          </label>
+          <p className={styles.formListHint} style={{ marginBottom: 12 }}>
+            Чем больше мест совпадает у двух маршрутов, тем они похожее. В списке для добавления маршруты отсортированы по количеству общих мест.
+          </p>
+          <button type="button" onClick={openAddSimilarRoutesModal} className={styles.addBtn} style={{ marginBottom: 12 }}>
+            <Plus size={18} /> Добавить маршруты
+          </button>
+          {(formData.similarRouteIds || []).length > 0 && (
+            <div className={styles.formCardList}>
+              {(formData.similarRouteIds || []).map((routeId) => {
+                const route = getRouteById(routeId) || { id: routeId, title: '…' };
+                return (
+                  <div key={routeId} className={styles.formCardRow}>
+                    {route.images?.[0] && (
+                      <img src={getImageUrl(route.images[0])} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+                    )}
+                    <div className={styles.formCardRowContent}>
+                      <div className={styles.formCardRowTitle}>{route.title}</div>
+                      {route.shortDescription && (
+                        <div className={styles.formCardRowSub}>{route.shortDescription}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSimilarRoute(routeId)}
+                      className={styles.deleteBtn}
+                      title="Удалить"
+                      aria-label="Удалить"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>
@@ -1260,6 +1712,231 @@ export default function RouteEditPage() {
         </div>
 
       </form>
+
+      {/* Модалка: выбор мест для «Места рядом с маршрутом» — только места с совпадающей локацией */}
+      {addNearbyPlacesModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={(e) => e.target === e.currentTarget && setAddNearbyPlacesModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-nearby-places-title"
+        >
+          <div
+            className={styles.modalDialog}
+            style={{ maxWidth: 480 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h2 id="add-nearby-places-title" className={styles.modalTitle}>Добавить места рядом с маршрутом</h2>
+              <button
+                type="button"
+                onClick={() => setAddNearbyPlacesModalOpen(false)}
+                className={styles.modalClose}
+                aria-label="Закрыть"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p className={styles.formListHint} style={{ marginBottom: 12 }}>
+                Показаны только места, у которых локация совпадает с локацией одного из мест маршрута.
+              </p>
+              <div style={{ position: 'relative', marginBottom: 12 }}>
+                <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                <input
+                  type="text"
+                  value={addNearbyPlacesSearch}
+                  onChange={(e) => setAddNearbyPlacesSearch(e.target.value)}
+                  className={styles.formInput}
+                  placeholder="Поиск по названию или локации..."
+                  style={{ paddingLeft: 40 }}
+                />
+              </div>
+              {(() => {
+                const alreadyIds = new Set([...(formData.placeIds || []), ...(formData.nearbyPlaceIds || [])]);
+                const searchLower = (addNearbyPlacesSearch || '').trim().toLowerCase();
+                const list = allPlaces.filter(
+                  (p) => !alreadyIds.has(p.id) &&
+                    (p.location || '').trim() &&
+                    routeLocations.has((p.location || '').trim().toLowerCase())
+                ).filter(
+                  (p) =>
+                    !searchLower ||
+                    (p.title || '').toLowerCase().includes(searchLower) ||
+                    (p.location || '').toLowerCase().includes(searchLower)
+                );
+                return (
+                  <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                    {list.length === 0 ? (
+                      <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>
+                        {addNearbyPlacesSearch ? 'Ничего не найдено' : routeLocations.size === 0 ? 'Сначала добавьте места на маршрут и укажите им локацию' : 'Нет мест с такой же локацией'}
+                      </div>
+                    ) : (
+                      list.map((p) => (
+                        <label
+                          key={p.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f1f5f9',
+                            background: addNearbyPlacesSelected.has(p.id) ? '#eff6ff' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={addNearbyPlacesSelected.has(p.id)}
+                            onChange={() => toggleAddNearbyPlaceSelection(p.id)}
+                          />
+                          {p.image && (
+                            <img
+                              src={getImageUrl(p.image)}
+                              alt=""
+                              style={{ width: 40, height: 30, objectFit: 'cover', borderRadius: 6 }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{p.title}</div>
+                            {p.location && (
+                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{p.location}</div>
+                            )}
+                          </div>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className={styles.modalFooter}>
+              <button type="button" onClick={() => setAddNearbyPlacesModalOpen(false)} className={styles.cancelBtn}>
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={addSelectedNearbyPlaces}
+                disabled={addNearbyPlacesSelected.size === 0}
+                className={styles.submitBtn}
+              >
+                Добавить выбранные ({addNearbyPlacesSelected.size})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модалка: выбор похожих маршрутов — отсортированы по числу общих мест */}
+      {addSimilarRoutesModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={(e) => e.target === e.currentTarget && setAddSimilarRoutesModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-similar-routes-title"
+        >
+          <div
+            className={styles.modalDialog}
+            style={{ maxWidth: 520 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h2 id="add-similar-routes-title" className={styles.modalTitle}>Добавить похожие маршруты</h2>
+              <button
+                type="button"
+                onClick={() => setAddSimilarRoutesModalOpen(false)}
+                className={styles.modalClose}
+                aria-label="Закрыть"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p className={styles.formListHint} style={{ marginBottom: 12 }}>
+                Маршруты отсортированы по похожести: чем больше общих мест с текущим маршрутом, тем выше в списке.
+              </p>
+              <div style={{ position: 'relative', marginBottom: 12 }}>
+                <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                <input
+                  type="text"
+                  value={addSimilarRoutesSearch}
+                  onChange={(e) => setAddSimilarRoutesSearch(e.target.value)}
+                  className={styles.formInput}
+                  placeholder="Поиск по названию..."
+                  style={{ paddingLeft: 40 }}
+                />
+              </div>
+              {(() => {
+                const searchLower = (addSimilarRoutesSearch || '').trim().toLowerCase();
+                const list = routesWithSimilarity
+                  .filter(({ route }) => !searchLower || (route.title || '').toLowerCase().includes(searchLower))
+                  .map(({ route, sharedPlaceCount }) => ({ route, sharedPlaceCount }));
+                return (
+                  <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                    {list.length === 0 ? (
+                      <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>
+                        {addSimilarRoutesSearch ? 'Ничего не найдено' : 'Нет других маршрутов для добавления'}
+                      </div>
+                    ) : (
+                      list.map(({ route, sharedPlaceCount }) => (
+                        <label
+                          key={route.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f1f5f9',
+                            background: addSimilarRoutesSelected.has(route.id) ? '#eff6ff' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={addSimilarRoutesSelected.has(route.id)}
+                            onChange={() => toggleAddSimilarRouteSelection(route.id)}
+                          />
+                          {route.images?.[0] && (
+                            <img
+                              src={getImageUrl(route.images[0])}
+                              alt=""
+                              style={{ width: 40, height: 30, objectFit: 'cover', borderRadius: 6 }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{route.title}</div>
+                            {route.shortDescription && (
+                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{route.shortDescription}</div>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }} title="Общих мест с маршрутом">
+                            {sharedPlaceCount} общих мест
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className={styles.modalFooter}>
+              <button type="button" onClick={() => setAddSimilarRoutesModalOpen(false)} className={styles.cancelBtn}>
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={addSelectedSimilarRoutes}
+                disabled={addSimilarRoutesSelected.size === 0}
+                className={styles.submitBtn}
+              >
+                Добавить выбранные ({addSimilarRoutesSelected.size})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={leaveModalOpen}
