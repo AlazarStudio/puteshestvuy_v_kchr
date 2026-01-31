@@ -14,6 +14,9 @@ const montserrat = Montserrat({
 export const metadata = {
   title: 'Путешествуй в КЧР',
   description: 'Откройте для себя красоту Карачаево-Черкесии',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({ children }) {

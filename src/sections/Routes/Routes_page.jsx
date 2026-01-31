@@ -12,6 +12,7 @@ const SCROLL_KEY = 'routes_scroll_position'
 
 export default function Routes_page() {
   const [sortBy, setSortBy] = useState('popularity')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -66,7 +67,13 @@ export default function Routes_page() {
 
       <CenterBlock>
         <section className={styles.flexBlock}>
-          <FilterBlock />
+          <FilterBlock
+            filterGroups={[]}
+            filters={{}}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Введите запрос"
+          />
           <div className={styles.routes}>
             <div className={styles.routesSort}>
               <div className={styles.routesSortFind}>

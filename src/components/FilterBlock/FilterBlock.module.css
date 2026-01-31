@@ -1,7 +1,7 @@
 .filter {
     width: 25%;
     height: fit-content;
-    padding: 32px;
+    padding: 25px;
     background-color: #fff;
     border-radius: 20px;
 }
@@ -10,8 +10,8 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-top: 23px;
-    padding-bottom: 30px;
+    padding-top: 20px;
+    padding-bottom: 20px;
     border-bottom: 1px solid #BDBDBD;
 }
 
@@ -33,9 +33,8 @@
 
 .title {
     font-weight: 500;
-    font-size: 20px;
+    font-size: 15px;
     line-height: 150%;
-    letter-spacing: 0%;
 }
 
 .arrow {
@@ -52,7 +51,7 @@
 
 .searchIcon{
     position: absolute;
-    right: 16px;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
     width: 17px;
@@ -63,7 +62,7 @@
 .search input {
     width: 100%;
     height: 50px;
-    padding: 13px 40px 13px 16px;
+    padding: 10px 40px 10px 10px;
     font-weight: 400;
     font-size: 14px;
     line-height: 150%;
@@ -95,10 +94,10 @@
 }
 
 .checkbox {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    min-height: 20px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
     border: 1px solid #BDBDBD;
     border-radius: 4px;
     appearance: none;
@@ -131,7 +130,7 @@
 
 .checkboxText {
     font-weight: 400;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 150%;
     letter-spacing: 0%;
     color: #000;

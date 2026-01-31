@@ -91,7 +91,15 @@ export default function Places_page() {
     }, 320)
   }
 
-  // Загрузка опций фильтров с API (для блока фильтров)
+  // Опции фильтров мест с API (группы для FilterBlock)
+  const placeFilterGroups = [
+    { key: 'directions', label: 'Направление', options: filterOptions?.directions ?? [] },
+    { key: 'seasons', label: 'Сезон', options: filterOptions?.seasons ?? [] },
+    { key: 'objectTypes', label: 'Вид объекта', options: filterOptions?.objectTypes ?? [] },
+    { key: 'accessibility', label: 'Доступность', options: filterOptions?.accessibility ?? [] },
+  ]
+
+  // Загрузка опций фильтров мест с API
   useEffect(() => {
     let cancelled = false
     publicPlacesAPI.getFilters()
@@ -292,11 +300,12 @@ export default function Places_page() {
       <CenterBlock>
         <section className={styles.flexBlock}>
           <FilterBlock
+            filterGroups={placeFilterGroups}
             filters={filters}
             onFiltersChange={setFilters}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            filterOptions={filterOptions}
+            searchPlaceholder="Введите запрос"
           />
           <div className={styles.places}>
             <div className={styles.placesSort}>
