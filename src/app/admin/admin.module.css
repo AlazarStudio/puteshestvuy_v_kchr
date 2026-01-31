@@ -974,6 +974,150 @@
   line-height: 1.45;
 }
 
+/* Списки в формах (места рядом, места на маршруте) — единый стиль */
+.formCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formCardRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.formOrderBadge {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: #2563eb;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.formMoveButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.formMoveBtn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+}
+
+.formMoveBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.formCardRow img {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.formCardRowContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.formCardRowTitle {
+  font-weight: 500;
+}
+
+.formCardRowSub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.formListHint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.formAddPlaceWrap {
+  margin-top: 12px;
+}
+
+.formAddPlaceSearch {
+  margin-bottom: 12px;
+}
+
+.formAddPlaceList {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.formAddPlaceItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.2s;
+}
+
+.formAddPlaceItem:last-child {
+  border-bottom: none;
+}
+
+.formAddPlaceItem:hover {
+  background: #f8fafc;
+}
+
+.formAddPlaceItem img {
+  width: 40px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.formAddPlaceItemTitle {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.formAddPlaceItemSub {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.formAddPlaceLabel {
+  color: #2563eb;
+  font-size: 0.85rem;
+}
+
+.formEmptyHint {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+}
+
 /* Блок фильтров места — группы друг под другом, на всю ширину */
 .filtersSection {
   width: 100%;
@@ -1013,6 +1157,17 @@
   gap: 10px 20px;
 }
 
+/* Сетка чекбоксов в модалке «Добавить параметр» */
+.addParamCheckboxGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 20px;
+}
+
+.addParamCheckboxGrid .filterCheckboxLabel {
+  min-width: 0;
+}
+
 .filterCheckboxLabel {
   display: inline-flex;
   align-items: center;
@@ -1039,6 +1194,51 @@
 
 .filterCheckboxLabel span {
   user-select: none;
+}
+
+/* Блок дополнительных параметров маршрута (расстояние, перепад, чекбоксы) */
+.routeParamsSection {
+  width: 100%;
+}
+
+.routeParamsCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.routeParamsCard:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.routeParamsCard .filterGroupTitle {
+  margin-bottom: 16px;
+}
+
+.routeParamsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.routeParamsRow:last-of-type {
+  margin-bottom: 0;
+}
+
+.routeParamsCheckboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.routeParamsCheckboxes .filterCheckboxLabel {
+  min-width: 160px;
 }
 
 /* Search and Filters */
@@ -1243,13 +1443,44 @@
   border-top: 1px solid #e2e8f0;
 }
 
-/* Модалка управления фильтрами мест */
-.filterModalGroup {
-  margin-bottom: 24px;
+/* Модалка управления фильтрами — табы */
+.filterModalTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0;
 }
 
-.filterModalGroup:last-child {
-  margin-bottom: 0;
+.filterModalTab {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.2s, background 0.2s;
+}
+
+.filterModalTab:hover {
+  color: #334155;
+  background: #f8fafc;
+}
+
+.filterModalTabActive {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: transparent;
+}
+
+.filterModalTabPanel {
+  padding-top: 4px;
+  min-height: 120px;
 }
 
 .filterModalGroupTitle {

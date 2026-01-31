@@ -83,9 +83,24 @@ export const publicPlacesAPI = {
 export const placeFiltersAPI = {
   get: () => api.get('/admin/place-filters'),
   update: (data) => api.put('/admin/place-filters', data),
+  addGroup: (key, label, values = []) =>
+    api.post('/admin/place-filters/add-group', { key, label, values }),
+  removeGroup: (key) => api.post('/admin/place-filters/remove-group', { key }),
   replaceValue: (group, oldValue, newValue) =>
     api.post('/admin/place-filters/replace-value', { group, oldValue, newValue }),
   removeValue: (group, value) => api.post('/admin/place-filters/remove-value', { group, value }),
+};
+
+// Route filters API (админка — управление опциями фильтров маршрутов)
+export const routeFiltersAPI = {
+  get: () => api.get('/admin/route-filters'),
+  update: (data) => api.put('/admin/route-filters', data),
+  addGroup: (key, label, values = []) =>
+    api.post('/admin/route-filters/add-group', { key, label, values }),
+  removeGroup: (key) => api.post('/admin/route-filters/remove-group', { key }),
+  replaceValue: (group, oldValue, newValue) =>
+    api.post('/admin/route-filters/replace-value', { group, oldValue, newValue }),
+  removeValue: (group, value) => api.post('/admin/route-filters/remove-value', { group, value }),
 };
 
 // News API

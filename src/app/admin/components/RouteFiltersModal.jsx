@@ -2,22 +2,30 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Plus, Trash2, Pencil, Check, FolderPlus } from 'lucide-react';
-import { placeFiltersAPI } from '@/lib/api';
+import { routeFiltersAPI } from '@/lib/api';
 import styles from '../admin.module.css';
 
-const FIXED_GROUP_KEYS = ['directions', 'seasons', 'objectTypes', 'accessibility'];
+const FIXED_GROUP_KEYS = ['seasons', 'transport', 'durationOptions', 'difficultyLevels', 'distanceOptions', 'elevationOptions', 'isFamilyOptions', 'hasOvernightOptions'];
 const FIXED_GROUP_LABELS = {
-  directions: 'Направление',
   seasons: 'Сезон',
-  objectTypes: 'Вид объекта',
-  accessibility: 'Доступность',
+  transport: 'Способ передвижения',
+  durationOptions: 'Время прохождения',
+  difficultyLevels: 'Сложность',
+  distanceOptions: 'Расстояние',
+  elevationOptions: 'Перепад высот',
+  isFamilyOptions: 'Семейный маршрут',
+  hasOvernightOptions: 'С ночевкой',
 };
 
 const emptyConfig = () => ({
-  directions: [],
   seasons: [],
-  objectTypes: [],
-  accessibility: [],
+  transport: [],
+  durationOptions: [],
+  difficultyLevels: [],
+  distanceOptions: [],
+  elevationOptions: [],
+  isFamilyOptions: [],
+  hasOvernightOptions: [],
 });
 
 function normalizeExtraGroups(arr) {
@@ -29,7 +37,7 @@ function normalizeExtraGroups(arr) {
   }));
 }
 
-export default function PlaceFiltersModal({ open, onClose }) {
+export default function RouteFiltersModal({ open, onClose }) {
   const [config, setConfig] = useState(emptyConfig);
   const [initialConfig, setInitialConfig] = useState(emptyConfig);
   const [extraGroups, setExtraGroups] = useState([]);
@@ -60,13 +68,17 @@ export default function PlaceFiltersModal({ open, onClose }) {
     setLoading(true);
     setError('');
     try {
-      const res = await placeFiltersAPI.get();
+      const res = await routeFiltersAPI.get();
       const data = res.data || {};
       const normalized = {
-        directions: Array.isArray(data.directions) ? [...data.directions] : [],
         seasons: Array.isArray(data.seasons) ? [...data.seasons] : [],
-        objectTypes: Array.isArray(data.objectTypes) ? [...data.objectTypes] : [],
-        accessibility: Array.isArray(data.accessibility) ? [...data.accessibility] : [],
+        transport: Array.isArray(data.transport) ? [...data.transport] : [],
+        durationOptions: Array.isArray(data.durationOptions) ? [...data.durationOptions] : [],
+        difficultyLevels: Array.isArray(data.difficultyLevels) ? [...data.difficultyLevels] : [],
+        distanceOptions: Array.isArray(data.distanceOptions) ? [...data.distanceOptions] : [],
+        elevationOptions: Array.isArray(data.elevationOptions) ? [...data.elevationOptions] : [],
+        isFamilyOptions: Array.isArray(data.isFamilyOptions) ? [...data.isFamilyOptions] : [],
+        hasOvernightOptions: Array.isArray(data.hasOvernightOptions) ? [...data.hasOvernightOptions] : [],
       };
       const extra = normalizeExtraGroups(data.extraGroups);
       setConfig(normalized);
@@ -76,7 +88,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
       const keys = [...FIXED_GROUP_KEYS, ...extra.map((g) => g.key)];
       setNewValues(keys.reduce((acc, k) => ({ ...acc, [k]: '' }), {}));
     } catch (err) {
-      console.error('Ошибка загрузки фильтров:', err);
+      console.error('Ошибка загрузки фильтров маршрутов:', err);
       setError('Не удалось загрузить фильтры');
       setConfig(emptyConfig());
       setInitialConfig(emptyConfig());
@@ -172,7 +184,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
     setSavingEdit(true);
     setError('');
     try {
-      await placeFiltersAPI.replaceValue(group, oldValue, newValue);
+      await routeFiltersAPI.replaceValue(group, oldValue, newValue);
       if (FIXED_GROUP_KEYS.includes(group)) {
         setConfig((prev) => ({ ...prev, [group]: (prev[group] || []).map((v) => (v === oldValue ? newValue : v)) }));
         setInitialConfig((prev) => ({ ...prev, [group]: (prev[group] || []).map((v) => (v === oldValue ? newValue : v)) }));
@@ -193,18 +205,22 @@ export default function PlaceFiltersModal({ open, onClose }) {
     setSaving(true);
     setError('');
     try {
-      await placeFiltersAPI.update({
-        directions: config.directions,
+      await routeFiltersAPI.update({
         seasons: config.seasons,
-        objectTypes: config.objectTypes,
-        accessibility: config.accessibility,
+        transport: config.transport,
+        durationOptions: config.durationOptions,
+        difficultyLevels: config.difficultyLevels,
+        distanceOptions: config.distanceOptions,
+        elevationOptions: config.elevationOptions,
+        isFamilyOptions: config.isFamilyOptions,
+        hasOvernightOptions: config.hasOvernightOptions,
         extraGroups: extraGroups.map((g) => ({ key: g.key, label: g.label, values: g.values || [] })),
       });
       setInitialConfig({ ...config });
       setInitialExtraGroups([...extraGroups]);
       onClose?.();
     } catch (err) {
-      console.error('Ошибка сохранения фильтров:', err);
+      console.error('Ошибка сохранения фильтров маршрутов:', err);
       setError(err.response?.data?.message || 'Не удалось сохранить фильтры');
     } finally {
       setSaving(false);
@@ -229,7 +245,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
     setAddingGroup(true);
     setError('');
     try {
-      await placeFiltersAPI.addGroup(key, label, []);
+      await routeFiltersAPI.addGroup(key, label, []);
       setNewGroupKey('');
       setNewGroupLabel('');
       await loadFilters();
@@ -245,7 +261,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
     setRemovingGroupKey(key);
     setError('');
     try {
-      await placeFiltersAPI.removeGroup(key);
+      await routeFiltersAPI.removeGroup(key);
       await loadFilters();
     } catch (err) {
       setError(err.response?.data?.message || 'Не удалось удалить группу');
@@ -268,7 +284,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="place-filters-title"
+      aria-labelledby="route-filters-title"
     >
       <div
         className={styles.modalDialog}
@@ -276,8 +292,8 @@ export default function PlaceFiltersModal({ open, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
-          <h2 id="place-filters-title" className={styles.modalTitle}>
-            Фильтры мест
+          <h2 id="route-filters-title" className={styles.modalTitle}>
+            Фильтры маршрутов
           </h2>
           <button type="button" onClick={onClose} className={styles.modalClose} aria-label="Закрыть">
             <X size={20} />
@@ -291,8 +307,11 @@ export default function PlaceFiltersModal({ open, onClose }) {
             </div>
           ) : (
             <>
-              <p className={styles.imageHint} style={{ marginBottom: 16 }}>
-                Опции для фильтра и карточки места. Переключайте группы по вкладкам.
+              <p className={styles.imageHint} style={{ marginBottom: 8 }}>
+                Опции для фильтра маршрутов и формы редактирования. Переключайте группы по вкладкам.
+              </p>
+              <p className={styles.imageHint} style={{ marginBottom: 16, fontSize: '0.85rem' }}>
+                Если создаёте новую группу (вкладка «Добавить группу») и не добавляете в неё значения — при создании и редактировании маршрута для этой группы будет показано поле для ввода (например, для расстояния в км).
               </p>
               {error && (
                 <div style={{ marginBottom: 16, padding: 12, background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: '0.9rem' }}>
@@ -369,7 +388,7 @@ export default function PlaceFiltersModal({ open, onClose }) {
                           {isExtra && (
                             <button
                               type="button"
-                              onClick={() => window.confirm(`Удалить группу «${label}»? Значения будут удалены у всех мест.`) && handleRemoveGroup(group)}
+                              onClick={() => window.confirm(`Удалить группу «${label}»? Значения будут удалены у всех маршрутов.`) && handleRemoveGroup(group)}
                               disabled={removingGroupKey === group}
                               className={styles.deleteBtn}
                               style={{ fontSize: '0.85rem', padding: '4px 8px' }}

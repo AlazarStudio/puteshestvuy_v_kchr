@@ -186,7 +186,7 @@ export default function PlacesPage() {
                   </td>
                   <td className={`${styles.tableCell} ${styles.actionsCell}`}>
                     <div className={styles.cellInner}>
-                    <div className={styles.actions}>
+                      <div className={styles.actions}>
                       <button
                         type="button"
                         onClick={() => handleTogglePublish(place)}
@@ -212,7 +212,7 @@ export default function PlacesPage() {
                       >
                         <Trash2 size={16} />
                       </button>
-                    </div>
+                      </div>
                     </div>
                   </td>
                 </tr>

@@ -1,33 +1,170 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-import { Upload, X, MapPin, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
-import { routesAPI, placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import { Upload, X, MapPin, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
+import { routesAPI, placesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
+import ConfirmModal from '../../components/ConfirmModal';
+import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
-const seasons = ['Зима', 'Весна', 'Лето', 'Осень'];
-const transportTypes = ['Пешком', 'Верхом', 'Автомобиль', 'Квадроцикл'];
+const TOAST_DURATION_MS = 3000;
+
+const FIXED_GROUPS_CONFIG = [
+  { key: 'seasons', label: 'Сезон', optionsKey: 'seasons' },
+  { key: 'transport', label: 'Способ передвижения', optionsKey: 'transport' },
+  { key: 'durationOptions', label: 'Время прохождения', optionsKey: 'durationOptions' },
+  { key: 'difficultyLevels', label: 'Сложность', optionsKey: 'difficultyLevels' },
+  { key: 'distanceOptions', label: 'Расстояние', optionsKey: 'distanceOptions' },
+  { key: 'elevationOptions', label: 'Перепад высот', optionsKey: 'elevationOptions' },
+  { key: 'isFamilyOptions', label: 'Семейный маршрут', optionsKey: 'isFamilyOptions' },
+  { key: 'hasOvernightOptions', label: 'С ночевкой', optionsKey: 'hasOvernightOptions' },
+];
+
+function getAvailableGroups(filterOptions) {
+  const list = [];
+  FIXED_GROUPS_CONFIG.forEach(({ key, label, optionsKey }) => {
+    const values = Array.isArray(filterOptions[optionsKey]) ? filterOptions[optionsKey] : [];
+    if (values.length > 0) {
+      list.push({ key, label, values, type: 'single' });
+    } else {
+      list.push({ key, label, values: [], type: 'input' });
+    }
+  });
+  (filterOptions.extraGroups || []).forEach((g) => {
+    if (!g?.key) return;
+    const values = g.values || [];
+    if (values.length > 0) {
+      list.push({ key: g.key, label: g.label || g.key, values, type: 'multi' });
+    } else {
+      list.push({ key: g.key, label: g.label || g.key, values: [], type: 'input' });
+    }
+  });
+  return list;
+}
+
+function getGroupByKey(filterOptions, groupKey) {
+  return getAvailableGroups(filterOptions).find((g) => g.key === groupKey) || null;
+}
+
+function deriveAddedFilterGroups(formData, filterOptions) {
+  const keys = [];
+  const has = (key) => {
+    const arr = formData.customFilters?.[key];
+    return Array.isArray(arr) ? arr.length > 0 : (arr != null && arr !== '');
+  };
+  if (has('seasons') || formData.season) keys.push('seasons');
+  if (has('transport') || formData.transport) keys.push('transport');
+  if (has('durationOptions') || formData.duration) keys.push('durationOptions');
+  if (has('difficultyLevels') || (formData.difficulty != null && formData.difficulty !== '')) keys.push('difficultyLevels');
+  if (has('distanceOptions') || formData.customFilters?.distance) keys.push('distanceOptions');
+  if (has('elevationOptions') || formData.customFilters?.elevationGain) keys.push('elevationOptions');
+  if (has('isFamilyOptions') || formData.isFamily) keys.push('isFamilyOptions');
+  if (has('hasOvernightOptions') || formData.hasOvernight) keys.push('hasOvernightOptions');
+  (filterOptions.extraGroups || []).forEach((g) => {
+    if (has(g.key)) keys.push(g.key);
+  });
+  return keys;
+}
+
+function clearFilter(formData, groupKey) {
+  const cf = { ...formData.customFilters };
+  delete cf[groupKey];
+  if (groupKey === 'distanceOptions') delete cf.distance;
+  if (groupKey === 'elevationOptions') delete cf.elevationGain;
+  return { ...formData, customFilters: cf };
+}
+
+function applyFilter(formData, groupKey, valueOrValues, groupType) {
+  if (groupType === 'multi') {
+    return { ...formData, customFilters: { ...formData.customFilters, [groupKey]: valueOrValues } };
+  }
+  if (groupType === 'input') {
+    const cf = { ...formData.customFilters };
+    if (groupKey === 'distanceOptions') cf.distance = valueOrValues;
+    else if (groupKey === 'elevationOptions') cf.elevationGain = valueOrValues;
+    else cf[groupKey] = valueOrValues;
+    return { ...formData, customFilters: cf };
+  }
+  if (groupKey === 'seasons') return { ...formData, customFilters: { ...formData.customFilters, seasons: valueOrValues } };
+  if (groupKey === 'transport') return { ...formData, customFilters: { ...formData.customFilters, transport: valueOrValues } };
+  if (groupKey === 'durationOptions') return { ...formData, customFilters: { ...formData.customFilters, durationOptions: valueOrValues } };
+  if (groupKey === 'difficultyLevels') return { ...formData, customFilters: { ...formData.customFilters, difficultyLevels: valueOrValues } };
+  if (groupKey === 'distanceOptions') return { ...formData, customFilters: { ...formData.customFilters, distanceOptions: valueOrValues } };
+  if (groupKey === 'elevationOptions') return { ...formData, customFilters: { ...formData.customFilters, elevationOptions: valueOrValues } };
+  if (groupKey === 'isFamilyOptions') return { ...formData, customFilters: { ...formData.customFilters, isFamilyOptions: valueOrValues } };
+  if (groupKey === 'hasOvernightOptions') return { ...formData, customFilters: { ...formData.customFilters, hasOvernightOptions: valueOrValues } };
+  return { ...formData, customFilters: { ...formData.customFilters, [groupKey]: valueOrValues } };
+}
+
+function getCurrentValueForGroup(formData, groupKey, groupType) {
+  if (groupType === 'input') {
+    if (groupKey === 'distanceOptions') return formData.customFilters?.distance ?? '';
+    if (groupKey === 'elevationOptions') return formData.customFilters?.elevationGain ?? '';
+    const v = formData.customFilters?.[groupKey];
+    return Array.isArray(v) ? (v[0] ?? '') : (typeof v === 'string' ? v : '');
+  }
+  if (groupType === 'multi' || groupKey === 'seasons' || groupKey === 'transport' || groupKey === 'durationOptions' || groupKey === 'difficultyLevels' || groupKey === 'distanceOptions' || groupKey === 'elevationOptions' || groupKey === 'isFamilyOptions' || groupKey === 'hasOvernightOptions') {
+    const arr = formData.customFilters?.[groupKey];
+    if (Array.isArray(arr)) return arr;
+    if (groupKey === 'seasons' && formData.season) return [formData.season];
+    if (groupKey === 'transport' && formData.transport) return [formData.transport];
+    if (groupKey === 'durationOptions' && formData.duration) return [formData.duration];
+    if (groupKey === 'difficultyLevels' && formData.difficulty != null) return [String(formData.difficulty)];
+    if (groupKey === 'distanceOptions' && formData.customFilters?.distance) return [formData.customFilters.distance];
+    if (groupKey === 'elevationOptions' && formData.customFilters?.elevationGain) return [formData.customFilters.elevationGain];
+    if (groupKey === 'isFamilyOptions' && formData.isFamily) return ['Да'];
+    if (groupKey === 'hasOvernightOptions' && formData.hasOvernight) return ['Да'];
+    return [];
+  }
+  return formData.customFilters?.[groupKey] || [];
+}
+
+function getFormSnapshot(data) {
+  const cf = data.customFilters && typeof data.customFilters === 'object' ? data.customFilters : {};
+  const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
+  return {
+    title: data.title ?? '',
+    description: data.description ?? '',
+    shortDescription: data.shortDescription ?? '',
+    season: first('seasons') ?? data.season ?? '',
+    duration: first('durationOptions') ?? data.duration ?? '',
+    difficulty: Number(first('difficultyLevels') || data.difficulty) || 3,
+    transport: first('transport') ?? data.transport ?? '',
+    customFilters: cf,
+    isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || !!data.isFamily,
+    hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || !!data.hasOvernight,
+    whatToBring: data.whatToBring ?? '',
+    importantInfo: data.importantInfo ?? '',
+    isActive: !!data.isActive,
+    images: Array.isArray(data.images) ? [...data.images] : [],
+    placeIds: Array.isArray(data.placeIds) ? [...data.placeIds] : [],
+  };
+}
+
+function formSnapshotsEqual(a, b) {
+  return JSON.stringify(getFormSnapshot(a)) === JSON.stringify(getFormSnapshot(b));
+}
 
 export default function RouteEditPage() {
   const router = useRouter();
   const params = useParams();
   const isNew = params.id === 'new';
+  const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
+  const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     shortDescription: '',
-    season: 'Лето',
-    distance: '',
+    season: '',
     duration: '',
     difficulty: 3,
-    transport: 'Пешком',
+    transport: '',
+    customFilters: {},
     isFamily: false,
     hasOvernight: false,
-    elevationGain: '',
     whatToBring: '',
     importantInfo: '',
     isActive: true,
@@ -36,34 +173,116 @@ export default function RouteEditPage() {
   });
 
   const [allPlaces, setAllPlaces] = useState([]);
+  const [filterOptions, setFilterOptions] = useState({
+    seasons: [],
+    transport: [],
+    durationOptions: [],
+    difficultyLevels: [],
+    distanceOptions: [],
+    elevationOptions: [],
+    isFamilyOptions: [],
+    hasOvernightOptions: [],
+    extraGroups: [],
+  });
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [placesSearch, setPlacesSearch] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [addFilterModalOpen, setAddFilterModalOpen] = useState(false);
+  const [addFilterSelectedGroups, setAddFilterSelectedGroups] = useState([]);
+  const [addedFilterGroups, setAddedFilterGroups] = useState([]);
+  const savedFormDataRef = useRef(null);
+
+  const isDirty = useMemo(() => {
+    if (isNew) return false;
+    if (!savedFormDataRef.current) return false;
+    return !formSnapshotsEqual(formData, savedFormDataRef.current);
+  }, [isNew, formData]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    router.push('/admin/routes');
+  }, [router]);
+
+  const handleCancelClick = useCallback(() => {
+    if (isDirty) {
+      setLeaveModalOpen(true);
+    } else {
+      router.push('/admin/routes');
+    }
+  }, [isDirty, router]);
 
   useEffect(() => {
-    fetchPlaces();
     if (!isNew) {
       fetchRoute();
     }
   }, [params.id]);
 
-  const fetchPlaces = async () => {
+  const fetchPlaces = useCallback(async () => {
     try {
-      const response = await placesAPI.getAll({ limit: 100 });
+      const response = await placesAPI.getAll({ limit: 500 });
       setAllPlaces(response.data.items || []);
     } catch (error) {
       console.error('Ошибка загрузки мест:', error);
     }
-  };
+  }, []);
+
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const res = await routeFiltersAPI.get();
+      const d = res.data || {};
+      const extra = Array.isArray(d.extraGroups) ? d.extraGroups : [];
+      setFilterOptions({
+        seasons: Array.isArray(d.seasons) ? d.seasons : [],
+        transport: Array.isArray(d.transport) ? d.transport : [],
+        durationOptions: Array.isArray(d.durationOptions) ? d.durationOptions : [],
+        difficultyLevels: Array.isArray(d.difficultyLevels) ? d.difficultyLevels : [],
+        distanceOptions: Array.isArray(d.distanceOptions) ? d.distanceOptions : [],
+        elevationOptions: Array.isArray(d.elevationOptions) ? d.elevationOptions : [],
+        isFamilyOptions: Array.isArray(d.isFamilyOptions) ? d.isFamilyOptions : [],
+        hasOvernightOptions: Array.isArray(d.hasOvernightOptions) ? d.hasOvernightOptions : [],
+        extraGroups: extra.filter((g) => g && typeof g.key === 'string' && g.key.trim()),
+      });
+    } catch (e) {
+      console.error('Ошибка загрузки опций фильтров маршрутов:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlaces();
+    fetchFilterOptions();
+  }, [fetchPlaces, fetchFilterOptions]);
+
+  useEffect(() => {
+    if (isNew) return;
+    if (!savedFormDataRef.current) return;
+    setAddedFilterGroups((prev) => [...new Set([...deriveAddedFilterGroups(savedFormDataRef.current, filterOptions), ...prev])]);
+  }, [isNew, filterOptions]);
 
   const fetchRoute = async () => {
     try {
       const response = await routesAPI.getById(params.id);
-      setFormData({
+      const raw = response.data.customFilters && typeof response.data.customFilters === 'object' ? response.data.customFilters : {};
+      const customFilters = {
+        ...raw,
+        seasons: Array.isArray(raw.seasons) ? raw.seasons : (response.data.season ? [response.data.season] : []),
+        transport: Array.isArray(raw.transport) ? raw.transport : (response.data.transport ? [response.data.transport] : []),
+        durationOptions: Array.isArray(raw.durationOptions) ? raw.durationOptions : (response.data.duration ? [response.data.duration] : []),
+        difficultyLevels: Array.isArray(raw.difficultyLevels) ? raw.difficultyLevels : (response.data.difficulty != null ? [String(response.data.difficulty)] : []),
+        distanceOptions: Array.isArray(raw.distanceOptions) ? raw.distanceOptions : (raw.distance ? [raw.distance] : []),
+        elevationOptions: Array.isArray(raw.elevationOptions) ? raw.elevationOptions : (raw.elevationGain ? [raw.elevationGain] : []),
+        isFamilyOptions: Array.isArray(raw.isFamilyOptions) ? raw.isFamilyOptions : (response.data.isFamily ? ['Да'] : []),
+        hasOvernightOptions: Array.isArray(raw.hasOvernightOptions) ? raw.hasOvernightOptions : (response.data.hasOvernight ? ['Да'] : []),
+      };
+      const next = {
         ...response.data,
         placeIds: response.data.placeIds || [],
-      });
+        customFilters,
+      };
+      setFormData(next);
+      savedFormDataRef.current = next;
     } catch (error) {
       console.error('Ошибка загрузки маршрута:', error);
       setError('Маршрут не найден');
@@ -71,6 +290,64 @@ export default function RouteEditPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!setBreadcrumbLabel) return;
+    const label = formData.title?.trim() || (isNew ? 'Новый маршрут' : '');
+    setBreadcrumbLabel(label);
+    return () => setBreadcrumbLabel(null);
+  }, [setBreadcrumbLabel, formData.title, isNew]);
+
+  useEffect(() => {
+    if (!setHeaderRight) return;
+    const submitLabel = isSaving
+      ? 'Сохранение...'
+      : isNew
+        ? 'Создать маршрут'
+        : isDirty
+          ? 'Сохранить изменения'
+          : 'Сохранено';
+    const submitClassName = [
+      styles.headerSubmitBtn,
+      !isNew && !isDirty && !isSaving && styles.headerSubmitBtnSaved,
+    ].filter(Boolean).join(' ');
+    setHeaderRight(
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label className={styles.visibilityToggle}>
+          <input
+            type="checkbox"
+            checked={!!formData.isActive}
+            onChange={() => setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))}
+          />
+          <span className={styles.visibilitySwitch} />
+          <span className={styles.visibilityLabel}>
+            {formData.isActive ? (
+              <Eye size={16} style={{ marginRight: 6, flexShrink: 0 }} />
+            ) : (
+              <EyeOff size={16} style={{ marginRight: 6, flexShrink: 0, opacity: 0.7 }} />
+            )}
+            Видимость
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={handleCancelClick}
+          className={styles.headerCancelBtn}
+        >
+          Назад
+        </button>
+        <button
+          type="submit"
+          form="route-form"
+          className={submitClassName}
+          disabled={isSaving}
+        >
+          {submitLabel}
+        </button>
+      </div>
+    );
+    return () => setHeaderRight(null);
+  }, [setHeaderRight, formData.isActive, isSaving, isNew, isDirty, handleCancelClick]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -151,20 +428,51 @@ export default function RouteEditPage() {
     setError('');
 
     try {
+      const cf = formData.customFilters && typeof formData.customFilters === 'object' ? formData.customFilters : {};
+      const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
       const dataToSend = {
         ...formData,
-        distance: parseFloat(formData.distance) || 0,
-        difficulty: parseInt(formData.difficulty) || 3,
-        elevationGain: parseFloat(formData.elevationGain) || 0,
+        season: first('seasons') ?? formData.season ?? '',
+        transport: first('transport') ?? formData.transport ?? '',
+        duration: first('durationOptions') ?? formData.duration ?? '',
+        difficulty: parseInt(first('difficultyLevels') || formData.difficulty, 10) || 3,
+        isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || formData.isFamily,
+        hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || formData.hasOvernight,
+        distance: null,
+        elevationGain: null,
+        customFilters: {
+          distance: first('distanceOptions') ?? cf.distance ?? null,
+          elevationGain: first('elevationOptions') ?? cf.elevationGain ?? null,
+          ...Object.fromEntries(
+            Object.entries(cf).filter(
+              ([k]) => !['seasons', 'transport', 'durationOptions', 'difficultyLevels', 'distanceOptions', 'elevationOptions', 'isFamilyOptions', 'hasOvernightOptions'].includes(k)
+            )
+          ),
+        },
       };
 
       if (isNew) {
-        await routesAPI.create(dataToSend);
+        const res = await routesAPI.create(dataToSend);
+        const created = res.data;
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
+        if (created?.id) {
+          router.replace(`/admin/routes/${created.id}`);
+        } else {
+          router.push('/admin/routes');
+        }
       } else {
         await routesAPI.update(params.id, dataToSend);
+        savedFormDataRef.current = {
+          ...formData,
+          ...dataToSend,
+          images: [...(formData.images || [])],
+          placeIds: [...(formData.placeIds || [])],
+          customFilters: formData.customFilters && typeof formData.customFilters === 'object' ? { ...formData.customFilters } : {},
+        };
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
-      
-      router.push('/admin/routes');
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setError(error.response?.data?.message || 'Ошибка сохранения маршрута');
@@ -172,6 +480,15 @@ export default function RouteEditPage() {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
   if (isLoading) {
     return (
@@ -190,7 +507,7 @@ export default function RouteEditPage() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.formContainer}>
+      <form id="route-form" onSubmit={handleSubmit} className={styles.formContainer}>
         {error && <div className={styles.error}>{error}</div>}
 
         <div className={styles.formGroup}>
@@ -226,169 +543,176 @@ export default function RouteEditPage() {
           />
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Сезон</label>
-            <select
-              name="season"
-              value={formData.season}
-              onChange={handleChange}
-              className={styles.formSelect}
+        {/* Параметры маршрута: в модалке только выбор группы, значения выбираются здесь (можно несколько) */}
+        <div className={styles.formGroup}>
+          <div className={styles.filtersSection}>
+            <label className={styles.formLabel}>Параметры маршрута</label>
+            <p className={styles.imageHint} style={{ marginBottom: 16 }}>
+              Группы задаются в «Фильтры маршрутов» (список маршрутов). Нажмите «Добавить параметр», выберите группу — значения выбираются ниже на экране (можно несколько).
+            </p>
+            {addedFilterGroups.length > 0 && (
+              <div className={styles.filterGroups} style={{ marginBottom: 16 }}>
+                {addedFilterGroups.map((groupKey) => {
+                  const g = getGroupByKey(filterOptions, groupKey);
+                  if (!g) return null;
+                  return (
+                    <div key={groupKey} className={styles.filterGroupCard}>
+                      <div className={styles.filterGroupTitle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                        <span>{g.label}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAddedFilterGroups((prev) => prev.filter((k) => k !== groupKey));
+                            setFormData((prev) => clearFilter(prev, groupKey));
+                          }}
+                          className={styles.deleteBtn}
+                          title="Удалить параметр"
+                          aria-label={`Удалить ${g.label}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      {g.type === 'input' ? (
+                        <input
+                          type="text"
+                          value={getCurrentValueForGroup(formData, groupKey, 'input')}
+                          onChange={(e) => setFormData((prev) => applyFilter(prev, groupKey, e.target.value.trim(), 'input'))}
+                          className={styles.formInput}
+                          placeholder="Введите значение"
+                          aria-label={g.label}
+                        />
+                      ) : (
+                        <div className={styles.filterCheckboxList}>
+                          {(g.values || []).map((v) => {
+                            const selected = getCurrentValueForGroup(formData, groupKey, g.type === 'multi' ? 'multi' : 'single');
+                            const arr = Array.isArray(selected) ? selected : [];
+                            const checked = arr.includes(v);
+                            return (
+                              <label key={v} className={styles.filterCheckboxLabel}>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    const next = checked ? arr.filter((x) => x !== v) : [...arr, v];
+                                    setFormData((prev) => applyFilter(prev, groupKey, next, 'multi'));
+                                  }}
+                                />
+                                <span>{v}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setAddFilterSelectedGroups([]);
+                setAddFilterModalOpen(true);
+              }}
+              className={styles.addBtn}
             >
-              {seasons.map((season) => (
-                <option key={season} value={season}>{season}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Способ передвижения</label>
-            <select
-              name="transport"
-              value={formData.transport}
-              onChange={handleChange}
-              className={styles.formSelect}
-            >
-              {transportTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
+              <Plus size={18} /> Добавить параметр
+            </button>
           </div>
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Расстояние (км)</label>
-            <input
-              type="number"
-              name="distance"
-              value={formData.distance}
-              onChange={handleChange}
-              className={styles.formInput}
-              placeholder="100"
-              step="0.1"
-            />
+        {/* Модалка: только выбор группы, значения выбираются на экране маршрута */}
+        {addFilterModalOpen && (
+          <div
+            className={styles.modalOverlay}
+            onClick={(e) => e.target === e.currentTarget && setAddFilterModalOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-filter-title"
+          >
+            <div className={styles.modalDialog} style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 id="add-filter-title" className={styles.modalTitle}>Добавить параметр</h2>
+                <button type="button" onClick={() => setAddFilterModalOpen(false)} className={styles.modalClose} aria-label="Закрыть">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.imageHint} style={{ marginBottom: 16 }}>
+                  Отметьте группы, которые хотите добавить. Значения для них вы выберете на экране создания маршрута (можно несколько).
+                </p>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Параметры</label>
+                  <div className={`${styles.filterCheckboxList} ${styles.addParamCheckboxGrid}`}>
+                    {getAvailableGroups(filterOptions)
+                      .filter((gr) => !addedFilterGroups.includes(gr.key))
+                      .map((gr) => (
+                        <label key={gr.key} className={styles.filterCheckboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={addFilterSelectedGroups.includes(gr.key)}
+                            onChange={() => {
+                              setAddFilterSelectedGroups((prev) =>
+                                prev.includes(gr.key) ? prev.filter((k) => k !== gr.key) : [...prev, gr.key]
+                              );
+                            }}
+                          />
+                          <span>{gr.label}</span>
+                        </label>
+                      ))}
+                  </div>
+                  {getAvailableGroups(filterOptions).filter((gr) => !addedFilterGroups.includes(gr.key)).length === 0 && (
+                    <p className={styles.imageHint} style={{ marginTop: 8 }}>
+                      Все доступные параметры уже добавлены к маршруту.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button type="button" onClick={() => setAddFilterModalOpen(false)} className={styles.cancelBtn}>
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  className={styles.submitBtn}
+                  onClick={() => {
+                    setAddedFilterGroups((prev) => [...new Set([...prev, ...addFilterSelectedGroups])]);
+                    setAddFilterModalOpen(false);
+                  }}
+                  disabled={addFilterSelectedGroups.length === 0}
+                >
+                  Добавить выбранные
+                </button>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Продолжительность</label>
-            <input
-              type="text"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-              className={styles.formInput}
-              placeholder="3ч 30м"
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Сложность (1-5)</label>
-            <select
-              name="difficulty"
-              value={formData.difficulty}
-              onChange={handleChange}
-              className={styles.formSelect}
-            >
-              {[1, 2, 3, 4, 5].map((level) => (
-                <option key={level} value={level}>{level}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Перепад высот (м)</label>
-            <input
-              type="number"
-              name="elevationGain"
-              value={formData.elevationGain}
-              onChange={handleChange}
-              className={styles.formInput}
-              placeholder="500"
-            />
-          </div>
-        </div>
-
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>
-              <input
-                type="checkbox"
-                name="isFamily"
-                checked={formData.isFamily}
-                onChange={handleChange}
-              />
-              {' '}Семейный маршрут
-            </label>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>
-              <input
-                type="checkbox"
-                name="hasOvernight"
-                checked={formData.hasOvernight}
-                onChange={handleChange}
-              />
-              {' '}С ночевкой
-            </label>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-              />
-              {' '}Активен (отображается на сайте)
-            </label>
-          </div>
-        </div>
-
-        {/* Секция выбора мест маршрута */}
-        <div className={styles.formGroup} style={{ marginTop: '30px' }}>
-          <label className={styles.formLabel}>
-            <MapPin size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-            Места на маршруте ({formData.placeIds.length})
+        {/* Секция выбора мест маршрута — тот же стиль, что и «Места рядом» в форме места */}
+        <div className={styles.formGroup} style={{ marginTop: 30 }}>
+          <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <MapPin size={18} />
+            <span>Места на маршруте ({formData.placeIds.length})</span>
           </label>
-          
-          {/* Выбранные места с возможностью сортировки */}
+
           {formData.placeIds.length > 0 && (
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
+            <div style={{ marginBottom: 16 }}>
+              <p className={styles.formListHint}>
                 Порядок мест на маршруте (можно изменить):
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className={styles.formCardList}>
                 {formData.placeIds.map((placeId, index) => {
                   const place = getPlaceById(placeId);
                   if (!place) return null;
                   return (
-                    <div
-                      key={placeId}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px 16px',
-                        background: '#f8fafc',
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div key={placeId} className={styles.formCardRow}>
+                      <div className={styles.formMoveButtons}>
                         <button
                           type="button"
                           onClick={() => movePlace(index, -1)}
                           disabled={index === 0}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: index === 0 ? 'not-allowed' : 'pointer',
-                            opacity: index === 0 ? 0.3 : 1,
-                            padding: '2px',
-                          }}
+                          className={styles.formMoveBtn}
+                          aria-label="Поднять"
                         >
                           <ChevronUp size={16} />
                         </button>
@@ -396,53 +720,28 @@ export default function RouteEditPage() {
                           type="button"
                           onClick={() => movePlace(index, 1)}
                           disabled={index === formData.placeIds.length - 1}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: index === formData.placeIds.length - 1 ? 'not-allowed' : 'pointer',
-                            opacity: index === formData.placeIds.length - 1 ? 0.3 : 1,
-                            padding: '2px',
-                          }}
+                          className={styles.formMoveBtn}
+                          aria-label="Опустить"
                         >
                           <ChevronDown size={16} />
                         </button>
                       </div>
-                      <span style={{
-                        width: '28px',
-                        height: '28px',
-                        background: '#2563eb',
-                        color: 'white',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                      }}>
-                        {index + 1}
-                      </span>
+                      <span className={styles.formOrderBadge}>{index + 1}</span>
                       {place.image && (
-                        <img
-                          src={getImageUrl(place.image)}
-                          alt={place.title}
-                          style={{
-                            width: '48px',
-                            height: '36px',
-                            objectFit: 'cover',
-                            borderRadius: '4px',
-                          }}
-                        />
+                        <img src={getImageUrl(place.image)} alt="" />
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '500' }}>{place.title}</div>
+                      <div className={styles.formCardRowContent}>
+                        <div className={styles.formCardRowTitle}>{place.title}</div>
                         {place.location && (
-                          <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{place.location}</div>
+                          <div className={styles.formCardRowSub}>{place.location}</div>
                         )}
                       </div>
                       <button
                         type="button"
                         onClick={() => removePlace(placeId)}
                         className={styles.deleteBtn}
+                        title="Удалить"
+                        aria-label="Удалить"
                       >
                         <X size={16} />
                       </button>
@@ -453,66 +752,45 @@ export default function RouteEditPage() {
             </div>
           )}
 
-          {/* Поиск и добавление мест */}
-          <div style={{ marginTop: '12px' }}>
-            <input
-              type="text"
-              placeholder="Поиск мест для добавления..."
-              value={placesSearch}
-              onChange={(e) => setPlacesSearch(e.target.value)}
-              className={styles.formInput}
-              style={{ marginBottom: '12px' }}
-            />
-            
+          <div className={styles.formAddPlaceWrap}>
+            <div className={styles.formAddPlaceSearch}>
+              <input
+                type="text"
+                placeholder="Поиск мест для добавления..."
+                value={placesSearch}
+                onChange={(e) => setPlacesSearch(e.target.value)}
+                className={styles.formInput}
+                aria-label="Поиск мест"
+              />
+            </div>
             {filteredPlaces.length > 0 ? (
-              <div style={{
-                maxHeight: '250px',
-                overflowY: 'auto',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-              }}>
+              <div className={styles.formAddPlaceList}>
                 {filteredPlaces.map((place) => (
                   <div
                     key={place.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => addPlace(place.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '10px 14px',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid #f1f5f9',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    onKeyDown={(e) => e.key === 'Enter' && addPlace(place.id)}
+                    className={styles.formAddPlaceItem}
                   >
                     {place.image && (
-                      <img
-                        src={getImageUrl(place.image)}
-                        alt={place.title}
-                        style={{
-                          width: '40px',
-                          height: '30px',
-                          objectFit: 'cover',
-                          borderRadius: '4px',
-                        }}
-                      />
+                      <img src={getImageUrl(place.image)} alt="" />
                     )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '500', fontSize: '0.9rem' }}>{place.title}</div>
+                    <div className={styles.formAddPlaceItemTitle}>
+                      <div>{place.title}</div>
                       {place.location && (
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{place.location}</div>
+                        <div className={styles.formAddPlaceItemSub}>{place.location}</div>
                       )}
                     </div>
-                    <span style={{ color: '#2563eb', fontSize: '0.85rem' }}>+ Добавить</span>
+                    <span className={styles.formAddPlaceLabel}>+ Добавить</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
-                {allPlaces.length === 0 
-                  ? 'Нет доступных мест. Сначала создайте места.' 
+              <div className={styles.formEmptyHint}>
+                {allPlaces.length === 0
+                  ? 'Нет доступных мест. Сначала создайте места.'
                   : 'Все места уже добавлены в маршрут'}
               </div>
             )}
@@ -573,19 +851,25 @@ export default function RouteEditPage() {
           )}
         </div>
 
-        <div className={styles.formActions}>
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Сохранение...' : (isNew ? 'Создать маршрут' : 'Сохранить изменения')}
-          </button>
-          <Link href="/admin/routes" className={styles.cancelBtn}>
-            Отмена
-          </Link>
-        </div>
       </form>
+
+      <ConfirmModal
+        open={leaveModalOpen}
+        title="Несохранённые изменения"
+        message="Есть несохранённые изменения. Вы уверены, что хотите уйти? Они будут потеряны."
+        confirmLabel="Уйти без сохранения"
+        cancelLabel="Остаться"
+        variant="danger"
+        dialogStyle={{ maxWidth: 500 }}
+        onCancel={() => setLeaveModalOpen(false)}
+        onConfirm={goToList}
+      />
+
+      {showToast && (
+        <div className={styles.toast} role="status">
+          Изменения успешно сохранены
+        </div>
+      )}
     </div>
   );
 }

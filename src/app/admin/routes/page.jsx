@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Pencil, Trash2, Map } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Map, Eye, EyeOff, Filter } from 'lucide-react';
 import { routesAPI, getImageUrl } from '@/lib/api';
-import { ConfirmModal, AlertModal } from '../components';
+import { ConfirmModal, AlertModal, RouteFiltersModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function RoutesPage() {
@@ -14,8 +14,14 @@ export default function RoutesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
+  const [togglingId, setTogglingId] = useState(null);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const searchDebounceRef = useRef(null);
+
+  const MIN_LOADING_MS = 500;
 
   const fetchRoutes = async (page = 1) => {
+    const start = Date.now();
     setIsLoading(true);
     try {
       const response = await routesAPI.getAll({ page, limit: 10, search: searchQuery });
@@ -25,13 +31,21 @@ export default function RoutesPage() {
       console.error('Ошибка загрузки маршрутов:', error);
       setRoutes([]);
     } finally {
-      setIsLoading(false);
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
+      setTimeout(() => setIsLoading(false), remaining);
     }
   };
 
   useEffect(() => {
-    fetchRoutes();
-  }, []);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchRoutes(1);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   const handleDeleteClick = (id) => {
     setConfirmModal({
@@ -55,32 +69,58 @@ export default function RoutesPage() {
     });
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchRoutes(1);
+  const handleTogglePublish = async (route) => {
+    const nextActive = !route.isActive;
+    setTogglingId(route.id);
+    try {
+      await routesAPI.update(route.id, { isActive: nextActive });
+      setRoutes((prev) =>
+        prev.map((r) => (r.id === route.id ? { ...r, isActive: nextActive } : r))
+      );
+    } catch (error) {
+      console.error('Ошибка изменения видимости:', error);
+      setAlertModal({
+        open: true,
+        title: 'Ошибка',
+        message: 'Не удалось изменить видимость',
+      });
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   return (
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Маршруты</h1>
-        <Link href="/admin/routes/new" className={styles.addBtn}>
-          <Plus size={18} /> Добавить маршрут
-        </Link>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setFiltersModalOpen(true)}
+            className={styles.filtersBtn}
+            title="Управление фильтрами"
+          >
+            <Filter size={18} /> Фильтры
+          </button>
+          <Link href="/admin/routes/new" className={styles.addBtn}>
+            <Plus size={18} /> Добавить маршрут
+          </Link>
+        </div>
       </div>
 
-      <form onSubmit={handleSearch} className={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Поиск маршрутов..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={styles.searchInput}
-        />
-        <button type="submit" className={styles.filterBtn}>
-          <Search size={18} /> Найти
-        </button>
-      </form>
+      <div className={styles.searchBar}>
+        <div className={styles.searchWrap}>
+          <input
+            type="text"
+            placeholder="Поиск маршрутов..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+            aria-label="Поиск маршрутов"
+          />
+          <Search size={18} className={styles.searchIcon} aria-hidden />
+        </div>
+      </div>
 
       <div className={styles.tableContainer}>
         {isLoading ? (
@@ -103,39 +143,75 @@ export default function RoutesPage() {
                 <th>Сезон</th>
                 <th>Сложность</th>
                 <th>Расстояние</th>
-                <th>Статус</th>
+                <th>Видимость</th>
                 <th>Действия</th>
               </tr>
             </thead>
             <tbody>
               {routes.map((route) => (
                 <tr key={route.id}>
-                  <td>
-                    <img
-                      src={getImageUrl(route.images?.[0])}
-                      alt={route.title}
-                      className={styles.tableImage}
-                    />
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <img
+                        src={getImageUrl(route.images?.[0])}
+                        alt={route.title}
+                        className={styles.tableImage}
+                      />
+                    </div>
                   </td>
-                  <td>{route.title}</td>
-                  <td>{route.season}</td>
-                  <td>{route.difficulty}/5</td>
-                  <td>{route.distance} км</td>
-                  <td>
-                    <span className={`${styles.badge} ${styles[route.isActive ? 'active' : 'inactive']}`}>
-                      {route.isActive ? 'Активен' : 'Скрыт'}
-                    </span>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>{route.title}</div>
                   </td>
-                  <td className={styles.actions}>
-                    <Link href={`/admin/routes/${route.id}`} className={styles.editBtn}>
-                      <Pencil size={16} />
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteClick(route.id)}
-                      className={styles.deleteBtn}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>{route.season ?? '—'}</div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      {route.difficulty != null ? `${route.difficulty}/5` : '—'}
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      {route.distance != null && route.distance !== '' ? `${route.distance} км` : '—'}
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <span className={`${styles.badge} ${styles[route.isActive ? 'active' : 'inactive']}`}>
+                        {route.isActive ? 'Включено' : 'Скрыто'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.actionsCell}`}>
+                    <div className={styles.cellInner}>
+                      <div className={styles.actions}>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePublish(route)}
+                          disabled={togglingId === route.id}
+                          className={route.isActive ? styles.deleteBtn : styles.viewBtn}
+                          title={route.isActive ? 'Скрыть' : 'Показать'}
+                          aria-label={route.isActive ? 'Скрыть' : 'Показать'}
+                        >
+                          {route.isActive ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </button>
+                        <Link href={`/admin/routes/${route.id}`} className={styles.editBtn} title="Редактировать">
+                          <Pencil size={16} />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(route.id)}
+                          className={styles.deleteBtn}
+                          title="Удалить"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -188,6 +264,7 @@ export default function RoutesPage() {
         message={alertModal.message}
         onClose={() => setAlertModal({ open: false, title: '', message: '' })}
       />
+      <RouteFiltersModal open={filtersModalOpen} onClose={() => setFiltersModalOpen(false)} />
     </div>
   );
 }

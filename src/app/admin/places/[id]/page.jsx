@@ -589,36 +589,19 @@ export default function PlaceEditPage() {
             <Plus size={18} /> Добавить места
           </button>
           {(formData.nearbyPlaceIds || []).length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className={styles.formCardList}>
               {(formData.nearbyPlaceIds || []).map((placeId) => {
                 const place = allPlaces.find((p) => p.id === placeId) || { id: placeId, title: '…', location: '' };
                 return (
-                  <div
-                    key={placeId}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      background: '#f8fafc',
-                      borderRadius: 8,
-                      border: '1px solid #e2e8f0',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {place.image && (
-                        <img
-                          src={getImageUrl(place.image)}
-                          alt=""
-                          style={{ width: 40, height: 30, objectFit: 'cover', borderRadius: 6 }}
-                        />
+                  <div key={placeId} className={styles.formCardRow}>
+                    {place.image && (
+                      <img src={getImageUrl(place.image)} alt="" />
+                    )}
+                    <div className={styles.formCardRowContent}>
+                      <div className={styles.formCardRowTitle}>{place.title}</div>
+                      {place.location && (
+                        <div className={styles.formCardRowSub}>{place.location}</div>
                       )}
-                      <div>
-                        <div style={{ fontWeight: 500 }}>{place.title}</div>
-                        {place.location && (
-                          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{place.location}</div>
-                        )}
-                      </div>
                     </div>
                     <button type="button" onClick={() => removeNearbyPlace(placeId)} className={styles.deleteBtn} title="Удалить" aria-label="Удалить">
                       <X size={16} />
