@@ -79,6 +79,13 @@ export const publicPlacesAPI = {
   createReview: (placeId, data) => api.post(`/places/${placeId}/reviews`, data),
 };
 
+// Routes API (public, для страницы «Маршруты» и страницы маршрута)
+export const publicRoutesAPI = {
+  getAll: (params) => api.get('/routes', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/routes/${idOrSlug}`),
+  getFilters: () => api.get('/routes/filters'),
+};
+
 // Place filters API (админка — управление опциями фильтров)
 export const placeFiltersAPI = {
   get: () => api.get('/admin/place-filters'),

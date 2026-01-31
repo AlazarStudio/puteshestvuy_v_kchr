@@ -57,13 +57,15 @@ export default function LayoutWrapper({ children }) {
     }
   }, [])
 
-  // При клике по внутренней ссылке — сразу показываем прелоадер
+  // При клике по внутренней ссылке или программном переходе — показываем прелоадер
   useEffect(() => {
     if (isAdminPage) return
 
     const handleClick = (e) => {
       const link = e.target.closest('a[href^="/"]')
       if (!link) return
+      // Не показываем прелоадер, если клик по зоне, где переход по ссылке отключён (слайдер и т.п.)
+      if (e.target.closest('[data-no-navigate]')) return
       // Пропускаем внешние ссылки (//), открытие в новой вкладке, якоря без смены страницы
       const href = link.getAttribute('href') || ''
       if (href.startsWith('//') || link.target === '_blank') return
@@ -74,8 +76,14 @@ export default function LayoutWrapper({ children }) {
       setIsNavigating(true)
     }
 
+    const handleNavigateStart = () => setIsNavigating(true)
+
     document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
+    window.addEventListener('navigate-start', handleNavigateStart)
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+      window.removeEventListener('navigate-start', handleNavigateStart)
+    }
   }, [isAdminPage, pathname, searchParams])
 
   // Когда pathname или searchParams изменились — страница/фильтр загрузились, скрываем прелоадер

@@ -680,7 +680,11 @@ export default function RouteEditPage() {
         ...cf,
         seasons: Array.isArray(cf.seasons) ? cf.seasons : (formData.season ? [formData.season] : []),
         transport: Array.isArray(cf.transport) ? cf.transport : (formData.transport ? [formData.transport] : []),
-        durationOptions: Array.isArray(cf.durationOptions) ? cf.durationOptions : (formData.duration ? [formData.duration] : []),
+        durationOptions: Array.isArray(cf.durationOptions)
+          ? cf.durationOptions
+          : typeof cf.durationOptions === 'string' && cf.durationOptions.trim()
+            ? [cf.durationOptions.trim()]
+            : (formData.duration ? [formData.duration] : []),
         difficultyLevels: [String(difficultyNum)],
         distanceOptions: distanceNum != null ? [distanceNum] : (Array.isArray(cf.distanceOptions) ? cf.distanceOptions : []),
         elevationOptions: elevationNum != null ? [elevationNum] : (Array.isArray(cf.elevationOptions) ? cf.elevationOptions : []),
@@ -689,13 +693,18 @@ export default function RouteEditPage() {
         distance: distanceNum != null ? distanceNum : (cf.distance ?? null),
         elevationGain: elevationNum != null ? elevationNum : (cf.elevationGain ?? null),
       };
+      const durationFromForm =
+        first('durationOptions') ??
+        (typeof cf.durationOptions === 'string' && cf.durationOptions.trim() !== '' ? cf.durationOptions.trim() : null) ??
+        formData.duration ??
+        '';
       const dataToSend = {
         title: formData.title ?? '',
         shortDescription: formData.shortDescription ?? null,
         description: formData.description ?? null,
         season: first('seasons') ?? formData.season ?? '',
         transport: first('transport') ?? formData.transport ?? '',
-        duration: first('durationOptions') ?? formData.duration ?? '',
+        duration: durationFromForm,
         difficulty: difficultyNum,
         isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || formData.isFamily,
         hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || formData.hasOvernight,

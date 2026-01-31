@@ -7,29 +7,106 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
+import { publicRoutesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'routes_scroll_position'
+
+const defaultFilters = {
+  seasons: [],
+  transport: [],
+  durationOptions: [],
+  difficultyLevels: [],
+}
 
 export default function Routes_page() {
   const [sortBy, setSortBy] = useState('popularity')
   const [searchQuery, setSearchQuery] = useState('')
+  const [routes, setRoutes] = useState([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState(defaultFilters)
+  const [filterOptions, setFilterOptions] = useState(null)
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
   }
 
+  const handleFiltersChange = (next) => {
+    setFilters(next)
+  }
+
+  // Опции фильтров маршрутов с API (группы для FilterBlock)
+  const routeFilterGroups = [
+    { key: 'seasons', label: 'Сезон', options: filterOptions?.seasons ?? [] },
+    { key: 'transport', label: 'Способ передвижения', options: filterOptions?.transport ?? [] },
+    { key: 'durationOptions', label: 'Время прохождения', options: filterOptions?.durationOptions ?? [] },
+    { key: 'difficultyLevels', label: 'Сложность', options: filterOptions?.difficultyLevels ?? [] },
+  ]
+
+  // Загрузка опций фильтров маршрутов с API
+  useEffect(() => {
+    let cancelled = false
+    publicRoutesAPI.getFilters()
+      .then(({ data }) => {
+        if (!cancelled && data) {
+          setFilterOptions({
+            seasons: Array.isArray(data.seasons) ? data.seasons : [],
+            transport: Array.isArray(data.transport) ? data.transport : [],
+            durationOptions: Array.isArray(data.durationOptions) ? data.durationOptions : [],
+            difficultyLevels: Array.isArray(data.difficultyLevels) ? data.difficultyLevels : [],
+          })
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('Ошибка загрузки опций фильтров маршрутов:', err)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  // Загрузка маршрутов с API (с учётом фильтров и поиска)
+  useEffect(() => {
+    let cancelled = false
+    async function fetchRoutes() {
+      setLoading(true)
+      try {
+        const params = {
+          limit: 100,
+          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          ...(sortBy === 'difficulty' && { sortBy: 'difficulty' }),
+          ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
+          ...(filters.transport?.length > 0 && { transport: filters.transport }),
+          ...(filters.durationOptions?.length > 0 && { durationOptions: filters.durationOptions }),
+          ...(filters.difficultyLevels?.length > 0 && { difficultyLevels: filters.difficultyLevels }),
+        }
+        const { data } = await publicRoutesAPI.getAll(params)
+        if (!cancelled) {
+          setRoutes(data.items || [])
+          setTotal(data.pagination?.total ?? 0)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setRoutes([])
+          setTotal(0)
+          console.error(err)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchRoutes()
+    return () => { cancelled = true }
+  }, [filters.seasons, filters.transport, filters.durationOptions, filters.difficultyLevels, searchQuery, sortBy])
+
   // Восстанавливаем позицию скролла при возврате на страницу
   useEffect(() => {
     const savedScroll = sessionStorage.getItem(SCROLL_KEY)
     if (savedScroll) {
-      // Используем setTimeout для гарантии восстановления после рендера
       setTimeout(() => {
         window.scrollTo({
           top: parseInt(savedScroll, 10),
           behavior: 'instant'
         })
       }, 0)
-      // Очищаем сохранённую позицию
       sessionStorage.removeItem(SCROLL_KEY)
     }
   }, [])
@@ -39,18 +116,14 @@ export default function Routes_page() {
     const handleBeforeUnload = () => {
       sessionStorage.setItem(SCROLL_KEY, window.scrollY.toString())
     }
-
-    // Сохраняем скролл при клике на ссылку маршрута
     const handleClick = (e) => {
       const link = e.target.closest('a[href^="/routes/"]')
       if (link) {
         sessionStorage.setItem(SCROLL_KEY, window.scrollY.toString())
       }
     }
-
     window.addEventListener('beforeunload', handleBeforeUnload)
     document.addEventListener('click', handleClick)
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       document.removeEventListener('click', handleClick)
@@ -68,8 +141,9 @@ export default function Routes_page() {
       <CenterBlock>
         <section className={styles.flexBlock}>
           <FilterBlock
-            filterGroups={[]}
-            filters={{}}
+            filterGroups={routeFilterGroups}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Введите запрос"
@@ -77,7 +151,7 @@ export default function Routes_page() {
           <div className={styles.routes}>
             <div className={styles.routesSort}>
               <div className={styles.routesSortFind}>
-                Найдено 46 маршрутов
+                Найдено {total} маршрутов
               </div>
               <div className={styles.routesSortSort}>
                 <div className={styles.title}>Сортировать:</div>
@@ -167,13 +241,19 @@ export default function Routes_page() {
             </div>
             
             <div className={styles.routesShow}>
-              <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
-              <RouteBlock title="Горные вершины Карачаево-Черкесии" />
-              <RouteBlock title="Водопады и озера региона" />
+              {loading ? (
+                <div className={styles.loading}>Загрузка...</div>
+              ) : routes.length === 0 ? (
+                <div className={styles.empty}>Маршруты не найдены</div>
+              ) : (
+                routes.map((route) => (
+                  <RouteBlock key={route.id} route={route} />
+                ))
+              )}
             </div>
           </div>
         </section>
       </CenterBlock>
-    </main >
+    </main>
   )
 }

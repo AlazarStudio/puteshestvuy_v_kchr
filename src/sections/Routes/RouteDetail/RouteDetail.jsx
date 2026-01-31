@@ -11,19 +11,24 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import Link from 'next/link'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
+import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
+import { publicRoutesAPI, getImageUrl } from '@/lib/api'
 
-export default function RouteDetail({ }) {
-  const photos = [
-    { src: "/routeGalery1.png" },
-    { src: "/routeGalery2.png" },
-    { src: "/routeGalery3.png" },
-    { src: "/routeGalery4.png" },
-    { src: "/routeGalery5.png" },
-    { src: "/routeGalery6.png" },
-    { src: "/routeGalery7.png" },
-    { src: "/routeGalery8.png" },
-  ]
+function parseWhatToBring(str) {
+  if (!str || typeof str !== 'string') return []
+  try {
+    const parsed = JSON.parse(str)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
 
+export default function RouteDetail({ routeSlug }) {
+  const [route, setRoute] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [similarRoutes, setSimilarRoutes] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeDay, setActiveDay] = useState(1)
@@ -32,37 +37,67 @@ export default function RouteDetail({ }) {
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
   const [activeAnchor, setActiveAnchor] = useState('main')
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'Михаил',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Остался в полном восторге от экскурсии «На границе регионов: Кисловодск-Медовые водопады»! Маршрут продуман идеально: сначала прогулка по Кисловодску с его целебным воздухом и архитектурными жемчужинами, а потом – резкий переход к дикой природе. Медовые водопады поразили мощью и красотой: шум воды, брызги, изумрудные оттенки реки – словно другая планета. Особенно запомнился самый высокий из каскадов: стоя у подножия, чувствуешь себя крошечным перед силой природы. Гид рассказывал увлекательно, не перегружая датами, но делясь интересными легендами. Время пролетело незаметно, а впечатлений – на год вперёд. Однозначно рекомендую тем, кто хочет увидеть контраст курортной элегантности и первозданной природы!',
-      avatar: '/avatar_feedback.png',
-      isLong: false
-    },
-    {
-      id: 2,
-      name: 'Андрей',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Экскурсия «На границе регионов: Кисловодск-Медовые водопады» оставила приятное впечатление. Программа сбалансирована: Кисловодск: обзор ключевых точек (Курортный парк, Нарзанная галерея) без спешки, достаточно времени для фото и самостоятельного изучения. Переезд к водопадам комфортный, дорога живописная. Медовые водопады – это отдельная история: каскады разной высоты, каждый со своим характером. Особенно понравилось, что гид не торопился, давал время насладиться каждым местом. Единственный момент – на водопадах довольно скользко, так что обувь действительно важна. В целом, отличный вариант для первого знакомства с регионом.',
-      avatar: '',
-      isLong: true
-    },
-    {
-      id: 3,
-      name: 'Анастасия',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Решилась на экскурсию «На границе регионов» и не пожалела! Делюсь нюансами, которые пригодятся: Что взять: удобную обувь (на водопадах каменистые тропы), воду и перекус (в программе есть паузы, но магазинов рядом мало). Что понравилось: структура экскурсии – не устаешь, есть время отдохнуть между локациями. Гид знающий, отвечал на все вопросы. Водопады впечатляют даже в пасмурную погоду. Что учесть: в Кисловодске много туристов, особенно в выходные, но гид нашел менее людные места для рассказа. В целом, рекомендую как для новичков, так и для тех, кто уже бывал в регионе – всегда найдется что-то новое.',
-      avatar: '',
-      isLong: true
-    }
-  ])
+  const [reviews, setReviews] = useState([])
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
+
+  useEffect(() => {
+    if (!routeSlug) {
+      setLoading(false)
+      setError('Маршрут не указан')
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    publicRoutesAPI.getByIdOrSlug(routeSlug)
+      .then(({ data }) => {
+        if (!cancelled) {
+          setRoute(data)
+          setReviews(Array.isArray(data.reviews) ? data.reviews.map((r, i) => ({
+            id: r.id || i,
+            name: r.authorName || '',
+            date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '',
+            rating: r.rating || 0,
+            text: r.text || '',
+            avatar: r.authorAvatar || '',
+            isLong: (r.text || '').length > 200,
+          })) : [])
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.response?.status === 404 ? 'Маршрут не найден' : 'Ошибка загрузки маршрута')
+          setRoute(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [routeSlug])
+
+  useEffect(() => {
+    if (route?.points?.length) setActiveDay(1)
+  }, [route?.id])
+
+  useEffect(() => {
+    const ids = route?.similarRouteIds
+    if (!Array.isArray(ids) || ids.length === 0) {
+      setSimilarRoutes([])
+      return
+    }
+    let cancelled = false
+    Promise.all(ids.map((id) => publicRoutesAPI.getByIdOrSlug(id).then((r) => r.data).catch(() => null)))
+      .then((list) => {
+        if (!cancelled) setSimilarRoutes(list.filter(Boolean))
+      })
+    return () => { cancelled = true }
+  }, [route?.similarRouteIds])
+
+  const photos = route?.images?.length
+    ? route.images.map((src) => ({ src: getImageUrl(src) }))
+    : [{ src: '/routeGalery1.png' }]
 
   const visiblePhotos = photos.slice(0, 5)
   const remainingCount = photos.length - 5
@@ -221,7 +256,7 @@ export default function RouteDetail({ }) {
   const anchors = [
     { id: 'main', label: 'Основное' },
     { id: 'route', label: 'Маршрут' },
-    { id: 'map', label: 'Карта' },
+    { id: 'map', label: 'Как добраться' },
     { id: 'what-to-take', label: 'Что взять с собой' },
     { id: 'description', label: 'Описание маршрута' },
     { id: 'important', label: 'Важно знать' },
@@ -271,6 +306,38 @@ export default function RouteDetail({ }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  if (loading) {
+    return (
+      <main className={styles.main}>
+        <CenterBlock>
+          <div className={styles.routePage} style={{ padding: '2rem', textAlign: 'center' }}>Загрузка маршрута...</div>
+        </CenterBlock>
+      </main>
+    )
+  }
+  if (error || !route) {
+    return (
+      <main className={styles.main}>
+        <CenterBlock>
+          <div className={styles.routePage} style={{ padding: '2rem', textAlign: 'center' }}>
+            {error || 'Маршрут не найден'}
+            <br />
+            <Link href="/routes">Вернуться к списку маршрутов</Link>
+          </div>
+        </CenterBlock>
+      </main>
+    )
+  }
+
+  const points = Array.isArray(route.points) ? route.points : []
+  const routePlaces = Array.isArray(route.places) ? route.places : []
+  const whatToBringItems = parseWhatToBring(route.whatToBring)
+  const seasonDisplay = Array.isArray(route.customFilters?.seasons) && route.customFilters.seasons.length > 0
+    ? route.customFilters.seasons.join(', ')
+    : (route.season || '')
+
+  console.log(routePlaces)
+
   return (
     <main className={styles.main}>
       <CenterBlock>
@@ -284,7 +351,7 @@ export default function RouteDetail({ }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>На границе регионов: Кисловодск - Медовые водопады</span>
+            <span>{route.title}</span>
           </div>
 
           <div className={styles.gallery}>
@@ -344,62 +411,93 @@ export default function RouteDetail({ }) {
 
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
-              <div id="main" className={styles.title}>На границе регионов: <br />Кисловодск - Медовые водопады</div>
+              <div id="main" className={styles.title}>{route.title}</div>
               <div className={styles.information}>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon1.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Расстояние</div>
-                    <div className={styles.textDesc}>20 км</div>
+                {route.distance != null && route.distance !== '' && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon1.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Расстояние</div>
+                      <div className={styles.textDesc}>{route.distance} км</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon2.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Сезон</div>
-                    <div className={styles.textDesc}>Зима</div>
+                )}
+                {seasonDisplay && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon2.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Сезон</div>
+                      <div className={styles.textDesc}>{seasonDisplay}</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon3.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Градус подъема</div>
-                    <div className={styles.textDesc}>30°</div>
+                )}
+                {route.elevationGain != null && route.elevationGain !== '' && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon3.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Перепад высот</div>
+                      <div className={styles.textDesc}>{route.elevationGain} м</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon4.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>С ночевкой</div>
+                )}
+                {route.hasOvernight && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon4.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>С ночевкой</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon5.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Сложность </div>
-                    <div className={styles.textDesc}>1/5</div>
+                )}
+                {route.difficulty != null && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon5.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>
+                        Сложность
+                        <span className={styles.difficultyHintWrap} aria-label="Пояснение уровней сложности">
+                          <span className={styles.difficultyHint}>?</span>
+                          <div className={styles.tooltipBlock}>
+                            <div className={styles.tooltipTitle}>Уровни сложности</div>
+                            <div className={styles.tooltipList}>
+                              <span>1 — лёгкий</span>
+                              <span>2 — простой</span>
+                              <span>3 — средний</span>
+                              <span>4 — сложный</span>
+                              <span>5 — очень сложный</span>
+                            </div>
+                          </div>
+                        </span>
+                      </div>
+                      <div className={styles.textDesc}>{route.difficulty}</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon6.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Время прохождения</div>
-                    <div className={styles.textDesc}>2 дня</div>
+                )}
+                {route.duration && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon6.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Время прохождения</div>
+                      <div className={styles.textDesc}>{route.duration}</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon7.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Семейный маршрут</div>
+                )}
+                {route.isFamily && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon7.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Семейный маршрут</div>
+                    </div>
                   </div>
-                </div>
-                <div className={styles.item}>
-                  <img src="/routeInfoContentIcon8.png" alt="" />
-                  <div className={styles.text}>
-                    <div className={styles.textTitle}>Способ передвижения</div>
-                    <div className={styles.textDesc}>Верхом</div>
+                )}
+                {route.transport && (
+                  <div className={styles.item}>
+                    <img src="/routeInfoContentIcon8.png" alt="" />
+                    <div className={styles.text}>
+                      <div className={styles.textTitle}>Способ передвижения</div>
+                      <div className={styles.textDesc}>{route.transport}</div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div id="route" className={styles.title}>Маршрут</div>
@@ -409,158 +507,103 @@ export default function RouteDetail({ }) {
                     navigation={true}
                     modules={[Navigation]}
                     slidesPerView={1}
-                    // loop={true}
                     className="mySwiperRoute"
                   >
-                    <SwiperSlide>
-                      <div className={styles.slide}>
-                        <div className={styles.slideTitle}>АРХЫЗ</div>
-                        <div className={styles.slideSubTitle}>точка 1</div>
-                        <div className={styles.routeLine}><img src="/routeLine.png" alt="" /></div>
-                        <div className={styles.slideBlock}>
-                          <div className={styles.slideDesc}>
-                            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+                    {routePlaces.length > 0 ? routePlaces.map((place, i) => {
+                      const mainImage = place.images?.[0] ?? place.image
+                      const placeHref = `/places/${place.slug || place.id}`
+                      return (
+                        <SwiperSlide key={place.id}>
+                          <div className={styles.slide}>
+                            <div className={styles.slideTitle}>{place.title || `Место ${i + 1}`}</div>
+                            <div className={styles.slideSubTitle}>место {i + 1}</div>
+                            <div className={styles.routeLine}><img src="/routeLine.png" alt="" /></div>
+                            <div className={styles.slideBlock}>
+                              <div className={styles.slideDesc} dangerouslySetInnerHTML={{ __html: place.description || '' }} />
+                              <div className={styles.slideImg}>
+                                {mainImage ? (
+                                  <img src={getImageUrl(mainImage)} alt={place.title} />
+                                ) : null}
+                              </div>
+                            </div>
+                            <Link href={placeHref} className={styles.slideBtn}>
+                              Подробнее
+                            </Link>
                           </div>
-                          <div className={styles.slideImg}><img src="/slideRouteImg1.png" alt="" /></div>
+                        </SwiperSlide>
+                      )
+                    }) : (
+                      <SwiperSlide>
+                        <div className={styles.slide}>
+                          <div className={styles.slideDesc}>В маршрут пока не добавлены места.</div>
                         </div>
-
-                        <Link href="/#" className={styles.slideBtn}>Подробнее</Link>
-                      </div>
-                    </SwiperSlide>
-                    <SwiperSlide>
-                      <div className={styles.slide}>
-                        <div className={styles.slideTitle}>АРХЫЗ</div>
-                        <div className={styles.slideSubTitle}>точка 1</div>
-                        <div className={styles.routeLine}><img src="/routeLine.png" alt="" /></div>
-                        <div className={styles.slideBlock}>
-                          <div className={styles.slideDesc}>
-                            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-                          </div>
-                          <div className={styles.slideImg}><img src="/slideRouteImg1.png" alt="" /></div>
-                        </div>
-
-                        <Link href="/#" className={styles.slideBtn}>Подробнее</Link>
-                      </div>
-                    </SwiperSlide>
-                    <SwiperSlide>
-                      <div className={styles.slide}>
-                        <div className={styles.slideTitle}>АРХЫЗ</div>
-                        <div className={styles.slideSubTitle}>точка 1</div>
-                        <div className={styles.routeLine}><img src="/routeLine.png" alt="" /></div>
-                        <div className={styles.slideBlock}>
-                          <div className={styles.slideDesc}>
-                            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-                          </div>
-                          <div className={styles.slideImg}><img src="/slideRouteImg1.png" alt="" /></div>
-                        </div>
-
-                        <Link href="/#" className={styles.slideBtn}>Подробнее</Link>
-                      </div>
-                    </SwiperSlide>
+                      </SwiperSlide>
+                    )}
                   </Swiper>
                 </div>
               </div>
 
-              <div id="map" className={styles.title}>Карта</div>
-              <div className={styles.map}><img src="/map.png" alt="" /></div>
+              <div id="map" className={styles.title}>Как добраться</div>
+              <div className={styles.map}>
+                <YandexMapRoute
+                  places={routePlaces.map((p) => ({
+                    id: p.id,
+                    title: p.title,
+                    latitude: p.latitude,
+                    longitude: p.longitude,
+                  }))}
+                  height={400}
+                  className={styles.mapYandex}
+                  showRouteFromMe
+                />
+              </div>
 
               <div id="what-to-take" className={styles.title}>Что взять с собой</div>
               <div className={styles.infoTable}>
-                <div className={styles.infoTable_blocks}>
-                  <div className={styles.infoTable_blocks_title}>
-                    Одежда
+                {whatToBringItems.length > 0 ? (
+                  <div className={styles.infoTable_blocks}>
+                    {whatToBringItems.map((item, i) => (
+                      <div key={i} className={styles.infoTable_blocks_block}>
+                        <div className={styles.infoTable_blocks_block_img}>
+                          <img src="/infoTable_icon1.png" alt="" />
+                        </div>
+                        {item.text || '—'}
+                      </div>
+                    ))}
                   </div>
-                  <div className={styles.infoTable_blocks_block}>
-                    <div className={styles.infoTable_blocks_block_img}>
-                      <img src="/infoTable_icon1.png" alt="" />
-                    </div>
-                    Куртки, ветровки, ветрозащитная одежда
-                  </div>
-                  <div className={styles.infoTable_blocks_block}>
-                    <div className={styles.infoTable_blocks_block_img}>
-                      <img src="/infoTable_icon2.png" alt="" />
-                    </div>
-                    Солнцезащитные очки
-                  </div>
-                  <div className={styles.infoTable_blocks_block}>
-                    <div className={styles.infoTable_blocks_block_img}>
-                      <img src="/infoTable_icon3.png" alt="" />
-                    </div>
-                    Удобная трекинговая обувь
-                  </div>
-                </div>
-                <div className={styles.infoTable_blocks}>
-                  <div className={styles.infoTable_blocks_title}>
-                    Одежда
-                  </div>
-                  <div className={styles.infoTable_blocks_block}>
-                    <div className={styles.infoTable_blocks_block_img}>
-                      <img src="/infoTable_icon4.png" alt="" />
-                    </div>
-                    Солнцезащитный крем
-                  </div>
-                  <div className={styles.infoTable_blocks_block}>
-                    <div className={styles.infoTable_blocks_block_img}>
-                      <img src="/infoTable_icon5.png" alt="" />
-                    </div>
-                    Индивидуальный комплект лекарственных препаратов
-                  </div>
-                </div>
+                ) : (
+                  <div className={styles.text}>Список не добавлен.</div>
+                )}
               </div>
 
               <div id="description" className={styles.title}>Описание маршрута</div>
               <div className={styles.tabs}>
-                <div className={styles.tabsList}>
-                  <button
-                    className={`${styles.tab} ${activeDay === 1 ? styles.tabActive : ''}`}
-                    onClick={() => setActiveDay(1)}
-                  >
-                    1 день
-                  </button>
-                  <button
-                    className={`${styles.tab} ${activeDay === 2 ? styles.tabActive : ''}`}
-                    onClick={() => setActiveDay(2)}
-                  >
-                    2 день
-                  </button>
-                  <button
-                    className={`${styles.tab} ${activeDay === 3 ? styles.tabActive : ''}`}
-                    onClick={() => setActiveDay(3)}
-                  >
-                    3 день
-                  </button>
-                </div>
-                <div className={styles.tabsContent}>
-                  <div className={styles.tabsContentTitle}>{activeDay} день</div>
-                  {activeDay === 1 && (
-                    <ul className={styles.tabsContentList}>
-                      <li>Прибытие на Кавказские Минеральные Воды (аэропорт или железнодорожный вокзал г.Минеральные Воды, или железнодорожный вокзал г. Пятигорска). Рекомендованное время прибытия не позднее 11:00 по московскому времени.</li>
-                      <li>Трансфер до гостиницы выбранной категории самостоятельно или по заявке за дополнительную плату.</li>
-                      <li>Размещение в выбранной гостинице.</li>
-                      <li>Обед оплачивается самостоятельно или по заявке за доп. плату.</li>
-                      <li>Встреча с гидом в 13:00 по московскому времени.</li>
-                    </ul>
-                  )}
-                  {activeDay === 2 && (
-                    <ul className={styles.tabsContentList}>
-                      <li>Прибытие на Кавказские Минеральные Воды (аэропорт или железнодорожный вокзал г.Минеральные Воды, или железнодорожный вокзал г. Пятигорска). Рекомендованное время прибытия не позднее 11:00 по московскому времени.</li>
-                      <li>Трансфер до гостиницы выбранной категории самостоятельно или по заявке за дополнительную плату.</li>
-                      <li>Размещение в выбранной гостинице.</li>
-                    </ul>
-                  )}
-                  {activeDay === 3 && (
-                    <ul className={styles.tabsContentList}>
-                      <li>Обед оплачивается самостоятельно или по заявке за доп. плату.</li>
-                      <li>Встреча с гидом в 13:00 по московскому времени.</li>
-                    </ul>
-                  )}
-                </div>
+                {points.length > 0 ? (
+                  <>
+                    <div className={styles.tabsList}>
+                      {points.map((point, i) => (
+                        <button
+                          key={point.id || i}
+                          className={`${styles.tab} ${activeDay === i + 1 ? styles.tabActive : ''}`}
+                          onClick={() => setActiveDay(i + 1)}
+                        >
+                          {i + 1} {point.title ? (point.title.length > 15 ? point.title.slice(0, 15) + '…' : point.title) : `день`}
+                        </button>
+                      ))}
+                    </div>
+                    <div className={styles.tabsContent}>
+                      <div className={styles.tabsContentTitle}>{points[activeDay - 1]?.title || `${activeDay} день`}</div>
+                      <div className={styles.tabsContentList} dangerouslySetInnerHTML={{ __html: points[activeDay - 1]?.description || '' }} />
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.text}>Описание по дням не добавлено.</div>
+                )}
               </div>
 
               <div id="important" className={styles.title}>Важно знать</div>
               <div className={styles.text}>
-                При посещении горных районов возможны перепады давления,
-                рекомендуем вам обратить на это внимание
+                {route.importantInfo || 'Дополнительная информация не добавлена.'}
               </div>
 
               <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
@@ -750,9 +793,11 @@ export default function RouteDetail({ }) {
 
               <div id="similar" className={styles.title}>Похожие маршруты</div>
               <div className={styles.anotherRoutes}>
-                <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
-                <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
-                <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
+                {similarRoutes.length > 0 ? (
+                  similarRoutes.map((r) => <RouteBlock key={r.id} route={r} />)
+                ) : (
+                  <div className={styles.text}>Нет похожих маршрутов.</div>
+                )}
               </div>
             </div>
 

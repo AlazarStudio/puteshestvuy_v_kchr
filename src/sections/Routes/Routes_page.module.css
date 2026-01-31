@@ -52,3 +52,11 @@
   line-height: 150%;
   letter-spacing: 0%;
 }
+
+.loading,
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 16px;
+}

@@ -1,23 +1,37 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Route, ExternalLink } from 'lucide-react';
 
 const DEFAULT_CENTER = [43.5, 41.7];
 const DEFAULT_ZOOM = 10;
 const SCRIPT_ID = 'yandex-maps-script-2-1';
 const MAP_HEIGHT = 400;
 
+/** Ссылка на маршрут в Яндекс.Картах (все точки по порядку). points — массив [lat, lon]. */
+function buildYandexRouteUrlMulti(points) {
+  if (points.length === 0) return 'https://yandex.ru/maps/';
+  const rtext = points.map((p) => `${p[0]},${p[1]}`).join('~');
+  return `https://yandex.ru/maps/?rtext=${encodeURIComponent(rtext)}&rtt=auto`;
+}
+
 /**
  * Карта маршрута: точки мест в порядке следования и маршрут между ними.
  * places — массив { id, title, latitude, longitude } в порядке маршрута.
+ * showRouteFromMe — показывать кнопки «Построить маршрут» (от меня до первой точки) и «Открыть в Яндекс.Картах» со всеми точками.
  */
-export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className }) {
+export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className, showRouteFromMe = false }) {
   const containerRef = useRef(null);
+  const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const placemarksRef = useRef([]);
-  const routeRef = useRef(null); // MultiRoute или Polyline
+  const routeRef = useRef(null);
+  const routeFromMeRef = useRef(null); // маршрут от пользователя до первой точки
+  const userCoordsRef = useRef(null); // { lat, lon } — сохранённое местоположение пользователя
   const [scriptReady, setScriptReady] = useState(false);
   const [error, setError] = useState(null);
+  const [routeStatus, setRouteStatus] = useState(null); // null | 'loading' | 'ready' | 'denied' | 'error'
+  const [routeBuiltFromMe, setRouteBuiltFromMe] = useState(false);
 
   const pointsWithCoords = places.filter(
     (p) =>
@@ -76,10 +90,16 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
   useEffect(() => {
     if (!scriptReady || !containerRef.current || !window.ymaps) return;
 
+    setRouteBuiltFromMe(false);
+    userCoordsRef.current = null;
+    const controls = ['zoomControl', 'typeSelector', 'fullscreenControl'];
+    if (showRouteFromMe) {
+      controls.push('geolocationControl');
+    }
     const map = new window.ymaps.Map(containerRef.current, {
       center: coordsOrdered.length ? coordsOrdered[0] : DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
-      controls: ['zoomControl', 'typeSelector', 'fullscreenControl'],
+      controls,
     });
     mapRef.current = map;
 
@@ -165,12 +185,69 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         mapRef.current.geoObjects.remove(routeRef.current);
         routeRef.current = null;
       }
+      if (routeFromMeRef.current && mapRef.current) {
+        mapRef.current.geoObjects.remove(routeFromMeRef.current);
+        routeFromMeRef.current = null;
+      }
       if (mapRef.current && mapRef.current.destroy) {
         mapRef.current.destroy();
         mapRef.current = null;
       }
     };
-  }, [scriptReady, JSON.stringify(coordsOrdered.map((c) => c.join(',')))]);
+  }, [scriptReady, showRouteFromMe, JSON.stringify(coordsOrdered.map((c) => c.join(',')))]);
+
+  const handleBuildRoute = () => {
+    if (!scriptReady || !window.ymaps || !mapRef.current || coordsOrdered.length === 0) return;
+    setRouteStatus('loading');
+    if (!navigator.geolocation) {
+      setRouteStatus('error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const fromLat = position.coords.latitude;
+        const fromLon = position.coords.longitude;
+        userCoordsRef.current = { lat: fromLat, lon: fromLon };
+        const referencePoints = [[fromLat, fromLon], coordsOrdered[0]];
+        const requireModules = window.ymaps.modules?.require;
+        if (typeof requireModules === 'function') {
+          requireModules(['multiRouter.MultiRoute'], (MultiRoute) => {
+            if (!mapRef.current) return;
+            if (routeFromMeRef.current) {
+              mapRef.current.geoObjects.remove(routeFromMeRef.current);
+              routeFromMeRef.current = null;
+            }
+            const multiRoute = new MultiRoute(
+              { referencePoints, params: { routingMode: 'auto' } },
+              {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: '#0066cc',
+                routeActiveStrokeWidth: 5,
+                routeStrokeColor: '#0066cc66',
+                routeStrokeWidth: 4,
+              }
+            );
+            mapRef.current.geoObjects.add(multiRoute);
+            routeFromMeRef.current = multiRoute;
+            setRouteBuiltFromMe(true);
+            setRouteStatus('ready');
+          });
+        } else {
+          setRouteBuiltFromMe(true);
+          setRouteStatus('ready');
+        }
+      },
+      () => setRouteStatus('denied')
+    );
+  };
+
+  const handleOpenYandexMaps = () => {
+    const user = userCoordsRef.current;
+    const points = user
+      ? [[user.lat, user.lon], ...coordsOrdered]
+      : coordsOrdered;
+    window.open(buildYandexRouteUrlMulti(points), '_blank', 'noopener,noreferrer');
+  };
 
   if (error) {
     return (
@@ -250,11 +327,78 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
     );
   }
 
+  const overlayStyle = {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    padding: 6,
+    background: 'rgba(255,255,255,0.95)',
+    borderRadius: 8,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+    zIndex: 1,
+  };
+  const iconBtnStyle = {
+    width: 40,
+    height: 40,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    cursor: 'pointer',
+    color: '#475569',
+  };
+
+  if (!showRouteFromMe) {
+    return (
+      <div
+        ref={containerRef}
+        className={className}
+        style={{ width: '100%', height, borderRadius: 8, overflow: 'hidden' }}
+      />
+    );
+  }
+
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{ width: '100%', height, borderRadius: 8, overflow: 'hidden' }}
-    />
+    <div className={className}>
+      <div ref={mapWrapperRef} style={{ position: 'relative', width: '100%', height, borderRadius: 8, overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+        <div style={overlayStyle}>
+          <button
+            type="button"
+            onClick={handleBuildRoute}
+            disabled={routeStatus === 'loading'}
+            title={routeStatus === 'loading' ? 'Определяем местоположение...' : 'Построить маршрут от моего местоположения'}
+            style={{
+              ...iconBtnStyle,
+              cursor: routeStatus === 'loading' ? 'wait' : 'pointer',
+              opacity: routeStatus === 'loading' ? 0.7 : 1,
+            }}
+          >
+            <Route size={20} strokeWidth={2} />
+          </button>
+          {routeBuiltFromMe && (
+            <button
+              type="button"
+              onClick={handleOpenYandexMaps}
+              title="Открыть в Яндекс.Картах"
+              style={iconBtnStyle}
+            >
+              <ExternalLink size={20} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      </div>
+      {routeStatus === 'denied' && (
+        <p style={{ marginTop: 8, fontSize: '0.85rem', color: '#dc2626' }}>
+          Доступ к геолокации запрещён. Разрешите доступ или откройте карту в приложении Яндекс.
+        </p>
+      )}
+    </div>
   );
 }

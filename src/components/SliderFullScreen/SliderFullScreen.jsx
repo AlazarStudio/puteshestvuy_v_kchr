@@ -11,10 +11,12 @@ const TIME_RUNNING = 500
 
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
+  // Главная картинка — первый из галереи, иначе превью
+  const mainImage = place.images?.[0] ?? place.image
   return {
     id: place.id,
     slug: place.slug,
-    image: getImageUrl(place.image),
+    image: getImageUrl(mainImage),
     place: place.location || '',
     title: place.title || '',
     rating: place.rating != null && place.rating !== '' ? String(place.rating) : '—',
