@@ -7,6 +7,7 @@ import { routesAPI, placesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
+import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
 
 const TOAST_DURATION_MS = 3000;
@@ -139,6 +140,9 @@ function getFormSnapshot(data) {
     isFamily: (Array.isArray(cf.isFamilyOptions) ? cf.isFamilyOptions : []).includes('Да') || !!data.isFamily,
     hasOvernight: (Array.isArray(cf.hasOvernightOptions) ? cf.hasOvernightOptions : []).includes('Да') || !!data.hasOvernight,
     whatToBring: data.whatToBring ?? '',
+    whatToBringItems: Array.isArray(data.whatToBringItems)
+      ? data.whatToBringItems.map((i) => ({ iconType: i.iconType ?? 'mui', icon: i.icon ?? '', text: i.text ?? '' }))
+      : parseWhatToBring(data.whatToBring ?? ''),
     importantInfo: data.importantInfo ?? '',
     isActive: !!data.isActive,
     images: Array.isArray(data.images) ? [...data.images] : [],
@@ -170,6 +174,7 @@ export default function RouteEditPage() {
     isFamily: false,
     hasOvernight: false,
     whatToBring: '',
+    whatToBringItems: [],
     importantInfo: '',
     isActive: true,
     images: [],
@@ -199,6 +204,8 @@ export default function RouteEditPage() {
   const [addFilterModalOpen, setAddFilterModalOpen] = useState(false);
   const [addFilterSelectedGroups, setAddFilterSelectedGroups] = useState([]);
   const [addedFilterGroups, setAddedFilterGroups] = useState([]);
+  const [whatToBringIconPickerIndex, setWhatToBringIconPickerIndex] = useState(null);
+  const [whatToBringIconGroup, setWhatToBringIconGroup] = useState('all');
   const savedFormDataRef = useRef(null);
 
   const isDirty = useMemo(() => {
@@ -288,11 +295,13 @@ export default function RouteEditPage() {
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .map((p) => ({ id: p.id, title: p.title ?? '', description: p.description ?? '', image: p.image ?? null, order: p.order ?? 0 }))
         : [];
+      const whatToBringItems = parseWhatToBring(response.data.whatToBring ?? '');
       const next = {
         ...response.data,
         placeIds: response.data.placeIds || [],
         customFilters,
         points,
+        whatToBringItems,
       };
       setFormData(next);
       savedFormDataRef.current = next;
@@ -473,6 +482,7 @@ export default function RouteEditPage() {
         distance: null,
         elevationGain: null,
         points: pointsPayload,
+        whatToBring: JSON.stringify(formData.whatToBringItems ?? []),
         customFilters: {
           distance: first('distanceOptions') ?? cf.distance ?? null,
           elevationGain: first('elevationOptions') ?? cf.elevationGain ?? null,
@@ -502,6 +512,7 @@ export default function RouteEditPage() {
           images: [...(formData.images || [])],
           placeIds: [...(formData.placeIds || [])],
           points: formData.points?.length ? formData.points.map((p) => ({ ...p })) : [],
+          whatToBringItems: formData.whatToBringItems?.length ? formData.whatToBringItems.map((i) => ({ ...i })) : [],
           customFilters: formData.customFilters && typeof formData.customFilters === 'object' ? { ...formData.customFilters } : {},
         };
         setShowToast(true);
@@ -983,12 +994,225 @@ export default function RouteEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Что взять с собой</label>
-          <RichTextEditor
-            value={formData.whatToBring}
-            onChange={(value) => setFormData((prev) => ({ ...prev, whatToBring: value }))}
-            placeholder="Список необходимых вещей"
-            minHeight={300}
-          />
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Каждый пункт: иконка (своя загрузка или из библиотеки) и текст.
+          </p>
+          <div className={styles.whatToBringList}>
+            {(formData.whatToBringItems ?? []).map((item, index) => (
+              <div key={`wtb-${index}`} className={styles.whatToBringBlock}>
+                <div className={styles.whatToBringIconCell}>
+                  <div className={styles.whatToBringTypeSwitcher} role="group" aria-label="Источник иконки">
+                    <button
+                      type="button"
+                      className={`${styles.whatToBringTypeSegment} ${item.iconType === 'upload' ? styles.whatToBringTypeSegmentActive : ''}`}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                            i === index ? { ...it, iconType: 'upload', icon: '' } : it
+                          ),
+                        }))
+                      }
+                    >
+                      Загрузить
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.whatToBringTypeSegment} ${item.iconType === 'mui' ? styles.whatToBringTypeSegmentActive : ''}`}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                            i === index ? { ...it, iconType: 'mui', icon: it.iconType === 'mui' ? it.icon : '' } : it
+                          ),
+                        }))
+                      }
+                    >
+                      Библиотека
+                    </button>
+                  </div>
+                  <div className={styles.whatToBringIconPreview}>
+                    {item.iconType === 'upload' ? (
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          id={`wtb-upload-${index}`}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const fd = new FormData();
+                              fd.append('file', file);
+                              const res = await mediaAPI.upload(fd);
+                              setFormData((prev) => ({
+                                ...prev,
+                                whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                  i === index ? { ...it, icon: res.data.url } : it
+                                ),
+                              }));
+                            } catch (err) {
+                              console.error(err);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        <label htmlFor={`wtb-upload-${index}`} className={styles.whatToBringUploadBtn}>
+                          {item.icon ? (
+                            <img src={getImageUrl(item.icon)} alt="" className={styles.whatToBringUploadImg} />
+                          ) : (
+                            <Upload size={24} />
+                          )}
+                        </label>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.whatToBringMuiBtn}
+                        onClick={() => {
+                          setWhatToBringIconGroup('all');
+                          setWhatToBringIconPickerIndex(index);
+                        }}
+                        title="Выбрать иконку"
+                      >
+                        {item.icon && getMuiIconComponent(item.icon) ? (
+                          (() => {
+                            const Icon = getMuiIconComponent(item.icon);
+                            return <Icon size={28} />;
+                          })()
+                        ) : (
+                          <span className={styles.whatToBringMuiPlaceholder}>Иконка</span>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  className={styles.whatToBringTextInput}
+                  value={item.text}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                        i === index ? { ...it, text: e.target.value } : it
+                      ),
+                    }))
+                  }
+                  placeholder="Текст пункта"
+                />
+                <button
+                  type="button"
+                  className={styles.deleteBtn}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      whatToBringItems: prev.whatToBringItems.filter((_, i) => i !== index),
+                    }))
+                  }
+                  aria-label="Удалить"
+                  title="Удалить"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ))}
+            <div className={styles.whatToBringAddWrap}>
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    whatToBringItems: [...(prev.whatToBringItems ?? []), { iconType: 'mui', icon: '', text: '' }],
+                  }))
+                }
+              >
+                <Plus size={18} /> Добавить пункт
+              </button>
+            </div>
+          </div>
+          {whatToBringIconPickerIndex !== null && (
+            <div
+              className={styles.modalOverlay}
+              onClick={(e) => e.target === e.currentTarget && setWhatToBringIconPickerIndex(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Выбор иконки"
+            >
+              <div className={styles.modalDialog} style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
+                  <h2 className={styles.modalTitle}>Выберите иконку</h2>
+                  <button
+                    type="button"
+                    onClick={() => setWhatToBringIconPickerIndex(null)}
+                    className={styles.modalClose}
+                    aria-label="Закрыть"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className={styles.modalBody} style={{ maxHeight: 440, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div className={styles.whatToBringIconFilters}>
+                    <select
+                      className={styles.whatToBringIconGroupSelect}
+                      value={whatToBringIconGroup}
+                      onChange={(e) => setWhatToBringIconGroup(e.target.value)}
+                      aria-label="Группа иконок"
+                    >
+                      <option value="all">Все иконки</option>
+                      {getIconGroups().map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.label} ({g.iconNames.length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {(() => {
+                    const groups = getIconGroups();
+                    const namesToShow =
+                      whatToBringIconGroup === 'all'
+                        ? MUI_ICON_NAMES
+                        : (groups.find((g) => g.id === whatToBringIconGroup)?.iconNames ?? []);
+                    return (
+                      <>
+                        <div className={styles.whatToBringIconGridWrap}>
+                          {namesToShow.map((name) => {
+                            const IconComponent = MUI_ICONS[name];
+                            if (!IconComponent) return null;
+                            return (
+                              <button
+                                key={name}
+                                type="button"
+                                className={styles.whatToBringIconGridItem}
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                      i === whatToBringIconPickerIndex ? { ...it, icon: name } : it
+                                    ),
+                                  }));
+                                  setWhatToBringIconPickerIndex(null);
+                                  setWhatToBringIconGroup('all');
+                                }}
+                                title={name}
+                              >
+                                <IconComponent size={28} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {namesToShow.length === 0 && (
+                          <p className={styles.whatToBringIconEmpty}>В этой группе нет иконок.</p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.formGroup}>
