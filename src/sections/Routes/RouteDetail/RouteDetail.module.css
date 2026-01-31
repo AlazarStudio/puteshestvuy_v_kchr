@@ -435,28 +435,41 @@
 .item {
   width: 24%;
   display: flex;
-  gap: 10px;
+  gap: 5px;
   align-items: center;
   background-color: #fff;
-  padding: 16px;
+  padding: 12px 10px;
   border-radius: 10px;
 }
 
-.item img {
+.item img,
+.item .routeInfoBlockIcon {
   width: 31px;
   height: 31px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.item .routeInfoBlockIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item .routeInfoBlockIcon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .text {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .textTitle {
   font-weight: 400;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 100%;
   letter-spacing: 0%;
 }
@@ -533,8 +546,8 @@
 }
 
 .textDesc {
-  font-weight: 400;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 12px;
   line-height: 100%;
   letter-spacing: 0%;
 }
@@ -550,7 +563,7 @@
   height: fit-content;
   background-color: #fff;
   border-radius: 20px;
-  padding: 20px;
+  padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -665,15 +678,17 @@
 
 .infoTable_blocks {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
-  width: 50%;
+  width: 100%;
 }
 
 .infoTable_blocks_block {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: calc(50% - 5px);
+  box-sizing: border-box;
 }
 
 .infoTable_blocks_block img {
@@ -744,7 +759,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* gap: 10px; */
 }
 
 .tabsContentList li {
@@ -849,6 +864,17 @@
   background-color: #0d4a44;
 }
 
+.feedbackSubmitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.feedbackSuccess {
+  font-size: 14px;
+  color: #156A60;
+  margin: 0;
+}
+
 .feedbackList {
   display: flex;
   flex-direction: column;
@@ -899,6 +925,12 @@
 .feedbackItemName {
   font-weight: 600;
   font-size: 16px;
+}
+
+.feedbackItemPending {
+  font-size: 12px;
+  color: #888;
+  font-weight: 400;
 }
 
 .feedbackItemDate {

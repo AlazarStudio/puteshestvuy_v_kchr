@@ -37,10 +37,11 @@ function getAvailableGroups(filterOptions) {
   (filterOptions.extraGroups || []).forEach((g) => {
     if (!g?.key) return;
     const values = g.values || [];
+    const item = { key: g.key, label: g.label || g.key, icon: g.icon || null, iconType: g.iconType || null };
     if (values.length > 0) {
-      list.push({ key: g.key, label: g.label || g.key, values, type: 'multi' });
+      list.push({ ...item, values, type: 'multi' });
     } else {
-      list.push({ key: g.key, label: g.label || g.key, values: [], type: 'input' });
+      list.push({ ...item, values: [], type: 'input' });
     }
   });
   return list;
@@ -247,6 +248,7 @@ export default function RouteEditPage() {
   const [addedFilterGroups, setAddedFilterGroups] = useState([]);
   const [whatToBringIconPickerIndex, setWhatToBringIconPickerIndex] = useState(null);
   const [whatToBringIconGroup, setWhatToBringIconGroup] = useState('all');
+  const [whatToBringIconSearch, setWhatToBringIconSearch] = useState('');
   const savedFormDataRef = useRef(null);
   /** Снимок формы на момент последнего сохранения — для точного сравнения isDirty. */
   const savedSnapshotRef = useRef(null);
@@ -275,6 +277,10 @@ export default function RouteEditPage() {
       fetchRoute();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (whatToBringIconPickerIndex !== null) setWhatToBringIconSearch('');
+  }, [whatToBringIconPickerIndex]);
 
   const fetchPlaces = useCallback(async () => {
     try {
@@ -987,7 +993,15 @@ export default function RouteEditPage() {
                   return (
                     <div key={groupKey} className={styles.filterGroupCard}>
                       <div className={styles.filterGroupTitle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                        <span>{g.label}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          {g.iconType === 'upload' && g.icon ? (
+                            <img src={getImageUrl(g.icon)} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                          ) : g.icon && getMuiIconComponent(g.icon) ? (() => {
+                            const Icon = getMuiIconComponent(g.icon);
+                            return <Icon size={20} />;
+                          })() : null}
+                          {g.label}
+                        </span>
                         <button
                           type="button"
                           onClick={() => {
@@ -1086,7 +1100,15 @@ export default function RouteEditPage() {
                               );
                             }}
                           />
-                          <span>{gr.label}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            {gr.iconType === 'upload' && gr.icon ? (
+                              <img src={getImageUrl(gr.icon)} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            ) : gr.icon && getMuiIconComponent(gr.icon) ? (() => {
+                              const Icon = getMuiIconComponent(gr.icon);
+                              return <Icon size={18} />;
+                            })() : null}
+                            {gr.label}
+                          </span>
                         </label>
                       ))}
                   </div>
@@ -1533,6 +1555,7 @@ export default function RouteEditPage() {
                         className={styles.whatToBringMuiBtn}
                         onClick={() => {
                           setWhatToBringIconGroup('all');
+                          setWhatToBringIconSearch('');
                           setWhatToBringIconPickerIndex(index);
                         }}
                         title="Выбрать иконку"
@@ -1616,6 +1639,15 @@ export default function RouteEditPage() {
                 </div>
                 <div className={styles.modalBody} style={{ maxHeight: 440, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div className={styles.whatToBringIconFilters}>
+                    <input
+                      type="search"
+                      className={styles.whatToBringIconSearch}
+                      placeholder="Поиск иконки..."
+                      value={whatToBringIconSearch}
+                      onChange={(e) => setWhatToBringIconSearch(e.target.value)}
+                      aria-label="Поиск иконки"
+                      autoComplete="off"
+                    />
                     <select
                       className={styles.whatToBringIconGroupSelect}
                       value={whatToBringIconGroup}
@@ -1632,10 +1664,14 @@ export default function RouteEditPage() {
                   </div>
                   {(() => {
                     const groups = getIconGroups();
-                    const namesToShow =
+                    const baseNames =
                       whatToBringIconGroup === 'all'
                         ? MUI_ICON_NAMES
                         : (groups.find((g) => g.id === whatToBringIconGroup)?.iconNames ?? []);
+                    const searchLower = (whatToBringIconSearch || '').trim().toLowerCase();
+                    const namesToShow = searchLower
+                      ? baseNames.filter((name) => name.toLowerCase().includes(searchLower))
+                      : baseNames;
                     return (
                       <>
                         <div className={styles.whatToBringIconGridWrap}>
@@ -1656,6 +1692,7 @@ export default function RouteEditPage() {
                                   }));
                                   setWhatToBringIconPickerIndex(null);
                                   setWhatToBringIconGroup('all');
+                                  setWhatToBringIconSearch('');
                                 }}
                                 title={name}
                               >

@@ -13,12 +13,18 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import { publicRoutesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
   try {
     const parsed = JSON.parse(str)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((i) => ({
+      iconType: i?.iconType ?? 'mui',
+      icon: i?.icon ?? '',
+      text: i?.text ?? '',
+    }))
   } catch {
     return []
   }
@@ -38,8 +44,66 @@ export default function RouteDetail({ routeSlug }) {
   const [expandedReviews, setExpandedReviews] = useState({})
   const [activeAnchor, setActiveAnchor] = useState('main')
   const [reviews, setReviews] = useState([])
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null) // null | 'loading' | 'success' | 'error'
+  const [showAllReviews, setShowAllReviews] = useState(false)
+  const [routeFilterMeta, setRouteFilterMeta] = useState({ fixedGroupMeta: {}, extraGroups: [] })
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
+  const anchorsRef = useRef([])
+
+  useEffect(() => {
+    let cancelled = false
+    publicRoutesAPI.getFilters()
+      .then(({ data }) => {
+        if (!cancelled && data) {
+          setRouteFilterMeta({
+            fixedGroupMeta: data.fixedGroupMeta && typeof data.fixedGroupMeta === 'object' ? data.fixedGroupMeta : {},
+            extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
+          })
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const getGroupIcon = (key) => {
+    const meta = routeFilterMeta.fixedGroupMeta?.[key]
+    if (meta && (meta.icon || meta.iconType)) {
+      return { icon: meta.icon || null, iconType: meta.iconType || null }
+    }
+    const extra = routeFilterMeta.extraGroups?.find((g) => g.key === key)
+    if (extra && (extra.icon || extra.iconType)) {
+      return { icon: extra.icon || null, iconType: extra.iconType || null }
+    }
+    return { icon: null, iconType: null }
+  }
+
+  const FALLBACK_ICONS = {
+    distanceOptions: '/routeInfoContentIcon1.png',
+    seasons: '/routeInfoContentIcon2.png',
+    elevationOptions: '/routeInfoContentIcon3.png',
+    hasOvernightOptions: '/routeInfoContentIcon4.png',
+    difficultyLevels: '/routeInfoContentIcon5.png',
+    durationOptions: '/routeInfoContentIcon6.png',
+    isFamilyOptions: '/routeInfoContentIcon7.png',
+    transport: '/routeInfoContentIcon8.png',
+  }
+
+  const renderInfoBlockIcon = (groupKey) => {
+    const { icon, iconType } = getGroupIcon(groupKey)
+    const fallbackSrc = FALLBACK_ICONS[groupKey]
+    const isUploadIcon = iconType === 'upload' || (icon && (icon.startsWith('http') || icon.startsWith('/')))
+    if (icon && isUploadIcon) {
+      return <img src={getImageUrl(icon)} alt="" className={styles.routeInfoBlockIcon} />
+    }
+    if (icon && !isUploadIcon) {
+      const IconComponent = getMuiIconComponent(icon)
+      if (IconComponent) {
+        return <span className={styles.routeInfoBlockIcon} aria-hidden="true"><IconComponent size={24} strokeWidth={1.5} /></span>
+      }
+    }
+    return <img src={fallbackSrc} alt="" className={styles.routeInfoBlockIcon} />
+  }
 
   useEffect(() => {
     if (!routeSlug) {
@@ -235,22 +299,24 @@ export default function RouteDetail({ routeSlug }) {
       return
     }
 
-    const newReview = {
-      id: reviews.length > 0 ? Math.max(...reviews.map(r => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating: rating,
+    setReviewSubmitStatus('loading')
+    publicRoutesAPI.createReview(route.id, {
+      authorName: reviewName.trim(),
+      rating,
       text: reviewText.trim(),
-      avatar: '/profile.png',
-      isLong: reviewText.trim().length > 200
-    }
-
-    setReviews(prev => [newReview, ...prev])
-
-    // Очистка формы
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
+      authorAvatar: '',
+    })
+      .then(() => {
+        setReviewName('')
+        setReviewText('')
+        setRating(0)
+        setReviewSubmitStatus('success')
+      })
+      .catch((err) => {
+        const message = err.response?.data?.message || err.message || 'Не удалось отправить отзыв'
+        setReviewSubmitStatus('error')
+        alert(message)
+      })
   }
 
   const anchors = [
@@ -260,11 +326,12 @@ export default function RouteDetail({ routeSlug }) {
     { id: 'what-to-take', label: 'Что взять с собой' },
     { id: 'description', label: 'Описание маршрута' },
     { id: 'important', label: 'Важно знать' },
-    { id: 'guides', label: 'Гиды' },
+    ...(route?.guides?.length > 0 ? [{ id: 'guides', label: 'Гиды' }] : []),
     { id: 'reviews', label: 'Отзывы' },
-    { id: 'places', label: 'Места рядом с этим маршрутом' },
-    { id: 'similar', label: 'Похожие маршруты' }
+    ...(route?.nearbyPlaces?.length > 0 ? [{ id: 'places', label: 'Места рядом с этим маршрутом' }] : []),
+    ...(similarRoutes.length > 0 ? [{ id: 'similar', label: 'Похожие маршруты' }] : []),
   ]
+  anchorsRef.current = anchors
 
   const scrollToAnchor = (anchorId) => {
     const element = document.getElementById(anchorId)
@@ -280,17 +347,18 @@ export default function RouteDetail({ routeSlug }) {
     }
   }
 
-  // Отслеживание активного якоря при прокрутке
+  // Отслеживание активного якоря при прокрутке (читаем актуальный список якорей из ref)
   useEffect(() => {
     const handleScroll = () => {
+      const list = anchorsRef.current
       const scrollPosition = window.scrollY + 150 // Отступ для учета sticky header
 
-      for (let i = anchors.length - 1; i >= 0; i--) {
-        const element = document.getElementById(anchors[i].id)
+      for (let i = list.length - 1; i >= 0; i--) {
+        const element = document.getElementById(list[i].id)
         if (element) {
           const elementTop = element.offsetTop
           if (scrollPosition >= elementTop) {
-            setActiveAnchor(anchors[i].id)
+            setActiveAnchor(list[i].id)
             break
           }
         }
@@ -303,7 +371,6 @@ export default function RouteDetail({ routeSlug }) {
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {
@@ -335,6 +402,9 @@ export default function RouteDetail({ routeSlug }) {
   const seasonDisplay = Array.isArray(route.customFilters?.seasons) && route.customFilters.seasons.length > 0
     ? route.customFilters.seasons.join(', ')
     : (route.season || '')
+  const transportDisplay = Array.isArray(route.customFilters?.transport) && route.customFilters.transport.length > 0
+    ? route.customFilters.transport.join(', ')
+    : (route.transport || '')
 
   console.log(routePlaces)
 
@@ -415,7 +485,7 @@ export default function RouteDetail({ routeSlug }) {
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon1.png" alt="" />
+                    {renderInfoBlockIcon('distanceOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Расстояние</div>
                       <div className={styles.textDesc}>{route.distance} км</div>
@@ -424,7 +494,7 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {seasonDisplay && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon2.png" alt="" />
+                    {renderInfoBlockIcon('seasons')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Сезон</div>
                       <div className={styles.textDesc}>{seasonDisplay}</div>
@@ -433,7 +503,7 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {route.elevationGain != null && route.elevationGain !== '' && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon3.png" alt="" />
+                    {renderInfoBlockIcon('elevationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Перепад высот</div>
                       <div className={styles.textDesc}>{route.elevationGain} м</div>
@@ -442,7 +512,7 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {route.hasOvernight && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon4.png" alt="" />
+                    {renderInfoBlockIcon('hasOvernightOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>С ночевкой</div>
                     </div>
@@ -450,7 +520,7 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {route.difficulty != null && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon5.png" alt="" />
+                    {renderInfoBlockIcon('difficultyLevels')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>
                         Сложность
@@ -474,7 +544,7 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {route.duration && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon6.png" alt="" />
+                    {renderInfoBlockIcon('durationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Время прохождения</div>
                       <div className={styles.textDesc}>{route.duration}</div>
@@ -483,18 +553,18 @@ export default function RouteDetail({ routeSlug }) {
                 )}
                 {route.isFamily && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon7.png" alt="" />
+                    {renderInfoBlockIcon('isFamilyOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Семейный маршрут</div>
                     </div>
                   </div>
                 )}
-                {route.transport && (
+                {transportDisplay && (
                   <div className={styles.item}>
-                    <img src="/routeInfoContentIcon8.png" alt="" />
+                    {renderInfoBlockIcon('transport')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Способ передвижения</div>
-                      <div className={styles.textDesc}>{route.transport}</div>
+                      <div className={styles.textDesc}>{transportDisplay}</div>
                     </div>
                   </div>
                 )}
@@ -562,14 +632,23 @@ export default function RouteDetail({ routeSlug }) {
               <div className={styles.infoTable}>
                 {whatToBringItems.length > 0 ? (
                   <div className={styles.infoTable_blocks}>
-                    {whatToBringItems.map((item, i) => (
-                      <div key={i} className={styles.infoTable_blocks_block}>
-                        <div className={styles.infoTable_blocks_block_img}>
-                          <img src="/infoTable_icon1.png" alt="" />
+                    {whatToBringItems.map((item, i) => {
+                      const IconComponent = item.iconType === 'mui' && item.icon ? getMuiIconComponent(item.icon) : null
+                      return (
+                        <div key={i} className={styles.infoTable_blocks_block}>
+                          <div className={styles.infoTable_blocks_block_img}>
+                            {item.iconType === 'upload' && item.icon ? (
+                              <img src={getImageUrl(item.icon)} alt="" />
+                            ) : IconComponent ? (
+                              <IconComponent size={28} strokeWidth={1.5} />
+                            ) : (
+                              <img src="/infoTable_icon1.png" alt="" />
+                            )}
+                          </div>
+                          {item.text || '—'}
                         </div>
-                        {item.text || '—'}
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className={styles.text}>Список не добавлен.</div>
@@ -587,12 +666,11 @@ export default function RouteDetail({ routeSlug }) {
                           className={`${styles.tab} ${activeDay === i + 1 ? styles.tabActive : ''}`}
                           onClick={() => setActiveDay(i + 1)}
                         >
-                          {i + 1} {point.title ? (point.title.length > 15 ? point.title.slice(0, 15) + '…' : point.title) : `день`}
+                          {point.title || 'День'}
                         </button>
                       ))}
                     </div>
                     <div className={styles.tabsContent}>
-                      <div className={styles.tabsContentTitle}>{points[activeDay - 1]?.title || `${activeDay} день`}</div>
                       <div className={styles.tabsContentList} dangerouslySetInnerHTML={{ __html: points[activeDay - 1]?.description || '' }} />
                     </div>
                   </>
@@ -603,75 +681,42 @@ export default function RouteDetail({ routeSlug }) {
 
               <div id="important" className={styles.title}>Важно знать</div>
               <div className={styles.text}>
-                {route.importantInfo || 'Дополнительная информация не добавлена.'}
+                {route.importantInfo ? (
+                  <div dangerouslySetInnerHTML={{ __html: route.importantInfo }} />
+                ) : (
+                  'Дополнительная информация не добавлена.'
+                )}
               </div>
 
-              <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
-              <div className={styles.guides}>
-                <Link href={'/#'} className={styles.guide_man}>
-                  <div className={styles.guide_man_img}>
-                    <img src="/serviceImg1.png" alt="" className={styles.guide_man_img_avatar} />
-                    <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />
+              {route.guides?.length > 0 && (
+                <>
+                  <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
+                  <div className={styles.guides}>
+                    {route.guides.map((guide) => {
+                      const guideHref = `/services/${guide.slug || guide.id}`
+                      const avatarSrc = guide.images?.[0] ? getImageUrl(guide.images[0]) : '/no-avatar.png'
+                      const ratingStr = guide.rating != null && guide.rating !== '' ? String(guide.rating) : '—'
+                      const n = guide.reviewsCount
+                      const reviewsStr = n != null ? (n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`) : ''
+                      return (
+                        <Link key={guide.id} href={guideHref} className={styles.guide_man}>
+                          <div className={styles.guide_man_img}>
+                            <img src={avatarSrc} alt="" className={styles.guide_man_img_avatar} />
+                            {guide.isVerified && <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />}
+                          </div>
+                          <div className={styles.guide_man_desc}>
+                            <div className={styles.guide_man_title}>{guide.title || 'Гид'}</div>
+                            <div className={styles.guide_man_rating_feedback}>
+                              <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> {ratingStr}</div>
+                              {reviewsStr && <div className={styles.guide_man_rating_feedback_item}>{reviewsStr}</div>}
+                            </div>
+                          </div>
+                        </Link>
+                      )
+                    })}
                   </div>
-                  <div className={styles.guide_man_desc}>
-                    <div className={styles.guide_man_title}>
-                      Хубиев Артур Арсенович
-                    </div>
-                    <div className={styles.guide_man_rating_feedback}>
-                      <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> 5.0</div>
-                      <div className={styles.guide_man_rating_feedback_item}>4 отзыва</div>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link href={'/#'} className={styles.guide_man}>
-                  <div className={styles.guide_man_img}>
-                    <img src="/serviceImg2.png" alt="" className={styles.guide_man_img_avatar} />
-                    <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />
-                  </div>
-                  <div className={styles.guide_man_desc}>
-                    <div className={styles.guide_man_title}>
-                      Долаев Артур Нурмагомедович
-                    </div>
-                    <div className={styles.guide_man_rating_feedback}>
-                      <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> 5.0</div>
-                      <div className={styles.guide_man_rating_feedback_item}>4 отзыва</div>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link href={'/#'} className={styles.guide_man}>
-                  <div className={styles.guide_man_img}>
-                    <img src="/serviceImg3.png" alt="" className={styles.guide_man_img_avatar} />
-                    <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />
-                  </div>
-                  <div className={styles.guide_man_desc}>
-                    <div className={styles.guide_man_title}>
-                      Шаманов Руслан Владимирович
-                    </div>
-                    <div className={styles.guide_man_rating_feedback}>
-                      <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> 5.0</div>
-                      <div className={styles.guide_man_rating_feedback_item}>4 отзыва</div>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link href={'/#'} className={styles.guide_man}>
-                  <div className={styles.guide_man_img}>
-                    <img src="/serviceImg4.png" alt="" className={styles.guide_man_img_avatar} />
-                    <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />
-                  </div>
-                  <div className={styles.guide_man_desc}>
-                    <div className={styles.guide_man_title}>
-                      Дотдаев Магомет Сеит-Мазанович
-                    </div>
-                    <div className={styles.guide_man_rating_feedback}>
-                      <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> 5.0</div>
-                      <div className={styles.guide_man_rating_feedback_item}>4 отзыва</div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
+                </>
+              )}
 
               <div id="reviews" className={styles.title}>Отзывы</div>
               <div className={styles.feedback}>
@@ -714,13 +759,20 @@ export default function RouteDetail({ routeSlug }) {
                     onChange={(e) => setReviewText(e.target.value)}
                     rows="4"
                   />
-                  <button type="submit" className={styles.feedbackSubmitButton}>
-                    Оставить отзыв
+                  {reviewSubmitStatus === 'success' && (
+                    <p className={styles.feedbackSuccess}>Спасибо! Отзыв отправлен на модерацию.</p>
+                  )}
+                  <button
+                    type="submit"
+                    className={styles.feedbackSubmitButton}
+                    disabled={reviewSubmitStatus === 'loading'}
+                  >
+                    {reviewSubmitStatus === 'loading' ? 'Отправка...' : 'Оставить отзыв'}
                   </button>
                 </form>
 
                 <div className={styles.feedbackList}>
-                  {reviews.map((review) => {
+                  {(reviews.length > 5 && !showAllReviews ? reviews.slice(0, 5) : reviews).map((review) => {
                     const isExpanded = expandedReviews[review.id]
                     const shortText = review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text
                     const showExpandButton = review.text.length > 200 && !isExpanded
@@ -730,7 +782,7 @@ export default function RouteDetail({ routeSlug }) {
                         <div className={styles.feedbackItemHeader}>
                           <div className={styles.feedbackItemLeft}>
                             <img 
-                              src={review.avatar || '/no-avatar.png'} 
+                              src={review.avatar ? getImageUrl(review.avatar) : '/no-avatar.png'} 
                               alt={review.name} 
                               className={styles.feedbackAvatar}
                               onError={(e) => { e.target.src = '/no-avatar.png' }}
@@ -738,6 +790,9 @@ export default function RouteDetail({ routeSlug }) {
                             <div className={styles.feedbackItemInfo}>
                               <div className={styles.feedbackItemNameRow}>
                                 <div className={styles.feedbackItemName}>{review.name}</div>
+                                {review.status === 'pending' && (
+                                  <span className={styles.feedbackItemPending}>На модерации</span>
+                                )}
                                 <div className={styles.feedbackItemDate}>{review.date}</div>
                               </div>
                               <div className={styles.feedbackItemRating}>
@@ -780,25 +835,55 @@ export default function RouteDetail({ routeSlug }) {
                   })}
                 </div>
 
-                <div className={styles.feedbackShowAll}>
-                  <button className={styles.feedbackShowAllButton}>Показать все отзывы</button>
-                </div>
-              </div>
-
-              <div id="places" className={styles.title}>Места рядом с этим маршрутом</div>
-              <div className={styles.places}>
-                <PlaceBlock width='336px' rating={"5.0"} feedback={"1 отзыв"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
-                <PlaceBlock width='336px' rating={"5.0"} feedback={"2 отзыва"} place={"Теберда"} title={"Центральная усадьба Тебердинского национального парка"} desc={"Здесь расположены музей природы с коллекцией минералов, цветов и трав, а также чучелами животных, птиц и рыб; информационный визит-центр с экспозициями и выставками;"} link={"/#"} img={'/placeImg1.png'} />
-              </div>
-
-              <div id="similar" className={styles.title}>Похожие маршруты</div>
-              <div className={styles.anotherRoutes}>
-                {similarRoutes.length > 0 ? (
-                  similarRoutes.map((r) => <RouteBlock key={r.id} route={r} />)
-                ) : (
-                  <div className={styles.text}>Нет похожих маршрутов.</div>
+                {reviews.length > 5 && (
+                  <div className={styles.feedbackShowAll}>
+                    <button
+                      type="button"
+                      className={styles.feedbackShowAllButton}
+                      onClick={() => setShowAllReviews((v) => !v)}
+                    >
+                      {showAllReviews ? 'Свернуть' : `Показать все отзывы (${reviews.length})`}
+                    </button>
+                  </div>
                 )}
               </div>
+
+              {route.nearbyPlaces?.length > 0 && (
+                <>
+                  <div id="places" className={styles.title}>Места рядом с этим маршрутом</div>
+                  <div className={styles.places}>
+                    {route.nearbyPlaces.map((place) => {
+                      const mainImage = place.images?.[0] ?? place.image
+                      const imgSrc = mainImage ? getImageUrl(mainImage) : '/placeImg1.png'
+                      const n = place.reviewsCount ?? 0
+                      const feedbackStr = n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`
+                      const ratingStr = place.rating != null && place.rating !== '' ? String(place.rating) : '—'
+                      return (
+                        <Link key={place.id} href={`/places/${place.slug || place.id}`}>
+                          <PlaceBlock
+                            width="336px"
+                            rating={ratingStr}
+                            feedback={feedbackStr}
+                            place={place.location || ''}
+                            title={place.title || ''}
+                            desc={place.shortDescription || ''}
+                            img={imgSrc}
+                          />
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {similarRoutes.length > 0 && (
+                <>
+                  <div id="similar" className={styles.title}>Похожие маршруты</div>
+                  <div className={styles.anotherRoutes}>
+                    {similarRoutes.map((r) => <RouteBlock key={r.id} route={r} />)}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className={styles.routeBlock_anchors}>
