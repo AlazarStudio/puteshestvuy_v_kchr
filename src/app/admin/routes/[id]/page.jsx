@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Upload, X, MapPin, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
+import { Upload, X, MapPin, GripVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus } from 'lucide-react';
 import { routesAPI, placesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -417,15 +417,25 @@ export default function RouteEditPage() {
   const movePlace = (index, direction) => {
     const newPlaceIds = [...formData.placeIds];
     const newIndex = index + direction;
-    
+
     if (newIndex < 0 || newIndex >= newPlaceIds.length) return;
-    
+
     [newPlaceIds[index], newPlaceIds[newIndex]] = [newPlaceIds[newIndex], newPlaceIds[index]];
-    
+
     setFormData((prev) => ({
       ...prev,
       placeIds: newPlaceIds,
     }));
+  };
+
+  const movePlaceByDrag = (draggedIndex, targetIndex) => {
+    if (draggedIndex === targetIndex) return;
+    setFormData((prev) => {
+      const ids = [...prev.placeIds];
+      const [removed] = ids.splice(draggedIndex, 1);
+      ids.splice(targetIndex, 0, removed);
+      return { ...prev, placeIds: ids };
+    });
   };
 
   const getPlaceById = (id) => allPlaces.find((p) => p.id === id);
@@ -848,7 +858,38 @@ export default function RouteEditPage() {
                   const place = getPlaceById(placeId);
                   if (!place) return null;
                   return (
-                    <div key={placeId} className={styles.formCardRow}>
+                    <div
+                      key={placeId}
+                      className={styles.formCardRow}
+                      data-place-row
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const raw = e.dataTransfer.getData('text/plain');
+                        const draggedIndex = parseInt(raw, 10);
+                        if (Number.isNaN(draggedIndex) || draggedIndex === index) return;
+                        movePlaceByDrag(draggedIndex, index);
+                      }}
+                    >
+                      <div
+                        className={styles.formCardRowDragHandle}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', String(index));
+                          e.dataTransfer.effectAllowed = 'move';
+                          const row = e.currentTarget.closest('[data-place-row]');
+                          if (row) e.dataTransfer.setDragImage(row, 0, 0);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Перетащить для изменения порядка"
+                        title="Перетащить для изменения порядка"
+                      >
+                        <GripVertical size={20} />
+                      </div>
                       <div className={styles.formMoveButtons}>
                         <button
                           type="button"

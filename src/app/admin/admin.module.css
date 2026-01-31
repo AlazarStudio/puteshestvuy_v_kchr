@@ -991,6 +991,31 @@
   border-radius: 8px;
 }
 
+.formCardRowDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin: -4px 0 -4px -4px;
+  color: #94a3b8;
+  cursor: grab;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.formCardRowDragHandle:hover {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+.formCardRowDragHandle:active {
+  cursor: grabbing;
+}
+
 .formOrderBadge {
   width: 28px;
   height: 28px;
@@ -1596,7 +1621,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 12px 12px 0;
+  padding: 12px;
   background: #f1f5f9;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -1615,7 +1640,7 @@
   background: #e2e8f0;
   border: 1px solid #e2e8f0;
   border-right: none;
-  border-radius: 8px 0 0 0;
+  border-radius: 8px 0 0 8px;
   margin-bottom: -1px;
   cursor: pointer;
   color: #64748b;
@@ -1658,7 +1683,7 @@
 
 .routeDescTabWrap .routeDescTabArrow:last-of-type {
   border-right: 1px solid #e2e8f0;
-  border-radius: 0 8px 0 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .routeDescTabLabel {
@@ -1728,7 +1753,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 0px;
   transition: background 0.2s, border-color 0.2s;
 }
 
