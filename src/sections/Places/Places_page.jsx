@@ -12,14 +12,24 @@ import { publicPlacesAPI } from '@/lib/api'
 import { getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 
+const defaultFilters = {
+  directions: [],
+  seasons: [],
+  objectTypes: [],
+  accessibility: [],
+}
+
 export default function Places_page() {
   const [sortBy, setSortBy] = useState('popularity')
   const [places, setPlaces] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState(defaultFilters)
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
+  const [filterOptions, setFilterOptions] = useState(null)
   const scrollPositionRef = useRef(0)
   const isClosingRef = useRef(false)
   const [currentPath, setCurrentPath] = useState('')
@@ -81,13 +91,41 @@ export default function Places_page() {
     }, 320)
   }
 
-  // Загрузка мест с API
+  // Загрузка опций фильтров с API (для блока фильтров)
+  useEffect(() => {
+    let cancelled = false
+    publicPlacesAPI.getFilters()
+      .then(({ data }) => {
+        if (!cancelled && data) {
+          setFilterOptions({
+            directions: Array.isArray(data.directions) ? data.directions : [],
+            seasons: Array.isArray(data.seasons) ? data.seasons : [],
+            objectTypes: Array.isArray(data.objectTypes) ? data.objectTypes : [],
+            accessibility: Array.isArray(data.accessibility) ? data.accessibility : [],
+          })
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('Ошибка загрузки опций фильтров:', err)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  // Загрузка мест с API (с учётом фильтров и поиска)
   useEffect(() => {
     let cancelled = false
     async function fetchPlaces() {
       setLoading(true)
       try {
-        const { data } = await publicPlacesAPI.getAll({ limit: 100 })
+        const params = {
+          limit: 100,
+          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          ...(filters.directions?.length > 0 && { directions: filters.directions }),
+          ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
+          ...(filters.objectTypes?.length > 0 && { objectTypes: filters.objectTypes }),
+          ...(filters.accessibility?.length > 0 && { accessibility: filters.accessibility }),
+        }
+        const { data } = await publicPlacesAPI.getAll(params)
         if (!cancelled) {
           setPlaces(data.items || [])
           setTotal(data.pagination?.total ?? 0)
@@ -104,7 +142,7 @@ export default function Places_page() {
     }
     fetchPlaces()
     return () => { cancelled = true }
-  }, [])
+  }, [filters.directions, filters.seasons, filters.objectTypes, filters.accessibility, searchQuery])
 
   // Отслеживаем изменения пути
   useEffect(() => {
@@ -253,7 +291,13 @@ export default function Places_page() {
 
       <CenterBlock>
         <section className={styles.flexBlock}>
-          <FilterBlock />
+          <FilterBlock
+            filters={filters}
+            onFiltersChange={setFilters}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterOptions={filterOptions}
+          />
           <div className={styles.places}>
             <div className={styles.placesSort}>
               <div className={styles.placesSortFind}>

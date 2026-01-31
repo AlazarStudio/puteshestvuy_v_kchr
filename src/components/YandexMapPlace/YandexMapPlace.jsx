@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Route, ExternalLink } from 'lucide-react';
+import { Route, ExternalLink, X } from 'lucide-react';
+import { getImageUrl } from '@/lib/api';
 
 const DEFAULT_CENTER = [43.5, 41.7];
 const DEFAULT_ZOOM = 14;
@@ -20,21 +21,56 @@ function buildYandexRouteUrl(fromLat, fromLon, toLat, toLon) {
   return `https://yandex.ru/maps/?rtext=${encodeURIComponent(rtext)}&rtt=auto`;
 }
 
-export default function YandexMapPlace({ latitude, longitude, title, location, className }) {
+export default function YandexMapPlace({ latitude, longitude, title, location, image, className }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const multiRouteRef = useRef(null);
   const placemarkRef = useRef(null);
   const routeFromRef = useRef(null); // { lat, lon } — старт построенного маршрута
+  const mapWrapperRef = useRef(null);
   const [scriptReady, setScriptReady] = useState(false);
   const [error, setError] = useState(null);
   const [routeStatus, setRouteStatus] = useState(null); // null | 'loading' | 'ready' | 'denied' | 'error'
   const [routeBuilt, setRouteBuilt] = useState(false); // маршрут уже построен на карте
+  const [customBalloon, setCustomBalloon] = useState(null); // null | { x, y } — позиция кастомного попапа относительно контейнера карты
 
   const hasCoords = latitude != null && longitude != null && Number(latitude) && Number(longitude);
   const lat = hasCoords ? Number(latitude) : DEFAULT_CENTER[0];
   const lon = hasCoords ? Number(longitude) : DEFAULT_CENTER[1];
   const center = [lat, lon];
+
+  function getPixelPositionFromCenter(map, coords, placemark) {
+    const wrapper = mapWrapperRef.current || containerRef.current;
+    if (!wrapper || !map) return null;
+    const rect = wrapper.getBoundingClientRect();
+    let x, y;
+    if (typeof map.convertCoordinatesToClient === 'function') {
+      const clientXY = map.convertCoordinatesToClient(coords);
+      x = clientXY[0] - rect.left;
+      y = clientXY[1] - rect.top;
+    } else if (typeof map.converter !== 'undefined' && typeof map.converter.globalToClient === 'function') {
+      const clientXY = map.converter.globalToClient(coords);
+      x = clientXY[0] - rect.left;
+      y = clientXY[1] - rect.top;
+    } else if (placemark && typeof placemark.getOverlaySync === 'function') {
+      try {
+        const overlay = placemark.getOverlaySync();
+        if (overlay && overlay.getElement) {
+          const el = overlay.getElement();
+          if (el && typeof el.getBoundingClientRect === 'function') {
+            const r = el.getBoundingClientRect();
+            x = r.left - rect.left + r.width / 2;
+            y = r.top - rect.top;
+          } else return null;
+        } else return null;
+      } catch (_) {
+        return null;
+      }
+    } else {
+      return null;
+    }
+    return { x, y };
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -93,14 +129,43 @@ export default function YandexMapPlace({ latitude, longitude, title, location, c
 
     const placemark = new window.ymaps.Placemark(
       center,
+      { balloonContentHeader: '\u00A0', balloonContentBody: '\u00A0' },
       {
-        balloonContentHeader: title || location || 'Место',
-        balloonContentBody: location || '',
-      },
-      { draggable: false }
+        draggable: false,
+        iconLayout: 'default#image',
+        iconImageHref: '/pointMap.png',
+        iconImageSize: [51, 62],
+        iconImageOffset: [-26, -62],
+      }
     );
     map.geoObjects.add(placemark);
     placemarkRef.current = placemark;
+
+    map.balloon.events.add('open', () => {
+      const pos = getPixelPositionFromCenter(map, center, placemark);
+      if (pos) {
+        map.balloon.close();
+        setCustomBalloon(pos);
+      } else {
+        const wrapper = mapWrapperRef.current || containerRef.current;
+        if (!wrapper) return;
+        const rect = wrapper.getBoundingClientRect();
+        const balloonEl = document.querySelector('[class*="balloon__layout"], [class*="balloon__content"]');
+        let x, y;
+        if (balloonEl) {
+          const br = balloonEl.getBoundingClientRect();
+          x = br.left - rect.left + br.width / 2;
+          y = br.top - rect.top;
+        } else {
+          x = rect.width / 2;
+          y = rect.height / 2 - 80;
+        }
+        map.balloon.close();
+        setCustomBalloon({ x, y });
+      }
+    });
+
+    map.events.add('actionbegin', () => setCustomBalloon(null));
 
     return () => {
       multiRouteRef.current = null;
@@ -110,8 +175,9 @@ export default function YandexMapPlace({ latitude, longitude, title, location, c
         mapRef.current.destroy();
         mapRef.current = null;
       }
+      setCustomBalloon(null);
     };
-  }, [scriptReady, lat, lon, title, location]);
+  }, [scriptReady, lat, lon]);
 
   const handleBuildRoute = () => {
     if (!hasCoords || !scriptReady || !window.ymaps || !mapRef.current) return;
@@ -220,8 +286,91 @@ export default function YandexMapPlace({ latitude, longitude, title, location, c
           Загрузка карты...
         </div>
       ) : (
-        <div style={{ position: 'relative', width: '100%', height: mapHeight, borderRadius: 8, overflow: 'hidden' }}>
+        <div ref={mapWrapperRef} style={{ position: 'relative', width: '100%', height: mapHeight, borderRadius: 8, overflow: 'hidden' }}>
           <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+          {customBalloon && (
+            <div
+              role="dialog"
+              aria-label="Информация о месте"
+              style={{
+                position: 'absolute',
+                left: customBalloon.x,
+                top: customBalloon.y - 16,
+                transform: 'translate(-50%, -100%)',
+                minWidth: 220,
+                maxWidth: 400,
+                display: 'flex',
+                flexDirection: 'row',
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                overflow: 'hidden',
+                zIndex: 10,
+                pointerEvents: 'auto',
+                paddingLeft: '88px'
+              }}
+            >
+              {image && (
+                <div
+                  style={{
+                    width: 88,
+                    height: '100%',
+                    flexShrink: 0,
+                    alignSelf: 'stretch',
+                    borderTopLeftRadius: 12,
+                    borderBottomLeftRadius: 12,
+                    overflow: 'hidden',
+                    background: '#f1f5f9',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0'
+                  }}
+                >
+                  <img
+                    src={getImageUrl(image)}
+                    alt=""
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      verticalAlign: 'top',
+                    }}
+                  />
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0, padding: '20px 40px 18px 20px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setCustomBalloon(null)}
+                  aria-label="Закрыть"
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    background: 'none',
+                    border: 'none',
+                    padding: 4,
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+                {location && (
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: 6, lineHeight: 1.3 }}>
+                    {location}
+                  </div>
+                )}
+                <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111', lineHeight: 1.3 }}>
+                  {title || location || 'Место'}
+                </div>
+              </div>
+            </div>
+          )}
           <div style={overlayStyle}>
             <button
               type="button"

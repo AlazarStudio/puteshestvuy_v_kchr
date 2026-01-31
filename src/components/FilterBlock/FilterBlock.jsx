@@ -3,65 +3,41 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './FilterBlock.module.css'
+import {
+  PLACE_DIRECTIONS,
+  PLACE_SEASONS,
+  PLACE_OBJECT_TYPES,
+  PLACE_ACCESSIBILITY,
+} from '@/lib/placeFilters'
 
-export default function FilterBlock() {
+const defaultFilters = {
+  directions: [],
+  seasons: [],
+  objectTypes: [],
+  accessibility: [],
+}
+
+export default function FilterBlock({
+  filters = defaultFilters,
+  onFiltersChange,
+  searchQuery = '',
+  onSearchChange,
+  filterOptions,
+}) {
+  const directions = filterOptions?.directions ?? PLACE_DIRECTIONS
+  const seasons = filterOptions?.seasons ?? PLACE_SEASONS
+  const objectTypes = filterOptions?.objectTypes ?? PLACE_OBJECT_TYPES
+  const accessibility = filterOptions?.accessibility ?? PLACE_ACCESSIBILITY
   const [isSearchOpen, setIsSearchOpen] = useState(true)
+  const [isDirectionOpen, setIsDirectionOpen] = useState(true)
   const [isSeasonOpen, setIsSeasonOpen] = useState(true)
-  const [isTransportOpen, setIsTransportOpen] = useState(true)
   const [isTypeOpen, setIsTypeOpen] = useState(true)
-  const [showMoreTypes, setShowMoreTypes] = useState(false)
+  const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(true)
 
-  const [selectedSeasons, setSelectedSeasons] = useState([])
-  const [selectedTransports, setSelectedTransports] = useState([])
-  const [selectedTypes, setSelectedTypes] = useState([])
-
-  const seasons = ['Зима', 'Весна', 'Лето', 'Осень']
-  const transports = ['Верхом', 'Автомобиль', 'Пешком', 'Квадроцикл']
-  const types = [
-    'Семейный',
-    'Гастрономический туризм',
-    'Природный туризм',
-    'Активный отдых',
-    'Лечебно-оздоровительный туризм',
-    'Культурный туризм',
-    'Экстремальный туризм',
-    'Экологический туризм',
-    'Религиозный туризм',
-    'Спортивный туризм',
-    'Оздоровительный туризм',
-    'Образовательный туризм',
-    'Приключенческий туризм',
-    'Романтический туризм',
-    'Деловой туризм',
-    'Детский туризм',
-    'Серебряный туризм',
-    'Молодежный туризм'
-  ]
-
-  const visibleTypes = showMoreTypes ? types : types.slice(0, 5)
-
-  const handleSeasonChange = (season) => {
-    setSelectedSeasons(prev =>
-      prev.includes(season)
-        ? prev.filter(s => s !== season)
-        : [...prev, season]
-    )
-  }
-
-  const handleTransportChange = (transport) => {
-    setSelectedTransports(prev =>
-      prev.includes(transport)
-        ? prev.filter(t => t !== transport)
-        : [...prev, transport]
-    )
-  }
-
-  const handleTypeChange = (type) => {
-    setSelectedTypes(prev =>
-      prev.includes(type)
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
-    )
+  const toggle = (field, value) => {
+    const arr = filters[field] || []
+    const next = arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value]
+    onFiltersChange?.({ ...filters, [field]: next })
   }
 
   return (
@@ -99,8 +75,63 @@ export default function FilterBlock() {
               style={{ overflow: 'hidden' }}
             >
               <div className={styles.search}>
-                <input type="text" placeholder='Введите название или направление' />
+                <input
+                  type="text"
+                  placeholder="Введите название или направление"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                />
                 <img src="/search_gray.png" alt="" className={styles.searchIcon} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Направление */}
+      <div className={styles.filterBlock}>
+        <div className={styles.headerRow} onClick={() => setIsDirectionOpen(!isDirectionOpen)}>
+          <div className={styles.title}>Направление</div>
+          <motion.svg
+            className={styles.arrow}
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            animate={{ rotate: isDirectionOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <path
+              d="M2 4L6 8L10 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </motion.svg>
+        </div>
+        <AnimatePresence>
+          {isDirectionOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className={styles.checkBlock}>
+                {directions.map((v) => (
+                  <label key={v} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={(filters.directions || []).includes(v)}
+                      onChange={() => toggle('directions', v)}
+                      className={styles.checkbox}
+                    />
+                    <span className={styles.checkboxText}>{v}</span>
+                  </label>
+                ))}
               </div>
             </motion.div>
           )}
@@ -140,15 +171,15 @@ export default function FilterBlock() {
               style={{ overflow: 'hidden' }}
             >
               <div className={styles.checkBlock}>
-                {seasons.map((season) => (
-                  <label key={season} className={styles.checkboxLabel}>
+                {seasons.map((v) => (
+                  <label key={v} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
-                      checked={selectedSeasons.includes(season)}
-                      onChange={() => handleSeasonChange(season)}
+                      checked={(filters.seasons || []).includes(v)}
+                      onChange={() => toggle('seasons', v)}
                       className={styles.checkbox}
                     />
-                    <span className={styles.checkboxText}>{season}</span>
+                    <span className={styles.checkboxText}>{v}</span>
                   </label>
                 ))}
               </div>
@@ -157,60 +188,10 @@ export default function FilterBlock() {
         </AnimatePresence>
       </div>
 
-      {/* Способ передвижения */}
-      <div className={styles.filterBlock}>
-        <div className={styles.headerRow} onClick={() => setIsTransportOpen(!isTransportOpen)}>
-          <div className={styles.title}>Способ передвижения</div>
-          <motion.svg
-            className={styles.arrow}
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            animate={{ rotate: isTransportOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <path
-              d="M2 4L6 8L10 4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </motion.svg>
-        </div>
-        <AnimatePresence>
-          {isTransportOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div className={styles.checkBlock}>
-                {transports.map((transport) => (
-                  <label key={transport} className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTransports.includes(transport)}
-                      onChange={() => handleTransportChange(transport)}
-                      className={styles.checkbox}
-                    />
-                    <span className={styles.checkboxText}>{transport}</span>
-                  </label>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Тип */}
+      {/* Вид объекта */}
       <div className={styles.filterBlock}>
         <div className={styles.headerRow} onClick={() => setIsTypeOpen(!isTypeOpen)}>
-          <div className={styles.title}>Тип</div>
+          <div className={styles.title}>Вид объекта</div>
           <motion.svg
             className={styles.arrow}
             width="12"
@@ -240,25 +221,67 @@ export default function FilterBlock() {
               style={{ overflow: 'hidden' }}
             >
               <div className={styles.checkBlock}>
-                {visibleTypes.map((type) => (
-                  <label key={type} className={styles.checkboxLabel}>
+                {objectTypes.map((v) => (
+                  <label key={v} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
-                      checked={selectedTypes.includes(type)}
-                      onChange={() => handleTypeChange(type)}
+                      checked={(filters.objectTypes || []).includes(v)}
+                      onChange={() => toggle('objectTypes', v)}
                       className={styles.checkbox}
                     />
-                    <span className={styles.checkboxText}>{type}</span>
+                    <span className={styles.checkboxText}>{v}</span>
                   </label>
                 ))}
-                {!showMoreTypes && types.length > 5 && (
-                  <button
-                    className={styles.showMore}
-                    onClick={() => setShowMoreTypes(true)}
-                  >
-                    Показать еще {types.length - 5}
-                  </button>
-                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Доступность */}
+      <div className={styles.filterBlock}>
+        <div className={styles.headerRow} onClick={() => setIsAccessibilityOpen(!isAccessibilityOpen)}>
+          <div className={styles.title}>Доступность</div>
+          <motion.svg
+            className={styles.arrow}
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            animate={{ rotate: isAccessibilityOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <path
+              d="M2 4L6 8L10 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </motion.svg>
+        </div>
+        <AnimatePresence>
+          {isAccessibilityOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className={styles.checkBlock}>
+                {accessibility.map((v) => (
+                  <label key={v} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={(filters.accessibility || []).includes(v)}
+                      onChange={() => toggle('accessibility', v)}
+                      className={styles.checkbox}
+                    />
+                    <span className={styles.checkboxText}>{v}</span>
+                  </label>
+                ))}
               </div>
             </motion.div>
           )}

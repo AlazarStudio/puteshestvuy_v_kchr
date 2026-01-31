@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff, Eye, Pencil } from 'lucide-react';
-import { placesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -32,6 +32,10 @@ function getFormSnapshot(data) {
     isActive: !!data.isActive,
     image: data.image ?? '',
     images: Array.isArray(data.images) ? [...data.images] : [],
+    directions: Array.isArray(data.directions) ? [...data.directions].sort() : [],
+    seasons: Array.isArray(data.seasons) ? [...data.seasons].sort() : [],
+    objectTypes: Array.isArray(data.objectTypes) ? [...data.objectTypes].sort() : [],
+    accessibility: Array.isArray(data.accessibility) ? [...data.accessibility].sort() : [],
     nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? [...data.nearbyPlaceIds].sort((a, b) => String(a).localeCompare(String(b))) : [],
   };
 }
@@ -61,10 +65,20 @@ export default function PlaceEditPage() {
     isActive: true,
     image: '',
     images: [],
+    directions: [],
+    seasons: [],
+    objectTypes: [],
+    accessibility: [],
     nearbyPlaceIds: [],
   });
 
   const [allPlaces, setAllPlaces] = useState([]);
+  const [filterOptions, setFilterOptions] = useState({
+    directions: [],
+    seasons: [],
+    objectTypes: [],
+    accessibility: [],
+  });
   const [addPlacesModalOpen, setAddPlacesModalOpen] = useState(false);
   const [addPlacesSearch, setAddPlacesSearch] = useState('');
   const [addPlacesSelected, setAddPlacesSelected] = useState(new Set());
@@ -112,10 +126,6 @@ export default function PlaceEditPage() {
     setBreadcrumbLabel(label);
     return () => setBreadcrumbLabel(null);
   }, [setBreadcrumbLabel, formData.title, isNew]);
-
-  useEffect(() => {
-    fetchAllPlaces();
-  }, []);
 
   useEffect(() => {
     if (!setHeaderRight) return;
@@ -176,6 +186,26 @@ export default function PlaceEditPage() {
       console.error('Ошибка загрузки списка мест:', e);
     }
   }, []);
+
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const res = await placeFiltersAPI.get();
+      const d = res.data || {};
+      setFilterOptions({
+        directions: Array.isArray(d.directions) ? d.directions : [],
+        seasons: Array.isArray(d.seasons) ? d.seasons : [],
+        objectTypes: Array.isArray(d.objectTypes) ? d.objectTypes : [],
+        accessibility: Array.isArray(d.accessibility) ? d.accessibility : [],
+      });
+    } catch (e) {
+      console.error('Ошибка загрузки опций фильтров:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllPlaces();
+    fetchFilterOptions();
+  }, [fetchAllPlaces, fetchFilterOptions]);
 
   const fetchPlace = async () => {
     try {
@@ -699,6 +729,102 @@ export default function PlaceEditPage() {
               </p>
             </>
           )}
+        </div>
+
+        {/* Фильтры — в самом низу формы, группы друг под другом */}
+        <div className={styles.formGroup}>
+          <div className={styles.filtersSection}>
+            <label className={styles.formLabel}>Фильтры (для поиска на сайте)</label>
+            <p className={styles.imageHint} style={{ marginBottom: 20 }}>
+              Можно выбрать несколько значений в каждой группе. По ним пользователи будут искать места.
+            </p>
+            <div className={styles.filterGroups}>
+              <div className={styles.filterGroupCard}>
+                <div className={styles.filterGroupTitle}>Направление</div>
+                <div className={styles.filterCheckboxList}>
+                  {(filterOptions.directions || []).map((v) => (
+                    <label key={v} className={styles.filterCheckboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={(formData.directions || []).includes(v)}
+                        onChange={() => {
+                          const arr = formData.directions || [];
+                          setFormData((prev) => ({
+                            ...prev,
+                            directions: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
+                          }));
+                        }}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.filterGroupCard}>
+                <div className={styles.filterGroupTitle}>Сезон</div>
+                <div className={styles.filterCheckboxList}>
+                  {(filterOptions.seasons || []).map((v) => (
+                    <label key={v} className={styles.filterCheckboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={(formData.seasons || []).includes(v)}
+                        onChange={() => {
+                          const arr = formData.seasons || [];
+                          setFormData((prev) => ({
+                            ...prev,
+                            seasons: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
+                          }));
+                        }}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.filterGroupCard}>
+                <div className={styles.filterGroupTitle}>Вид объекта</div>
+                <div className={styles.filterCheckboxList}>
+                  {(filterOptions.objectTypes || []).map((v) => (
+                    <label key={v} className={styles.filterCheckboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={(formData.objectTypes || []).includes(v)}
+                        onChange={() => {
+                          const arr = formData.objectTypes || [];
+                          setFormData((prev) => ({
+                            ...prev,
+                            objectTypes: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
+                          }));
+                        }}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.filterGroupCard}>
+                <div className={styles.filterGroupTitle}>Доступность</div>
+                <div className={styles.filterCheckboxList}>
+                  {(filterOptions.accessibility || []).map((v) => (
+                    <label key={v} className={styles.filterCheckboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={(formData.accessibility || []).includes(v)}
+                        onChange={() => {
+                          const arr = formData.accessibility || [];
+                          setFormData((prev) => ({
+                            ...prev,
+                            accessibility: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
+                          }));
+                        }}
+                      />
+                      <span>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </form>

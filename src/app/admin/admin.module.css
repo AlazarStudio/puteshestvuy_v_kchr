@@ -517,6 +517,27 @@
   transform: translateY(-1px);
 }
 
+.filtersBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filtersBtn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
 /* Table Styles */
 .tableContainer {
   background: white;
@@ -953,6 +974,73 @@
   line-height: 1.45;
 }
 
+/* Блок фильтров места — группы друг под другом, на всю ширину */
+.filtersSection {
+  width: 100%;
+}
+
+.filterGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filterGroupCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filterGroupCard:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filterGroupTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.filterCheckboxList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.filterCheckboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #475569;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.filterCheckboxLabel:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.filterCheckboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #156A60;
+  cursor: pointer;
+}
+
+.filterCheckboxLabel span {
+  user-select: none;
+}
+
 /* Search and Filters */
 .reviewTabs {
   display: flex;
@@ -1153,4 +1241,114 @@
   justify-content: flex-end;
   padding: 16px 24px;
   border-top: 1px solid #e2e8f0;
+}
+
+/* Модалка управления фильтрами мест */
+.filterModalGroup {
+  margin-bottom: 24px;
+}
+
+.filterModalGroup:last-child {
+  margin-bottom: 0;
+}
+
+.filterModalGroupTitle {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.filterModalValues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filterModalValueRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.filterModalValueDelete {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.filterModalValueDelete:hover {
+  background: #e2e8f0;
+  color: #dc2626;
+}
+
+.filterModalValueEdit {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.filterModalValueEdit:hover {
+  background: #e2e8f0;
+  color: #2563eb;
+}
+
+.filterModalValueApply {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.filterModalValueApply:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.filterModalValueApply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filterModalAddRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filterModalAddInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.filterModalAddInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }

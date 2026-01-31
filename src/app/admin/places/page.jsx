@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Pencil, Trash2, MapPin, Star, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MapPin, Star, Eye, EyeOff, Filter } from 'lucide-react';
 import { placesAPI, getImageUrl } from '@/lib/api';
-import { ConfirmModal, AlertModal } from '../components';
+import { ConfirmModal, AlertModal, PlaceFiltersModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function PlacesPage() {
@@ -15,6 +15,7 @@ export default function PlacesPage() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
   const [togglingId, setTogglingId] = useState(null);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const searchDebounceRef = useRef(null);
 
   const MIN_LOADING_MS = 500;
@@ -92,9 +93,19 @@ export default function PlacesPage() {
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Места</h1>
-        <Link href="/admin/places/new" className={styles.addBtn}>
-          <Plus size={18} /> Добавить место
-        </Link>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setFiltersModalOpen(true)}
+            className={styles.filtersBtn}
+            title="Управление фильтрами"
+          >
+            <Filter size={18} /> Фильтры
+          </button>
+          <Link href="/admin/places/new" className={styles.addBtn}>
+            <Plus size={18} /> Добавить место
+          </Link>
+        </div>
       </div>
 
       <div className={styles.searchBar}>
@@ -255,6 +266,7 @@ export default function PlacesPage() {
         message={alertModal.message}
         onClose={() => setAlertModal({ open: false, title: '', message: '' })}
       />
+      <PlaceFiltersModal open={filtersModalOpen} onClose={() => setFiltersModalOpen(false)} />
     </div>
   );
 }

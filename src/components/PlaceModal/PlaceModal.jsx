@@ -266,6 +266,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                             longitude={place.longitude}
                             title={place.title}
                             location={place.location}
+                            image={place.image || place.images?.[0]}
                           />
                         ) : (
                           <>

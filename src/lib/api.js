@@ -75,7 +75,17 @@ export const placesAPI = {
 export const publicPlacesAPI = {
   getAll: (params) => api.get('/places', { params }),
   getByIdOrSlug: (idOrSlug) => api.get(`/places/${idOrSlug}`),
+  getFilters: () => api.get('/places/filters'),
   createReview: (placeId, data) => api.post(`/places/${placeId}/reviews`, data),
+};
+
+// Place filters API (админка — управление опциями фильтров)
+export const placeFiltersAPI = {
+  get: () => api.get('/admin/place-filters'),
+  update: (data) => api.put('/admin/place-filters', data),
+  replaceValue: (group, oldValue, newValue) =>
+    api.post('/admin/place-filters/replace-value', { group, oldValue, newValue }),
+  removeValue: (group, value) => api.post('/admin/place-filters/remove-value', { group, value }),
 };
 
 // News API
