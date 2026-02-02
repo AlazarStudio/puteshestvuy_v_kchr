@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Building2, Star, CheckCircle, XCircle } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
@@ -64,7 +64,7 @@ export default function ServicesPage() {
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Услуги и сервисы</h1>
-        <Link href="/admin/services/new" className={styles.addBtn}>
+        <Link to="/admin/services/new" className={styles.addBtn}>
           <Plus size={18} /> Добавить услугу
         </Link>
       </div>
@@ -137,7 +137,7 @@ export default function ServicesPage() {
                     </span>
                   </td>
                   <td className={styles.actions}>
-                    <Link href={`/admin/services/${service.id}`} className={styles.editBtn}>
+                    <Link to={`/admin/services/${service.id}`} className={styles.editBtn}>
                       <Pencil size={16} />
                     </Link>
                     <button

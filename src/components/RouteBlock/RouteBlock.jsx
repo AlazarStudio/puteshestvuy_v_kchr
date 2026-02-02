@@ -1,12 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import styles from './RouteBlock.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { Navigation, Autoplay } from 'swiper/modules'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { getImageUrl } from '@/lib/api'
 import { generateSlug } from '@/utils/transliterate'
 
@@ -18,7 +18,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
   const route = routeProp || (titleProp ? { title: titleProp, slug: generateSlug(titleProp) } : null)
   if (!route) return null
 
-  const router = useRouter()
+  const navigate = useNavigate()
   const slug = route.slug || (route.title ? generateSlug(route.title) : route.id)
   const title = route.title || ''
   const imageUrl = getImageUrl(route.images?.[0])
@@ -47,7 +47,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
   const handleCardClick = (e) => {
     if (e.target.closest('[data-no-navigate]') || e.target.closest('a')) return
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('navigate-start'))
-    router.push(`/routes/${slug}`)
+    navigate(`/routes/${slug}`)
   }
 
   return (
@@ -61,7 +61,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
           e.preventDefault()
           if (!e.target.closest('a')) {
             if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('navigate-start'))
-            router.push(`/routes/${slug}`)
+            navigate(`/routes/${slug}`)
           }
         }
       }}
@@ -129,7 +129,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
               {places.map((place, i) => (
                 <span key={place.id}>
                   {i > 0 && ' → '}
-                  <Link href={`/places/${place.slug}`} className={styles.placeLink} onClick={(e) => e.stopPropagation()}>
+                  <Link to={`/places/${place.slug}`} className={styles.placeLink} onClick={(e) => e.stopPropagation()}>
                     {place.title}
                   </Link>
                 </span>

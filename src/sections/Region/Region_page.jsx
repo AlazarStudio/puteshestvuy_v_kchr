@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import styles from './Region_page.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 
 const facts = [
@@ -165,7 +165,7 @@ export default function Region_page() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
-            <Link href="/routes" className={styles.heroButton}>
+            <Link to="/routes" className={styles.heroButton}>
               Исследовать маршруты
             </Link>
           </motion.div>
@@ -414,7 +414,7 @@ export default function Region_page() {
                 />
               </div>
               <div className={styles.placesMore}>
-                <Link href="/places" className={styles.placesMoreButton}>
+                <Link to="/places" className={styles.placesMoreButton}>
                   Смотреть все места
                 </Link>
               </div>
@@ -432,10 +432,10 @@ export default function Region_page() {
             Откройте для себя красоту Карачаево-Черкесии. Выберите маршрут и отправляйтесь в незабываемое приключение!
           </p>
           <div className={styles.ctaButtons}>
-            <Link href="/routes" className={styles.ctaButtonPrimary}>
+            <Link to="/routes" className={styles.ctaButtonPrimary}>
               Выбрать маршрут
             </Link>
-            <Link href="/services" className={styles.ctaButtonSecondary}>
+            <Link to="/services" className={styles.ctaButtonSecondary}>
               Найти гида
             </Link>
           </div>

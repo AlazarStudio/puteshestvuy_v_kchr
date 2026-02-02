@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import styles from './SliderFullScreen.module.css'
 import { publicPlacesAPI, getImageUrl } from '@/lib/api'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
@@ -162,7 +162,7 @@ export default function SliderFullScreen() {
                 )}
               </div>
               <div className={styles.buttons}>
-                <Link href={placeHref(slide)} className={styles.ctaLink}>
+                <Link to={placeHref(slide)} className={styles.ctaLink}>
                   Начать путешествие
                 </Link>
               </div>
@@ -174,7 +174,7 @@ export default function SliderFullScreen() {
       {/* Превью (thumbnail) */}
       <div className={styles.thumbnail}>
         {thumbnailSlides.map((slide) => (
-          <Link href={placeHref(slide)} key={slide.id} className={styles.item}>
+          <Link to={placeHref(slide)} key={slide.id} className={styles.item}>
             <img src={slide.image} alt={slide.title} />
             <div className={styles.content}>
               <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>

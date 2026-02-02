@@ -75,7 +75,7 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY || '';
+    const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY || '';
     const lang = 'ru_RU';
 
     if (window.ymaps && window.ymaps.ready) {

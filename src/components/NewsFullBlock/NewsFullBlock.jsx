@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import styles from './NewsFullBlock.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 
 export default function NewsFullBlock() {
@@ -25,7 +25,7 @@ export default function NewsFullBlock() {
           <div className={styles.description}>
             Если в путешествии вам хочется совместить приятное с полезным, походы в горы — точно для вас. Даже небольшая прогулка по свежему воздуху подарит вам заряд бодрости и хорошо скажется на организме...
           </div>
-          <Link href={"/#"} className={styles.button}>Читать далее</Link>
+          <Link to="/#" className={styles.button}>Читать далее</Link>
         </div>
         <div className={styles.bottom}>
           <div className={styles.anotherNew}>

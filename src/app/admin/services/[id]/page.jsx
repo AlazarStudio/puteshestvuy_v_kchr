@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Upload, X, Plus } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
@@ -24,7 +24,7 @@ const categories = [
 ];
 
 export default function ServiceEditPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const params = useParams();
   const isNew = params.id === 'new';
 
@@ -158,7 +158,7 @@ export default function ServiceEditPage() {
         await servicesAPI.update(params.id, formData);
       }
       
-      router.push('/admin/services');
+      navigate('/admin/services');
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setError(error.response?.data?.message || 'Ошибка сохранения услуги');
@@ -428,7 +428,7 @@ export default function ServiceEditPage() {
           >
             {isSaving ? 'Сохранение...' : (isNew ? 'Создать услугу' : 'Сохранить изменения')}
           </button>
-          <Link href="/admin/services" className={styles.cancelBtn}>
+          <Link to="/admin/services" className={styles.cancelBtn}>
             Отмена
           </Link>
         </div>

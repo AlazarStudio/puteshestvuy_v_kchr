@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Select, MenuItem, FormControl } from '@mui/material'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import styles from './Services_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
@@ -235,7 +235,7 @@ export default function Services_page() {
               {servicesData.map((service) => (
                 <Link 
                   key={service.id} 
-                  href={`/services/${transliterate(service.name)}`}
+                  to={`/services/${transliterate(service.name)}`}
                   className={styles.serviceCard}
                 >
                   <div className={styles.serviceCardImg}>

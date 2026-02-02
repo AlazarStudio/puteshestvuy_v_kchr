@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { 
   Map, 
   MapPin, 
@@ -91,7 +89,7 @@ export default function AdminDashboard() {
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
-              <Link key={action.href} href={action.href} className={styles.actionBtn}>
+              <Link key={action.href} to={action.href} className={styles.actionBtn}>
                 <Icon size={18} />
                 <span>{action.label}</span>
               </Link>

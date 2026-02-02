@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import styles from './NewsDetail.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 // Моковые данные для популярных новостей
 const popularNews = [
@@ -106,11 +106,11 @@ export default function NewsDetail({ slug }) {
         <CenterBlock>
           {/* Хлебные крошки */}
           <div className={styles.breadCrumbs}>
-            <Link href="/">Главная</Link>
+            <Link to="/">Главная</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <Link href="/news">Новости</Link>
+            <Link to="/news">Новости</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -242,7 +242,7 @@ export default function NewsDetail({ slug }) {
           <h2 className={styles.popularTitle}>Популярные новости</h2>
           <div className={styles.popularGrid}>
             {popularNews.map(item => (
-              <Link href={`/news/${item.id}`} key={item.id} className={styles.popularCard}>
+              <Link to={`/news/${item.id}`} key={item.id} className={styles.popularCard}>
                 <div className={styles.popularImage}>
                   <img src={item.image} alt={item.title} />
                 </div>

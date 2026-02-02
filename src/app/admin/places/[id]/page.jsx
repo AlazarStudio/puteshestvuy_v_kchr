@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff, Eye, Pencil } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
@@ -45,7 +45,7 @@ function formSnapshotsEqual(a, b) {
 }
 
 export default function PlaceEditPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const params = useParams();
   const isNew = params.id === 'new';
 
@@ -103,16 +103,16 @@ export default function PlaceEditPage() {
 
   const goToList = useCallback(() => {
     setLeaveModalOpen(false);
-    router.push('/admin/places');
-  }, [router]);
+    navigate('/admin/places');
+  }, [navigate]);
 
   const handleCancelClick = useCallback(() => {
     if (isDirty) {
       setLeaveModalOpen(true);
     } else {
-      router.push('/admin/places');
+      navigate('/admin/places');
     }
-  }, [isDirty, router]);
+  }, [isDirty, navigate]);
 
   useEffect(() => {
     if (!isNew) {
@@ -391,7 +391,7 @@ export default function PlaceEditPage() {
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
         if (created?.id) {
-          router.replace(`/admin/places/${created.id}`);
+          navigate(`/admin/places/${created.id}`, { replace: true });
         }
       } else {
         await placesAPI.update(params.id, formData);

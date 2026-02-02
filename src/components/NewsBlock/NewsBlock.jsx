@@ -1,14 +1,14 @@
 'use client'
 
 import styles from './NewsBlock.module.css'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { generateSlug } from '@/utils/transliterate'
 
 export default function NewsBlock({ title, date, tag = 'новости', description, image }) {
   const slug = generateSlug(title)
   
   return (
-    <Link href={`/news/${slug}`} className={styles.news}>
+    <Link to={`/news/${slug}`} className={styles.news}>
       <div className={styles.newsImage}>
         <img src={image || '/new1.png'} alt={title} />
       </div>

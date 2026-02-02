@@ -2,7 +2,7 @@
 
 import styles from './PlaceDetail.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 export default function PlaceDetail({ placeSlug }) {
   return (
@@ -12,7 +12,7 @@ export default function PlaceDetail({ placeSlug }) {
           <div className={styles.bread_crumbs}>
             <Link href={"/"}>Главная</Link>
             <p>→</p>
-            <Link href={"/places"}>Интересные места</Link>
+            <Link to="/places">Интересные места</Link>
             <p>→</p>
             <p>Центральная усадьба Тебердинского национального парка</p>
           </div>

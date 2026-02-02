@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import Footer from './Footer'
@@ -10,8 +10,8 @@ import styles from './LayoutWrapper.module.css'
 export default function LayoutWrapper({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isNavigating, setIsNavigating] = useState(false)
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
   const isFirstLoad = useRef(true)
   const prevRoute = useRef(null)
 
@@ -71,7 +71,7 @@ export default function LayoutWrapper({ children }) {
       if (href.startsWith('//') || link.target === '_blank') return
       // Не показываем прелоадер при клике по текущей странице (тот же path + query)
       const pathAndQuery = href.split('#')[0]
-      const currentRoute = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')
+      const currentRoute = pathname + (searchParams?.toString() ? '?' + searchParams.toString() : '')
       if (pathAndQuery === currentRoute || pathAndQuery === '' || pathAndQuery === pathname) return
       setIsNavigating(true)
     }
@@ -90,7 +90,7 @@ export default function LayoutWrapper({ children }) {
   useEffect(() => {
     if (isAdminPage) return
 
-    const search = searchParams.toString()
+    const search = searchParams?.toString?.() ?? ''
     const currentRoute = pathname + (search ? '?' + search : '')
     const prev = prevRoute.current
 

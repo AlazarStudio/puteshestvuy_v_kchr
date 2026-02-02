@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import styles from './TitleButton.module.css'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 
 export default function TitleButton({ title, buttonLink, desc }) {
@@ -13,7 +13,7 @@ export default function TitleButton({ title, buttonLink, desc }) {
       {buttonLink &&
         <>
           <div className={styles.line}></div>
-          <Link href={`${buttonLink}`} className={styles.button}>Смотреть все</Link>
+          <Link to={buttonLink} className={styles.button}>Смотреть все</Link>
         </>
       }
 

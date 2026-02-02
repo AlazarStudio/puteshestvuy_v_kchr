@@ -1,7 +1,5 @@
-'use client'
-
 import { useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import Button from '@/components/ui/Button'
 
 export default function NotFound() {
@@ -27,7 +25,7 @@ export default function NotFound() {
         <p className="text-gray-600 mb-8">
           Извините, запрашиваемая страница не существует.
         </p>
-        <Link href="/">
+        <Link to="/">
           <Button>Вернуться на главную</Button>
         </Link>
       </div>

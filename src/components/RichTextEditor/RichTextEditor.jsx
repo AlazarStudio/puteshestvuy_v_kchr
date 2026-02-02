@@ -1,11 +1,8 @@
-'use client';
-
-import dynamic from 'next/dynamic';
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import styles from './RichTextEditor.module.css';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = lazy(() => import('react-quill'));
 
 const TOOLBAR_OPTIONS = [
   [{ header: [2, 3, false] }],
@@ -30,13 +27,15 @@ export default function RichTextEditor({ value = '', onChange, placeholder, clas
       className={`${styles.wrapper} ${className || ''}`.trim()}
       style={{ '--editor-min-height': `${minHeight}px` }}
     >
-      <ReactQuill
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        modules={modules}
-      />
+      <Suspense fallback={<div style={{ minHeight: minHeight }} />}>
+        <ReactQuill
+          theme="snow"
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          modules={modules}
+        />
+      </Suspense>
     </div>
   );
 }

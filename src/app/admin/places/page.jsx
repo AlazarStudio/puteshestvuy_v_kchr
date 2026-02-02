@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, MapPin, Star, Eye, EyeOff, Filter } from 'lucide-react';
 import { placesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal, PlaceFiltersModal } from '../components';
@@ -102,7 +102,7 @@ export default function PlacesPage() {
           >
             <Filter size={18} /> Фильтры
           </button>
-          <Link href="/admin/places/new" className={styles.addBtn}>
+          <Link to="/admin/places/new" className={styles.addBtn}>
             <Plus size={18} /> Добавить место
           </Link>
         </div>
@@ -201,7 +201,7 @@ export default function PlacesPage() {
                           <Eye size={16} />
                         )}
                       </button>
-                      <Link href={`/admin/places/${place.id}`} className={styles.editBtn} title="Редактировать">
+                      <Link to={`/admin/places/${place.id}`} className={styles.editBtn} title="Редактировать">
                         <Pencil size={16} />
                       </Link>
                       <button

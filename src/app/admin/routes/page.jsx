@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Map, Eye, EyeOff, Filter } from 'lucide-react';
 import { routesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal, RouteFiltersModal } from '../components';
@@ -104,7 +104,7 @@ export default function RoutesPage() {
           >
             <Filter size={18} /> Фильтры
           </button>
-          <Link href="/admin/routes/new" className={styles.addBtn}>
+          <Link to="/admin/routes/new" className={styles.addBtn}>
             <Plus size={18} /> Добавить маршрут
           </Link>
         </div>
@@ -206,7 +206,7 @@ export default function RoutesPage() {
                             <Eye size={16} />
                           )}
                         </button>
-                        <Link href={`/admin/routes/${route.id}`} className={styles.editBtn} title="Редактировать">
+                        <Link to={`/admin/routes/${route.id}`} className={styles.editBtn} title="Редактировать">
                           <Pencil size={16} />
                         </Link>
                         <button

@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation } from 'react-router-dom'
 import styles from './Header.module.css'
 
 // Данные для выпадающего меню "На помощь туристу"
@@ -156,7 +154,7 @@ const getPageConfig = (pathname) => {
 }
 
 export default function Header() {
-  const pathname = usePathname()
+  const { pathname } = useLocation()
   const [isNotFound, setIsNotFound] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [hasBlur, setHasBlur] = useState(false)
@@ -295,54 +293,42 @@ export default function Header() {
 
         {/* Логотип слева */}
         <Link
-          href="/"
+          to="/"
           className={styles.logo}
           aria-label="Карачаево-Черкесия - Главная страница"
         >
-          {(isDarkMode || isDropdownActive) ? <Image
-            src="/color_logo.png"
-            alt="Логотип Карачаево-Черкесии"
-            width={232}
-            height={50}
-            priority
-            quality={90}
-          /> :
-            <Image
-              src="/white_logo.png"
-              alt="Логотип Карачаево-Черкесии"
-              width={232}
-              height={50}
-              priority
-              quality={90}
-            />
-          }
+          {(isDarkMode || isDropdownActive) ? (
+            <img src="/color_logo.png" alt="Логотип Карачаево-Черкесии" width={232} height={50} />
+          ) : (
+            <img src="/white_logo.png" alt="Логотип Карачаево-Черкесии" width={232} height={50} />
+          )}
         </Link>
 
         {/* Навигационное меню по центру */}
         <nav className={styles.nav} role="navigation" aria-label="Основная навигация">
           <Link
-            href="/region"
+            to="/region"
             className={`${styles.navLink} ${pathname === '/region' ? styles.navLink_active : ''}`}
             title="Информация о регионе Карачаево-Черкесия"
           >
             О регионе
           </Link>
           <Link
-            href="/routes"
+            to="/routes"
             className={`${styles.navLink} ${pathname === '/routes' || (pathname?.startsWith('/routes/') && pathname !== '/routes') ? styles.navLink_active : ''}`}
             title="Туристические маршруты"
           >
             Маршруты
           </Link>
           <Link
-            href="/places"
+            to="/places"
             className={`${styles.navLink} ${pathname === '/places' || pathname?.startsWith('/places/') ? styles.navLink_active : ''}`}
             title="Интересные места для посещения"
           >
             Интересные места
           </Link>
           <Link
-            href="/news"
+            to="/news"
             className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
             title="Новости и события"
           >
@@ -362,7 +348,7 @@ export default function Header() {
             onMouseLeave={() => setIsDropdownOpen(false)}
           >
             <Link
-              href="/services"
+              to="/services"
               className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
               title="Услуги и сервисы для туристов"
             >
@@ -394,7 +380,7 @@ export default function Header() {
               <div className={styles.dropdownContent}>
                 {/* Изображение-превью слева */}
                 <div className={styles.dropdownImageWrapper}>
-                  <Image
+                  <img
                     src={dropdownMenuData.articles.items[activeArticleIndex]?.image || '/new1.png'}
                     alt="Превью статьи"
                     width={200}
@@ -410,7 +396,7 @@ export default function Header() {
                     {dropdownMenuData.articles.items.map((item, index) => (
                       <li key={index}>
                         <Link 
-                          href={item.href} 
+                          to={item.href} 
                           className={`${styles.dropdownLink} ${activeArticleIndex === index ? styles.dropdownLinkActive : ''}`}
                           onMouseEnter={() => {
                             setIsArticleHovered(true)
@@ -423,7 +409,7 @@ export default function Header() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={dropdownMenuData.articles.viewAllHref} className={styles.dropdownViewAll}>
+                  <Link to={dropdownMenuData.articles.viewAllHref} className={styles.dropdownViewAll}>
                     Смотреть все
                   </Link>
                 </div>
@@ -436,7 +422,7 @@ export default function Header() {
                       <ul key={colIndex} className={styles.dropdownList}>
                         {column.map((item, index) => (
                           <li key={index}>
-                            <Link href={item.href} className={styles.dropdownLink}>
+                            <Link to={item.href} className={styles.dropdownLink}>
                               {item.title}
                             </Link>
                           </li>
@@ -444,7 +430,7 @@ export default function Header() {
                       </ul>
                     ))}
                   </div>
-                  <Link href={dropdownMenuData.services.viewAllHref} className={styles.dropdownViewAll}>
+                  <Link to={dropdownMenuData.services.viewAllHref} className={styles.dropdownViewAll}>
                     Смотреть все
                   </Link>
                 </div>
@@ -455,7 +441,7 @@ export default function Header() {
                   <ul className={styles.dropdownList}>
                     {dropdownMenuData.emergency.items.map((item, index) => (
                       <li key={index}>
-                        <Link href={item.href} className={styles.dropdownLink}>
+                        <Link to={item.href} className={styles.dropdownLink}>
                           {item.title}
                         </Link>
                       </li>
@@ -484,17 +470,12 @@ export default function Header() {
           </Link> */}
 
           <Link
-            href="/search"
+            to="/search"
             className={styles.iconButton}
             aria-label="Поиск"
             title="Поиск по сайту"
           >
-            <Image
-              src="/search.png"
-              alt="Поиск"
-              width={17}
-              height={17}
-            />
+            <img src="/search.png" alt="Поиск" width={17} height={17} />
           </Link>
 
           {/* <Link

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, X, MapPin, GripVertical, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Search } from 'lucide-react';
 import { routesAPI, placesAPI, servicesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -186,7 +186,7 @@ function formSnapshotsEqual(a, b) {
 }
 
 export default function RouteEditPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const params = useParams();
   const isNew = params.id === 'new';
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
@@ -261,16 +261,16 @@ export default function RouteEditPage() {
 
   const goToList = useCallback(() => {
     setLeaveModalOpen(false);
-    router.push('/admin/routes');
-  }, [router]);
+    navigate('/admin/routes');
+  }, [navigate]);
 
   const handleCancelClick = useCallback(() => {
     if (isDirty) {
       setLeaveModalOpen(true);
     } else {
-      router.push('/admin/routes');
+      navigate('/admin/routes');
     }
-  }, [isDirty, router]);
+  }, [isDirty, navigate]);
 
   useEffect(() => {
     if (!isNew) {
@@ -735,9 +735,9 @@ export default function RouteEditPage() {
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
         if (created?.id) {
-          router.replace(`/admin/routes/${created.id}`);
+          navigate(`/admin/routes/${created.id}`, { replace: true });
         } else {
-          router.push('/admin/routes');
+          navigate('/admin/routes');
         }
       } else {
         const res = await routesAPI.update(params.id, dataToSend);

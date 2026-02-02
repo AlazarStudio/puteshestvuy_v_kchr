@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
@@ -11,7 +11,7 @@ import styles from '../../admin.module.css';
 const categories = ['Новости', 'Маршруты', 'Гайды', 'События', 'Анонсы'];
 
 export default function NewsEditPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const params = useParams();
   const isNew = params.id === 'new';
 
@@ -103,7 +103,7 @@ export default function NewsEditPage() {
         await newsAPI.update(params.id, dataToSend);
       }
       
-      router.push('/admin/news');
+      navigate('/admin/news');
     } catch (error) {
       console.error('Ошибка сохранения:', error);
       setError(error.response?.data?.message || 'Ошибка сохранения новости');
@@ -258,7 +258,7 @@ export default function NewsEditPage() {
           >
             {isSaving ? 'Сохранение...' : (isNew ? 'Создать новость' : 'Сохранить изменения')}
           </button>
-          <Link href="/admin/news" className={styles.cancelBtn}>
+          <Link to="/admin/news" className={styles.cancelBtn}>
             Отмена
           </Link>
         </div>

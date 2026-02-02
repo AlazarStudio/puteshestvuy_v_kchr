@@ -30,7 +30,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY || '';
+    const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY || '';
     const lang = 'ru_RU';
 
     if (window.ymaps && window.ymaps.ready) {
@@ -168,7 +168,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
   if (error) {
     return (
       <div style={{ height, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-        {error}. Укажите NEXT_PUBLIC_YANDEX_MAPS_API_KEY.
+        {error}. Укажите VITE_YANDEX_MAPS_API_KEY.
       </div>
     );
   }

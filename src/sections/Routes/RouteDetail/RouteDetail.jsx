@@ -8,7 +8,7 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
@@ -389,7 +389,7 @@ export default function RouteDetail({ routeSlug }) {
           <div className={styles.routePage} style={{ padding: '2rem', textAlign: 'center' }}>
             {error || 'Маршрут не найден'}
             <br />
-            <Link href="/routes">Вернуться к списку маршрутов</Link>
+            <Link to="/routes">Вернуться к списку маршрутов</Link>
           </div>
         </CenterBlock>
       </main>
@@ -413,11 +413,11 @@ export default function RouteDetail({ routeSlug }) {
       <CenterBlock>
         <div className={styles.routePage}>
           <div className={styles.bread_crumbs}>
-            <Link href="/">Главная</Link>
+            <Link to="/">Главная</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <Link href="/routes">Маршруты</Link>
+            <Link to="/routes">Маршруты</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -596,7 +596,7 @@ export default function RouteDetail({ routeSlug }) {
                                 ) : null}
                               </div>
                             </div>
-                            <Link href={placeHref} className={styles.slideBtn}>
+                            <Link to={placeHref} className={styles.slideBtn}>
                               Подробнее
                             </Link>
                           </div>
@@ -699,7 +699,7 @@ export default function RouteDetail({ routeSlug }) {
                       const n = guide.reviewsCount
                       const reviewsStr = n != null ? (n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`) : ''
                       return (
-                        <Link key={guide.id} href={guideHref} className={styles.guide_man}>
+                        <Link key={guide.id} to={guideHref} className={styles.guide_man}>
                           <div className={styles.guide_man_img}>
                             <img src={avatarSrc} alt="" className={styles.guide_man_img_avatar} />
                             {guide.isVerified && <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />}
@@ -859,7 +859,7 @@ export default function RouteDetail({ routeSlug }) {
                       const feedbackStr = n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`
                       const ratingStr = place.rating != null && place.rating !== '' ? String(place.rating) : '—'
                       return (
-                        <Link key={place.id} href={`/places/${place.slug || place.id}`}>
+                        <Link key={place.id} to={`/places/${place.slug || place.id}`}>
                           <PlaceBlock
                             width="336px"
                             rating={ratingStr}

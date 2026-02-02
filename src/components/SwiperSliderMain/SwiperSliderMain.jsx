@@ -9,7 +9,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 
 import { Navigation } from 'swiper/modules';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import TitleButton from '../TitleButton/TitleButton';
 import { useRef } from 'react';
 
@@ -47,7 +47,7 @@ function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
   return (
     <Link
       ref={ref}
-      href={slide.href}
+      to={slide.href}
       className={styles.slide}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

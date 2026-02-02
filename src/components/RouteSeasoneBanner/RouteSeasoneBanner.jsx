@@ -2,14 +2,14 @@
 
 import { motion } from 'framer-motion'
 import styles from './RouteSeasoneBanner.module.css'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 
 export default function RouteSeasoneBanner({ bgColor, patternColor, title, logo, routeLink, showFrom }) {
   const translateXValue = showFrom === 'left' ? '-400px' : '400px'
 
   return (
-    <Link href={routeLink} className={styles.routeSeasoneBanner} style={{
+    <Link to={routeLink} className={styles.routeSeasoneBanner} style={{
       backgroundColor: `${bgColor}`,
       '--translate-x': translateXValue
     }}>

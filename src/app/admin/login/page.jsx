@@ -1,13 +1,11 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { authAPI } from '@/lib/api';
 import styles from './login.module.css';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     login: '',
     password: '',
@@ -38,7 +36,7 @@ export default function AdminLoginPage() {
 
       localStorage.setItem('adminToken', token);
       localStorage.setItem('adminUser', JSON.stringify(user));
-      router.push('/admin');
+      navigate('/admin');
     } catch (err) {
       setError(
         err.response?.data?.message || 

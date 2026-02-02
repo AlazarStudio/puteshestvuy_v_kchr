@@ -8,7 +8,7 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 
 export default function ServiceDetail({ serviceSlug }) {
@@ -238,7 +238,7 @@ export default function ServiceDetail({ serviceSlug }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <Link href="/services">Услуги и сервисы</Link>
+            <Link to="/services">Услуги и сервисы</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

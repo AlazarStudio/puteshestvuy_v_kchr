@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Newspaper } from 'lucide-react';
 import { newsAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
@@ -73,7 +73,7 @@ export default function NewsPage() {
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Новости</h1>
-        <Link href="/admin/news/new" className={styles.addBtn}>
+        <Link to="/admin/news/new" className={styles.addBtn}>
           <Plus size={18} /> Добавить новость
         </Link>
       </div>
@@ -138,7 +138,7 @@ export default function NewsPage() {
                     </span>
                   </td>
                   <td className={styles.actions}>
-                    <Link href={`/admin/news/${item.id}`} className={styles.editBtn}>
+                    <Link to={`/admin/news/${item.id}`} className={styles.editBtn}>
                       <Pencil size={16} />
                     </Link>
                     <button

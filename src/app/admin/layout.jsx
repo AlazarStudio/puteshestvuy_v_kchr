@@ -1,8 +1,5 @@
-'use client';
-
-import { useState, useEffect, createContext, useContext } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect, createContext } from 'react';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Map, 
@@ -28,9 +25,9 @@ const menuItems = [
   { href: '/admin/reviews', label: 'Отзывы', icon: Star },
 ];
 
-export default function AdminLayout({ children }) {
-  const pathname = usePathname();
-  const router = useRouter();
+export default function AdminLayout() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -43,7 +40,7 @@ export default function AdminLayout({ children }) {
     
     if (!token || !user) {
       if (pathname !== '/admin/login') {
-        router.push('/admin/login');
+        navigate('/admin/login');
       }
       setIsLoading(false);
       return;
@@ -54,7 +51,7 @@ export default function AdminLayout({ children }) {
       if (userData.role !== 'SUPERADMIN') {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
-        router.push('/admin/login');
+        navigate('/admin/login');
         setIsLoading(false);
         return;
       }
@@ -62,22 +59,17 @@ export default function AdminLayout({ children }) {
     } catch {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      router.push('/admin/login');
+      navigate('/admin/login');
     }
     
     setIsLoading(false);
-  }, [pathname, router]);
+  }, [pathname, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    router.push('/admin/login');
+    navigate('/admin/login');
   };
-
-  // Показываем страницу логина без layout
-  if (pathname === '/admin/login') {
-    return children;
-  }
 
   if (isLoading) {
     return (
@@ -96,7 +88,7 @@ export default function AdminLayout({ children }) {
     <div className={styles.adminContainer}>
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <Link href={"/"} target='_blank' className={styles.logo}>КЧР Админ</Link>
+          <Link to="/" target="_blank" rel="noopener noreferrer" className={styles.logo}>КЧР Админ</Link>
           <button 
             className={styles.toggleBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -114,7 +106,7 @@ export default function AdminLayout({ children }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 className={`${styles.navItem} ${isActive ? styles.active : ''}`}
               >
                 <span className={styles.navIcon}><Icon size={20} /></span>
@@ -150,7 +142,7 @@ export default function AdminLayout({ children }) {
                 <span key={index}>
                   {index > 0 && ' / '}
                   <Link
-                    href={href}
+                    to={href}
                     className={isLast ? styles.currentPage : ''}
                     style={{ color: 'inherit', textDecoration: 'none' }}
                   >
@@ -166,7 +158,7 @@ export default function AdminLayout({ children }) {
         <div className={styles.content}>
           <AdminHeaderRightContext.Provider value={{ setHeaderRight }}>
             <AdminBreadcrumbContext.Provider value={{ setBreadcrumbLabel }}>
-              {children}
+              <Outlet />
             </AdminBreadcrumbContext.Provider>
           </AdminHeaderRightContext.Provider>
         </div>

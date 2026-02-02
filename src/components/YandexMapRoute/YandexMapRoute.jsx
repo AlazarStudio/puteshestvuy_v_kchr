@@ -46,7 +46,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY || '';
+    const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY || '';
     const lang = 'ru_RU';
 
     if (window.ymaps && window.ymaps.ready) {
@@ -263,7 +263,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
           color: '#64748b',
         }}
       >
-        {error}. Укажите NEXT_PUBLIC_YANDEX_MAPS_API_KEY.
+        {error}. Укажите VITE_YANDEX_MAPS_API_KEY.
       </div>
     );
   }
