@@ -11,12 +11,31 @@ import { publicRoutesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'routes_scroll_position'
 
-const defaultFilters = {
-  seasons: [],
-  transport: [],
-  durationOptions: [],
-  difficultyLevels: [],
+const FIXED_GROUP_KEYS = [
+  'seasons',
+  'transport',
+  'durationOptions',
+  'difficultyLevels',
+  'distanceOptions',
+  'elevationOptions',
+  'isFamilyOptions',
+  'hasOvernightOptions',
+]
+
+const FIXED_GROUP_LABELS = {
+  seasons: 'Сезон',
+  transport: 'Способ передвижения',
+  durationOptions: 'Время прохождения',
+  difficultyLevels: 'Сложность',
+  distanceOptions: 'Расстояние',
+  elevationOptions: 'Перепад высот',
+  isFamilyOptions: 'Семейный маршрут',
+  hasOvernightOptions: 'С ночевкой',
 }
+
+const defaultFilters = Object.fromEntries(
+  FIXED_GROUP_KEYS.map((k) => [k, []])
+)
 
 export default function Routes_page() {
   const [sortBy, setSortBy] = useState('popularity')
@@ -35,12 +54,37 @@ export default function Routes_page() {
     setFilters(next)
   }
 
-  // Опции фильтров маршрутов с API (группы для FilterBlock)
+  // Добавляем ключи extra-групп в filters при первой загрузке опций
+  useEffect(() => {
+    if (!filterOptions?.extraGroups?.length) return
+    setFilters((prev) => {
+      const next = { ...prev }
+      let changed = false
+      for (const g of filterOptions.extraGroups) {
+        if (Array.isArray(g.values) && g.key && prev[g.key] === undefined) {
+          next[g.key] = []
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [filterOptions?.extraGroups])
+
+  // Все группы фильтров: встроенные + extra (с опциями или без — для поля ввода)
   const routeFilterGroups = [
-    { key: 'seasons', label: 'Сезон', options: filterOptions?.seasons ?? [] },
-    { key: 'transport', label: 'Способ передвижения', options: filterOptions?.transport ?? [] },
-    { key: 'durationOptions', label: 'Время прохождения', options: filterOptions?.durationOptions ?? [] },
-    { key: 'difficultyLevels', label: 'Сложность', options: filterOptions?.difficultyLevels ?? [] },
+    ...FIXED_GROUP_KEYS.map((key) => {
+      const meta = filterOptions?.fixedGroupMeta?.[key]
+      const label = (meta?.label && meta.label.trim()) || FIXED_GROUP_LABELS[key] || key
+      const options = Array.isArray(filterOptions?.[key]) ? filterOptions[key] : []
+      return { key, label, options }
+    }),
+    ...(Array.isArray(filterOptions?.extraGroups)
+      ? filterOptions.extraGroups.map((g) => ({
+          key: g.key,
+          label: (g.label && g.label.trim()) || g.key,
+          options: Array.isArray(g.values) ? g.values : [],
+        }))
+      : []),
   ]
 
   // Загрузка опций фильтров маршрутов с API
@@ -54,6 +98,12 @@ export default function Routes_page() {
             transport: Array.isArray(data.transport) ? data.transport : [],
             durationOptions: Array.isArray(data.durationOptions) ? data.durationOptions : [],
             difficultyLevels: Array.isArray(data.difficultyLevels) ? data.difficultyLevels : [],
+            distanceOptions: Array.isArray(data.distanceOptions) ? data.distanceOptions : [],
+            elevationOptions: Array.isArray(data.elevationOptions) ? data.elevationOptions : [],
+            isFamilyOptions: Array.isArray(data.isFamilyOptions) ? data.isFamilyOptions : [],
+            hasOvernightOptions: Array.isArray(data.hasOvernightOptions) ? data.hasOvernightOptions : [],
+            extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
+            fixedGroupMeta: data.fixedGroupMeta && typeof data.fixedGroupMeta === 'object' ? data.fixedGroupMeta : {},
           })
         }
       })
@@ -77,6 +127,15 @@ export default function Routes_page() {
           ...(filters.transport?.length > 0 && { transport: filters.transport }),
           ...(filters.durationOptions?.length > 0 && { durationOptions: filters.durationOptions }),
           ...(filters.difficultyLevels?.length > 0 && { difficultyLevels: filters.difficultyLevels }),
+          ...(filters.distanceOptions?.length > 0 && { distanceOptions: filters.distanceOptions }),
+          ...(filters.elevationOptions?.length > 0 && { elevationOptions: filters.elevationOptions }),
+          ...(filters.isFamilyOptions?.length > 0 && { isFamilyOptions: filters.isFamilyOptions }),
+          ...(filters.hasOvernightOptions?.length > 0 && { hasOvernightOptions: filters.hasOvernightOptions }),
+        }
+        for (const g of filterOptions?.extraGroups || []) {
+          if (g.key && filters[g.key]?.length > 0) {
+            params[g.key] = filters[g.key]
+          }
         }
         const { data } = await publicRoutesAPI.getAll(params)
         if (!cancelled) {
@@ -95,7 +154,7 @@ export default function Routes_page() {
     }
     fetchRoutes()
     return () => { cancelled = true }
-  }, [filters.seasons, filters.transport, filters.durationOptions, filters.difficultyLevels, searchQuery, sortBy])
+  }, [filters, searchQuery, sortBy])
 
   // Восстанавливаем позицию скролла при возврате на страницу
   useEffect(() => {
