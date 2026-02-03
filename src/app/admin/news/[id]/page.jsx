@@ -1,56 +1,70 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useContext } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import { AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
 const categories = ['Новости', 'Маршруты', 'Гайды', 'События', 'Анонсы'];
 
+const initialFormData = () => ({
+  title: '',
+  category: 'Новости',
+  shortDescription: '',
+  content: '',
+  author: '',
+  publishedAt: new Date().toISOString().split('T')[0],
+  isActive: false,
+  images: [],
+});
+
 export default function NewsEditPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const { setBreadcrumbLabel } = useContext(AdminBreadcrumbContext) || {};
   const isNew = params.id === 'new';
 
-  const [formData, setFormData] = useState({
-    title: '',
-    category: 'Новости',
-    shortDescription: '',
-    content: '',
-    author: '',
-    publishedAt: new Date().toISOString().split('T')[0],
-    isActive: false,
-    images: [],
-  });
-
+  const [formData, setFormData] = useState(initialFormData());
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  useEffect(() => {
-    if (!isNew) {
-      fetchNews();
-    }
-  }, [params.id]);
-
-  const fetchNews = async () => {
+  const fetchNews = useCallback(async () => {
+    if (isNew) return;
     try {
+      setError('');
       const response = await newsAPI.getById(params.id);
       const data = response.data;
       setFormData({
-        ...data,
+        title: data.title ?? '',
+        category: data.category ?? 'Новости',
+        shortDescription: data.shortDescription ?? '',
+        content: data.content ?? '',
+        author: data.author ?? '',
         publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString().split('T')[0] : '',
+        isActive: Boolean(data.isActive),
+        images: Array.isArray(data.images) ? data.images : [],
       });
-    } catch (error) {
-      console.error('Ошибка загрузки новости:', error);
+      setBreadcrumbLabel?.(data.title || 'Новость');
+    } catch (err) {
+      console.error('Ошибка загрузки новости:', err);
       setError('Новость не найдена');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, isNew, setBreadcrumbLabel]);
+
+  useEffect(() => {
+    if (isNew) {
+      setBreadcrumbLabel?.('Новая новость');
+      setIsLoading(false);
+    } else {
+      fetchNews();
+    }
+    return () => setBreadcrumbLabel?.('');
+  }, [isNew, fetchNews, setBreadcrumbLabel]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,21 +75,28 @@ export default function NewsEditPage() {
   };
 
   const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    
-    for (const file of files) {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      
-      try {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploadingImage(true);
+    try {
+      for (const file of files) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
         const response = await mediaAPI.upload(formDataUpload);
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, response.data.url],
-        }));
-      } catch (error) {
-        console.error('Ошибка загрузки изображения:', error);
+        const url = response.data?.url;
+        if (url) {
+          setFormData((prev) => ({
+            ...prev,
+            images: [...prev.images, url],
+          }));
+        }
       }
+    } catch (err) {
+      console.error('Ошибка загрузки изображения:', err);
+      setError('Не удалось загрузить изображение');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
@@ -86,27 +107,42 @@ export default function NewsEditPage() {
     }));
   };
 
+  const setCoverImage = (index) => {
+    if (index === 0) return;
+    setFormData((prev) => {
+      const images = [...prev.images];
+      const [img] = images.splice(index, 1);
+      images.unshift(img);
+      return { ...prev, images };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setError('');
 
-    try {
-      const dataToSend = {
-        ...formData,
-        publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : null,
-      };
+    const dataToSend = {
+      title: formData.title.trim(),
+      category: formData.category || null,
+      shortDescription: formData.shortDescription || null,
+      content: formData.content || null,
+      author: formData.author?.trim() || null,
+      publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : null,
+      isActive: Boolean(formData.isActive),
+      images: Array.isArray(formData.images) ? formData.images : [],
+    };
 
+    try {
       if (isNew) {
         await newsAPI.create(dataToSend);
       } else {
         await newsAPI.update(params.id, dataToSend);
       }
-      
       navigate('/admin/news');
-    } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      setError(error.response?.data?.message || 'Ошибка сохранения новости');
+    } catch (err) {
+      console.error('Ошибка сохранения:', err);
+      setError(err.response?.data?.message || 'Ошибка сохранения новости');
     } finally {
       setIsSaving(false);
     }
@@ -218,32 +254,65 @@ export default function NewsEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Изображения</label>
+          <p className={styles.formHint} style={{ marginBottom: 8 }}>
+            Первое изображение используется как обложка в списке новостей.
+          </p>
           <div className={styles.imageUpload}>
             <input
               type="file"
               accept="image/*"
               multiple
               onChange={handleImageUpload}
+              disabled={uploadingImage}
               style={{ display: 'none' }}
-              id="imageUpload"
+              id="newsImageUpload"
             />
-            <label htmlFor="imageUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Upload size={20} /> Нажмите для загрузки изображений
+            <label
+              htmlFor="newsImageUpload"
+              style={{
+                cursor: uploadingImage ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                justifyContent: 'center',
+                opacity: uploadingImage ? 0.7 : 1,
+              }}
+            >
+              <Upload size={20} />
+              {uploadingImage ? 'Загрузка...' : 'Загрузить изображения'}
             </label>
           </div>
-          
+
           {formData.images.length > 0 && (
             <div className={styles.imagePreview}>
               {formData.images.map((img, index) => (
                 <div key={index} className={styles.previewItem}>
-                  <img src={getImageUrl(img)} alt={`Preview ${index}`} />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className={styles.removeImage}
-                  >
-                    <X size={14} />
-                  </button>
+                  {index === 0 && (
+                    <span className={styles.badge} style={{ position: 'absolute', top: 6, left: 6, zIndex: 1, fontSize: 11 }}>
+                      Обложка
+                    </span>
+                  )}
+                  <img src={getImageUrl(img)} alt={`Превью ${index + 1}`} />
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    {index !== 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCoverImage(index)}
+                        className={styles.filterBtn}
+                        style={{ fontSize: 12 }}
+                      >
+                        Сделать обложкой
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className={styles.removeImage}
+                      title="Удалить"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

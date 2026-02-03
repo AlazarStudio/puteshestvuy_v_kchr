@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet, useParams } from 'react-router-dom'
+import { Routes, Route, Outlet, useParams, useLocation } from 'react-router-dom'
 import LayoutWrapper from '@/components/layout/LayoutWrapper'
 import Main_page from '@/sections/Main_page'
 import Region_page from '@/sections/Region/Region_page'
@@ -9,6 +9,8 @@ import News_page from '@/sections/News/News_page'
 import NewsDetail from '@/sections/News/NewsDetail/NewsDetail'
 import Services_page from '@/sections/Services/Services_page'
 import ServiceDetail from '@/sections/Services/ServiceDetail/ServiceDetail'
+import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
+import TemplateListPage from '@/sections/Services/ServiceDetail/templates/TemplateListPage'
 import NotFound from '@/app/not-found'
 import AdminLayout from '@/app/admin/layout'
 import AdminDashboard from '@/app/admin/page'
@@ -46,6 +48,15 @@ function ServiceDetailWrapper() {
   return <ServiceDetail serviceSlug={slug} />
 }
 
+function ServiceTemplatePreviewWrapper() {
+  const { type } = useParams()
+  const pathname = useLocation().pathname
+  // type из URL (на случай если useParams вложенного маршрута не отдаёт param)
+  const typeFromPath = pathname.split('/').pop()
+  const resolvedType = type || typeFromPath
+  return <ServiceTemplateByType type={resolvedType} />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -60,7 +71,9 @@ export default function App() {
         <Route path="news" element={<News_page />} />
         <Route path="news/:slug" element={<NewsDetailWrapper />} />
         <Route path="services" element={<Services_page />} />
-        <Route path="services/:slug" element={<ServiceDetailWrapper />} />
+        <Route path="services/template" element={<TemplateListPage />} />
+        <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
+        {/* <Route path="services/:slug" element={<ServiceDetailWrapper />} /> */}
       </Route>
 
       {/* Админ: логин без layout */}

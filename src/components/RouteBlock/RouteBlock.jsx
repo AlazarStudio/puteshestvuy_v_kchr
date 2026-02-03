@@ -19,7 +19,13 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
   if (!route) return null
 
   const navigate = useNavigate()
-  const slug = route.slug || (route.title ? generateSlug(route.title) : route.id)
+  // Slug должен совпадать с /routes: либо из API (route.slug), либо title + id в том же формате
+  const slug =
+    route.slug ||
+    (route.title && route.id != null ? `${generateSlug(route.title)}-${route.id}` : null) ||
+    (route.title ? generateSlug(route.title) : null) ||
+    (route.id != null ? String(route.id) : '')
+  if (!slug) return null
   const title = route.title || ''
   const imageUrl = getImageUrl(route.images?.[0])
   const shortDesc = route.shortDescription || ''

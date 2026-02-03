@@ -693,7 +693,7 @@ export default function RouteDetail({ routeSlug }) {
                   <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
                   <div className={styles.guides}>
                     {route.guides.map((guide) => {
-                      const guideHref = `/services/${guide.slug || guide.id}`
+                      const guideHref = `/services/template/guide`
                       const avatarSrc = guide.images?.[0] ? getImageUrl(guide.images[0]) : '/no-avatar.png'
                       const ratingStr = guide.rating != null && guide.rating !== '' ? String(guide.rating) : '—'
                       const n = guide.reviewsCount

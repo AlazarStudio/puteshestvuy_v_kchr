@@ -124,13 +124,19 @@ export const newsAPI = {
   delete: (id) => api.delete(`/admin/news/${id}`),
 };
 
-// Services API
+// Services API (admin)
 export const servicesAPI = {
   getAll: (params) => api.get('/admin/services', { params }),
   getById: (id) => api.get(`/admin/services/${id}`),
   create: (data) => api.post('/admin/services', data),
   update: (id, data) => api.put(`/admin/services/${id}`, data),
   delete: (id) => api.delete(`/admin/services/${id}`),
+};
+
+// Services API (public — для страницы «Услуги» на сайте)
+export const publicServicesAPI = {
+  getAll: (params) => api.get('/services', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/services/${idOrSlug}`),
 };
 
 // Reviews API

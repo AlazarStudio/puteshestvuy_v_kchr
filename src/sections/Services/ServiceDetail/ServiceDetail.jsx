@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './ServiceDetail.module.css'
+import g from './ServiceDetailGuide.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
 import 'swiper/css'
@@ -10,6 +11,8 @@ import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
+import routesPageStyles from '@/sections/Routes/Routes_page.module.css'
+import { publicRoutesAPI } from '@/lib/api'
 
 export default function ServiceDetail({ serviceSlug }) {
   const photos = [
@@ -30,6 +33,7 @@ export default function ServiceDetail({ serviceSlug }) {
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
   const [activeAnchor, setActiveAnchor] = useState('main')
+  const [guideRoutes, setGuideRoutes] = useState([])
   const [reviews, setReviews] = useState([
     {
       id: 1,
@@ -174,12 +178,25 @@ export default function ServiceDetail({ serviceSlug }) {
     setRating(0)
   }
 
+  // Все маршруты с сайта (тот же API, что на странице /routes)
+  useEffect(() => {
+    let cancelled = false
+    publicRoutesAPI.getAll({ limit: 500 })
+      .then(({ data }) => {
+        if (!cancelled) setGuideRoutes(data?.items ?? [])
+      })
+      .catch(() => {
+        if (!cancelled) setGuideRoutes([])
+      })
+    return () => { cancelled = true }
+  }, [])
+
   const anchors = [
     { id: 'main', label: 'Основное' },
     { id: 'about', label: 'О специалисте' },
     { id: 'services', label: 'Услуги' },
     { id: 'certificates', label: 'Сертификаты' },
-    { id: 'routes', label: 'Маршруты' },
+    ...(guideRoutes.length > 0 ? [{ id: 'routes', label: 'Маршруты' }] : []),
     { id: 'reviews', label: 'Отзывы' },
   ]
 
@@ -230,10 +247,10 @@ export default function ServiceDetail({ serviceSlug }) {
   ]
 
   return (
-    <main className={styles.main}>
+    <main className={`${styles.main} ${g.main}`}>
       <CenterBlock>
-        <div className={styles.servicePage}>
-          <div className={styles.bread_crumbs}>
+        <div className={`${styles.servicePage} ${g.servicePage}`}>
+          <div className={`${styles.bread_crumbs} ${g.bread_crumbs}`}>
             <Link href="/">Главная</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -245,9 +262,9 @@ export default function ServiceDetail({ serviceSlug }) {
             <span>Хубиев Артур Арсенович</span>
           </div>
 
-          <div className={styles.gallery}>
+          <div className={`${styles.gallery} ${g.gallery}`}>
             <div
-              className={styles.galleryMain}
+              className={`${styles.galleryMain} ${g.galleryMain}`}
               onClick={() => openModal(0)}
             >
               <img src={photos[0]?.src} alt={`Фото 1`} />
@@ -261,7 +278,7 @@ export default function ServiceDetail({ serviceSlug }) {
                   return (
                     <div
                       key={photoIndex}
-                      className={styles.galleryItem}
+                      className={`${styles.galleryItem} ${g.galleryItem}`}
                       onClick={() => openModal(photoIndex)}
                     >
                       <img src={photo.src} alt={`Фото ${photoIndex + 1}`} />
@@ -277,13 +294,13 @@ export default function ServiceDetail({ serviceSlug }) {
                   return (
                     <div
                       key={photoIndex}
-                      className={`${styles.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
+                      className={`${styles.galleryItem} ${g.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                       onClick={() => openModal(photoIndex)}
                     >
                       <img src={photo.src} alt={`Фото ${photoIndex + 1}`} />
                       {isLast && (
                         <div
-                          className={styles.moreButton}
+                          className={`${styles.moreButton} ${g.moreButton}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             openModal(5)
@@ -301,26 +318,26 @@ export default function ServiceDetail({ serviceSlug }) {
           </div>
 
           <div className={styles.serviceBlock}>
-            <div className={styles.serviceBlock_content}>
-              <div id="main" className={styles.serviceHeader}>
-                <div className={styles.serviceAvatar}>
-                  <img src="/serviceImg1.png" alt="Аватар" className={styles.avatarImg} />
+            <div className={`${styles.serviceBlock_content} ${g.serviceBlock_content}`}>
+              <div id="main" className={`${styles.serviceHeader} ${g.serviceHeader}`}>
+                <div className={`${styles.serviceAvatar} ${g.serviceAvatar}`}>
+                  <img src="/serviceImg1.png" alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
                   <img src="/verification.png" alt="" className={styles.verificationBadge} />
                 </div>
                 <div className={styles.serviceInfo}>
-                  <div className={styles.serviceCategory}>Гид</div>
-                  <div className={styles.serviceName}>Хубиев Артур Арсенович</div>
+                  <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>Гид</div>
+                  <div className={`${styles.serviceName} ${g.serviceName}`}>Хубиев Артур Арсенович</div>
                   <div className={styles.serviceRating}>
-                    <div className={styles.ratingStars}>
+                    <div className={`${styles.ratingStars} ${g.ratingStars}`}>
                       <img src="/star.png" alt="" /> 5.0
                     </div>
-                    <div className={styles.ratingFeedback}>4 отзыва</div>
+                    <div className={`${styles.ratingFeedback} ${g.ratingFeedback}`}>4 отзыва</div>
                   </div>
                 </div>
               </div>
 
-              <div id="about" className={styles.title}>О специалисте</div>
-              <div className={styles.aboutText}>
+              <div id="about" className={`${styles.title} ${g.title}`}>О специалисте</div>
+              <div className={`${styles.aboutText} ${g.aboutText}`}>
                 <p>
                   Профессиональный гид с опытом работы более 10 лет. Специализируюсь на горных маршрутах 
                   и культурных экскурсиях по Карачаево-Черкесии.
@@ -336,56 +353,63 @@ export default function ServiceDetail({ serviceSlug }) {
                 </p>
               </div>
 
-              <div className={styles.contacts}>
-                <div className={styles.contactsTitle}>Контакты</div>
+              <div className={`${styles.contacts} ${g.contacts}`}>
+                <div className={`${styles.contactsTitle} ${g.contactsTitle}`}>Контакты</div>
                 <div className={styles.contactsList}>
                   <div className={styles.contactItem}>
                     <span className={styles.contactLabel}>Телефон:</span>
-                    <a href="tel:+79281234567" className={styles.contactValue}>+7 (928) 123-45-67</a>
+                    <a href="tel:+79281234567" className={`${styles.contactValue} ${g.contactValue}`}>+7 (928) 123-45-67</a>
                   </div>
                   <div className={styles.contactItem}>
                     <span className={styles.contactLabel}>Email:</span>
-                    <a href="mailto:guide@example.com" className={styles.contactValue}>guide@example.com</a>
+                    <a href="mailto:guide@example.com" className={`${styles.contactValue} ${g.contactValue}`}>guide@example.com</a>
                   </div>
                   <div className={styles.contactItem}>
                     <span className={styles.contactLabel}>Telegram:</span>
-                    <a href="https://t.me/guide_kchr" className={styles.contactValue} target="_blank" rel="noopener noreferrer">@guide_kchr</a>
+                    <a href="https://t.me/guide_kchr" className={`${styles.contactValue} ${g.contactValue}`} target="_blank" rel="noopener noreferrer">@guide_kchr</a>
                   </div>
                 </div>
               </div>
 
-              <div id="services" className={styles.title}>Услуги и цены</div>
+              <div id="services" className={`${styles.title} ${g.title}`}>Услуги и цены</div>
               <div className={styles.servicesList}>
                 {servicesList.map((service, index) => (
-                  <div key={index} className={styles.servicesListItem}>
+                  <div key={index} className={`${styles.servicesListItem} ${g.servicesListItem}`}>
                     <div className={styles.servicesListItemName}>{service.name}</div>
-                    <div className={styles.servicesListItemPrice}>{service.price}</div>
+                    <div className={`${styles.servicesListItemPrice} ${g.servicesListItemPrice}`}>{service.price}</div>
                   </div>
                 ))}
               </div>
 
-              <div id="certificates" className={styles.title}>Сертификаты и документы</div>
+              <div id="certificates" className={`${styles.title} ${g.title}`}>Сертификаты и документы</div>
               <div className={styles.certificates}>
-                <div className={styles.certificateItem}>
+                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
                   <img src="/routeGalery1.png" alt="Сертификат" />
                 </div>
-                <div className={styles.certificateItem}>
+                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
                   <img src="/routeGalery2.png" alt="Сертификат" />
                 </div>
-                <div className={styles.certificateItem}>
+                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
                   <img src="/routeGalery3.png" alt="Сертификат" />
                 </div>
               </div>
 
-              <div id="routes" className={styles.title}>Маршруты гида</div>
-              <div className={styles.guideRoutes}>
-                <RouteBlock title="На границе регионов: Кисловодск - Медовые водопады" />
-                <RouteBlock title="Горные вершины Карачаево-Черкесии" />
-              </div>
+              {guideRoutes.length > 0 && (
+                <>
+                  <div id="routes" className={`${styles.title} ${g.title}`}>Маршруты гида</div>
+                  <div className={`${routesPageStyles.routes} ${g.routesWrap}`}>
+                    <div className={routesPageStyles.routesShow}>
+                      {guideRoutes.map((route, index) => (
+                        <RouteBlock key={route.slug || route.id || index} route={route} />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <div id="reviews" className={styles.title}>Отзывы</div>
+              <div id="reviews" className={`${styles.title} ${g.title}`}>Отзывы</div>
               <div className={styles.feedback}>
-                <form className={styles.feedbackForm} onSubmit={handleSubmitReview}>
+                <form className={`${styles.feedbackForm} ${g.feedbackForm}`} onSubmit={handleSubmitReview}>
                   <div className={styles.feedbackFormRating}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -423,7 +447,7 @@ export default function ServiceDetail({ serviceSlug }) {
                     onChange={(e) => setReviewText(e.target.value)}
                     rows="4"
                   />
-                  <button type="submit" className={styles.feedbackSubmitButton}>
+                  <button type="submit" className={`${styles.feedbackSubmitButton} ${g.feedbackSubmitButton}`}>
                     Оставить отзыв
                   </button>
                 </form>
@@ -435,7 +459,7 @@ export default function ServiceDetail({ serviceSlug }) {
                     const showExpandButton = review.text.length > 200 && !isExpanded
 
                     return (
-                      <div key={review.id} className={styles.feedbackItem}>
+                      <div key={review.id} className={`${styles.feedbackItem} ${g.feedbackItem}`}>
                         <div className={styles.feedbackItemHeader}>
                           <div className={styles.feedbackItemLeft}>
                             <img 
@@ -470,7 +494,7 @@ export default function ServiceDetail({ serviceSlug }) {
                         </div>
                         {showExpandButton && (
                           <button
-                            className={styles.feedbackExpandButton}
+                            className={`${styles.feedbackExpandButton} ${g.feedbackExpandButton}`}
                             onClick={() => toggleReview(review.id)}
                           >
                             Показать полностью
@@ -478,7 +502,7 @@ export default function ServiceDetail({ serviceSlug }) {
                         )}
                         {isExpanded && review.text.length > 200 && (
                           <button
-                            className={styles.feedbackExpandButton}
+                            className={`${styles.feedbackExpandButton} ${g.feedbackExpandButton}`}
                             onClick={() => toggleReview(review.id)}
                           >
                             Свернуть
@@ -490,17 +514,17 @@ export default function ServiceDetail({ serviceSlug }) {
                 </div>
 
                 <div className={styles.feedbackShowAll}>
-                  <button className={styles.feedbackShowAllButton}>Показать все отзывы</button>
+                  <button className={`${styles.feedbackShowAllButton} ${g.feedbackShowAllButton}`}>Показать все отзывы</button>
                 </div>
               </div>
             </div>
 
-            <div className={styles.serviceBlock_anchors}>
+            <div className={`${styles.serviceBlock_anchors} ${g.serviceBlock_anchors}`}>
               <div className={styles.anchorsList}>
                 {anchors.map((anchor) => (
                   <button
                     key={anchor.id}
-                    className={`${styles.anchorItem} ${activeAnchor === anchor.id ? styles.anchorItemActive : ''}`}
+                    className={`${styles.anchorItem} ${activeAnchor === anchor.id ? `${styles.anchorItemActive} ${g.anchorItemActive}` : ''}`}
                     onClick={() => scrollToAnchor(anchor.id)}
                   >
                     {anchor.label}
@@ -508,10 +532,10 @@ export default function ServiceDetail({ serviceSlug }) {
                 ))}
               </div>
               <div className={styles.anchorsButtons}>
-                <button className={styles.anchorButton}>
+                <button className={`${styles.anchorButton} ${g.anchorButton}`}>
                   Связаться
                 </button>
-                <button className={styles.anchorButtonPrimary}>
+                <button className={`${styles.anchorButtonPrimary} ${g.anchorButtonPrimary}`}>
                   Забронировать
                 </button>
               </div>
