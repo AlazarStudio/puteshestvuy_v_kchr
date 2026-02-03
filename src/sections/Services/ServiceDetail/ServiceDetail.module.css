@@ -488,9 +488,9 @@
   color: #333;
 }
 
-.aboutTextHtml p {
-  /* margin: 0 0 0.75em; */
-}
+/*.aboutTextHtml p {
+   margin: 0 0 0.75em; 
+}*/
 
 .aboutTextHtml p:last-child {
   margin-bottom: 0;
@@ -506,9 +506,9 @@
   padding-left: 1.5em;
 }
 
-.aboutTextHtml li {
-  /* margin-bottom: 0.25em; */
-}
+/*.aboutTextHtml li {
+   margin-bottom: 0.25em; 
+}*/
 
 /* Program (activities) */
 .program {
