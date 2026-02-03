@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Building2, Star, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
@@ -14,24 +14,37 @@ export default function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
+  const [togglingId, setTogglingId] = useState(null);
+  const searchDebounceRef = useRef(null);
+
+  const MIN_LOADING_MS = 500;
 
   const fetchServices = async (page = 1) => {
+    const start = Date.now();
     setIsLoading(true);
     try {
       const response = await servicesAPI.getAll({ page, limit: 10, search: searchQuery });
-      setServices(response.data.items);
-      setPagination(response.data.pagination);
+      setServices(response.data.items ?? []);
+      setPagination(response.data.pagination ?? { page: 1, pages: 1, total: 0 });
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
       setServices([]);
     } finally {
-      setIsLoading(false);
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
+      setTimeout(() => setIsLoading(false), remaining);
     }
   };
 
   useEffect(() => {
-    fetchServices();
-  }, []);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchServices(1);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   const handleDeleteClick = (id) => {
     setConfirmModal({
@@ -55,32 +68,48 @@ export default function ServicesPage() {
     });
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchServices(1);
+  const handleTogglePublish = async (service) => {
+    const nextActive = !service.isActive;
+    setTogglingId(service.id);
+    try {
+      await servicesAPI.update(service.id, { isActive: nextActive });
+      setServices((prev) =>
+        prev.map((s) => (s.id === service.id ? { ...s, isActive: nextActive } : s))
+      );
+    } catch (error) {
+      console.error('Ошибка изменения видимости:', error);
+      setAlertModal({
+        open: true,
+        title: 'Ошибка',
+        message: 'Не удалось изменить видимость',
+      });
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   return (
     <div>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Услуги и сервисы</h1>
+        <h1 className={styles.pageTitle}>Услуги</h1>
         <Link to="/admin/services/new" className={styles.addBtn}>
           <Plus size={18} /> Добавить услугу
         </Link>
       </div>
 
-      <form onSubmit={handleSearch} className={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Поиск услуг..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={styles.searchInput}
-        />
-        <button type="submit" className={styles.filterBtn}>
-          <Search size={18} /> Найти
-        </button>
-      </form>
+      <div className={styles.searchBar}>
+        <div className={styles.searchWrap}>
+          <input
+            type="text"
+            placeholder="Поиск услуг..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+            aria-label="Поиск услуг"
+          />
+          <Search size={18} className={styles.searchIcon} aria-hidden />
+        </div>
+      </div>
 
       <div className={styles.tableContainer}>
         {isLoading ? (
@@ -102,50 +131,82 @@ export default function ServicesPage() {
                 <th>Название</th>
                 <th>Категория</th>
                 <th>Рейтинг</th>
-                <th>Верификация</th>
-                <th>Статус</th>
+                <th>Видимость</th>
                 <th>Действия</th>
               </tr>
             </thead>
             <tbody>
               {services.map((service) => (
                 <tr key={service.id}>
-                  <td>
-                    <img
-                      src={getImageUrl(service.image)}
-                      alt={service.title}
-                      className={styles.tableImage}
-                    />
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <img
+                        src={getImageUrl(service.images?.[0])}
+                        alt={service.title}
+                        className={styles.tableImage}
+                      />
+                    </div>
                   </td>
-                  <td>{service.title}</td>
-                  <td>
-                    <span className={`${styles.badge} ${styles.pending}`}>
-                      {service.category || '—'}
-                    </span>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>{service.title}</div>
                   </td>
-                  <td><Star size={14} style={{ marginRight: 4 }} /> {service.rating || '—'}</td>
-                  <td>
-                    {service.isVerified ? (
-                      <CheckCircle size={18} color="#10b981" />
-                    ) : (
-                      <XCircle size={18} color="#ef4444" />
-                    )}
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <span className={`${styles.badge} ${styles.pending}`}>
+                        {service.category || '—'}
+                      </span>
+                    </div>
                   </td>
-                  <td>
-                    <span className={`${styles.badge} ${styles[service.isActive ? 'active' : 'inactive']}`}>
-                      {service.isActive ? 'Активна' : 'Скрыта'}
-                    </span>
+                  <td className={`${styles.tableCell} ${styles.ratingCell}`}>
+                    <div className={styles.cellInner}>
+                      {service.rating != null && service.rating !== '' ? (
+                        <>
+                          <Star size={14} />
+                          <span>{Number(service.rating)}</span>
+                          <span className={styles.ratingReviews}>({service.reviewsCount ?? 0})</span>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </div>
                   </td>
-                  <td className={styles.actions}>
-                    <Link to={`/admin/services/${service.id}`} className={styles.editBtn}>
-                      <Pencil size={16} />
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteClick(service.id)}
-                      className={styles.deleteBtn}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <span className={`${styles.badge} ${styles[service.isActive ? 'active' : 'inactive']}`}>
+                        {service.isActive ? 'Включено' : 'Скрыто'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.actionsCell}`}>
+                    <div className={styles.cellInner}>
+                      <div className={styles.actions}>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePublish(service)}
+                          disabled={togglingId === service.id}
+                          className={service.isActive ? styles.deleteBtn : styles.viewBtn}
+                          title={service.isActive ? 'Скрыть' : 'Показать'}
+                          aria-label={service.isActive ? 'Скрыть' : 'Показать'}
+                        >
+                          {service.isActive ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </button>
+                        <Link to={`/admin/services/${service.id}`} className={styles.editBtn} title="Редактировать">
+                          <Pencil size={16} />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(service.id)}
+                          className={styles.deleteBtn}
+                          title="Удалить"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}

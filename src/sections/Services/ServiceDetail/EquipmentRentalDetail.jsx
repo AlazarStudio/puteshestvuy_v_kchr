@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './ServiceDetail.module.css'
 import common from './ServiceDetailCommon.module.css'
@@ -11,19 +11,76 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
+import { getImageUrl } from '@/lib/api'
+
+const DEFAULT_PHOTOS = [
+  { src: '/routeGalery1.png' },
+  { src: '/routeGalery2.png' },
+  { src: '/routeGalery3.png' },
+  { src: '/routeGalery4.png' },
+  { src: '/routeGalery5.png' },
+]
+
+const DEFAULT_EQUIPMENT = [
+  { name: 'Палатка 2-местная', note: 'в комплекте чехол, колышки', price: '500 ₽/сут' },
+  { name: 'Спальник', note: 'до −5 °C', price: '300 ₽/сут' },
+  { name: 'Треккинговые палки', note: 'пара', price: '200 ₽/сут' },
+  { name: 'Рюкзак 50–70 л', note: 'с rain cover', price: '400 ₽/сут' },
+  { name: 'Горелка + газ', note: 'комплект на 2–3 дня', price: '350 ₽/сут' },
+  { name: 'Коврик туристический', note: 'пенка или надувной', price: '150 ₽/сут' },
+]
+
+const DEFAULT_CONDITIONS = [
+  'Залог или документ (паспорт) оставляется на время проката.',
+  'Минимальный срок проката — 1 сутки. При аренде от 3 суток действует скидка.',
+  'Оборудование выдаётся чистым и исправным; при возврате ожидается в том же виде.',
+  'Повреждение или утрата компенсируются согласно прайсу и договору.',
+  'Заблаговременное бронирование рекомендуется в сезон (июль–сентябрь).',
+]
+
+function buildContactsFromService(service) {
+  const items = []
+  if (service?.address) items.push({ label: 'Адрес', value: service.address })
+  if (service?.phone) items.push({ label: 'Телефон', value: service.phone, href: `tel:${String(service.phone).replace(/\D/g, '')}` })
+  if (service?.email) items.push({ label: 'Email', value: service.email, href: `mailto:${service.email}` })
+  if (service?.telegram) items.push({ label: 'Telegram', value: service.telegram, href: `https://t.me/${String(service.telegram).replace('@', '')}` })
+  return items
+}
 
 /**
  * Страница услуги «Прокат оборудования».
  * Визуал в одном стиле с гидами и активностями; контент под прокат: каталог, условия, контакты.
  */
-export default function EquipmentRentalDetail({ serviceSlug }) {
-  const photos = [
-    { src: '/routeGalery1.png' },
-    { src: '/routeGalery2.png' },
-    { src: '/routeGalery3.png' },
-    { src: '/routeGalery4.png' },
-    { src: '/routeGalery5.png' },
-  ]
+export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
+  const photos = useMemo(() => {
+    if (serviceData?.images?.length) {
+      return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
+    }
+    return DEFAULT_PHOTOS
+  }, [serviceData?.images])
+
+  const serviceName = serviceData?.title ?? 'Прокат туристического снаряжения'
+  const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
+  const defaultAbout = (
+    <>
+      <p>Предлагаем в аренду туристическое снаряжение для походов и отдыха в горах: палатки, спальники, рюкзаки, горелки, треккинговые палки и другое. Всё оборудование регулярно обслуживается и готово к использованию.</p>
+      <p>Удобное расположение в посёлке Архыз — можно взять снаряжение перед выездом на маршрут и сдать по возвращении. Работаем без выходных в сезон. При аренде от нескольких суток — скидки.</p>
+    </>
+  )
+  const equipmentItems = useMemo(() => {
+    const fromData = serviceData?.data?.equipmentItems
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData
+    return DEFAULT_EQUIPMENT
+  }, [serviceData?.data?.equipmentItems])
+  const conditions = useMemo(() => {
+    const fromData = serviceData?.data?.conditions
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData
+    return DEFAULT_CONDITIONS
+  }, [serviceData?.data?.conditions])
+  const contactsList = useMemo(() => {
+    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    return buildContactsFromService(serviceData)
+  }, [serviceData])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -172,23 +229,6 @@ export default function EquipmentRentalDetail({ serviceSlug }) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const equipmentItems = [
-    { name: 'Палатка 2-местная', note: 'в комплекте чехол, колышки', price: '500 ₽/сут' },
-    { name: 'Спальник', note: 'до −5 °C', price: '300 ₽/сут' },
-    { name: 'Треккинговые палки', note: 'пара', price: '200 ₽/сут' },
-    { name: 'Рюкзак 50–70 л', note: 'с rain cover', price: '400 ₽/сут' },
-    { name: 'Горелка + газ', note: 'комплект на 2–3 дня', price: '350 ₽/сут' },
-    { name: 'Коврик туристический', note: 'пенка или надувной', price: '150 ₽/сут' },
-  ]
-
-  const conditions = [
-    'Залог или документ (паспорт) оставляется на время проката.',
-    'Минимальный срок проката — 1 сутки. При аренде от 3 суток действует скидка.',
-    'Оборудование выдаётся чистым и исправным; при возврате ожидается в том же виде.',
-    'Повреждение или утрата компенсируются согласно прайсу и договору.',
-    'Заблаговременное бронирование рекомендуется в сезон (июль–сентябрь).',
-  ]
-
   return (
     <main className={`${styles.main} ${common.main}`}>
       <CenterBlock>
@@ -202,7 +242,7 @@ export default function EquipmentRentalDetail({ serviceSlug }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span>Прокат туристического снаряжения</span>
+            <span>{serviceName}</span>
           </div>
 
           <div className={`${styles.gallery} ${common.gallery}`}>
@@ -256,7 +296,7 @@ export default function EquipmentRentalDetail({ serviceSlug }) {
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>Прокат оборудования</div>
-                  <div className={`${styles.serviceName} ${common.serviceName}`}>Прокат туристического снаряжения</div>
+                  <div className={`${styles.serviceName} ${common.serviceName}`}>{serviceName}</div>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${common.ratingStars}`}>
                       <img src="/star.png" alt="" /> 5.0
@@ -272,14 +312,11 @@ export default function EquipmentRentalDetail({ serviceSlug }) {
 
               <div id="about" className={`${styles.title} ${common.title}`}>О прокате</div>
               <div className={`${styles.aboutText} ${common.aboutText}`}>
-                <p>
-                  Предлагаем в аренду туристическое снаряжение для походов и отдыха в горах: палатки, спальники,
-                  рюкзаки, горелки, треккинговые палки и другое. Всё оборудование регулярно обслуживается и готово к использованию.
-                </p>
-                <p>
-                  Удобное расположение в посёлке Архыз — можно взять снаряжение перед выездом на маршрут и сдать по возвращении.
-                  Работаем без выходных в сезон. При аренде от нескольких суток — скидки.
-                </p>
+                {aboutContent != null && aboutContent !== '' ? (
+                  typeof aboutContent === 'string' ? <p>{aboutContent}</p> : aboutContent
+                ) : (
+                  defaultAbout
+                )}
               </div>
 
               <div id="catalog" className={`${styles.title} ${common.title}`}>Каталог оборудования</div>
@@ -306,27 +343,23 @@ export default function EquipmentRentalDetail({ serviceSlug }) {
                 </ul>
               </div>
 
-              <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
-                <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
-                <div className={styles.contactsList}>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Адрес:</span>
-                    <span className={`${styles.contactValue} ${common.contactValue}`}>КЧР, пос. Архыз, ул. Ленина, 42</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Телефон:</span>
-                    <a href="tel:+79281234567" className={`${styles.contactValue} ${common.contactValue}`}>+7 (928) 123-45-67</a>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Режим работы:</span>
-                    <span className={`${styles.contactValue} ${common.contactValue}`}>ежедневно 9:00–19:00</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Telegram:</span>
-                    <a href="https://t.me/rent_kchr" className={`${styles.contactValue} ${common.contactValue}`} target="_blank" rel="noopener noreferrer">@rent_kchr</a>
+              {contactsList.length > 0 && (
+                <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
+                  <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
+                  <div className={styles.contactsList}>
+                    {contactsList.map((c, i) => (
+                      <div key={i} className={styles.contactItem}>
+                        <span className={styles.contactLabel}>{c.label}:</span>
+                        {c.href ? (
+                          <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                        ) : (
+                          <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
 
               <div id="reviews" className={`${styles.title} ${common.title}`}>Отзывы</div>
               <div className={styles.feedback}>

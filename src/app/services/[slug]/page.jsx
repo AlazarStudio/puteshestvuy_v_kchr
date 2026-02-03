@@ -1,8 +1,7 @@
-import ServiceDetail from '@/sections/Services/ServiceDetail/ServiceDetail'
+import ServicePageContent from './ServicePageContent'
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  
   return {
     title: `Услуга - Путешествуй в КЧР`,
     description: 'Детальная информация об услуге или сервисе для туристов',
@@ -11,6 +10,5 @@ export async function generateMetadata({ params }) {
 
 export default async function ServicePage({ params }) {
   const { slug } = await params
-  
-  return <ServiceDetail serviceSlug={slug} />
+  return <ServicePageContent slug={slug} />
 }

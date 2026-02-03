@@ -8,7 +8,7 @@ import Places_page from '@/sections/Places/Places_page'
 import News_page from '@/sections/News/News_page'
 import NewsDetail from '@/sections/News/NewsDetail/NewsDetail'
 import Services_page from '@/sections/Services/Services_page'
-import ServiceDetail from '@/sections/Services/ServiceDetail/ServiceDetail'
+import ServicePageContent from '@/app/services/[slug]/ServicePageContent'
 import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
 import TemplateListPage from '@/sections/Services/ServiceDetail/templates/TemplateListPage'
 import NotFound from '@/app/not-found'
@@ -45,7 +45,7 @@ function RouteDetailWrapper() {
 
 function ServiceDetailWrapper() {
   const { slug } = useParams()
-  return <ServiceDetail serviceSlug={slug} />
+  return <ServicePageContent slug={slug} />
 }
 
 function ServiceTemplatePreviewWrapper() {
@@ -73,7 +73,7 @@ export default function App() {
         <Route path="services" element={<Services_page />} />
         <Route path="services/template" element={<TemplateListPage />} />
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
-        {/* <Route path="services/:slug" element={<ServiceDetailWrapper />} /> */}
+        <Route path="services/:slug" element={<ServiceDetailWrapper />} />
       </Route>
 
       {/* Админ: логин без layout */}

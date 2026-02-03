@@ -269,11 +269,11 @@ export default function Services_page() {
             ) : (
               <div className={styles.servicesGrid}>
                 {services.map((service) => {
-                  const templateKey = CATEGORY_TO_TEMPLATE_KEY[service.category] || DEFAULT_TEMPLATE_KEY
+                  const serviceUrl = `/services/${service.slug || service.id}`
                   return (
                   <Link
                     key={service.id}
-                    to={`/services/template/${templateKey}`}
+                    to={serviceUrl}
                     className={styles.serviceCard}
                   >
                     <div className={styles.serviceCardImg}>

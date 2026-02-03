@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './ServiceDetail.module.css'
 import a from './ActivityDetail.module.css'
@@ -8,23 +8,120 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
+import { getImageUrl } from '@/lib/api'
+
+const DEFAULT_PHOTOS = [
+  { src: '/routeGalery1.png' },
+  { src: '/routeGalery2.png' },
+  { src: '/routeGalery3.png' },
+  { src: '/routeGalery4.png' },
+  { src: '/routeGalery5.png' },
+  { src: '/routeGalery6.png' },
+  { src: '/routeGalery7.png' },
+  { src: '/routeGalery8.png' },
+]
+
+const DEFAULT_PROGRAM = [
+  { title: 'Встреча и инструктаж', text: 'Сбор группы, знакомство с инструкторами, раздача и проверка экипировки, подробный инструктаж по технике безопасности.' },
+  { title: 'Разминка и отработка базовых навыков', text: 'Небольшая разминка и отработка ключевых элементов активности в безопасных условиях.' },
+  { title: 'Основная часть программы', text: 'Маршрут по заранее подготовленному треку с несколькими живописными точками для фото и отдыха.' },
+  { title: 'Финал и обратная связь', text: 'Возвращение в точку старта, разбор программы, рекомендации по дальнейшим маршрутам и активностям.' },
+]
+
+const DEFAULT_EQUIPMENT = [
+  'Удобная треккинговая обувь или кроссовки с хорошей фиксацией',
+  'Ветрозащитная куртка и лёгкая теплая одежда по погоде',
+  'Перчатки и кепка/панама в зависимости от сезона',
+  'Небольшой рюкзак (10–20 л) для личных вещей',
+  'Запас воды (от 0.5 до 1.5 л на человека)',
+  'Солнцезащитный крем и солнцезащитные очки',
+]
+
+const DEFAULT_REQUIREMENTS = [
+  'Возраст участников — от 8 лет (для детей — в сопровождении взрослых)',
+  'Отсутствие серьёзных медицинских противопоказаний к физической нагрузке',
+  'Готовность следовать инструкциям гидов и инструкторов',
+  'Базовый уровень физической подготовки (возможно адаптировать под группу)',
+]
+
+const DEFAULT_SAFETY = [
+  'Всю программу сопровождает сертифицированный инструктор и/или гид.',
+  'Перед началом активности проводится обязательный инструктаж по технике безопасности.',
+  'Используется только проверенное и сервисно обслуживаемое оборудование.',
+  'Маршруты проработаны с учётом уровня сложности и погодных условий.',
+  'В команде есть базовая аптечка и средства связи.',
+]
+
+function parseProgramSteps(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return DEFAULT_PROGRAM
+  return arr.map((item) => {
+    if (item && typeof item === 'object' && ('title' in item || 'text' in item)) {
+      return { title: item.title || '', text: item.text || '' }
+    }
+    const str = String(item)
+    const colon = str.indexOf(': ')
+    if (colon > 0) return { title: str.slice(0, colon).trim(), text: str.slice(colon + 2).trim() }
+    return { title: '', text: str }
+  })
+}
+
+function buildContactsFromService(service) {
+  const items = []
+  if (service?.address) items.push({ label: 'Адрес', value: service.address })
+  if (service?.phone) items.push({ label: 'Телефон', value: service.phone, href: `tel:${String(service.phone).replace(/\D/g, '')}` })
+  if (service?.email) items.push({ label: 'Email', value: service.email, href: `mailto:${service.email}` })
+  if (service?.telegram) items.push({ label: 'Telegram', value: service.telegram, href: `https://t.me/${String(service.telegram).replace('@', '')}` })
+  return items
+}
 
 /**
  * Страница услуги типа «Активности».
- * В будущем сюда можно пробрасывать реальные данные активности
- * (через publicServicesAPI по slug/id) и наполнять блоки динамически.
+ * При передаче serviceData подставляет данные из API (title, images, description, data).
  */
-export default function ActivityDetail({ serviceSlug }) {
-  const photos = [
-    { src: '/routeGalery1.png' },
-    { src: '/routeGalery2.png' },
-    { src: '/routeGalery3.png' },
-    { src: '/routeGalery4.png' },
-    { src: '/routeGalery5.png' },
-    { src: '/routeGalery6.png' },
-    { src: '/routeGalery7.png' },
-    { src: '/routeGalery8.png' },
-  ]
+export default function ActivityDetail({ serviceSlug, serviceData }) {
+  const photos = useMemo(() => {
+    if (serviceData?.images?.length) {
+      return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
+    }
+    return DEFAULT_PHOTOS
+  }, [serviceData?.images])
+
+  const serviceName = serviceData?.title ?? 'Приключенческий тур в горах КЧР'
+  const categoryLabel = serviceData?.category ?? 'Активность'
+  const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
+  const defaultAbout = (
+    <>
+      <p>Это динамичная активность для тех, кто хочет наполнить день яркими эмоциями: живописные виды, лёгкий экстрим и безопасный формат под контролем опытной команды.</p>
+      <p>Программа подойдёт как тем, кто впервые пробует подобный формат отдыха, так и тем, кто уже знаком с активным туризмом и хочет открыть для себя новые маршруты.</p>
+      <p>Мы подберём темп под вашу группу, сделаем несколько остановок для фото и отдыха, а также расскажем интересные факты о природе и истории региона.</p>
+    </>
+  )
+  const programSteps = useMemo(() => parseProgramSteps(serviceData?.data?.programSteps), [serviceData?.data?.programSteps])
+  const equipmentList = useMemo(() => {
+    const fromData = serviceData?.data?.equipmentList
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
+    return DEFAULT_EQUIPMENT
+  }, [serviceData?.data?.equipmentList])
+  const requirementsList = useMemo(() => {
+    const fromData = serviceData?.data?.requirementsList
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
+    return DEFAULT_REQUIREMENTS
+  }, [serviceData?.data?.requirementsList])
+  const safetyNotes = useMemo(() => {
+    const fromData = serviceData?.data?.safetyNotes
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
+    return DEFAULT_SAFETY
+  }, [serviceData?.data?.safetyNotes])
+  const contactsList = useMemo(() => {
+    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    return buildContactsFromService(serviceData)
+  }, [serviceData])
+  const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '12 отзывов'
+  const tagsList = useMemo(() => {
+    const t = serviceData?.data?.tags
+    if (Array.isArray(t) && t.length > 0) return t.map(String)
+    return ['сложность: средняя', 'длительность: 4–6 часов', 'группа: до 10 человек']
+  }, [serviceData?.data?.tags])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -215,49 +312,6 @@ export default function ActivityDetail({ serviceSlug }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const programSteps = [
-    {
-      title: 'Встреча и инструктаж',
-      text: 'Сбор группы, знакомство с инструкторами, раздача и проверка экипировки, подробный инструктаж по технике безопасности.',
-    },
-    {
-      title: 'Разминка и отработка базовых навыков',
-      text: 'Небольшая разминка и отработка ключевых элементов активности в безопасных условиях.',
-    },
-    {
-      title: 'Основная часть программы',
-      text: 'Маршрут по заранее подготовленному треку с несколькими живописными точками для фото и отдыха.',
-    },
-    {
-      title: 'Финал и обратная связь',
-      text: 'Возвращение в точку старта, разбор программы, рекомендации по дальнейшим маршрутам и активностям.',
-    },
-  ]
-
-  const equipmentList = [
-    'Удобная треккинговая обувь или кроссовки с хорошей фиксацией',
-    'Ветрозащитная куртка и лёгкая теплая одежда по погоде',
-    'Перчатки и кепка/панама в зависимости от сезона',
-    'Небольшой рюкзак (10–20 л) для личных вещей',
-    'Запас воды (от 0.5 до 1.5 л на человека)',
-    'Солнцезащитный крем и солнцезащитные очки',
-  ]
-
-  const requirementsList = [
-    'Возраст участников — от 8 лет (для детей — в сопровождении взрослых)',
-    'Отсутствие серьёзных медицинских противопоказаний к физической нагрузке',
-    'Готовность следовать инструкциям гидов и инструкторов',
-    'Базовый уровень физической подготовки (возможно адаптировать под группу)',
-  ]
-
-  const safetyNotes = [
-    'Всю программу сопровождает сертифицированный инструктор и/или гид.',
-    'Перед началом активности проводится обязательный инструктаж по технике безопасности.',
-    'Используется только проверенное и сервисно обслуживаемое оборудование.',
-    'Маршруты проработаны с учётом уровня сложности и погодных условий.',
-    'В команде есть базовая аптечка и средства связи.',
-  ]
-
   return (
     <main className={`${styles.main} ${a.main}`}>
       <CenterBlock>
@@ -271,7 +325,7 @@ export default function ActivityDetail({ serviceSlug }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span>Активность в горах Карачаево-Черкесии</span>
+            <span>{serviceName}</span>
           </div>
 
           <div className={`${styles.gallery} ${a.gallery}`}>
@@ -332,36 +386,31 @@ export default function ActivityDetail({ serviceSlug }) {
                   <img src="/verification.png" alt="" className={styles.verificationBadge} />
                 </div>
                 <div className={styles.serviceInfo}>
-                  <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>Активность</div>
-                  <div className={`${styles.serviceName} ${a.serviceName}`}>Приключенческий тур в горах КЧР</div>
+                  <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>{categoryLabel}</div>
+                  <div className={`${styles.serviceName} ${a.serviceName}`}>{serviceName}</div>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${a.ratingStars}`}>
                       <img src="/star.png" alt="" /> 5.0
                     </div>
-                    <div className={`${styles.ratingFeedback} ${a.ratingFeedback}`}>12 отзывов</div>
+                    <div className={`${styles.ratingFeedback} ${a.ratingFeedback}`}>{reviewsCountLabel}</div>
                   </div>
-                  <div className={`${styles.serviceTags} ${a.serviceTags}`}>
-                    <span className={`${styles.serviceTag} ${a.serviceTag}`}>сложность: средняя</span>
-                    <span className={`${styles.serviceTag} ${a.serviceTag}`}>длительность: 4–6 часов</span>
-                    <span className={`${styles.serviceTag} ${a.serviceTag}`}>группа: до 10 человек</span>
-                  </div>
+                  {tagsList.length > 0 && (
+                    <div className={`${styles.serviceTags} ${a.serviceTags}`}>
+                      {tagsList.map((tag, i) => (
+                        <span key={i} className={`${styles.serviceTag} ${a.serviceTag}`}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div id="about" className={`${styles.title} ${a.title}`}>О активности</div>
               <div className={`${styles.aboutText} ${a.aboutText}`}>
-                <p>
-                  Это динамичная активность для тех, кто хочет наполнить день яркими эмоциями: 
-                  живописные виды, лёгкий экстрим и безопасный формат под контролем опытной команды.
-                </p>
-                <p>
-                  Программа подойдёт как тем, кто впервые пробует подобный формат отдыха, 
-                  так и тем, кто уже знаком с активным туризмом и хочет открыть для себя новые маршруты.
-                </p>
-                <p>
-                  Мы подберём темп под вашу группу, сделаем несколько остановок для фото и отдыха, 
-                  а также расскажем интересные факты о природе и истории региона.
-                </p>
+                {aboutContent != null && aboutContent !== '' ? (
+                  typeof aboutContent === 'string' ? <p>{aboutContent}</p> : aboutContent
+                ) : (
+                  defaultAbout
+                )}
               </div>
 
               <div id="program" className={`${styles.title} ${a.title}`}>Программа дня</div>
@@ -408,25 +457,23 @@ export default function ActivityDetail({ serviceSlug }) {
                 </p>
               </div>
 
-              <div className={`${styles.contacts} ${a.contacts}`}>
-                <div className={`${styles.contactsTitle} ${a.contactsTitle}`}>Место сбора и контакты</div>
-                <div className={styles.contactsList}>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Место сбора:</span>
-                    <span className={`${styles.contactValue} ${a.contactValue}`}>пос. Архыз, центральная парковка у туристического центра</span>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Телефон организатора:</span>
-                    <a href="tel:+79281234567" className={`${styles.contactValue} ${a.contactValue}`}>+7 (928) 123-45-67</a>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Telegram:</span>
-                    <a href="https://t.me/activity_kchr" className={`${styles.contactValue} ${a.contactValue}`} target="_blank" rel="noopener noreferrer">
-                      @activity_kchr
-                    </a>
+              {contactsList.length > 0 && (
+                <div className={`${styles.contacts} ${a.contacts}`}>
+                  <div className={`${styles.contactsTitle} ${a.contactsTitle}`}>Место сбора и контакты</div>
+                  <div className={styles.contactsList}>
+                    {contactsList.map((c, i) => (
+                      <div key={i} className={styles.contactItem}>
+                        <span className={styles.contactLabel}>{c.label}:</span>
+                        {c.href ? (
+                          <a href={c.href} className={`${styles.contactValue} ${a.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                        ) : (
+                          <span className={`${styles.contactValue} ${a.contactValue}`}>{c.value}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
 
               <div id="reviews" className={`${styles.title} ${a.title}`}>Отзывы</div>
               <div className={styles.feedback}>

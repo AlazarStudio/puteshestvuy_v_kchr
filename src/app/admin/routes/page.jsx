@@ -89,8 +89,6 @@ export default function RoutesPage() {
     }
   };
 
-  console.log(routes)
-
   return (
     <div>
       <div className={styles.pageHeader}>

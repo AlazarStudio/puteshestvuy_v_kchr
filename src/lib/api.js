@@ -137,6 +137,7 @@ export const servicesAPI = {
 export const publicServicesAPI = {
   getAll: (params) => api.get('/services', { params }),
   getByIdOrSlug: (idOrSlug) => api.get(`/services/${idOrSlug}`),
+  createReview: (serviceId, data) => api.post(`/services/${serviceId}/reviews`, data),
 };
 
 // Reviews API

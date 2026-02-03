@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './ServiceDetail.module.css'
 import g from './ServiceDetailGuide.module.css'
@@ -12,19 +12,109 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import routesPageStyles from '@/sections/Routes/Routes_page.module.css'
-import { publicRoutesAPI } from '@/lib/api'
+import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
-export default function ServiceDetail({ serviceSlug }) {
-  const photos = [
-    { src: "/routeGalery1.png" },
-    { src: "/routeGalery2.png" },
-    { src: "/routeGalery3.png" },
-    { src: "/routeGalery4.png" },
-    { src: "/routeGalery5.png" },
-    { src: "/routeGalery6.png" },
-    { src: "/routeGalery7.png" },
-    { src: "/routeGalery8.png" },
-  ]
+const DEFAULT_PHOTOS = [
+  { src: '/routeGalery1.png' },
+  { src: '/routeGalery2.png' },
+  { src: '/routeGalery3.png' },
+  { src: '/routeGalery4.png' },
+  { src: '/routeGalery5.png' },
+  { src: '/routeGalery6.png' },
+  { src: '/routeGalery7.png' },
+  { src: '/routeGalery8.png' },
+]
+
+const DEFAULT_SERVICES_LIST = [
+  { name: 'Индивидуальная экскурсия (до 4 человек)', price: 'от 5 000 ₽' },
+  { name: 'Групповая экскурсия (до 10 человек)', price: 'от 3 000 ₽/чел' },
+  { name: 'Многодневный тур (2-3 дня)', price: 'от 15 000 ₽' },
+  { name: 'Фототур по живописным местам', price: 'от 7 000 ₽' },
+]
+
+function buildContactsFromService(service) {
+  const items = []
+  if (service?.address) items.push({ label: 'Адрес', value: service.address })
+  if (service?.phone) items.push({ label: 'Телефон', value: service.phone, href: `tel:${String(service.phone).replace(/\D/g, '')}` })
+  if (service?.email) items.push({ label: 'Email', value: service.email, href: `mailto:${service.email}` })
+  if (service?.telegram) items.push({ label: 'Telegram', value: service.telegram, href: `https://t.me/${String(service.telegram).replace('@', '')}` })
+  return items
+}
+
+export default function ServiceDetail({ serviceSlug, serviceData }) {
+  const isGuide = serviceData?.category === 'Гид'
+  const photos = useMemo(() => {
+    if (isGuide) {
+      const galleryEnabled = serviceData?.data?.galleryEnabled !== false
+      const urls = serviceData?.data?.galleryImages?.length
+        ? serviceData.data.galleryImages
+        : serviceData?.images
+      if (!galleryEnabled || !urls?.length) return []
+      return urls.map((path) => ({ src: getImageUrl(path) }))
+    }
+    if (serviceData?.images?.length) {
+      return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
+    }
+    return DEFAULT_PHOTOS
+  }, [isGuide, serviceData?.data?.galleryEnabled, serviceData?.data?.galleryImages, serviceData?.images])
+
+  const avatarSrc = useMemo(() => {
+    if (isGuide && serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
+    if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
+    return '/serviceImg1.png'
+  }, [isGuide, serviceData?.data?.avatar, serviceData?.images])
+
+  const displayName = serviceData?.title ?? 'Хубиев Артур Арсенович'
+  const categoryLabel = serviceData?.category ?? 'Гид'
+  const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
+  const defaultAbout = (
+    <>
+      <p>Профессиональный гид с опытом работы более 10 лет. Специализируюсь на горных маршрутах и культурных экскурсиях по Карачаево-Черкесии.</p>
+      <p>Знаю все тайные места региона, провожу авторские экскурсии по историческим местам, горным тропам и живописным ущельям. Работаю как с индивидуальными туристами, так и с группами.</p>
+      <p>Все маршруты разработаны с учётом безопасности и комфорта туристов. Предоставляю необходимое снаряжение для горных походов.</p>
+    </>
+  )
+  const contactsList = useMemo(() => {
+    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    return buildContactsFromService(serviceData)
+  }, [serviceData])
+  const servicesList = useMemo(() => {
+    const fromData = serviceData?.data?.pricesInData
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData
+    if (Array.isArray(serviceData?.prices) && serviceData.prices.length > 0) {
+      return serviceData.prices.map((p) => ({ name: p.name || p.title || '', price: p.price || p.value || '' }))
+    }
+    return DEFAULT_SERVICES_LIST
+  }, [serviceData?.data?.pricesInData, serviceData?.prices])
+  const certificateList = useMemo(() => {
+    const fromData = serviceData?.data?.certificatesInData
+    if (Array.isArray(fromData) && fromData.length > 0) {
+      return fromData.map((c) => (typeof c === 'string' ? { url: c, caption: '' } : { url: c?.url || '', caption: c?.caption || '' }))
+    }
+    if (Array.isArray(serviceData?.certificates) && serviceData.certificates.length > 0) {
+      return serviceData.certificates.map((c) => (typeof c === 'string' ? { url: c, caption: '' } : { url: c?.url || c?.path || '', caption: '' }))
+    }
+    return []
+  }, [serviceData?.data?.certificatesInData, serviceData?.certificates])
+  const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '0 отзывов'
+
+  const guideRoutes = useMemo(() => {
+    if (!isGuide) return []
+    return Array.isArray(serviceData?.routes) ? serviceData.routes : []
+  }, [isGuide, serviceData?.routes])
+
+  const reviews = useMemo(() => {
+    const list = Array.isArray(serviceData?.reviews) ? serviceData.reviews : []
+    return list.map((r) => ({
+      id: r.id,
+      name: r.authorName || 'Гость',
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '',
+      rating: r.rating ?? 5,
+      text: r.text || '',
+      avatar: r.authorAvatar || '',
+    }))
+  }, [serviceData?.reviews])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -32,37 +122,13 @@ export default function ServiceDetail({ serviceSlug }) {
   const [reviewName, setReviewName] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const [activeAnchor, setActiveAnchor] = useState('main')
-  const [guideRoutes, setGuideRoutes] = useState([])
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'Михаил',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Отличный гид! Артур провёл потрясающую экскурсию по горным маршрутам. Знает все тайные места, рассказывает интересные истории. Очень рекомендую для тех, кто хочет познакомиться с настоящим Кавказом.',
-      avatar: '/avatar_feedback.png',
-    },
-    {
-      id: 2,
-      name: 'Андрей',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Профессионал своего дела. Экскурсия была организована на высшем уровне. Артур учёл все наши пожелания, помог выбрать оптимальный маршрут с учётом физической подготовки группы. Обязательно обращусь снова!',
-      avatar: '',
-    },
-    {
-      id: 3,
-      name: 'Анастасия',
-      date: '12 сентября 2025',
-      rating: 5.0,
-      text: 'Незабываемые впечатления! Артур не только показал красивейшие места, но и обеспечил полную безопасность на маршруте. Очень внимательный и ответственный гид.',
-      avatar: '',
-    }
-  ])
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null)
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
 
+  const showGallery = photos.length > 0
   const visiblePhotos = photos.slice(0, 5)
   const remainingCount = photos.length - 5
   const showMoreButton = photos.length > 5
@@ -143,53 +209,29 @@ export default function ServiceDetail({ serviceSlug }) {
     setRating(starIndex + 1)
   }
 
-  const formatDate = (date) => {
-    const months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-    ]
-    const day = date.getDate()
-    const month = months[date.getMonth()]
-    const year = date.getFullYear()
-    return `${day} ${month} ${year}`
-  }
-
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault()
-
-    if (!reviewName.trim() || !reviewText.trim() || rating === 0) {
+    if (!reviewName.trim() || !reviewText.trim() || rating < 1) {
       alert('Пожалуйста, заполните все поля и выберите рейтинг')
       return
     }
-
-    const newReview = {
-      id: reviews.length > 0 ? Math.max(...reviews.map(r => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating: rating,
-      text: reviewText.trim(),
-      avatar: '/profile.png',
+    const serviceId = serviceData?.id || serviceSlug
+    if (!serviceId) return
+    setReviewSubmitStatus(null)
+    try {
+      await publicServicesAPI.createReview(serviceId, {
+        authorName: reviewName.trim(),
+        rating,
+        text: reviewText.trim(),
+      })
+      setReviewName('')
+      setReviewText('')
+      setRating(0)
+      setReviewSubmitStatus('success')
+    } catch (err) {
+      setReviewSubmitStatus('error')
     }
-
-    setReviews(prev => [newReview, ...prev])
-
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
   }
-
-  // Все маршруты с сайта (тот же API, что на странице /routes)
-  useEffect(() => {
-    let cancelled = false
-    publicRoutesAPI.getAll({ limit: 500 })
-      .then(({ data }) => {
-        if (!cancelled) setGuideRoutes(data?.items ?? [])
-      })
-      .catch(() => {
-        if (!cancelled) setGuideRoutes([])
-      })
-    return () => { cancelled = true }
-  }, [])
 
   const anchors = [
     { id: 'main', label: 'Основное' },
@@ -239,13 +281,6 @@ export default function ServiceDetail({ serviceSlug }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const servicesList = [
-    { name: 'Индивидуальная экскурсия (до 4 человек)', price: 'от 5 000 ₽' },
-    { name: 'Групповая экскурсия (до 10 человек)', price: 'от 3 000 ₽/чел' },
-    { name: 'Многодневный тур (2-3 дня)', price: 'от 15 000 ₽' },
-    { name: 'Фототур по живописным местам', price: 'от 7 000 ₽' },
-  ]
-
   return (
     <main className={`${styles.main} ${g.main}`}>
       <CenterBlock>
@@ -259,9 +294,10 @@ export default function ServiceDetail({ serviceSlug }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Хубиев Артур Арсенович</span>
+            <span>{displayName}</span>
           </div>
 
+          {showGallery && (
           <div className={`${styles.gallery} ${g.gallery}`}>
             <div
               className={`${styles.galleryMain} ${g.galleryMain}`}
@@ -316,60 +352,70 @@ export default function ServiceDetail({ serviceSlug }) {
               </div>
             </div>
           </div>
+          )}
 
           <div className={styles.serviceBlock}>
             <div className={`${styles.serviceBlock_content} ${g.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${g.serviceHeader}`}>
                 <div className={`${styles.serviceAvatar} ${g.serviceAvatar}`}>
-                  <img src="/serviceImg1.png" alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
+                  <img src={avatarSrc} alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
                   <img src="/verification.png" alt="" className={styles.verificationBadge} />
                 </div>
                 <div className={styles.serviceInfo}>
-                  <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>Гид</div>
-                  <div className={`${styles.serviceName} ${g.serviceName}`}>Хубиев Артур Арсенович</div>
+                  <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>{categoryLabel}</div>
+                  <div className={`${styles.serviceName} ${g.serviceName}`}>{displayName}</div>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${g.ratingStars}`}>
-                      <img src="/star.png" alt="" /> 5.0
+                      <img src="/star.png" alt="" /> {serviceData?.rating ?? '—'}
                     </div>
-                    <div className={`${styles.ratingFeedback} ${g.ratingFeedback}`}>4 отзыва</div>
+                    <div className={`${styles.ratingFeedback} ${g.ratingFeedback}`}>{reviewsCountLabel}</div>
                   </div>
                 </div>
               </div>
 
               <div id="about" className={`${styles.title} ${g.title}`}>О специалисте</div>
               <div className={`${styles.aboutText} ${g.aboutText}`}>
-                <p>
-                  Профессиональный гид с опытом работы более 10 лет. Специализируюсь на горных маршрутах 
-                  и культурных экскурсиях по Карачаево-Черкесии.
-                </p>
-                <p>
-                  Знаю все тайные места региона, провожу авторские экскурсии по историческим местам, 
-                  горным тропам и живописным ущельям. Работаю как с индивидуальными туристами, 
-                  так и с группами.
-                </p>
-                <p>
-                  Все маршруты разработаны с учётом безопасности и комфорта туристов. 
-                  Предоставляю необходимое снаряжение для горных походов.
-                </p>
+                {aboutContent != null && aboutContent !== '' ? (
+                  typeof aboutContent === 'string' ? (
+                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                  ) : (
+                    aboutContent
+                  )
+                ) : (
+                  defaultAbout
+                )}
               </div>
 
-              <div className={`${styles.contacts} ${g.contacts}`}>
-                <div className={`${styles.contactsTitle} ${g.contactsTitle}`}>Контакты</div>
-                <div className={styles.contactsList}>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Телефон:</span>
-                    <a href="tel:+79281234567" className={`${styles.contactValue} ${g.contactValue}`}>+7 (928) 123-45-67</a>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Email:</span>
-                    <a href="mailto:guide@example.com" className={`${styles.contactValue} ${g.contactValue}`}>guide@example.com</a>
-                  </div>
-                  <div className={styles.contactItem}>
-                    <span className={styles.contactLabel}>Telegram:</span>
-                    <a href="https://t.me/guide_kchr" className={`${styles.contactValue} ${g.contactValue}`} target="_blank" rel="noopener noreferrer">@guide_kchr</a>
+              {contactsList.length > 0 && (
+                <div className={`${styles.contacts} ${g.contacts}`}>
+                  <div className={`${styles.contactsTitle} ${g.contactsTitle}`}>Контакты</div>
+                  <div className={styles.contactsList}>
+                    {contactsList.map((c, i) => {
+                      const isIconUrl = c.icon && (typeof c.icon === 'string' && (c.icon.startsWith('http') || c.icon.startsWith('/') || c.icon.includes('uploads')))
+                      const IconComponent = c.icon && !isIconUrl ? getMuiIconComponent(c.icon) : null
+                      return (
+                        <div key={i} className={styles.contactItem}>
+                          {c.icon && (
+                            <span className={styles.contactIcon}>
+                              {isIconUrl ? (
+                                <img src={getImageUrl(c.icon)} alt="" className={styles.contactIconImg} />
+                              ) : IconComponent ? (
+                                <IconComponent size={22} className={styles.contactIconSvg} />
+                              ) : null}
+                            </span>
+                          )}
+                          <span className={styles.contactLabel}>{c.label}:</span>
+                          {c.href ? (
+                            <a href={c.href} className={`${styles.contactValue} ${g.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                          ) : (
+                            <span className={`${styles.contactValue} ${g.contactValue}`}>{c.value}</span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-              </div>
+              )}
 
               <div id="services" className={`${styles.title} ${g.title}`}>Услуги и цены</div>
               <div className={styles.servicesList}>
@@ -381,18 +427,27 @@ export default function ServiceDetail({ serviceSlug }) {
                 ))}
               </div>
 
-              <div id="certificates" className={`${styles.title} ${g.title}`}>Сертификаты и документы</div>
-              <div className={styles.certificates}>
-                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
-                  <img src="/routeGalery1.png" alt="Сертификат" />
-                </div>
-                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
-                  <img src="/routeGalery2.png" alt="Сертификат" />
-                </div>
-                <div className={`${styles.certificateItem} ${g.certificateItem}`}>
-                  <img src="/routeGalery3.png" alt="Сертификат" />
-                </div>
-              </div>
+              {(certificateList.length > 0 || (!serviceData && true)) && (
+                <>
+                  <div id="certificates" className={`${styles.title} ${g.title}`}>Сертификаты и документы</div>
+                  <div className={styles.certificates}>
+                    {certificateList.length > 0
+                      ? certificateList.map((item, i) => (
+                          <div key={i} className={`${styles.certificateItem} ${g.certificateItem}`}>
+                            <img src={getImageUrl(item.url)} alt={item.caption || 'Сертификат'} />
+                            {item.caption ? <div className={styles.certificateCaption}>{item.caption}</div> : null}
+                          </div>
+                        ))
+                      : (
+                        <>
+                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery1.png" alt="Сертификат" /></div>
+                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery2.png" alt="Сертификат" /></div>
+                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery3.png" alt="Сертификат" /></div>
+                        </>
+                      )}
+                  </div>
+                </>
+              )}
 
               {guideRoutes.length > 0 && (
                 <>
@@ -450,10 +505,16 @@ export default function ServiceDetail({ serviceSlug }) {
                   <button type="submit" className={`${styles.feedbackSubmitButton} ${g.feedbackSubmitButton}`}>
                     Оставить отзыв
                   </button>
+                  {reviewSubmitStatus === 'success' && (
+                    <p className={styles.reviewSubmitSuccess}>Спасибо! Отзыв отправлен на модерацию.</p>
+                  )}
+                  {reviewSubmitStatus === 'error' && (
+                    <p className={styles.reviewSubmitError}>Не удалось отправить отзыв. Попробуйте позже.</p>
+                  )}
                 </form>
 
                 <div className={styles.feedbackList}>
-                  {reviews.map((review) => {
+                  {(showAllReviews ? reviews : reviews.slice(0, 5)).map((review) => {
                     const isExpanded = expandedReviews[review.id]
                     const shortText = review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text
                     const showExpandButton = review.text.length > 200 && !isExpanded
@@ -513,9 +574,17 @@ export default function ServiceDetail({ serviceSlug }) {
                   })}
                 </div>
 
-                <div className={styles.feedbackShowAll}>
-                  <button className={`${styles.feedbackShowAllButton} ${g.feedbackShowAllButton}`}>Показать все отзывы</button>
-                </div>
+                {reviews.length > 5 && (
+                  <div className={styles.feedbackShowAll}>
+                    <button
+                      type="button"
+                      className={`${styles.feedbackShowAllButton} ${g.feedbackShowAllButton}`}
+                      onClick={() => setShowAllReviews((v) => !v)}
+                    >
+                      {showAllReviews ? 'Свернуть отзывы' : `Показать все отзывы (${reviews.length})`}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
