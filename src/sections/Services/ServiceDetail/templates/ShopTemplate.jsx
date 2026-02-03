@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import ShopDetail from '../ShopDetail'
 
 export default function ShopTemplate() {
-  return <TemplatePlaceholder typeTitle="Торговые точки" typeKey="shop" />
+  return <ShopDetail />
 }

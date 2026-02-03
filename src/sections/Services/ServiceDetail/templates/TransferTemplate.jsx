@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import TransferDetail from '../TransferDetail'
 
 export default function TransferTemplate() {
-  return <TemplatePlaceholder typeTitle="Трансфер" typeKey="transfer" />
+  return <TransferDetail />
 }

@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import CafeDetail from '../CafeDetail'
 
 export default function CafeTemplate() {
-  return <TemplatePlaceholder typeTitle="Кафе и ресторан" typeKey="cafe" />
+  return <CafeDetail />
 }

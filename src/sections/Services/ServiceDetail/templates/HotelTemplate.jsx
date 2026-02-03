@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import HotelDetail from '../HotelDetail'
 
 export default function HotelTemplate() {
-  return <TemplatePlaceholder typeTitle="Гостиница" typeKey="hotel" />
+  return <HotelDetail />
 }

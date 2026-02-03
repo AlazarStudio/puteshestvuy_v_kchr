@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import PoliceDetail from '../PoliceDetail'
 
 export default function PoliceTemplate() {
-  return <TemplatePlaceholder typeTitle="МВД" typeKey="police" />
+  return <PoliceDetail />
 }

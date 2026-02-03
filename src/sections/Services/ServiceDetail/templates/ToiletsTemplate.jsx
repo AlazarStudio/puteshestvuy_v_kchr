@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import ToiletsDetail from '../ToiletsDetail'
 
 export default function ToiletsTemplate() {
-  return <TemplatePlaceholder typeTitle="Санитарные узлы" typeKey="toilets" />
+  return <ToiletsDetail />
 }

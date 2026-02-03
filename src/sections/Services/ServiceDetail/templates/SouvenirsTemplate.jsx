@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import SouvenirsDetail from '../SouvenirsDetail'
 
 export default function SouvenirsTemplate() {
-  return <TemplatePlaceholder typeTitle="Сувениры" typeKey="souvenirs" />
+  return <SouvenirsDetail />
 }

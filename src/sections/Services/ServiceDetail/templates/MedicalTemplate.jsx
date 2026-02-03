@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import MedicalDetail from '../MedicalDetail'
 
 export default function MedicalTemplate() {
-  return <TemplatePlaceholder typeTitle="Пункт медпомощи" typeKey="medical" />
+  return <MedicalDetail />
 }

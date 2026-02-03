@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import TourOperatorDetail from '../TourOperatorDetail'
 
 export default function TourOperatorTemplate() {
-  return <TemplatePlaceholder typeTitle="Туроператор" typeKey="tour-operator" />
+  return <TourOperatorDetail />
 }

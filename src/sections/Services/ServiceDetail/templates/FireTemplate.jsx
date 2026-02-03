@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import FireDetail from '../FireDetail'
 
 export default function FireTemplate() {
-  return <TemplatePlaceholder typeTitle="Пожарная охрана" typeKey="fire" />
+  return <FireDetail />
 }

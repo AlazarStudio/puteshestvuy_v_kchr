@@ -1,5 +1,6 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import EquipmentRentalDetail from '../EquipmentRentalDetail'
 
+/** Шаблон страницы проката оборудования: каталог, условия, контакты, отзывы — в общем стиле услуг. */
 export default function EquipmentRentalTemplate() {
-  return <TemplatePlaceholder typeTitle="Прокат оборудования" typeKey="equipment-rental" />
+  return <EquipmentRentalDetail serviceSlug={null} />
 }

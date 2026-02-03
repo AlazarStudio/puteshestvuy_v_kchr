@@ -1,5 +1,5 @@
-import TemplatePlaceholder from './TemplatePlaceholder'
+import RoadsidePointDetail from '../RoadsidePointDetail'
 
 export default function RoadsidePointTemplate() {
-  return <TemplatePlaceholder typeTitle="Придорожный пункт" typeKey="roadside-point" />
+  return <RoadsidePointDetail />
 }
