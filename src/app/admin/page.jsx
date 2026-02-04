@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   const statCards = [
     { key: 'routes', label: 'Маршруты', icon: Map, color: 'routes' },
     { key: 'places', label: 'Места', icon: MapPin, color: 'places' },
-    { key: 'news', label: 'Новости', icon: Newspaper, color: 'news' },
+    { key: 'news', label: 'Новости и статьи', icon: Newspaper, color: 'news' },
     { key: 'services', label: 'Услуги', icon: Building2, color: 'services' },
     { key: 'reviews', label: 'Отзывы', icon: Star, color: 'reviews' },
   ];
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const quickActions = [
     { href: '/admin/routes/new', label: 'Добавить маршрут', icon: Plus },
     { href: '/admin/places/new', label: 'Добавить место', icon: Plus },
-    { href: '/admin/news/new', label: 'Добавить новость', icon: Plus },
+    { href: '/admin/news/new', label: 'Добавить новость или статью', icon: Plus },
     { href: '/admin/services/new', label: 'Добавить услугу', icon: Plus },
   ];
 

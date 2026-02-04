@@ -2,7 +2,7 @@ import News_page from '@/sections/News/News_page'
 
 export const metadata = {
   title: 'Новости | Путешествуй в КЧР',
-  description: 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
+  description: 'Актуальные новости о туризме в Карачаево-Черкесии',
 }
 
 export default function NewsPage() {

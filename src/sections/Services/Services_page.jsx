@@ -6,7 +6,7 @@ import styles from './Services_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
-import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { publicServicesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
 import { CATEGORY_TO_TEMPLATE_KEY, DEFAULT_TEMPLATE_KEY } from './ServiceDetail/serviceTypeTemplates'
 
 const SCROLL_KEY = 'services_scroll_position'
@@ -49,7 +49,26 @@ const EMERGENCY_FILTER_OPTIONS = [
   'Пожарная охрана',
 ]
 
+const LABEL_TO_URL_FILTER = {
+  'Статьи': 'articles',
+  'Гиды': 'guides',
+  'Активности': 'activities',
+  'Прокат оборудования': 'equipment-rental',
+  'Пункты придорожного сервиса': 'roadside-service',
+  'Торговые точки': 'shops',
+  'Сувениры': 'souvenirs',
+  'Гостиницы': 'hotels',
+  'Кафе и рестораны': 'restaurants',
+  'Трансфер': 'transfer',
+  'АЗС': 'gas-stations',
+  'Санитарные узлы': 'restrooms',
+  'Пункты медпомощи': 'medical',
+  'МВД': 'police',
+  'Пожарная охрана': 'fire-department',
+}
+
 const URL_FILTER_TO_LABEL = {
+  articles: 'Статьи',
   guides: 'Гиды',
   activities: 'Активности',
   'equipment-rental': 'Прокат оборудования',
@@ -73,24 +92,67 @@ const filterGroups = [
 ]
 
 export default function Services_page() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [sortBy, setSortBy] = useState('popularity')
   const [services, setServices] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState(() => {
-    const filterFromUrl = searchParams.get('filter')
-    const label = filterFromUrl ? URL_FILTER_TO_LABEL[filterFromUrl] : null
-    if (!label) return {}
-    if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
-      return { emergency: [label] }
+  const getFiltersFromUrl = () => {
+    const filterValues = searchParams.getAll('filter')
+    const result = { articles: [], service: [], emergency: [] }
+    filterValues.forEach((fv) => {
+      const label = URL_FILTER_TO_LABEL[fv]
+      if (!label) return
+      if (label === 'Статьи') {
+        result.articles = ['Статьи']
+      } else if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
+        if (!result.emergency.includes(label)) result.emergency.push(label)
+      } else {
+        if (!result.service.includes(label)) result.service.push(label)
+      }
+    })
+    return {
+      articles: result.articles,
+      service: result.service,
+      emergency: result.emergency,
     }
-    return { service: [label] }
-  })
+  }
+
+  const [filters, setFilters] = useState(() => getFiltersFromUrl())
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Синхронизация фильтров с URL при переходе по ссылке (например, из хедера)
+  const filterParamsStr = searchParams.toString()
+  useEffect(() => {
+    setFilters(getFiltersFromUrl())
+  }, [filterParamsStr])
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
+  }
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters)
+    const articles = newFilters.articles || []
+    const service = newFilters.service || []
+    const emergency = newFilters.emergency || []
+    const filterValues = []
+    if (articles.includes('Статьи')) filterValues.push('articles')
+    service.forEach((s) => {
+      const v = LABEL_TO_URL_FILTER[s]
+      if (v) filterValues.push(v)
+    })
+    emergency.forEach((e) => {
+      const v = LABEL_TO_URL_FILTER[e]
+      if (v) filterValues.push(v)
+    })
+    if (filterValues.length === 0) {
+      setSearchParams({})
+    } else {
+      const params = new URLSearchParams()
+      filterValues.forEach((f) => params.append('filter', f))
+      setSearchParams(params)
+    }
   }
 
   const buildCategoryParams = () => {
@@ -102,25 +164,101 @@ export default function Services_page() {
   useEffect(() => {
     let cancelled = false
 
-    async function fetchServices() {
+    async function fetchData() {
       setLoading(true)
       try {
+        const showArticles = (filters.articles || []).includes('Статьи')
         const categories = buildCategoryParams()
-        const params = {
-          limit: 100,
-          ...(searchQuery.trim() && { search: searchQuery.trim() }),
-          ...(categories.length > 0 && { category: categories }),
-        }
-        const { data } = await publicServicesAPI.getAll(params)
-        if (!cancelled) {
-          let items = data.items || []
-          if (sortBy === 'rating') {
-            items = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-          } else if (sortBy === 'reviews') {
-            items = [...items].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        const hasServiceFilter = categories.length > 0
+
+        const fetchArticles = () =>
+          publicNewsAPI.getAll({
+            limit: 100,
+            type: 'article',
+            ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          })
+
+        const fetchServices = (cats) =>
+          publicServicesAPI.getAll({
+            limit: 100,
+            ...(searchQuery.trim() && { search: searchQuery.trim() }),
+            ...(cats?.length > 0 && { category: cats }),
+          })
+
+        if (showArticles && !hasServiceFilter) {
+          const { data } = await fetchArticles()
+          if (!cancelled) {
+            const items = (data.items || []).map((a) => ({
+              id: a.id,
+              slug: a.slug,
+              title: a.title,
+              image: a.image,
+              category: 'Статья',
+              isArticle: true,
+            }))
+            setServices(items)
+            setTotal(data.pagination?.total ?? 0)
           }
-          setServices(items)
-          setTotal(data.pagination?.total ?? 0)
+        } else if (hasServiceFilter && !showArticles) {
+          const { data } = await fetchServices(categories)
+          if (!cancelled) {
+            let items = data.items || []
+            if (sortBy === 'rating') {
+              items = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            } else if (sortBy === 'reviews') {
+              items = [...items].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+            }
+            setServices(items)
+            setTotal(data.pagination?.total ?? 0)
+          }
+        } else if (showArticles && hasServiceFilter) {
+          const [articlesRes, servicesRes] = await Promise.all([
+            fetchArticles(),
+            fetchServices(categories),
+          ])
+          if (!cancelled) {
+            let serviceItems = servicesRes.data?.items || []
+            if (sortBy === 'rating') {
+              serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            } else if (sortBy === 'reviews') {
+              serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+            }
+            const articleItems = (articlesRes.data?.items || []).map((a) => ({
+              id: a.id,
+              slug: a.slug,
+              title: a.title,
+              image: a.image,
+              category: 'Статья',
+              isArticle: true,
+            }))
+            const combined = [...serviceItems, ...articleItems]
+            setServices(combined)
+            setTotal((servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0))
+          }
+        } else {
+          const [servicesRes, articlesRes] = await Promise.all([
+            fetchServices(),
+            fetchArticles(),
+          ])
+          if (!cancelled) {
+            let serviceItems = servicesRes.data?.items || []
+            if (sortBy === 'rating') {
+              serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            } else if (sortBy === 'reviews') {
+              serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+            }
+            const articleItems = (articlesRes.data?.items || []).map((a) => ({
+              id: a.id,
+              slug: a.slug,
+              title: a.title,
+              image: a.image,
+              category: 'Статья',
+              isArticle: true,
+            }))
+            const combined = [...serviceItems, ...articleItems]
+            setServices(combined)
+            setTotal((servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0))
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -133,11 +271,11 @@ export default function Services_page() {
       }
     }
 
-    fetchServices()
+    fetchData()
     return () => {
       cancelled = true
     }
-  }, [filters.service, filters.emergency, searchQuery, sortBy])
+  }, [filters.service, filters.emergency, filters.articles, searchQuery, sortBy])
 
   useEffect(() => {
     const savedScroll = sessionStorage.getItem(SCROLL_KEY)
@@ -158,7 +296,7 @@ export default function Services_page() {
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  const showArticlesLink = (filters.articles || []).includes('Статьи')
+  const showArticlesOnly = (filters.articles || []).includes('Статьи')
 
   return (
     <main className={styles.main}>
@@ -173,7 +311,7 @@ export default function Services_page() {
           <FilterBlock
             filterGroups={filterGroups}
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Поиск по услугам..."
@@ -181,7 +319,7 @@ export default function Services_page() {
           <div className={styles.services}>
             <div className={styles.servicesSort}>
               <div className={styles.servicesSortFind}>
-                Найдено {total} услуг
+                Найдено {total} {showArticlesOnly ? 'статей' : 'услуг'}
               </div>
               <div className={styles.servicesSortSort}>
                 <div className={styles.title}>Сортировать:</div>
@@ -251,12 +389,6 @@ export default function Services_page() {
               </div>
             </div>
 
-            {showArticlesLink && (
-              <Link to="/news" className={styles.articlesLink}>
-                Читать статьи в разделе «Новости»
-              </Link>
-            )}
-
             {loading ? (
               <div className={styles.loadingState}>
                 <div className={styles.spinner} />
@@ -264,12 +396,13 @@ export default function Services_page() {
               </div>
             ) : services.length === 0 ? (
               <div className={styles.emptyState}>
-                <p>По выбранным фильтрам услуг не найдено.</p>
+                <p>{showArticlesOnly ? 'Статьи не найдены.' : 'По выбранным фильтрам услуг не найдено.'}</p>
               </div>
             ) : (
               <div className={styles.servicesGrid}>
                 {services.map((service) => {
-                  const serviceUrl = `/services/${service.slug || service.id}`
+                  const isArticle = service.isArticle === true
+                  const serviceUrl = isArticle ? `/news/${service.slug || service.id}` : `/services/${service.slug || service.id}`
                   return (
                   <Link
                     key={service.id}
@@ -279,6 +412,7 @@ export default function Services_page() {
                     <div className={styles.serviceCardImg}>
                       <img src={getImageUrl(service.image || service.images?.[0])} alt={service.title} />
                     </div>
+                    {!service.isArticle && (
                     <div className={styles.serviceCardTopLine}>
                       {service.isVerified && (
                         <div className={styles.serviceCardVerification}>
@@ -289,8 +423,10 @@ export default function Services_page() {
                         <img src="/like.png" alt="В избранное" />
                       </div>
                     </div>
+                    )}
                     <div className={styles.serviceCardInfo}>
                       <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
+                      {!service.isArticle && (
                       <div className={styles.serviceCardRating}>
                         <div className={styles.serviceCardStars}>
                           <img src="/star.png" alt="" />
@@ -300,6 +436,7 @@ export default function Services_page() {
                           {service.reviewsCount ?? 0} отзывов
                         </div>
                       </div>
+                      )}
                       <div className={styles.serviceCardName}>{service.title}</div>
                     </div>
                   </Link>

@@ -115,13 +115,19 @@ export const routeFiltersAPI = {
   removeValue: (group, value) => api.post('/admin/route-filters/remove-value', { group, value }),
 };
 
-// News API
+// News API (admin)
 export const newsAPI = {
   getAll: (params) => api.get('/admin/news', { params }),
   getById: (id) => api.get(`/admin/news/${id}`),
   create: (data) => api.post('/admin/news', data),
   update: (id, data) => api.put(`/admin/news/${id}`, data),
   delete: (id) => api.delete(`/admin/news/${id}`),
+};
+
+// News API (public — для страницы «Новости и статьи»)
+export const publicNewsAPI = {
+  getAll: (params) => api.get('/news', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/news/${idOrSlug}`),
 };
 
 // Services API (admin)

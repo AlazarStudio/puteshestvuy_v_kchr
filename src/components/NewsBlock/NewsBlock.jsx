@@ -4,8 +4,8 @@ import styles from './NewsBlock.module.css'
 import { Link } from 'react-router-dom'
 import { generateSlug } from '@/utils/transliterate'
 
-export default function NewsBlock({ title, date, tag = 'новости', description, image }) {
-  const slug = generateSlug(title)
+export default function NewsBlock({ title, date, tag = 'новости', description, image, slug: slugProp }) {
+  const slug = slugProp || generateSlug(title)
   
   return (
     <Link to={`/news/${slug}`} className={styles.news}>

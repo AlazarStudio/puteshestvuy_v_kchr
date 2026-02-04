@@ -3,61 +3,69 @@
 import { useState, useEffect, useRef } from 'react'
 import styles from './NewsDetail.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
+import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { Link } from 'react-router-dom'
-
-// Моковые данные для популярных новостей
-const popularNews = [
-  {
-    id: 2,
-    title: 'Советы от местных: Хычины - вкусный символ Карачаево-Черкесии',
-    date: '12.01.2026',
-    image: '/new2.png'
-  },
-  {
-    id: 3,
-    title: 'Вкусный Домбай: сувениры, которые продлят впечатление от отдыха',
-    date: '10.01.2026',
-    image: '/new1.png'
-  },
-  {
-    id: 4,
-    title: 'Открытие нового маршрута к водопадам Софийской долины',
-    date: '08.01.2026',
-    image: '/new2.png'
-  }
-]
-
-// Секции статьи для навигации
-const sections = [
-  { id: 'intro', title: 'О проекте' },
-  { id: 'history', title: 'Задача: построить то, чего ещё не строили' },
-  { id: 'could-be', title: 'Он мог бы стать лучшим советским отелем' },
-  { id: 'legend', title: 'Легенда советской архитектуры — всё!' },
-  { id: 'future', title: 'Новому отелю Домбая быть!' }
-]
+import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import { slugFromText } from '@/app/admin/components/NewsBlockEditor'
+import NewsGalleryBlock from '@/components/NewsGalleryBlock'
 
 export default function NewsDetail({ slug }) {
-  const [activeSection, setActiveSection] = useState('intro')
+  const [news, setNews] = useState(null)
+  const [popularNews, setPopularNews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeSection, setActiveSection] = useState('')
   const contentRef = useRef(null)
 
-  // Моковые данные новости
-  const news = {
-    title: 'АМАНАУЗ ОТ ГОСТИНИЦЫ-ПРИЗРАКА ДО ОТЕЛЯ ПЯТИЗВЁЗДОЧНИКА',
-    date: '15 января 2026',
-    tag: 'новости',
-    image: '/new_openBG.png',
-    author: 'Редакция'
-  }
+  const blocks = Array.isArray(news?.blocks) ? news.blocks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []
+  const sections = blocks
+    .filter((b) => b.type === 'heading' && b.data?.text?.trim())
+    .map((b) => ({
+      id: slugFromText(b.data.text) || `h-${b.id}`,
+      title: b.data.text.trim(),
+    }))
 
-  // Отслеживание активной секции при скролле
   useEffect(() => {
+    let cancelled = false
+    async function fetchData() {
+      try {
+        setLoading(true)
+        setError(null)
+        const [detailRes, listRes] = await Promise.all([
+          publicNewsAPI.getByIdOrSlug(slug),
+          publicNewsAPI.getAll({ limit: 4, page: 1 }),
+        ])
+        if (cancelled) return
+        setNews(detailRes.data)
+        const items = listRes.data?.items || []
+        const others = items.filter((n) => n.id !== detailRes.data?.id).slice(0, 3)
+        setPopularNews(others)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.response?.status === 404 ? 'Запись не найдена' : 'Ошибка загрузки')
+          setNews(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [slug])
+
+  useEffect(() => {
+    if (sections.length > 0 && !activeSection) {
+      setActiveSection(sections[0].id)
+    }
+  }, [sections, activeSection])
+
+  useEffect(() => {
+    if (sections.length === 0) return
     const handleScroll = () => {
-      const sectionElements = sections.map(s => document.getElementById(s.id))
-      
-      for (let i = sectionElements.length - 1; i >= 0; i--) {
-        const section = sectionElements[i]
-        if (section) {
-          const rect = section.getBoundingClientRect()
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i].id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
           if (rect.top <= 150) {
             setActiveSection(sections[i].id)
             break
@@ -65,35 +73,64 @@ export default function NewsDetail({ slug }) {
         }
       }
     }
-
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [sections])
 
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
+    const el = document.getElementById(sectionId)
+    if (el) {
       const offset = 100
-      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-      window.scrollTo({
-        top: elementPosition - offset,
-        behavior: 'smooth'
-      })
+      const top = el.getBoundingClientRect().top + window.pageYOffset
+      window.scrollTo({ top: top - offset, behavior: 'smooth' })
     }
   }
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  if (loading) {
+    return (
+      <main className={styles.main}>
+        <div className={styles.content}>
+          <CenterBlock>
+            <div className={styles.loading}>Загрузка...</div>
+          </CenterBlock>
+        </div>
+      </main>
+    )
+  }
+
+  if (error || !news) {
+    return (
+      <main className={styles.main}>
+        <div className={styles.content}>
+          <CenterBlock>
+            <div className={styles.error}>{error || 'Запись не найдена'}</div>
+            <Link to="/news" className={styles.backLink}>← Вернуться к списку</Link>
+          </CenterBlock>
+        </div>
+      </main>
+    )
+  }
+
+  const heroImage = news.image || news.images?.[0]
+  const tagLabel = news.type === 'article' ? 'Статья' : 'Новость'
+
   return (
     <main className={styles.main}>
-      {/* Главное изображение */}
       <div className={styles.heroImage}>
-        <img src={news.image} alt={news.title} />
+        {heroImage && <img src={getImageUrl(heroImage)} alt={news.title} />}
         <div className={styles.heroOverlay}></div>
         <div className={styles.heroContent}>
           <CenterBlock>
             <div className={styles.heroText}>
               <div className={styles.tagDate}>
-                <div className={styles.tag}>{news.tag}</div>
-                <div className={styles.date}>{news.date}</div>
+                <div className={styles.tag}>{tagLabel}</div>
+                <div className={styles.date}>{formatDate(news.publishedAt)}</div>
               </div>
               <h1 className={styles.heroTitle}>{news.title}</h1>
             </div>
@@ -101,10 +138,8 @@ export default function NewsDetail({ slug }) {
         </div>
       </div>
 
-      {/* Контент статьи */}
       <div className={styles.content}>
         <CenterBlock>
-          {/* Хлебные крошки */}
           <div className={styles.breadCrumbs}>
             <Link to="/">Главная</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -114,97 +149,63 @@ export default function NewsDetail({ slug }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>{news.title.charAt(0).toUpperCase() + news.title.slice(1).toLowerCase()}</span>
+            <span>{news.title}</span>
           </div>
 
           <div className={styles.contentWrapper}>
-            {/* Основной контент */}
             <article className={styles.article} ref={contentRef}>
-              
-              {/* Секция: О проекте */}
-              <section id="intro" className={styles.section}>
-                <h2 className={styles.sectionTitle}>О проекте</h2>
-                <p>
-                  Среди снежных вершин Домбая, окутанный легендами и тайнами, возвышается заброшенный отель «Аманауз». 
-                  Этот величественный, но печально известный объект стал символом амбициозных планов и нереализованных мечтаний советской эпохи.
-                </p>
-                <p>
-                  История «Аманауза» — это рассказ о грандиозном проекте, который так и не был завершен, 
-                  оставив после себя лишь бетонный скелет, ставший местом притяжения для любителей заброшенных мест и урбанистов.
-                </p>
-              </section>
+              {blocks.map((block) => {
+                if (block.type === 'heading') {
+                  const text = block.data?.text?.trim() || ''
+                  const id = slugFromText(text) || `h-${block.id}`
+                  return (
+                    <h2 key={block.id} id={id} className={styles.sectionTitle}>
+                      {text}
+                    </h2>
+                  )
+                }
+                if (block.type === 'text') {
+                  return (
+                    <div key={block.id} className={styles.textBlock}>
+                      <RichTextContent html={block.data?.content} />
+                    </div>
+                  )
+                }
+                if (block.type === 'image' && block.data?.url) {
+                  return (
+                    <div key={block.id} className={styles.imageBlock}>
+                      <img src={getImageUrl(block.data.url)} alt="" />
+                    </div>
+                  )
+                }
+                if (block.type === 'gallery' && Array.isArray(block.data?.images) && block.data.images.length > 0) {
+                  return (
+                    <NewsGalleryBlock key={block.id} images={block.data.images} />
+                  )
+                }
+                if (block.type === 'quote' && (block.data?.content?.trim() || block.data?.text?.trim())) {
+                  const quoteContent = block.data?.content || block.data?.text || ''
+                  return (
+                    <div key={block.id} className={styles.quoteBlock}>
+                      <RichTextContent html={quoteContent} />
+                    </div>
+                  )
+                }
+                if (block.type === 'video' && block.data?.url) {
+                  return (
+                    <div key={block.id} className={styles.videoEmbed}>
+                      <iframe
+                        title="Видео VK"
+                        src={block.data.url}
+                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )
+                }
+                return null
+              })}
 
-              {/* Секция: Задача */}
-              <section id="history" className={styles.section}>
-                <h2 className={styles.sectionTitle}>Задача: построить то, чего ещё не строили</h2>
-                <div className={styles.imageBlock}>
-                  <img src="/new1.png" alt="Строительство отеля" />
-                </div>
-                <p>
-                  В 1980-х годах советские архитекторы получили амбициозную задачу — создать уникальный 
-                  высокогорный отель, который стал бы жемчужиной курорта Домбай. Проект предполагал 
-                  строительство 18-этажного здания с панорамными видами на горные вершины.
-                </p>
-                <p>
-                  Архитекторы вдохновлялись альпийскими курортами, но стремились создать что-то принципиально новое — 
-                  отель, который органично впишется в горный ландшафт и станет архитектурной доминантой региона.
-                </p>
-              </section>
-
-              {/* Секция: Лучший отель */}
-              <section id="could-be" className={styles.section}>
-                <h2 className={styles.sectionTitle}>Он мог бы стать лучшим советским отелем</h2>
-                <p>
-                  Проект предусматривал 200 номеров различных категорий, ресторан на верхнем этаже с круговым 
-                  обзором, спа-комплекс, конференц-залы и собственную канатную дорогу. По тем временам это 
-                  был революционный проект.
-                </p>
-                <div className={styles.imageBlock}>
-                  <img src="/new2.png" alt="Проект отеля" />
-                </div>
-                <p>
-                  Интерьеры планировалось оформить в современном стиле с использованием натуральных 
-                  материалов — дерева и камня. Каждый номер должен был иметь балкон с видом на горы.
-                </p>
-              </section>
-
-              {/* Секция: Легенда */}
-              <section id="legend" className={styles.section}>
-                <h2 className={styles.sectionTitle}>Легенда советской архитектуры — всё!</h2>
-                <p>
-                  К сожалению, распад Советского Союза поставил крест на этом амбициозном проекте. 
-                  Строительство было заморожено на стадии возведения каркаса здания. 
-                  С тех пор отель стоит заброшенным, медленно разрушаясь под воздействием времени и суровых горных условий.
-                </p>
-                <div className={styles.imageBlock}>
-                  <img src="/new1.png" alt="Заброшенный отель" />
-                </div>
-                <p>
-                  Сегодня «Аманауз» стал культовым местом для любителей урбанистики и заброшенных объектов. 
-                  Его часто называют «призраком Домбая» — величественным напоминанием о несбывшихся мечтах.
-                </p>
-              </section>
-
-              {/* Секция: Будущее */}
-              <section id="future" className={styles.section}>
-                <h2 className={styles.sectionTitle}>Новому отелю Домбая быть!</h2>
-                <p>
-                  В 2024 году власти Карачаево-Черкесии объявили о планах по восстановлению отеля. 
-                  Инвесторы готовы вложить значительные средства в реконструкцию здания и превращение 
-                  его в современный пятизвёздочный отель.
-                </p>
-                <div className={styles.quoteBlock}>
-                  <p>«Мы хотим сохранить уникальную архитектуру здания, но при этом оснастить его 
-                  всеми современными удобствами. Это будет отель мирового уровня»</p>
-                  <span>— представитель инвестора</span>
-                </div>
-                <p>
-                  Планируется, что обновлённый «Аманауз» откроет свои двери для гостей уже в 2027 году, 
-                  став флагманским отелем курорта Домбай.
-                </p>
-              </section>
-
-              {/* Поделиться */}
               <div className={styles.share}>
                 <span className={styles.shareLabel}>Поделиться:</span>
                 <div className={styles.shareButtons}>
@@ -218,43 +219,45 @@ export default function NewsDetail({ slug }) {
               </div>
             </article>
 
-            {/* Боковая навигация */}
-            <aside className={styles.sidebar}>
-              <nav className={styles.tableOfContents}>
-                {sections.map(section => (
-                  <button
-                    key={section.id}
-                    className={`${styles.tocItem} ${activeSection === section.id ? styles.tocItemActive : ''}`}
-                    onClick={() => scrollToSection(section.id)}
-                  >
-                    {section.title}
-                  </button>
-                ))}
-              </nav>
-            </aside>
+            {sections.length > 0 && (
+              <aside className={styles.sidebar}>
+                <nav className={styles.tableOfContents}>
+                  {sections.map((s) => (
+                    <button
+                      key={s.id}
+                      className={`${styles.tocItem} ${activeSection === s.id ? styles.tocItemActive : ''}`}
+                      onClick={() => scrollToSection(s.id)}
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </nav>
+              </aside>
+            )}
           </div>
         </CenterBlock>
       </div>
 
-      {/* Популярные новости */}
-      <div className={styles.popularSection}>
-        <CenterBlock>
-          <h2 className={styles.popularTitle}>Популярные новости</h2>
-          <div className={styles.popularGrid}>
-            {popularNews.map(item => (
-              <Link to={`/news/${item.id}`} key={item.id} className={styles.popularCard}>
-                <div className={styles.popularImage}>
-                  <img src={item.image} alt={item.title} />
-                </div>
-                <div className={styles.popularInfo}>
-                  <div className={styles.popularDate}>{item.date}</div>
-                  <div className={styles.popularCardTitle}>{item.title}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </CenterBlock>
-      </div>
+      {popularNews.length > 0 && (
+        <div className={styles.popularSection}>
+          <CenterBlock>
+            <h2 className={styles.popularTitle}>Популярные новости</h2>
+            <div className={styles.popularGrid}>
+              {popularNews.map((item) => (
+                <Link to={`/news/${item.slug || item.id}`} key={item.id} className={styles.popularCard}>
+                  <div className={styles.popularImage}>
+                    <img src={getImageUrl(item.image)} alt={item.title} />
+                  </div>
+                  <div className={styles.popularInfo}>
+                    <div className={styles.popularDate}>{formatDate(item.publishedAt)}</div>
+                    <div className={styles.popularCardTitle}>{item.title}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CenterBlock>
+        </div>
+      )}
     </main>
   )
 }

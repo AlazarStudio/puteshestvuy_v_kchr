@@ -20,7 +20,7 @@ const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard },
   { href: '/admin/places', label: 'Места', icon: MapPin },
   { href: '/admin/routes', label: 'Маршруты', icon: Map },
-  { href: '/admin/news', label: 'Новости', icon: Newspaper },
+  { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper },
   { href: '/admin/services', label: 'Услуги', icon: Building2 },
   { href: '/admin/reviews', label: 'Отзывы', icon: Star },
 ];
@@ -134,7 +134,7 @@ export default function AdminLayout() {
                 : part === 'admin' ? 'Админ панель' :
                   part === 'routes' ? 'Маршруты' :
                   part === 'places' ? 'Места' :
-                  part === 'news' ? 'Новости' :
+                  part === 'news' ? 'Новости и статьи' :
                   part === 'services' ? 'Услуги' :
                   part === 'reviews' ? 'Отзывы' : part;
               const href = '/' + arr.slice(0, index + 1).join('/');

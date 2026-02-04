@@ -781,6 +781,37 @@
   gap: 20px;
 }
 
+/* Переключатель типа (Новость / Статья) */
+.typeToggle {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 0;
+}
+
+.typeToggleBtn {
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typeToggleBtn:hover {
+  color: #334155;
+}
+
+.typeToggleBtnActive {
+  background: white;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 .formActions {
   display: flex;
   gap: 12px;

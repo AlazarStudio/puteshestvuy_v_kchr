@@ -1,69 +1,60 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './News_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import NewsBlock from '@/components/NewsBlock/NewsBlock'
+import { publicNewsAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'news_scroll_position'
 
-// Моковые данные новостей
-const newsData = [
-  {
-    id: 1,
-    title: 'Горный поход: с гидом или самостоятельно?',
-    date: '15.01.2026',
-    tag: 'новости',
-    description: 'Если в путешествии вам хочется совместить приятное с полезным, походы в горы — точно для вас. Даже небольшая прогулка по свежему воздуху подарит вам заряд бодрости и хорошо скажется на организме...',
-    image: '/new1.png'
-  },
-  {
-    id: 2,
-    title: 'Советы от местных: Хычины - вкусный символ Карачаево-Черкесии',
-    date: '12.01.2026',
-    tag: 'новости',
-    description: 'Хычины — это традиционные лепёшки с разнообразными начинками, которые готовят в Карачаево-Черкесии. Узнайте, где попробовать самые вкусные хычины и как их готовят местные жители...',
-    image: '/new2.png'
-  },
-  {
-    id: 3,
-    title: 'Вкусный Домбай: сувениры, которые продлят впечатление от отдыха',
-    date: '10.01.2026',
-    tag: 'новости',
-    description: 'Домбай славится не только горнолыжными трассами, но и вкуснейшими местными продуктами. Какие сувениры привезти из Домбая, чтобы продлить воспоминания об отдыхе...',
-    image: '/new1.png'
-  },
-  {
-    id: 4,
-    title: 'Открытие нового маршрута к водопадам Софийской долины',
-    date: '08.01.2026',
-    tag: 'маршруты',
-    description: 'В этом году открылся новый пешеходный маршрут, который позволяет добраться до живописных водопадов Софийской долины безопасным и комфортным путём...',
-    image: '/new2.png'
-  },
-  {
-    id: 5,
-    title: 'Зимние развлечения в Архызе: что нового в этом сезоне',
-    date: '05.01.2026',
-    tag: 'новости',
-    description: 'Горнолыжный курорт Архыз подготовил множество новинок для туристов в этом зимнем сезоне. Новые трассы, обновлённая инфраструктура и интересные мероприятия...',
-    image: '/new1.png'
-  },
-  {
-    id: 6,
-    title: 'Как подготовиться к походу в горы: советы для начинающих',
-    date: '02.01.2026',
-    tag: 'гайды',
-    description: 'Планируете свой первый поход в горы Карачаево-Черкесии? Мы подготовили подробное руководство о том, что взять с собой, как одеться и на что обратить внимание...',
-    image: '/new2.png'
-  }
-]
+function stripHtml(html) {
+  if (!html || typeof html !== 'string') return ''
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}.${month}.${year}`
+}
 
 export default function News_page() {
   const [sortBy, setSortBy] = useState('newest')
   const [searchQuery, setSearchQuery] = useState('')
+  const [news, setNews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchNews = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const { data } = await publicNewsAPI.getAll({
+        page: 1,
+        limit: 100,
+        search: searchQuery.trim() || undefined,
+      })
+      const items = data?.items || []
+      setNews(items)
+    } catch (err) {
+      console.error('Ошибка загрузки новостей:', err)
+      setError('Не удалось загрузить новости')
+      setNews([])
+    } finally {
+      setLoading(false)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    const t = setTimeout(fetchNews, searchQuery ? 400 : 0)
+    return () => clearTimeout(t)
+  }, [fetchNews, searchQuery])
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -105,17 +96,12 @@ export default function News_page() {
     }
   }, [])
 
-  // Фильтрация и сортировка новостей
-  const filteredNews = newsData
-    .filter(news => 
-      news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      news.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      const dateA = a.date.split('.').reverse().join('')
-      const dateB = b.date.split('.').reverse().join('')
-      return sortBy === 'newest' ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB)
-    })
+  // Сортировка (поиск уже на бэке)
+  const sortedNews = [...news].sort((a, b) => {
+    const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
+    const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
+    return sortBy === 'newest' ? dateB - dateA : dateA - dateB
+  })
 
   return (
     <main className={styles.main}>
@@ -137,7 +123,7 @@ export default function News_page() {
               </div>
               <input
                 type="text"
-                placeholder="Поиск новостей..."
+                placeholder="Поиск новостей и статей..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={styles.searchInput}
@@ -146,7 +132,7 @@ export default function News_page() {
             
             <div className={styles.sortBlock}>
               <div className={styles.newsCount}>
-                Найдено {filteredNews.length} {filteredNews.length === 1 ? 'новость' : filteredNews.length < 5 ? 'новости' : 'новостей'}
+                {loading ? 'Загрузка...' : `Найдено ${sortedNews.length} ${sortedNews.length === 1 ? 'запись' : sortedNews.length < 5 ? 'записи' : 'записей'}`}
               </div>
               <div className={styles.sortWrapper}>
                 <div className={styles.sortLabel}>Сортировать:</div>
@@ -155,7 +141,7 @@ export default function News_page() {
                     value={sortBy}
                     onChange={handleSortChange}
                     displayEmpty
-                    inputProps={{ 'aria-label': 'Сортировка новостей' }}
+                    inputProps={{ 'aria-label': 'Сортировка новостей и статей' }}
                     MenuProps={{
                       disableScrollLock: true,
                       PaperProps: {
@@ -235,20 +221,27 @@ export default function News_page() {
             </div>
           </div>
           
+          {error && (
+            <div className={styles.noResults}>
+              {error}
+            </div>
+          )}
+
           <div className={styles.newsList}>
-            {filteredNews.map(news => (
+            {sortedNews.map(item => (
               <NewsBlock
-                key={news.id}
-                title={news.title}
-                date={news.date}
-                tag={news.tag}
-                description={news.description}
-                image={news.image}
+                key={item.id}
+                title={item.title}
+                date={formatDate(item.publishedAt)}
+                tag={item.type === 'article' ? 'Статья' : 'Новость'}
+                description={stripHtml(item.shortDescription) || ''}
+                image={getImageUrl(item.image)}
+                slug={item.slug}
               />
             ))}
           </div>
 
-          {filteredNews.length === 0 && (
+          {!loading && !error && sortedNews.length === 0 && (
             <div className={styles.noResults}>
               По вашему запросу ничего не найдено
             </div>

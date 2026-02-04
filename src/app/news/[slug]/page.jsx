@@ -3,7 +3,7 @@ import NewsDetail from '@/sections/News/NewsDetail'
 export async function generateMetadata({ params }) {
   // В будущем здесь можно получать данные новости по slug
   return {
-    title: 'Новость | Путешествуй в КЧР',
+    title: 'Новость или статья | Путешествуй в КЧР',
     description: 'Читайте актуальные новости о туризме в Карачаево-Черкесии',
   }
 }

@@ -1,35 +1,112 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Upload, X } from 'lucide-react';
+'use client';
+
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Upload, X, Eye, EyeOff, Pencil } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
-import { AdminBreadcrumbContext } from '../../layout';
+import ConfirmModal from '../../components/ConfirmModal';
+import NewsBlockEditor from '../../components/NewsBlockEditor';
+import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
-const categories = ['Новости', 'Маршруты', 'Гайды', 'События', 'Анонсы'];
+const TOAST_DURATION_MS = 3000;
+
+function getFormSnapshot(data) {
+  return {
+    type: data.type ?? 'news',
+    title: data.title ?? '',
+    shortDescription: data.shortDescription ?? '',
+    image: data.image ?? '',
+    publishedAt: data.publishedAt ?? '',
+    isActive: !!data.isActive,
+    blocks: JSON.stringify(data.blocks || []),
+  };
+}
+
+function formSnapshotsEqual(a, b) {
+  return JSON.stringify(getFormSnapshot(a)) === JSON.stringify(getFormSnapshot(b));
+}
+
+function migrateLegacyData(data) {
+  const blocks = Array.isArray(data.blocks) ? data.blocks : [];
+  if (blocks.length === 0 && (data.content || data.images?.length)) {
+    const migrated = [];
+    if (data.content) {
+      migrated.push({ id: `b-${Date.now()}-text`, type: 'text', order: 0, data: { content: data.content } });
+    }
+    if (Array.isArray(data.images) && data.images.length > 0) {
+      if (data.images.length === 1) {
+        migrated.push({ id: `b-${Date.now()}-img`, type: 'image', order: migrated.length, data: { url: data.images[0] } });
+      } else {
+        migrated.push({ id: `b-${Date.now()}-gal`, type: 'gallery', order: migrated.length, data: { images: data.images } });
+      }
+    }
+    return migrated.map((b, i) => ({ ...b, order: i }));
+  }
+  return blocks;
+}
 
 const initialFormData = () => ({
+  type: 'news',
   title: '',
-  category: 'Новости',
   shortDescription: '',
-  content: '',
-  author: '',
+  image: '',
   publishedAt: new Date().toISOString().split('T')[0],
   isActive: false,
-  images: [],
+  blocks: [],
 });
 
 export default function NewsEditPage() {
   const navigate = useNavigate();
   const params = useParams();
-  const { setBreadcrumbLabel } = useContext(AdminBreadcrumbContext) || {};
+  const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
+  const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
   const isNew = params.id === 'new';
 
   const [formData, setFormData] = useState(initialFormData());
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState(null);
+  const [pendingBlockFiles, setPendingBlockFiles] = useState({});
+  const savedFormDataRef = useRef(null);
+  const imageUploadRef = useRef(null);
+
+  const isDirty = useMemo(() => {
+    if (isNew) return false;
+    if (!savedFormDataRef.current) return false;
+    const hasPendingFiles = !!(
+      pendingImageFile ||
+      Object.keys(pendingBlockFiles).some((k) => pendingBlockFiles[k])
+    );
+    return !formSnapshotsEqual(formData, savedFormDataRef.current) || hasPendingFiles;
+  }, [isNew, formData, pendingImageFile, pendingBlockFiles]);
+
+  const [imageDisplayUrl, setImageDisplayUrl] = useState('');
+  useEffect(() => {
+    if (pendingImageFile) {
+      const u = URL.createObjectURL(pendingImageFile);
+      setImageDisplayUrl(u);
+      return () => URL.revokeObjectURL(u);
+    }
+    setImageDisplayUrl(formData.image ? getImageUrl(formData.image) : '');
+  }, [pendingImageFile, formData.image]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    navigate('/admin/news');
+  }, [navigate]);
+
+  const handleCancelClick = useCallback(() => {
+    if (isDirty) {
+      setLeaveModalOpen(true);
+    } else {
+      navigate('/admin/news');
+    }
+  }, [isDirty, navigate]);
 
   const fetchNews = useCallback(async () => {
     if (isNew) return;
@@ -37,20 +114,22 @@ export default function NewsEditPage() {
       setError('');
       const response = await newsAPI.getById(params.id);
       const data = response.data;
-      setFormData({
+      const blocks = migrateLegacyData(data);
+      const next = {
+        type: data.type ?? 'news',
         title: data.title ?? '',
-        category: data.category ?? 'Новости',
         shortDescription: data.shortDescription ?? '',
-        content: data.content ?? '',
-        author: data.author ?? '',
+        image: data.image ?? data.images?.[0] ?? '',
         publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString().split('T')[0] : '',
         isActive: Boolean(data.isActive),
-        images: Array.isArray(data.images) ? data.images : [],
-      });
-      setBreadcrumbLabel?.(data.title || 'Новость');
+        blocks,
+      };
+      setFormData(next);
+      savedFormDataRef.current = next;
+      setBreadcrumbLabel?.(data.title || 'Запись');
     } catch (err) {
-      console.error('Ошибка загрузки новости:', err);
-      setError('Новость не найдена');
+      console.error('Ошибка загрузки:', err);
+      setError('Запись не найдена');
     } finally {
       setIsLoading(false);
     }
@@ -58,13 +137,73 @@ export default function NewsEditPage() {
 
   useEffect(() => {
     if (isNew) {
-      setBreadcrumbLabel?.('Новая новость');
+      setBreadcrumbLabel?.('Новая запись');
       setIsLoading(false);
     } else {
       fetchNews();
     }
-    return () => setBreadcrumbLabel?.('');
+    return () => setBreadcrumbLabel?.(null);
   }, [isNew, fetchNews, setBreadcrumbLabel]);
+
+  useEffect(() => {
+    if (!setHeaderRight) return;
+    const submitLabel = isSaving
+      ? 'Сохранение...'
+      : isNew
+        ? 'Создать запись'
+        : isDirty
+          ? 'Сохранить изменения'
+          : 'Сохранено';
+    const submitClassName = [
+      styles.headerSubmitBtn,
+      !isNew && !isDirty && !isSaving && styles.headerSubmitBtnSaved,
+    ].filter(Boolean).join(' ');
+    setHeaderRight(
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label className={styles.visibilityToggle}>
+          <input
+            type="checkbox"
+            checked={!!formData.isActive}
+            onChange={() => setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))}
+          />
+          <span className={styles.visibilitySwitch} />
+          <span className={styles.visibilityLabel}>
+            {formData.isActive ? (
+              <Eye size={16} style={{ marginRight: 6, flexShrink: 0 }} />
+            ) : (
+              <EyeOff size={16} style={{ marginRight: 6, flexShrink: 0, opacity: 0.7 }} />
+            )}
+            Видимость
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={handleCancelClick}
+          className={styles.headerCancelBtn}
+        >
+          Назад
+        </button>
+        <button
+          type="submit"
+          form="news-form"
+          className={submitClassName}
+          disabled={isSaving}
+        >
+          {submitLabel}
+        </button>
+      </div>
+    );
+    return () => setHeaderRight(null);
+  }, [setHeaderRight, formData.isActive, isSaving, isNew, isDirty, handleCancelClick]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -74,47 +213,11 @@ export default function NewsEditPage() {
     }));
   };
 
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setUploadingImage(true);
-    try {
-      for (const file of files) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', file);
-        const response = await mediaAPI.upload(formDataUpload);
-        const url = response.data?.url;
-        if (url) {
-          setFormData((prev) => ({
-            ...prev,
-            images: [...prev.images, url],
-          }));
-        }
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки изображения:', err);
-      setError('Не удалось загрузить изображение');
-    } finally {
-      setUploadingImage(false);
-      e.target.value = '';
-    }
-  };
-
-  const removeImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
-  const setCoverImage = (index) => {
-    if (index === 0) return;
-    setFormData((prev) => {
-      const images = [...prev.images];
-      const [img] = images.splice(index, 1);
-      images.unshift(img);
-      return { ...prev, images };
-    });
+  const handleMainImageFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPendingImageFile(file);
   };
 
   const handleSubmit = async (e) => {
@@ -122,27 +225,73 @@ export default function NewsEditPage() {
     setIsSaving(true);
     setError('');
 
-    const dataToSend = {
-      title: formData.title.trim(),
-      category: formData.category || null,
-      shortDescription: formData.shortDescription || null,
-      content: formData.content || null,
-      author: formData.author?.trim() || null,
-      publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : null,
-      isActive: Boolean(formData.isActive),
-      images: Array.isArray(formData.images) ? formData.images : [],
-    };
+    let imageUrl = formData.image;
+    const blocksToSend = (formData.blocks || []).map((b) => ({ ...b, data: { ...b.data } }));
 
     try {
+      if (pendingImageFile) {
+        const fd = new FormData();
+        fd.append('file', pendingImageFile);
+        const res = await mediaAPI.upload(fd);
+        imageUrl = res.data?.url || imageUrl;
+        setPendingImageFile(null);
+      }
+
+      for (const [blockId, pending] of Object.entries(pendingBlockFiles)) {
+        if (!pending) continue;
+        const block = blocksToSend.find((b) => b.id === blockId);
+        if (!block) continue;
+        if (pending.url) {
+          const fd = new FormData();
+          fd.append('file', pending.url);
+          const res = await mediaAPI.upload(fd);
+          if (res.data?.url) block.data = { ...block.data, url: res.data.url };
+        }
+        if (pending.images?.length) {
+          const urls = [];
+          for (const file of pending.images) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await mediaAPI.upload(fd);
+            if (res.data?.url) urls.push(res.data.url);
+          }
+          block.data = { ...block.data, images: [...(block.data?.images || []), ...urls] };
+        }
+      }
+      setPendingBlockFiles({});
+
+      const dataToSend = {
+        type: formData.type,
+        title: formData.title.trim(),
+        shortDescription: formData.shortDescription || null,
+        image: imageUrl || null,
+        publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : null,
+        isActive: Boolean(formData.isActive),
+        blocks: blocksToSend,
+        images: [],
+      };
+
       if (isNew) {
-        await newsAPI.create(dataToSend);
+        const res = await newsAPI.create(dataToSend);
+        const created = res.data;
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
+        if (created?.id) {
+          navigate(`/admin/news/${created.id}`, { replace: true });
+        } else {
+          navigate('/admin/news');
+        }
       } else {
         await newsAPI.update(params.id, dataToSend);
+        const updated = { ...formData, image: imageUrl, blocks: blocksToSend };
+        savedFormDataRef.current = updated;
+        setFormData(updated);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
-      navigate('/admin/news');
     } catch (err) {
       console.error('Ошибка сохранения:', err);
-      setError(err.response?.data?.message || 'Ошибка сохранения новости');
+      setError(err.response?.data?.message || 'Ошибка сохранения');
     } finally {
       setIsSaving(false);
     }
@@ -161,12 +310,27 @@ export default function NewsEditPage() {
     <div>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>
-          {isNew ? 'Новая новость' : 'Редактирование новости'}
+          {isNew ? 'Новая запись' : 'Редактирование новости или статьи'}
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.formContainer}>
+      <form id="news-form" onSubmit={handleSubmit} className={styles.formContainer}>
         {error && <div className={styles.error}>{error}</div>}
+
+        {/* Тип записи: Новость / Статья (одно и то же, разное название) */}
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Тип записи</label>
+          <select
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            className={styles.formSelect}
+            style={{ maxWidth: 200 }}
+          >
+            <option value="news">Новость</option>
+            <option value="article">Статья</option>
+          </select>
+        </div>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Заголовок *</label>
@@ -177,25 +341,11 @@ export default function NewsEditPage() {
             onChange={handleChange}
             className={styles.formInput}
             required
-            placeholder="Введите заголовок новости"
+            placeholder="Введите заголовок"
           />
         </div>
 
         <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Категория</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className={styles.formSelect}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Дата публикации</label>
             <input
@@ -206,132 +356,95 @@ export default function NewsEditPage() {
               className={styles.formInput}
             />
           </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Автор</label>
-            <input
-              type="text"
-              name="author"
-              value={formData.author}
-              onChange={handleChange}
-              className={styles.formInput}
-              placeholder="Имя автора"
-            />
-          </div>
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Краткое описание</label>
+          <label className={styles.formLabel}>Краткое описание (для карточки)</label>
           <RichTextEditor
             value={formData.shortDescription}
-            onChange={(value) => setFormData((prev) => ({ ...prev, shortDescription: value }))}
-            placeholder="Краткое описание для превью"
-            minHeight={300}
+            onChange={(v) => setFormData((prev) => ({ ...prev, shortDescription: v }))}
+            placeholder="Краткое описание для превью в списке"
+            minHeight={150}
           />
         </div>
 
+        {/* Главная картинка (без кропа) */}
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Содержание</label>
-          <RichTextEditor
-            value={formData.content}
-            onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
-            placeholder="Полное содержание новости"
-            minHeight={300}
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            <input
-              type="checkbox"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-            />
-            {' '}Опубликовать (отображается на сайте)
-          </label>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Изображения</label>
-          <p className={styles.formHint} style={{ marginBottom: 8 }}>
-            Первое изображение используется как обложка в списке новостей.
+          <label className={styles.formLabel}>Главная картинка</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Отображается в шапке страницы.
           </p>
-          <div className={styles.imageUpload}>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              disabled={uploadingImage}
-              style={{ display: 'none' }}
-              id="newsImageUpload"
-            />
-            <label
-              htmlFor="newsImageUpload"
-              style={{
-                cursor: uploadingImage ? 'wait' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                justifyContent: 'center',
-                opacity: uploadingImage ? 0.7 : 1,
-              }}
-            >
-              <Upload size={20} />
-              {uploadingImage ? 'Загрузка...' : 'Загрузить изображения'}
-            </label>
-          </div>
-
-          {formData.images.length > 0 && (
-            <div className={styles.imagePreview}>
-              {formData.images.map((img, index) => (
-                <div key={index} className={styles.previewItem}>
-                  {index === 0 && (
-                    <span className={styles.badge} style={{ position: 'absolute', top: 6, left: 6, zIndex: 1, fontSize: 11 }}>
-                      Обложка
-                    </span>
-                  )}
-                  <img src={getImageUrl(img)} alt={`Превью ${index + 1}`} />
-                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                    {index !== 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setCoverImage(index)}
-                        className={styles.filterBtn}
-                        style={{ fontSize: 12 }}
-                      >
-                        Сделать обложкой
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className={styles.removeImage}
-                      title="Удалить"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+          <input
+            ref={imageUploadRef}
+            type="file"
+            accept="image/*"
+            onChange={handleMainImageFileSelect}
+            style={{ display: 'none' }}
+            id="mainImageUpload"
+          />
+          {(imageDisplayUrl || formData.image) ? (
+            <div className={styles.previewItem} style={{ maxWidth: 500, aspectRatio: '16/9', position: 'relative', overflow: 'hidden', borderRadius: 8 }}>
+              <img src={imageDisplayUrl || getImageUrl(formData.image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
+                <button type="button" onClick={() => imageUploadRef.current?.click()} className={styles.removeImage} title="Заменить">
+                  <Pencil size={14} />
+                </button>
+                <button type="button" onClick={() => { setFormData((prev) => ({ ...prev, image: '' })); setPendingImageFile(null); }} className={styles.removeImage} title="Удалить">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.imageUpload}>
+              <label htmlFor="mainImageUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <Upload size={20} /> Загрузить главную картинку
+              </label>
             </div>
           )}
         </div>
 
-        <div className={styles.formActions}>
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Сохранение...' : (isNew ? 'Создать новость' : 'Сохранить изменения')}
-          </button>
-          <Link to="/admin/news" className={styles.cancelBtn}>
-            Отмена
-          </Link>
+        {/* Блоки контента */}
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Блоки контента</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Добавляйте блоки через выпадающий список. Заголовки станут якорями в боковой навигации. Перетаскивайте блоки или используйте стрелки для изменения порядка.
+          </p>
+          <NewsBlockEditor
+            blocks={formData.blocks}
+            onChange={(blocks) => setFormData((prev) => ({ ...prev, blocks }))}
+            pendingBlockFiles={pendingBlockFiles}
+            onPendingBlockFilesChange={(blockId, data) => {
+              setPendingBlockFiles((prev) => {
+                const next = { ...prev };
+                if (data === null) {
+                  delete next[blockId];
+                } else {
+                  next[blockId] = { ...prev[blockId], ...data };
+                }
+                return next;
+              });
+            }}
+          />
         </div>
       </form>
+
+      <ConfirmModal
+        open={leaveModalOpen}
+        title="Несохранённые изменения"
+        message="Есть несохранённые изменения. Вы уверены, что хотите уйти? Они будут потеряны."
+        cancelLabel="Остаться"
+        confirmLabel="Уйти без сохранения"
+        variant="danger"
+        dialogStyle={{ maxWidth: 500 }}
+        onCancel={() => setLeaveModalOpen(false)}
+        onConfirm={goToList}
+      />
+
+      {showToast && (
+        <div className={styles.toast} role="status">
+          Изменения успешно сохранены
+        </div>
+      )}
     </div>
   );
 }

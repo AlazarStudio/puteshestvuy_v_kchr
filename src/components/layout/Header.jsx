@@ -3,29 +3,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import styles from './Header.module.css'
+import { publicNewsAPI, getImageUrl } from '@/lib/api'
 
 // Данные для выпадающего меню "На помощь туристу"
 const dropdownMenuData = {
   articles: {
     title: 'Статьи',
-    items: [
-      { 
-        title: 'Советы от местных: 5 непопсовых смотровых на Эльбрус', 
-        href: '/news/elbrus-views',
-        image: '/new1.png'
-      },
-      { 
-        title: 'Зимний Архыз без горнолыжки', 
-        href: '/news/winter-arkhyz',
-        image: '/new2.png'
-      },
-      { 
-        title: 'Рассказы походника: Как оправдалась надежда подняться на гору Надежда', 
-        href: '/news/nadezhda-mountain',
-        image: '/slider1.png'
-      },
-    ],
-    viewAllHref: '/news',
+    viewAllHref: '/services?filter=articles',
   },
   services: {
     title: 'Сервис',
@@ -161,21 +145,40 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [activeArticleIndex, setActiveArticleIndex] = useState(0)
   const [isArticleHovered, setIsArticleHovered] = useState(false)
+  const [dropdownArticles, setDropdownArticles] = useState([])
   const dropdownRef = useRef(null)
   const dropdownTriggerRef = useRef(null)
 
+  // Загрузка статей для блока "На помощь туристу"
+  useEffect(() => {
+    let cancelled = false
+    publicNewsAPI.getAll({ type: 'article', limit: 6 })
+      .then((res) => {
+        if (!cancelled) {
+          const items = (res.data?.items || []).map((a) => ({
+            title: a.title,
+            href: `/news/${a.slug || a.id}`,
+            image: getImageUrl(a.image) || '/new1.png',
+          }))
+          setDropdownArticles(items)
+        }
+      })
+      .catch(() => { if (!cancelled) setDropdownArticles([]) })
+    return () => { cancelled = true }
+  }, [])
+
+  const articlesItems = dropdownArticles.length > 0 ? dropdownArticles : []
+
   // Автоматическая смена активной статьи
   useEffect(() => {
-    if (!isDropdownOpen || isArticleHovered) return
+    if (!isDropdownOpen || isArticleHovered || articlesItems.length === 0) return
 
     const interval = setInterval(() => {
-      setActiveArticleIndex((prev) => 
-        (prev + 1) % dropdownMenuData.articles.items.length
-      )
-    }, 3000) // Смена каждые 3 секунды
+      setActiveArticleIndex((prev) => (prev + 1) % articlesItems.length)
+    }, 3000)
 
     return () => clearInterval(interval)
-  }, [isDropdownOpen, isArticleHovered])
+  }, [isDropdownOpen, isArticleHovered, articlesItems.length])
   
   // Получаем конфигурацию для текущей страницы
   const currentConfig = getPageConfig(pathname)
@@ -330,7 +333,7 @@ export default function Header() {
           <Link
             to="/news"
             className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
-            title="Новости и события"
+            title="Новости"
           >
             Новости
           </Link>
@@ -381,7 +384,7 @@ export default function Header() {
                 {/* Изображение-превью слева */}
                 <div className={styles.dropdownImageWrapper}>
                   <img
-                    src={dropdownMenuData.articles.items[activeArticleIndex]?.image || '/new1.png'}
+                    src={articlesItems[activeArticleIndex]?.image || '/new1.png'}
                     alt="Превью статьи"
                     width={200}
                     height={200}
@@ -393,7 +396,7 @@ export default function Header() {
                 <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionArticles}`}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.articles.title}</h3>
                   <ul className={styles.dropdownList}>
-                    {dropdownMenuData.articles.items.map((item, index) => (
+                    {articlesItems.map((item, index) => (
                       <li key={index}>
                         <Link 
                           to={item.href} 
