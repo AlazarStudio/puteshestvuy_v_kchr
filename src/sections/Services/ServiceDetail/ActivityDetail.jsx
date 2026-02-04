@@ -8,7 +8,8 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
-import { getImageUrl } from '@/lib/api'
+import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import YandexMapPlace from '@/components/YandexMapPlace'
 
 const DEFAULT_PHOTOS = [
   { src: '/routeGalery1.png' },
@@ -44,13 +45,6 @@ const DEFAULT_REQUIREMENTS = [
   'Базовый уровень физической подготовки (возможно адаптировать под группу)',
 ]
 
-const DEFAULT_SAFETY = [
-  'Всю программу сопровождает сертифицированный инструктор и/или гид.',
-  'Перед началом активности проводится обязательный инструктаж по технике безопасности.',
-  'Используется только проверенное и сервисно обслуживаемое оборудование.',
-  'Маршруты проработаны с учётом уровня сложности и погодных условий.',
-  'В команде есть базовая аптечка и средства связи.',
-]
 
 function parseProgramSteps(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return DEFAULT_PROGRAM
@@ -62,6 +56,19 @@ function parseProgramSteps(arr) {
     const colon = str.indexOf(': ')
     if (colon > 0) return { title: str.slice(0, colon).trim(), text: str.slice(colon + 2).trim() }
     return { title: '', text: str }
+  })
+}
+
+/** Нормализует массив из админки (titleTextList: { title, text }[] или string[]) в string[] для отображения списком */
+function titleTextListToStrings(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return []
+  return arr.map((item) => {
+    if (item && typeof item === 'object' && ('title' in item || 'text' in item)) {
+      const t = item.title || ''
+      const x = item.text || ''
+      return x ? `${t}: ${x}`.trim() : t
+    }
+    return String(item)
   })
 }
 
@@ -86,6 +93,12 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
     return DEFAULT_PHOTOS
   }, [serviceData?.images])
 
+  const avatarSrc = useMemo(() => {
+    if (serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
+    if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
+    return '/serviceImg2.png'
+  }, [serviceData?.data?.avatar, serviceData?.images])
+
   const serviceName = serviceData?.title ?? 'Приключенческий тур в горах КЧР'
   const categoryLabel = serviceData?.category ?? 'Активность'
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
@@ -99,27 +112,42 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
   const programSteps = useMemo(() => parseProgramSteps(serviceData?.data?.programSteps), [serviceData?.data?.programSteps])
   const equipmentList = useMemo(() => {
     const fromData = serviceData?.data?.equipmentList
-    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
+    if (Array.isArray(fromData) && fromData.length > 0) return titleTextListToStrings(fromData)
     return DEFAULT_EQUIPMENT
   }, [serviceData?.data?.equipmentList])
   const requirementsList = useMemo(() => {
     const fromData = serviceData?.data?.requirementsList
-    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
+    if (Array.isArray(fromData) && fromData.length > 0) return titleTextListToStrings(fromData)
     return DEFAULT_REQUIREMENTS
   }, [serviceData?.data?.requirementsList])
-  const safetyNotes = useMemo(() => {
+  const safetyContent = useMemo(() => {
     const fromData = serviceData?.data?.safetyNotes
-    if (Array.isArray(fromData) && fromData.length > 0) return fromData.map(String)
-    return DEFAULT_SAFETY
+    if (typeof fromData === 'string' && fromData.trim()) return fromData
+    if (Array.isArray(fromData) && fromData.length > 0) {
+      const strings = titleTextListToStrings(fromData)
+      return strings.map((s) => `<p>${s}</p>`).join('')
+    }
+    return null
   }, [serviceData?.data?.safetyNotes])
   const contactsList = useMemo(() => {
     if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
     return buildContactsFromService(serviceData)
   }, [serviceData])
-  const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '12 отзывов'
+  const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '0 отзывов'
+  const reviews = useMemo(() => {
+    const list = Array.isArray(serviceData?.reviews) ? serviceData.reviews : []
+    return list.map((r) => ({
+      id: r.id,
+      name: r.authorName || 'Гость',
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '',
+      rating: r.rating ?? 5,
+      text: r.text || '',
+      avatar: r.authorAvatar || '',
+    }))
+  }, [serviceData?.reviews])
   const tagsList = useMemo(() => {
     const t = serviceData?.data?.tags
-    if (Array.isArray(t) && t.length > 0) return t.map(String)
+    if (Array.isArray(t) && t.length > 0) return titleTextListToStrings(t)
     return ['сложность: средняя', 'длительность: 4–6 часов', 'группа: до 10 человек']
   }, [serviceData?.data?.tags])
 
@@ -129,25 +157,9 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
   const [reviewName, setReviewName] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const [activeAnchor, setActiveAnchor] = useState('main')
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'Ирина',
-      date: '10 августа 2025',
-      rating: 5.0,
-      text: 'Очень понравилась активность! Инструкторы внимательные, всё оборудование в отличном состоянии. Маршрут подобран с учётом уровня группы, было и динамично, и безопасно.',
-      avatar: '/avatar_feedback.png',
-    },
-    {
-      id: 2,
-      name: 'Дмитрий',
-      date: '2 июля 2025',
-      rating: 5.0,
-      text: 'Брали семейный формат активности. Дети в восторге, взрослым тоже хватило эмоций. Отдельное спасибо за подробный инструктаж и постоянный контроль со стороны команды.',
-      avatar: '',
-    },
-  ])
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null)
 
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
@@ -229,47 +241,28 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
     setRating(starIndex + 1)
   }
 
-  const formatDate = (date) => {
-    const months = [
-      'января',
-      'февраля',
-      'марта',
-      'апреля',
-      'мая',
-      'июня',
-      'июля',
-      'августа',
-      'сентября',
-      'октября',
-      'ноября',
-      'декабря',
-    ]
-    const day = date.getDate()
-    const month = months[date.getMonth()]
-    const year = date.getFullYear()
-    return `${day} ${month} ${year}`
-  }
-
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault()
-    if (!reviewName.trim() || !reviewText.trim() || rating === 0) {
+    if (!reviewName.trim() || !reviewText.trim() || rating < 1) {
       alert('Пожалуйста, заполните все поля и выберите рейтинг')
       return
     }
-
-    const newReview = {
-      id: reviews.length > 0 ? Math.max(...reviews.map((r) => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating,
-      text: reviewText.trim(),
-      avatar: '/profile.png',
+    const serviceId = serviceData?.id || serviceSlug
+    if (!serviceId) return
+    setReviewSubmitStatus(null)
+    try {
+      await publicServicesAPI.createReview(serviceId, {
+        authorName: reviewName.trim(),
+        rating,
+        text: reviewText.trim(),
+      })
+      setReviewName('')
+      setReviewText('')
+      setRating(0)
+      setReviewSubmitStatus('success')
+    } catch (err) {
+      setReviewSubmitStatus('error')
     }
-
-    setReviews((prev) => [newReview, ...prev])
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
   }
 
   const anchors = [
@@ -382,8 +375,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
             <div className={`${styles.serviceBlock_content} ${a.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${a.serviceHeader}`}>
                 <div className={`${styles.serviceAvatar} ${a.serviceAvatar}`}>
-                  <img src="/serviceImg2.png" alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
-                  <img src="/verification.png" alt="" className={styles.verificationBadge} />
+                  <img src={avatarSrc} alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>{categoryLabel}</div>
@@ -407,7 +399,11 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
               <div id="about" className={`${styles.title} ${a.title}`}>О активности</div>
               <div className={`${styles.aboutText} ${a.aboutText}`}>
                 {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? <p>{aboutContent}</p> : aboutContent
+                  typeof aboutContent === 'string' ? (
+                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                  ) : (
+                    aboutContent
+                  )
                 ) : (
                   defaultAbout
                 )}
@@ -444,22 +440,36 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                 </div>
               </div>
 
-              <div id="safety" className={`${styles.title} ${a.title}`}>Безопасность и организация</div>
+              <div id="safety" className={`${styles.title} ${a.title}`}>Безопасность</div>
               <div className={`${styles.aboutText} ${a.aboutText}`}>
-                <ul className={`${styles.bulletList} ${a.bulletList}`}>
-                  {safetyNotes.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-                <p>
-                  Точную программу, список экипировки и формат активности вы сможете уточнить у организатора
-                  перед бронированием. Мы всегда учитываем сезон, прогноз погоды и уровень группы.
-                </p>
+                {safetyContent ? (
+                  <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: safetyContent }} />
+                ) : (
+                  <p>
+                    Точную программу, список экипировки и формат активности вы сможете уточнить у организатора
+                    перед бронированием. Мы всегда учитываем сезон, прогноз погоды и уровень группы.
+                  </p>
+                )}
               </div>
+
+              {serviceData?.latitude != null && serviceData?.longitude != null && (
+                <>
+                  <div className={`${styles.title} ${a.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div style={{ marginBottom: 24 }}>
+                    <YandexMapPlace
+                      latitude={serviceData.latitude}
+                      longitude={serviceData.longitude}
+                      title={serviceData?.title}
+                      location={serviceData?.address}
+                      image={serviceData?.images?.[0] ? getImageUrl(serviceData.images[0]) : null}
+                    />
+                  </div>
+                </>
+              )}
 
               {contactsList.length > 0 && (
                 <div className={`${styles.contacts} ${a.contacts}`}>
-                  <div className={`${styles.contactsTitle} ${a.contactsTitle}`}>Место сбора и контакты</div>
+                  <div className={`${styles.contactsTitle} ${a.contactsTitle}`}>Контакты</div>
                   <div className={styles.contactsList}>
                     {contactsList.map((c, i) => (
                       <div key={i} className={styles.contactItem}>
@@ -518,10 +528,16 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                   <button type="submit" className={`${styles.feedbackSubmitButton} ${a.feedbackSubmitButton}`}>
                     Оставить отзыв
                   </button>
+                  {reviewSubmitStatus === 'success' && (
+                    <p className={styles.reviewSubmitSuccess}>Спасибо! Отзыв отправлен на модерацию.</p>
+                  )}
+                  {reviewSubmitStatus === 'error' && (
+                    <p className={styles.reviewSubmitError}>Не удалось отправить отзыв. Попробуйте позже.</p>
+                  )}
                 </form>
 
                 <div className={styles.feedbackList}>
-                  {reviews.map((review) => {
+                  {(showAllReviews ? reviews : reviews.slice(0, 5)).map((review) => {
                     const isExpanded = expandedReviews[review.id]
                     const shortText =
                       review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text
@@ -582,10 +598,18 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                     )
                   })}
                 </div>
-              </div>
 
-              <div className={styles.feedbackShowAll}>
-                <button className={`${styles.feedbackShowAllButton} ${a.feedbackShowAllButton}`}>Показать все отзывы</button>
+                {reviews.length > 5 && (
+                  <div className={styles.feedbackShowAll}>
+                    <button
+                      type="button"
+                      className={`${styles.feedbackShowAllButton} ${a.feedbackShowAllButton}`}
+                      onClick={() => setShowAllReviews((v) => !v)}
+                    >
+                      {showAllReviews ? 'Свернуть отзывы' : `Показать все отзывы (${reviews.length})`}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -603,10 +627,12 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                   </button>
                 ))}
               </div>
+              {/* Кнопки снизу — функционал будет позже
               <div className={styles.anchorsButtons}>
                 <button className={`${styles.anchorButton} ${a.anchorButton}`}>Задать вопрос</button>
                 <button className={`${styles.anchorButtonPrimary} ${a.anchorButtonPrimary}`}>Забронировать активность</button>
               </div>
+              */}
             </div>
           </div>
         </div>

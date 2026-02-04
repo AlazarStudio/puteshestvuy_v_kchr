@@ -14,6 +14,7 @@ import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import routesPageStyles from '@/sections/Routes/Routes_page.module.css'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
+import YandexMapPlace from '@/components/YandexMapPlace'
 
 const DEFAULT_PHOTOS = [
   { src: '/routeGalery1.png' },
@@ -386,6 +387,21 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                 )}
               </div>
 
+              {serviceData?.latitude != null && serviceData?.longitude != null && (
+                <div className={`${styles.title} ${g.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+              )}
+              {serviceData?.latitude != null && serviceData?.longitude != null && (
+                <div style={{ marginBottom: 24 }}>
+                  <YandexMapPlace
+                    latitude={serviceData.latitude}
+                    longitude={serviceData.longitude}
+                    title={displayName}
+                    location={serviceData.address}
+                    image={avatarSrc !== '/serviceImg1.png' ? avatarSrc : null}
+                  />
+                </div>
+              )}
+
               {contactsList.length > 0 && (
                 <div className={`${styles.contacts} ${g.contacts}`}>
                   <div className={`${styles.contactsTitle} ${g.contactsTitle}`}>Контакты</div>
@@ -600,6 +616,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                   </button>
                 ))}
               </div>
+              {/* Кнопки снизу — функционал будет позже
               <div className={styles.anchorsButtons}>
                 <button className={`${styles.anchorButton} ${g.anchorButton}`}>
                   Связаться
@@ -608,6 +625,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                   Забронировать
                 </button>
               </div>
+              */}
             </div>
           </div>
         </div>

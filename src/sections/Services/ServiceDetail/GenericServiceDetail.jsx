@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './ServiceDetail.module.css'
 import common from './ServiceDetailCommon.module.css'
@@ -10,6 +10,8 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
+import { publicServicesAPI } from '@/lib/api'
+import YandexMapPlace from '@/components/YandexMapPlace'
 
 const DEFAULT_PHOTOS = [
   { src: '/routeGalery1.png' },
@@ -17,11 +19,6 @@ const DEFAULT_PHOTOS = [
   { src: '/routeGalery3.png' },
   { src: '/routeGalery4.png' },
   { src: '/routeGalery5.png' },
-]
-
-const DEFAULT_REVIEWS = [
-  { id: 1, name: 'Гость', date: '1 сентября 2025', rating: 5.0, text: 'Всё понравилось, рекомендуем.', avatar: '/avatar_feedback.png' },
-  { id: 2, name: 'Посетитель', date: '15 августа 2025', rating: 5.0, text: 'Удобно, чисто, вежливый персонал.', avatar: '' },
 ]
 
 const BreadcrumbArrow = () => (
@@ -38,9 +35,9 @@ const StarIcon = ({ filled, size = 24 }) => (
 
 /**
  * Общий layout страницы услуги: галерея, шапка, якорные блоки, контакты, отзывы, сайдбар.
- * config: { breadcrumbTitle, categoryLabel, serviceName, tags[], aboutTitle, aboutContent, sections: [{ id, title, content }], contacts: [{ label, value, href? }], primaryButtonText, reviewPlaceholder, showReviews?, avatarImg? }
+ * config: { breadcrumbTitle, categoryLabel, serviceName, tags[], aboutTitle, aboutContent, sections: [{ id, title, content }], contacts: [{ label, value, href? }], primaryButtonText, reviewPlaceholder, showReviews?, avatarImg?, photos, reviews?, rating?, reviewsCount? }
  */
-export default function GenericServiceDetail({ config, specificStyles = {} }) {
+export default function GenericServiceDetail({ config, specificStyles = {}, serviceId, serviceSlug }) {
   const {
     breadcrumbTitle,
     categoryLabel,
@@ -50,13 +47,20 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
     aboutContent,
     sections = [],
     contacts = [],
+    mapData = null,
     primaryButtonText = 'Связаться',
     reviewPlaceholder = 'Ваш отзыв',
     showReviews = true,
     avatarImg = '/serviceImg1.png',
+    rating: configRating = null,
+    reviewsCount: configReviewsCount = null,
+    rooms = [],
   } = config
 
   const photos = config.photos || DEFAULT_PHOTOS
+  const mappedReviews = useMemo(() => {
+    return Array.isArray(config.reviews) ? config.reviews : []
+  }, [config.reviews])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [rating, setRating] = useState(0)
@@ -64,7 +68,8 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
   const [activeAnchor, setActiveAnchor] = useState('main')
-  const [reviews, setReviews] = useState(config.reviews || DEFAULT_REVIEWS)
+  const [showAllReviews, setShowAllReviews] = useState(false)
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null)
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
 
@@ -78,35 +83,36 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
   const toggleReview = (reviewId) => setExpandedReviews((prev) => ({ ...prev, [reviewId]: !prev[reviewId] }))
   const handleStarClick = (starIndex) => setRating(starIndex + 1)
 
-  const formatDate = (date) => {
-    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
-  }
-
-  const handleSubmitReview = (ev) => {
+  const handleSubmitReview = async (ev) => {
     ev.preventDefault()
-    if (!reviewName.trim() || !reviewText.trim() || rating === 0) {
+    if (!reviewName.trim() || !reviewText.trim() || rating < 1) {
       alert('Заполните имя, отзыв и выберите рейтинг')
       return
     }
-    const newReview = {
-      id: reviews.length ? Math.max(...reviews.map((r) => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating,
-      text: reviewText.trim(),
-      avatar: '/profile.png',
+    const idForApi = serviceId || serviceSlug
+    if (!idForApi) return
+    setReviewSubmitStatus(null)
+    try {
+      await publicServicesAPI.createReview(idForApi, {
+        authorName: reviewName.trim(),
+        rating,
+        text: reviewText.trim(),
+      })
+      setReviewName('')
+      setReviewText('')
+      setRating(0)
+      setReviewSubmitStatus('success')
+    } catch (err) {
+      setReviewSubmitStatus('error')
     }
-    setReviews((prev) => [newReview, ...prev])
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
   }
 
   const anchors = [
     { id: 'main', label: 'Основное' },
     ...(aboutTitle ? [{ id: 'about', label: aboutTitle }] : []),
+    ...(rooms.length > 0 ? [{ id: 'rooms', label: 'Номера' }] : []),
     ...sections.map((s) => ({ id: s.id, label: s.title })),
+    ...(mapData ? [{ id: 'map', label: 'Как добраться' }] : []),
     { id: 'contacts', label: 'Контакты' },
     ...(showReviews ? [{ id: 'reviews', label: 'Отзывы' }] : []),
   ]
@@ -227,8 +233,12 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>{categoryLabel}</div>
                   <div className={`${styles.serviceName} ${common.serviceName}`}>{serviceName}</div>
                   <div className={styles.serviceRating}>
-                    <div className={`${styles.ratingStars} ${common.ratingStars}`}><img src="/star.png" alt="" /> 5.0</div>
-                    <div className={`${styles.ratingFeedback} ${common.ratingFeedback}`}>{reviews.length} отзывов</div>
+                    <div className={`${styles.ratingStars} ${common.ratingStars}`}>
+                      <img src="/star.png" alt="" /> {configRating != null ? configRating : '—'}
+                    </div>
+                    <div className={`${styles.ratingFeedback} ${common.ratingFeedback}`}>
+                      {configReviewsCount != null ? `${configReviewsCount} отзывов` : `${mappedReviews.length} отзывов`}
+                    </div>
                   </div>
                   {tags.length > 0 && (
                     <div className={`${styles.serviceTags} ${common.serviceTags}`}>
@@ -243,16 +253,87 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
               {aboutTitle && (
                 <>
                   <div id="about" className={`${styles.title} ${common.title}`}>{aboutTitle}</div>
-                  <div className={`${styles.aboutText} ${common.aboutText}`}>{aboutContent}</div>
+                  <div className={`${styles.aboutText} ${common.aboutText}`}>
+                    {typeof aboutContent === 'string'
+                      ? <div className={common.aboutTextHtml || ''} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                      : aboutContent}
+                  </div>
                 </>
+              )}
+
+              {rooms.length > 0 && (
+                <div id="rooms">
+                  <div className={`${styles.title} ${common.title}`}>Номера</div>
+                  <div className={styles.roomCardsList}>
+                    {rooms.map((room, roomIdx) => (
+                      <div key={roomIdx} className={styles.roomCard}>
+                        <div className={styles.roomCardSlider}>
+                          {Array.isArray(room.images) && room.images.length > 0 ? (
+                            <div className={styles.roomSliderWrap} style={{ overflow: 'hidden', background: '#f8fafc' }}>
+                              <Swiper
+                                modules={[Navigation]}
+                                navigation
+                                spaceBetween={0}
+                                slidesPerView={1}
+                                className={styles.roomSlider}
+                              >
+                                {room.images.map((src, imgIdx) => (
+                                  <SwiperSlide key={imgIdx}>
+                                    <div className={styles.roomSlideImgWrap}>
+                                      <img src={src} alt={`${room.name} — фото ${imgIdx + 1}`} />
+                                    </div>
+                                  </SwiperSlide>
+                                ))}
+                              </Swiper>
+                            </div>
+                          ) : (
+                            <div className={styles.roomCardSliderPlaceholder}>Нет фото</div>
+                          )}
+                        </div>
+                        <div className={styles.roomCardInfo}>
+                          {room.name && <h3 className={styles.roomCardName}>{room.name}</h3>}
+                          {room.description && (
+                            <div className={`${styles.roomCardDescription} ${common.aboutTextHtml || ''}`} dangerouslySetInnerHTML={{ __html: room.description }} />
+                          )}
+                          {room.price && <div className={styles.roomCardPrice}>{room.price}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {sections.map((sec) => (
                 <div key={sec.id} id={sec.id}>
                   <div className={`${styles.title} ${common.title}`}>{sec.title}</div>
-                  <div className={`${styles.aboutText} ${common.aboutText}`}>{sec.content}</div>
+                  <div className={`${styles.aboutText} ${common.aboutText}`}>
+                    {Array.isArray(sec.content)
+                      ? (
+                          <ul className={common.bulletList || ''}>
+                            {sec.content.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        )
+                      : typeof sec.content === 'string'
+                        ? <div className={common.aboutTextHtml || ''} dangerouslySetInnerHTML={{ __html: sec.content }} />
+                        : sec.content}
+                  </div>
                 </div>
               ))}
+
+              {mapData && (
+                <div id="map" className={styles.mapSection} style={{ marginBottom: 24 }}>
+                  <div className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <YandexMapPlace
+                    latitude={mapData.latitude}
+                    longitude={mapData.longitude}
+                    title={mapData.title}
+                    location={mapData.location}
+                    image={mapData.image}
+                  />
+                </div>
+              )}
 
               <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
                 <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
@@ -282,12 +363,30 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
                           </button>
                         ))}
                       </div>
-                      <input type="text" className={styles.feedbackFormInput} placeholder="Ваше имя" value={reviewName} onChange={(ev) => setReviewName(ev.target.value)} />
-                      <textarea className={styles.feedbackFormTextarea} placeholder={reviewPlaceholder} value={reviewText} onChange={(ev) => setReviewText(ev.target.value)} rows={4} />
+                      <input
+                        type="text"
+                        className={styles.feedbackFormInput}
+                        placeholder="Ваше имя"
+                        value={reviewName}
+                        onChange={(ev) => setReviewName(ev.target.value)}
+                      />
+                      <textarea
+                        className={styles.feedbackFormTextarea}
+                        placeholder={reviewPlaceholder}
+                        value={reviewText}
+                        onChange={(ev) => setReviewText(ev.target.value)}
+                        rows={4}
+                      />
                       <button type="submit" className={`${styles.feedbackSubmitButton} ${common.feedbackSubmitButton}`}>Оставить отзыв</button>
+                      {reviewSubmitStatus === 'success' && (
+                        <p className={styles.reviewSubmitSuccess}>Спасибо! Отзыв отправлен на модерацию.</p>
+                      )}
+                      {reviewSubmitStatus === 'error' && (
+                        <p className={styles.reviewSubmitError}>Не удалось отправить отзыв. Попробуйте позже.</p>
+                      )}
                     </form>
                     <div className={styles.feedbackList}>
-                      {reviews.map((review) => {
+                      {(showAllReviews ? mappedReviews : mappedReviews.slice(0, 5)).map((review) => {
                         const isExpanded = expandedReviews[review.id]
                         const shortText = review.text.length > 200 ? review.text.slice(0, 200) + '...' : review.text
                         const showExpand = review.text.length > 200 && !isExpanded
@@ -295,26 +394,58 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
                           <div key={review.id} className={`${styles.feedbackItem} ${common.feedbackItem}`}>
                             <div className={styles.feedbackItemHeader}>
                               <div className={styles.feedbackItemLeft}>
-                                <img src={review.avatar || '/no-avatar.png'} alt="" className={styles.feedbackAvatar} onError={(e) => { e.target.src = '/no-avatar.png' }} />
+                                <img
+                                  src={review.avatar || '/no-avatar.png'}
+                                  alt=""
+                                  className={styles.feedbackAvatar}
+                                  onError={(e) => { e.target.src = '/no-avatar.png' }}
+                                />
                                 <div className={styles.feedbackItemInfo}>
                                   <div className={styles.feedbackItemNameRow}>
                                     <div className={styles.feedbackItemName}>{review.name}</div>
                                     <div className={styles.feedbackItemDate}>{review.date}</div>
                                   </div>
-                                  <div className={styles.feedbackItemRating}><StarIcon filled size={16} /><span>{review.rating}</span></div>
+                                  <div className={styles.feedbackItemRating}>
+                                    <StarIcon filled size={16} />
+                                    <span>{review.rating}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                             <div className={styles.feedbackItemText}>{isExpanded ? review.text : shortText}</div>
-                            {showExpand && <button type="button" className={`${styles.feedbackExpandButton} ${common.feedbackExpandButton}`} onClick={() => toggleReview(review.id)}>Показать полностью</button>}
-                            {isExpanded && review.text.length > 200 && <button type="button" className={`${styles.feedbackExpandButton} ${common.feedbackExpandButton}`} onClick={() => toggleReview(review.id)}>Свернуть</button>}
+                            {showExpand && (
+                              <button
+                                type="button"
+                                className={`${styles.feedbackExpandButton} ${common.feedbackExpandButton}`}
+                                onClick={() => toggleReview(review.id)}
+                              >
+                                Показать полностью
+                              </button>
+                            )}
+                            {isExpanded && review.text.length > 200 && (
+                              <button
+                                type="button"
+                                className={`${styles.feedbackExpandButton} ${common.feedbackExpandButton}`}
+                                onClick={() => toggleReview(review.id)}
+                              >
+                                Свернуть
+                              </button>
+                            )}
                           </div>
                         )
                       })}
                     </div>
-                  </div>
-                  <div className={styles.feedbackShowAll}>
-                    <button type="button" className={`${styles.feedbackShowAllButton} ${common.feedbackShowAllButton}`}>Показать все отзывы</button>
+                    {mappedReviews.length > 5 && (
+                      <div className={styles.feedbackShowAll}>
+                        <button
+                          type="button"
+                          className={`${styles.feedbackShowAllButton} ${common.feedbackShowAllButton}`}
+                          onClick={() => setShowAllReviews((v) => !v)}
+                        >
+                          {showAllReviews ? 'Свернуть отзывы' : `Показать все отзывы (${mappedReviews.length})`}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -328,10 +459,12 @@ export default function GenericServiceDetail({ config, specificStyles = {} }) {
                   </button>
                 ))}
               </div>
+              {/* Кнопки снизу — функционал будет позже у каждого типа услуги свой
               <div className={styles.anchorsButtons}>
                 <button type="button" className={`${styles.anchorButton} ${common.anchorButton}`}>Задать вопрос</button>
                 <button type="button" className={`${styles.anchorButtonPrimary} ${common.anchorButtonPrimary}`}>{primaryButtonText}</button>
               </div>
+              */}
             </div>
           </div>
         </div>

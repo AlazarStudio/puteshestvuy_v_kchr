@@ -26,6 +26,10 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
   const [error, setError] = useState(null);
   const geocodeDebounceRef = useRef(null);
   const isFirstGeocodeRunRef = useRef(true);
+  const onCoordinatesChangeRef = useRef(onCoordinatesChange);
+  const onLocationChangeRef = useRef(onLocationChange);
+  onCoordinatesChangeRef.current = onCoordinatesChange;
+  onLocationChangeRef.current = onLocationChange;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -85,9 +89,8 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
 
     placemark.events.add('dragend', () => {
       const coords = placemark.geometry.getCoordinates();
-      if (onCoordinatesChange) {
-        onCoordinatesChange(coords[0], coords[1]);
-      }
+      const cb = onCoordinatesChangeRef.current;
+      if (cb) cb(coords[0], coords[1]);
     });
 
     map.geoObjects.add(placemark);
@@ -113,7 +116,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
     mapRef.current.setCenter(coords);
   }, [visible, scriptReady, latitude, longitude]);
 
-  // Геокодирование при изменении названия (после паузы 800 ms). Первый запуск при открытии формы пропускаем — не слать запрос просто из‑за открытия страницы.
+  // Геокодирование только при изменении запроса. Колбэки через ref, чтобы после перетаскивания маркера эффект не перезапускался и не перезаписывал координаты.
   useEffect(() => {
     if (!scriptReady || !window.ymaps) return;
 
@@ -132,10 +135,12 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
         const first = res.geoObjects.get(0);
         if (!first) return;
         const coords = first.geometry.getCoordinates();
-        if (onCoordinatesChange) onCoordinatesChange(coords[0], coords[1]);
-        if (onLocationChange) {
+        const coordCb = onCoordinatesChangeRef.current;
+        if (coordCb) coordCb(coords[0], coords[1]);
+        const locationCb = onLocationChangeRef.current;
+        if (locationCb) {
           const shortLocation = getLocationInKchr(first);
-          if (shortLocation) onLocationChange(shortLocation);
+          if (shortLocation) locationCb(shortLocation);
         }
       }).catch(() => {});
     }, GEOCODE_DEBOUNCE_MS);
@@ -143,7 +148,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
     return () => {
       if (geocodeDebounceRef.current) clearTimeout(geocodeDebounceRef.current);
     };
-  }, [scriptReady, geocodeQuery, onCoordinatesChange, onLocationChange]);
+  }, [scriptReady, geocodeQuery]);
 
   // по кнопке «Найти по адресу» — принудительно геокодируем (даже если координаты уже есть)
   const prevGeocodeTriggerRef = useRef(geocodeTrigger);
@@ -155,13 +160,15 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
       const first = res.geoObjects.get(0);
       if (!first) return;
       const coords = first.geometry.getCoordinates();
-      if (onCoordinatesChange) onCoordinatesChange(coords[0], coords[1]);
-      if (onLocationChange) {
+      const coordCb = onCoordinatesChangeRef.current;
+      if (coordCb) coordCb(coords[0], coords[1]);
+      const locationCb = onLocationChangeRef.current;
+      if (locationCb) {
         const shortLocation = getLocationInKchr(first);
-        if (shortLocation) onLocationChange(shortLocation);
+        if (shortLocation) locationCb(shortLocation);
       }
     }).catch(() => {});
-  }, [scriptReady, geocodeQuery, geocodeTrigger, onCoordinatesChange, onLocationChange]);
+  }, [scriptReady, geocodeQuery, geocodeTrigger]);
 
   if (!visible) return null;
 

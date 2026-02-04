@@ -7,6 +7,7 @@ import { buildGenericServiceConfig } from '@/sections/Services/ServiceDetail/bui
 import ServiceDetail from '@/sections/Services/ServiceDetail/ServiceDetail'
 import ActivityDetail from '@/sections/Services/ServiceDetail/ActivityDetail'
 import EquipmentRentalDetail from '@/sections/Services/ServiceDetail/EquipmentRentalDetail'
+import RoadsideServiceDetail from '@/sections/Services/ServiceDetail/RoadsideServiceDetail'
 import GenericServiceDetail from '@/sections/Services/ServiceDetail/GenericServiceDetail'
 
 export default function ServicePageContent({ slug }) {
@@ -60,7 +61,15 @@ export default function ServicePageContent({ slug }) {
       return <ActivityDetail serviceSlug={slug} serviceData={service} />
     case 'equipment-rental':
       return <EquipmentRentalDetail serviceSlug={slug} serviceData={service} />
+    case 'roadside-service':
+      return <RoadsideServiceDetail serviceSlug={slug} serviceData={service} />
     default:
-      return <GenericServiceDetail config={buildGenericServiceConfig(service)} />
+      return (
+        <GenericServiceDetail
+          config={buildGenericServiceConfig(service)}
+          serviceId={service.id}
+          serviceSlug={slug}
+        />
+      )
   }
 }

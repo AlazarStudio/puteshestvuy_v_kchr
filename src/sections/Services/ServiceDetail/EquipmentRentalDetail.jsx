@@ -11,7 +11,8 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
-import { getImageUrl } from '@/lib/api'
+import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import YandexMapPlace from '@/components/YandexMapPlace'
 
 const DEFAULT_PHOTOS = [
   { src: '/routeGalery1.png' },
@@ -59,6 +60,12 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
     return DEFAULT_PHOTOS
   }, [serviceData?.images])
 
+  const avatarSrc = useMemo(() => {
+    if (serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
+    if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
+    return '/serviceImg3.png'
+  }, [serviceData?.data?.avatar, serviceData?.images])
+
   const serviceName = serviceData?.title ?? 'Прокат туристического снаряжения'
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
   const defaultAbout = (
@@ -72,11 +79,28 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
     if (Array.isArray(fromData) && fromData.length > 0) return fromData
     return DEFAULT_EQUIPMENT
   }, [serviceData?.data?.equipmentItems])
+  const criteriaList = useMemo(() => {
+    const fromData = serviceData?.data?.criteriaList
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData.filter((s) => String(s).trim())
+    return []
+  }, [serviceData?.data?.criteriaList])
   const conditions = useMemo(() => {
     const fromData = serviceData?.data?.conditions
-    if (Array.isArray(fromData) && fromData.length > 0) return fromData
+    if (Array.isArray(fromData) && fromData.length > 0) return fromData.filter((s) => String(s).trim())
     return DEFAULT_CONDITIONS
   }, [serviceData?.data?.conditions])
+  const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '0 отзывов'
+  const reviews = useMemo(() => {
+    const list = Array.isArray(serviceData?.reviews) ? serviceData.reviews : []
+    return list.map((r) => ({
+      id: r.id,
+      name: r.authorName || 'Гость',
+      date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '',
+      rating: r.rating ?? 5,
+      text: r.text || '',
+      avatar: r.authorAvatar || '',
+    }))
+  }, [serviceData?.reviews])
   const contactsList = useMemo(() => {
     if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
     return buildContactsFromService(serviceData)
@@ -88,25 +112,9 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
   const [reviewName, setReviewName] = useState('')
   const [reviewText, setReviewText] = useState('')
   const [expandedReviews, setExpandedReviews] = useState({})
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const [activeAnchor, setActiveAnchor] = useState('main')
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'Олег',
-      date: '15 августа 2025',
-      rating: 5.0,
-      text: 'Взяли палатки и спальники на неделю. Всё чистое, без поломок. Выдали быстро, объяснили как пользоваться. Рекомендую.',
-      avatar: '/avatar_feedback.png',
-    },
-    {
-      id: 2,
-      name: 'Мария',
-      date: '3 июля 2025',
-      rating: 5.0,
-      text: 'Прокат снаряжения для похода организован отлично. Цены адекватные, оборудование в хорошем состоянии.',
-      avatar: '',
-    },
-  ])
+  const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null)
 
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
@@ -170,29 +178,28 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
 
   const handleStarClick = (starIndex) => setRating(starIndex + 1)
 
-  const formatDate = (date) => {
-    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
-  }
-
-  const handleSubmitReview = (ev) => {
+  const handleSubmitReview = async (ev) => {
     ev.preventDefault()
-    if (!reviewName.trim() || !reviewText.trim() || rating === 0) {
-      alert('Заполните имя, отзыв и выберите рейтинг')
+    if (!reviewName.trim() || !reviewText.trim() || rating < 1) {
+      alert('Пожалуйста, заполните все поля и выберите рейтинг')
       return
     }
-    const newReview = {
-      id: reviews.length ? Math.max(...reviews.map((r) => r.id)) + 1 : 1,
-      name: reviewName.trim(),
-      date: formatDate(new Date()),
-      rating,
-      text: reviewText.trim(),
-      avatar: '/profile.png',
+    const serviceId = serviceData?.id || serviceSlug
+    if (!serviceId) return
+    setReviewSubmitStatus(null)
+    try {
+      await publicServicesAPI.createReview(serviceId, {
+        authorName: reviewName.trim(),
+        rating,
+        text: reviewText.trim(),
+      })
+      setReviewName('')
+      setReviewText('')
+      setRating(0)
+      setReviewSubmitStatus('success')
+    } catch (err) {
+      setReviewSubmitStatus('error')
     }
-    setReviews((prev) => [newReview, ...prev])
-    setReviewName('')
-    setReviewText('')
-    setRating(0)
   }
 
   const anchors = [
@@ -292,28 +299,35 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
             <div className={`${styles.serviceBlock_content} ${common.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${common.serviceHeader}`}>
                 <div className={`${styles.serviceAvatar} ${common.serviceAvatar}`}>
-                  <img src="/serviceImg3.png" alt="Прокат" className={`${styles.avatarImg} ${common.avatarImg}`} />
+                  <img src={avatarSrc} alt="Прокат" className={`${styles.avatarImg} ${common.avatarImg}`} />
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>Прокат оборудования</div>
                   <div className={`${styles.serviceName} ${common.serviceName}`}>{serviceName}</div>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${common.ratingStars}`}>
-                      <img src="/star.png" alt="" /> 5.0
+                      <img src="/star.png" alt="" /> {serviceData?.rating ?? '5.0'}
                     </div>
-                    <div className={`${styles.ratingFeedback} ${common.ratingFeedback}`}>{reviews.length} отзывов</div>
+                    <div className={`${styles.ratingFeedback} ${common.ratingFeedback}`}>{reviewsCountLabel}</div>
                   </div>
-                  <div className={`${styles.serviceTags} ${common.serviceTags}`}>
-                    <span className={`${styles.serviceTag} ${common.serviceTag}`}>пос. Архыз</span>
-                    <span className={`${styles.serviceTag} ${common.serviceTag}`}>ежедневно 9:00–19:00</span>
-                  </div>
+                  {criteriaList.length > 0 && (
+                    <div className={`${styles.serviceTags} ${common.serviceTags}`}>
+                      {criteriaList.map((tag, i) => (
+                        <span key={i} className={`${styles.serviceTag} ${common.serviceTag}`}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div id="about" className={`${styles.title} ${common.title}`}>О прокате</div>
               <div className={`${styles.aboutText} ${common.aboutText}`}>
                 {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? <p>{aboutContent}</p> : aboutContent
+                  typeof aboutContent === 'string' ? (
+                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                  ) : (
+                    aboutContent
+                  )
                 ) : (
                   defaultAbout
                 )}
@@ -342,6 +356,21 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                   ))}
                 </ul>
               </div>
+
+              {serviceData?.latitude != null && serviceData?.longitude != null && (
+                <>
+                  <div className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div style={{ marginBottom: 24 }}>
+                    <YandexMapPlace
+                      latitude={serviceData.latitude}
+                      longitude={serviceData.longitude}
+                      title={serviceData?.title}
+                      location={serviceData?.address}
+                      image={serviceData?.images?.[0] ? getImageUrl(serviceData.images[0]) : null}
+                    />
+                  </div>
+                </>
+              )}
 
               {contactsList.length > 0 && (
                 <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
@@ -395,9 +424,15 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                   <button type="submit" className={`${styles.feedbackSubmitButton} ${common.feedbackSubmitButton}`}>
                     Оставить отзыв
                   </button>
+                  {reviewSubmitStatus === 'success' && (
+                    <p className={styles.reviewSubmitSuccess}>Спасибо! Отзыв отправлен на модерацию.</p>
+                  )}
+                  {reviewSubmitStatus === 'error' && (
+                    <p className={styles.reviewSubmitError}>Не удалось отправить отзыв. Попробуйте позже.</p>
+                  )}
                 </form>
                 <div className={styles.feedbackList}>
-                  {reviews.map((review) => {
+                  {(showAllReviews ? reviews : reviews.slice(0, 5)).map((review) => {
                     const isExpanded = expandedReviews[review.id]
                     const shortText = review.text.length > 200 ? review.text.slice(0, 200) + '...' : review.text
                     const showExpand = review.text.length > 200 && !isExpanded
@@ -425,9 +460,17 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                     )
                   })}
                 </div>
-              </div>
-              <div className={styles.feedbackShowAll}>
-                <button type="button" className={`${styles.feedbackShowAllButton} ${common.feedbackShowAllButton}`}>Показать все отзывы</button>
+                {reviews.length > 5 && (
+                  <div className={styles.feedbackShowAll}>
+                    <button
+                      type="button"
+                      className={`${styles.feedbackShowAllButton} ${common.feedbackShowAllButton}`}
+                      onClick={() => setShowAllReviews((v) => !v)}
+                    >
+                      {showAllReviews ? 'Свернуть отзывы' : `Показать все отзывы (${reviews.length})`}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -444,10 +487,12 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                   </button>
                 ))}
               </div>
+              {/* Кнопки снизу — функционал будет позже
               <div className={styles.anchorsButtons}>
                 <button type="button" className={`${styles.anchorButton} ${common.anchorButton}`}>Задать вопрос</button>
                 <button type="button" className={`${styles.anchorButtonPrimary} ${common.anchorButtonPrimary}`}>Оформить заявку на прокат</button>
               </div>
+              */}
             </div>
           </div>
         </div>

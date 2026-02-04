@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Upload, X, Plus, Trash2, Eye, EyeOff, Map } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import { CATEGORY_TO_TEMPLATE_KEY } from '@/sections/Services/ServiceDetail/serviceTypeTemplates';
 import { SERVICE_TYPE_FIELDS } from '@/sections/Services/ServiceDetail/serviceTypeFields';
@@ -51,6 +52,7 @@ const categories = [
 ];
 
 function getTemplateKey(category) {
+  if (!category) return null;
   return CATEGORY_TO_TEMPLATE_KEY[category] || 'guide';
 }
 
@@ -69,9 +71,20 @@ function getFormSnapshot(data) {
       item.type === 'url' ? item.value : `file:${item.value?.name ?? ''}`
     );
   }
+  if (Array.isArray(rawData.roomTypes)) {
+    dataForSnapshot.roomTypes = rawData.roomTypes.map((room) => ({
+      name: room.name,
+      price: room.price,
+      description: room.description ?? '',
+      images: (room.images || []).map((img) => (img.type === 'url' ? img.value : `file:${img.value?.name ?? ''}`)),
+    }));
+  }
   return {
     title: (data.title ?? '').trim(),
-    category: data.category ?? 'Гид',
+    category: data.category ?? '',
+    address: (data.address ?? '').trim(),
+    latitude: data.latitude != null ? Number(data.latitude) : null,
+    longitude: data.longitude != null ? Number(data.longitude) : null,
     isActive: !!data.isActive,
     isVerified: !!data.isVerified,
     data: JSON.stringify(dataForSnapshot),
@@ -88,12 +101,16 @@ export default function ServiceEditPage() {
 
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Гид',
+    category: '',
+    address: '',
+    latitude: null,
+    longitude: null,
     images: [],
     isActive: true,
     isVerified: false,
     data: {},
   });
+  const [mapVisible, setMapVisible] = useState(false);
 
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
@@ -104,6 +121,8 @@ export default function ServiceEditPage() {
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState(null);
   const certificateFileInputRef = useRef(null);
   const certificateFieldKeyRef = useRef(null);
+  const roomListImageInputRef = useRef(null);
+  const roomListContextRef = useRef({ key: null, roomIndex: null });
   /** Выбор иконки контакта: ключ поля (например contacts), индекс элемента в списке */
   const [contactIconPickerKey, setContactIconPickerKey] = useState(null);
   const [contactIconPickerIndex, setContactIconPickerIndex] = useState(null);
@@ -196,6 +215,10 @@ export default function ServiceEditPage() {
           )
         : [];
       const isGuide = data.category === 'Гид';
+      const isActivity = data.category === 'Активности';
+      const isEquipmentRental = data.category === 'Прокат оборудования';
+      const isCafe = data.category === 'Кафе и ресторан';
+      const isRoadsideService = data.category === 'Пункты придорожного сервиса';
       const mainImages = Array.isArray(data.images) ? data.images : [];
       let guideAvatar = rawData.avatar;
       let guideGalleryImages = rawData.galleryImages;
@@ -204,9 +227,19 @@ export default function ServiceEditPage() {
         if (!Array.isArray(guideGalleryImages) && mainImages.length > 1) guideGalleryImages = mainImages.slice(1);
         if (!Array.isArray(guideGalleryImages)) guideGalleryImages = [];
       }
+      const otherAvatar = !isGuide && rawData.avatar != null ? { type: 'url', value: rawData.avatar } : null;
+      const templateKey = getTemplateKey(data.category);
+      const typeFieldsForLoad = templateKey ? (SERVICE_TYPE_FIELDS[templateKey] || []) : [];
+      const hasCriteriaListField = typeFieldsForLoad.some((f) => f.key === 'criteriaList');
+      const migratedCriteriaList = hasCriteriaListField && (rawData.criteriaList ?? rawData.tags) != null
+        ? (Array.isArray(rawData.criteriaList) ? rawData.criteriaList : (Array.isArray(rawData.tags) ? rawData.tags : String(rawData.tags || '').split(',').map((s) => s.trim()).filter(Boolean)))
+        : undefined;
       const next = {
         title: data.title ?? '',
-        category: data.category ?? 'Гид',
+        category: data.category ?? '',
+        address: data.address ?? '',
+        latitude: data.latitude != null ? Number(data.latitude) : null,
+        longitude: data.longitude != null ? Number(data.longitude) : null,
         images: isGuide ? [] : mainImages.map((url) => ({ type: 'url', value: url })),
         isActive: data.isActive !== false,
         isVerified: data.isVerified === true,
@@ -218,6 +251,8 @@ export default function ServiceEditPage() {
             galleryImages: guideGalleryImages.map((url) => ({ type: 'url', value: url })),
             galleryEnabled: rawData.galleryEnabled !== false,
           }),
+          ...(otherAvatar && { avatar: otherAvatar }),
+          ...(migratedCriteriaList != null && { criteriaList: migratedCriteriaList }),
         },
       };
       setFormData(next);
@@ -364,6 +399,7 @@ export default function ServiceEditPage() {
       const isGuide = formData.category === 'Гид';
       let resolvedGuideAvatar = '';
       let resolvedGuideGallery = [];
+      let resolvedOtherAvatar = '';
 
       if (isGuide) {
         const avatarItem = formData.data?.avatar;
@@ -387,6 +423,14 @@ export default function ServiceEditPage() {
         if (resolvedGuideAvatar) imageUrls.push(resolvedGuideAvatar);
         imageUrls.push(...resolvedGuideGallery);
       } else {
+        const avatarItem = formData.data?.avatar;
+        if (avatarItem?.type === 'url') resolvedOtherAvatar = avatarItem.value;
+        else if (avatarItem?.type === 'file') {
+          const fd = new FormData();
+          fd.append('file', avatarItem.value);
+          const res = await mediaAPI.upload(fd);
+          if (res.data?.url) resolvedOtherAvatar = res.data.url;
+        }
         for (const item of formData.images) {
           if (item.type === 'url') imageUrls.push(item.value);
           else {
@@ -404,6 +448,27 @@ export default function ServiceEditPage() {
         dataToSave.galleryImages = resolvedGuideGallery;
         dataToSave.galleryEnabled = formData.data?.galleryEnabled !== false;
       }
+      if (!isGuide) {
+        dataToSave.avatar = resolvedOtherAvatar || undefined;
+      }
+      if (Array.isArray(dataToSave.roomTypes) && dataToSave.roomTypes.length > 0) {
+        const resolvedRoomTypes = [];
+        for (const room of dataToSave.roomTypes) {
+          const images = Array.isArray(room.images) ? room.images : [];
+          const urls = [];
+          for (const img of images) {
+            if (img?.type === 'url' && img.value) urls.push(img.value);
+            else if (img?.type === 'file' && img.value) {
+              const fd = new FormData();
+              fd.append('file', img.value);
+              const res = await mediaAPI.upload(fd);
+              if (res.data?.url) urls.push(res.data.url);
+            }
+          }
+          resolvedRoomTypes.push({ name: room.name ?? '', price: room.price ?? '', description: room.description ?? '', images: urls });
+        }
+        dataToSave.roomTypes = resolvedRoomTypes;
+      }
       if (Array.isArray(dataToSave.contacts)) {
         dataToSave.contacts = dataToSave.contacts.map((c) => {
           const href = c?.href ?? '';
@@ -419,6 +484,9 @@ export default function ServiceEditPage() {
       const payload = {
         title: formData.title.trim(),
         category: formData.category || null,
+        address: formData.address?.trim() || null,
+        latitude: formData.latitude != null ? Number(formData.latitude) : null,
+        longitude: formData.longitude != null ? Number(formData.longitude) : null,
         images: imageUrls,
         isActive: formData.isActive,
         isVerified: formData.category === 'Гид' ? formData.isVerified : false,
@@ -447,6 +515,12 @@ export default function ServiceEditPage() {
             if (item?.type === 'file' && item.preview) URL.revokeObjectURL(item.preview);
           });
         } else {
+          if (formData.data?.avatar?.type === 'file' && formData.data.avatar.preview) URL.revokeObjectURL(formData.data.avatar.preview);
+          (formData.data?.roomTypes ?? []).forEach((room) => {
+            (room.images ?? []).forEach((img) => {
+              if (img?.type === 'file' && img.preview) URL.revokeObjectURL(img.preview);
+            });
+          });
           formData.images.forEach((item) => {
             if (item?.type === 'file' && item.preview) URL.revokeObjectURL(item.preview);
           });
@@ -461,6 +535,9 @@ export default function ServiceEditPage() {
             ...(isGuide && {
               avatar: resolvedGuideAvatar ? { type: 'url', value: resolvedGuideAvatar } : null,
               galleryImages: resolvedGuideGallery.map((url) => ({ type: 'url', value: url })),
+            }),
+            ...(!isGuide && {
+              avatar: resolvedOtherAvatar ? { type: 'url', value: resolvedOtherAvatar } : null,
             }),
           },
         };
@@ -488,7 +565,7 @@ export default function ServiceEditPage() {
   }, [isDirty]);
 
   const templateKey = getTemplateKey(formData.category);
-  const typeFields = SERVICE_TYPE_FIELDS[templateKey] || [];
+  const typeFields = templateKey ? (SERVICE_TYPE_FIELDS[templateKey] || []) : [];
 
   const renderField = (field) => {
     const value = formData.data[field.key];
@@ -506,12 +583,11 @@ export default function ServiceEditPage() {
         );
       case 'textarea':
         return (
-          <textarea
-            className={styles.formInput}
+          <RichTextEditor
             value={value ?? ''}
-            onChange={(e) => setData(key, e.target.value)}
-            rows={4}
+            onChange={(v) => setData(key, v)}
             placeholder={field.label}
+            minHeight={300}
           />
         );
       case 'certificateList': {
@@ -840,6 +916,40 @@ export default function ServiceEditPage() {
           />
         );
       }
+      case 'tagList': {
+        const list = Array.isArray(value) ? value : [];
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {list.map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="Пункт"
+                  value={typeof item === 'string' ? item : ''}
+                  onChange={(e) => {
+                    const next = [...list];
+                    next[i] = e.target.value;
+                    setData(key, next);
+                  }}
+                />
+                <button type="button" onClick={() => setData(key, list.filter((_, j) => j !== i))} className={styles.deleteBtn} title="Удалить">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setData(key, [...list, ''])}
+              className={styles.addBtn}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <Plus size={14} /> Добавить
+            </button>
+          </div>
+        );
+      }
       case 'equipmentList': {
         const list = Array.isArray(value) ? value : [];
         return (
@@ -944,6 +1054,166 @@ export default function ServiceEditPage() {
           </div>
         );
       }
+      case 'roomList': {
+        const rawList = Array.isArray(value) ? value : [];
+        const list = rawList.map((r) => ({
+          name: r.name ?? '',
+          price: r.price ?? '',
+          description: r.description ?? '',
+          images: (Array.isArray(r.images) ? r.images : []).map((img) =>
+            typeof img === 'string' ? { type: 'url', value: img } : img
+          ),
+        }));
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <input
+              ref={roomListImageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                e.target.value = '';
+                if (files.length === 0) return;
+                const { key: ctxKey, roomIndex } = roomListContextRef.current;
+                if (ctxKey !== key || roomIndex == null) return;
+                const newImages = files.map((file) => ({ type: 'file', value: file, preview: URL.createObjectURL(file) }));
+                const next = list.map((room, j) =>
+                  j === roomIndex ? { ...room, images: [...room.images, ...newImages] } : room
+                );
+                setData(key, next);
+              }}
+            />
+            {list.map((room, roomIdx) => (
+              <div key={roomIdx} className={styles.formCardRow} style={{ flexWrap: 'wrap', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    style={{ minWidth: 160 }}
+                    placeholder="Название номера"
+                    value={room.name}
+                    onChange={(e) => {
+                      const next = list.map((r, j) => (j === roomIdx ? { ...r, name: e.target.value } : r));
+                      setData(key, next);
+                    }}
+                  />
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    style={{ width: 120 }}
+                    placeholder="Цена"
+                    value={room.price}
+                    onChange={(e) => {
+                      const next = list.map((r, j) => (j === roomIdx ? { ...r, price: e.target.value } : r));
+                      setData(key, next);
+                    }}
+                  />
+                  <button type="button" onClick={() => setData(key, list.filter((_, j) => j !== roomIdx))} className={styles.deleteBtn} title="Удалить номер">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div style={{ width: '100%' }}>
+                  <label className={styles.formLabel}>Описание номера</label>
+                  <RichTextEditor
+                    value={room.description}
+                    onChange={(v) => {
+                      const next = list.map((r, j) => (j === roomIdx ? { ...r, description: v } : r));
+                      setData(key, next);
+                    }}
+                    placeholder="Описание номера, удобства..."
+                    minHeight={120}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  <span className={styles.formLabel} style={{ marginBottom: 0 }}>Фото номера (можно выбрать несколько)</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {room.images.map((img, imgIdx) => (
+                      <div key={imgIdx} className={styles.previewItem} style={{ position: 'relative' }}>
+                        <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+                        <button
+                          type="button"
+                          className={styles.removeImage}
+                          style={{ position: 'absolute', top: 4, right: 4 }}
+                          onClick={() => {
+                            if (img.type === 'file' && img.preview) URL.revokeObjectURL(img.preview);
+                            const next = list.map((r, j) =>
+                              j === roomIdx ? { ...r, images: r.images.filter((_, i) => i !== imgIdx) } : r
+                            );
+                            setData(key, next);
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className={styles.addBtn}
+                      onClick={() => {
+                        roomListContextRef.current = { key, roomIndex: roomIdx };
+                        roomListImageInputRef.current?.click();
+                      }}
+                    >
+                      <Plus size={14} /> Добавить фото
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={() => setData(key, [...list, { name: '', price: '', description: '', images: [] }])} className={styles.addBtn} style={{ alignSelf: 'flex-start' }}>
+              <Plus size={14} /> Добавить номер
+            </button>
+          </div>
+        );
+      }
+      case 'titleTextList': {
+        const list = Array.isArray(value) ? value : [];
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {list.map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="Название"
+                  value={item.title ?? ''}
+                  onChange={(e) => {
+                    const next = [...list];
+                    next[i] = { ...next[i], title: e.target.value };
+                    setData(key, next);
+                  }}
+                />
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  style={{ flex: 1, minWidth: 0 }}
+                  placeholder="Текст"
+                  value={item.text ?? ''}
+                  onChange={(e) => {
+                    const next = [...list];
+                    next[i] = { ...next[i], text: e.target.value };
+                    setData(key, next);
+                  }}
+                />
+                <button type="button" onClick={() => setData(key, list.filter((_, j) => j !== i))} className={styles.deleteBtn} title="Удалить">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setData(key, [...list, { title: '', text: '' }])}
+              className={styles.addBtn}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <Plus size={14} /> Добавить
+            </button>
+          </div>
+        );
+      }
       default:
         return (
           <input
@@ -978,26 +1248,14 @@ export default function ServiceEditPage() {
         {error && <div className={styles.error}>{error}</div>}
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Название *</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className={styles.formInput}
-            required
-            placeholder="Название услуги или имя специалиста"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
           <label className={styles.formLabel}>Тип услуги</label>
           <select
             name="category"
-            value={formData.category}
+            value={formData.category || ''}
             onChange={handleChange}
             className={styles.formSelect}
           >
+            <option value="" disabled>Выберите тип услуги</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -1021,36 +1279,112 @@ export default function ServiceEditPage() {
           )}
         </div>
 
+        {formData.category && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Название *</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className={styles.formInput}
+              required
+              placeholder="Название услуги или имя специалиста"
+            />
+          </div>
+        )}
+
+        {formData.category && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              {formData.category === 'Гид' ? 'Аватар гида' : 'Аватар (для карточки в списке и на странице)'}
+            </label>
+            <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+              {formData.category === 'Гид'
+                ? 'Одно фото для карточки и блока о специалисте. Загружается при нажатии «Сохранить».'
+                : 'Фото для карточки услуги (круглое изображение). Загружается при нажатии «Сохранить».'}
+            </p>
+            <div className={styles.imageUpload}>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                id={formData.category === 'Гид' ? 'guideAvatarUpload' : 'serviceAvatarUpload'}
+                onChange={handleGuideAvatarUpload}
+              />
+              <label
+                htmlFor={formData.category === 'Гид' ? 'guideAvatarUpload' : 'serviceAvatarUpload'}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}
+              >
+                <Upload size={20} /> Загрузить аватар
+              </label>
+            </div>
+            {formData.data?.avatar && (
+              <div className={styles.imagePreview} style={{ marginTop: 12 }}>
+                <div className={styles.previewItem}>
+                  <img src={formData.data.avatar.type === 'url' ? getImageUrl(formData.data.avatar.value) : formData.data.avatar.preview} alt="Аватар" />
+                  <button type="button" onClick={removeGuideAvatar} className={styles.removeImage} title="Удалить" aria-label="Удалить">
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {formData.category && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Адрес (для карты на сайте)</label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                className={styles.formInput}
+                placeholder="Введите адрес — на карте появится точка"
+                style={{ flex: '1 1 280px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setMapVisible((v) => !v)}
+                className={mapVisible ? styles.viewBtn : styles.editBtn}
+                style={{ padding: 15 }}
+                title={mapVisible ? 'Скрыть карту' : 'Показать карту'}
+                aria-label={mapVisible ? 'Скрыть карту' : 'Показать карту'}
+              >
+                {mapVisible ? <EyeOff size={18} /> : <Map size={18} />}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {formData.category && mapVisible && (
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Местоположение на карте</label>
+            <YandexMapPicker
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              geocodeQuery={formData.address?.trim() || ''}
+              onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+              visible={true}
+              height={500}
+            />
+          </div>
+        )}
+
+        {formData.category && !mapVisible && formData.address?.trim() && (
+          <YandexMapPicker
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            geocodeQuery={formData.address.trim()}
+            onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+            visible={false}
+            height={500}
+          />
+        )}
+
         {formData.category === 'Гид' ? (
           <>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Аватар гида</label>
-              <p className={styles.imageHint} style={{ marginBottom: 12 }}>
-                Одно фото для карточки и блока о специалисте. Загружается при нажатии «Сохранить».
-              </p>
-              <div className={styles.imageUpload}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  id="guideAvatarUpload"
-                  onChange={handleGuideAvatarUpload}
-                />
-                <label htmlFor="guideAvatarUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                  <Upload size={20} /> Загрузить аватар
-                </label>
-              </div>
-              {formData.data?.avatar && (
-                <div className={styles.imagePreview} style={{ marginTop: 12 }}>
-                  <div className={styles.previewItem}>
-                    <img src={formData.data.avatar.type === 'url' ? getImageUrl(formData.data.avatar.value) : formData.data.avatar.preview} alt="Аватар" />
-                    <button type="button" onClick={removeGuideAvatar} className={styles.removeImage} title="Удалить" aria-label="Удалить">
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Галерея</label>
               <p className={styles.imageHint} style={{ marginBottom: 12 }}>
@@ -1092,7 +1426,7 @@ export default function ServiceEditPage() {
               )}
             </div>
           </>
-        ) : (
+        ) : formData.category ? (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Изображения</label>
             <p className={styles.imageHint} style={{ marginBottom: 12 }}>
@@ -1145,7 +1479,7 @@ export default function ServiceEditPage() {
               </>
             )}
           </div>
-        )}
+        ) : null}
 
         {typeFields.length > 0 && (
           <div className={styles.formGroup} style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
