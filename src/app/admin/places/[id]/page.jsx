@@ -90,12 +90,14 @@ export default function PlaceEditPage() {
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [pendingImages, setPendingImages] = useState({});
+  const [pendingGallery, setPendingGallery] = useState([]);
   const [savedVersion, setSavedVersion] = useState(0);
   const previewUploadRef = useRef(null);
   const savedFormDataRef = useRef(null);
   const pendingImagesRef = useRef(pendingImages);
   pendingImagesRef.current = pendingImages;
   const pendingGalleryRef = useRef([]);
+  pendingGalleryRef.current = pendingGallery;
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
   const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
 
@@ -328,12 +330,6 @@ export default function PlaceEditPage() {
       (pendingGalleryRef.current || []).forEach((p) => URL.revokeObjectURL(p.preview));
     };
   }, []);
-
-  const [pendingGallery, setPendingGallery] = useState([]);
-
-  useEffect(() => {
-    pendingGalleryRef.current = pendingGallery;
-  }, [pendingGallery]);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
