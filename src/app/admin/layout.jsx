@@ -9,7 +9,8 @@ import {
   Star,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from 'lucide-react';
 import styles from './admin.module.css';
 
@@ -18,6 +19,7 @@ export const AdminBreadcrumbContext = createContext(null);
 
 const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard },
+  { href: '/admin/region', label: 'О регионе', icon: Globe },
   { href: '/admin/places', label: 'Места', icon: MapPin },
   { href: '/admin/routes', label: 'Маршруты', icon: Map },
   { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper },
@@ -136,7 +138,8 @@ export default function AdminLayout() {
                   part === 'places' ? 'Места' :
                   part === 'news' ? 'Новости и статьи' :
                   part === 'services' ? 'Услуги' :
-                  part === 'reviews' ? 'Отзывы' : part;
+                  part === 'reviews' ? 'Отзывы' :
+                  part === 'region' ? 'О регионе' : part;
               const href = '/' + arr.slice(0, index + 1).join('/');
               return (
                 <span key={index}>

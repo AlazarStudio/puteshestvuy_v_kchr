@@ -186,6 +186,18 @@
   color: #333;
 }
 
+.introRichText p {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 170%;
+  color: #333;
+  /* margin-bottom: 20px; */
+}
+
+.introRichText p:last-child {
+  margin-bottom: 0;
+}
+
 .introImage {
   border-radius: 20px;
   overflow: hidden;
@@ -266,7 +278,7 @@
 .timelineItem::before {
   content: '';
   position: absolute;
-  left: -25px;
+  left: -30px;
   top: 5px;
   width: 14px;
   height: 14px;
@@ -349,7 +361,8 @@
   color: #000;
 }
 
-.natureCardContent p {
+.natureCardContent p,
+.natureCardDesc {
   font-weight: 400;
   font-size: 16px;
   line-height: 160%;
@@ -433,6 +446,11 @@
   gap: 20px;
 }
 
+.placeBlockLink {
+  text-decoration: none;
+  color: inherit;
+}
+
 .placesMore {
   display: flex;
   justify-content: center;
@@ -488,7 +506,7 @@
   font-weight: 700;
   font-size: 40px;
   line-height: 120%;
-  margin-bottom: 20px;
+  /* margin-bottom: 20px; */
 }
 
 .ctaText {

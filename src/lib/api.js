@@ -167,4 +167,15 @@ export const statsAPI = {
   getDashboard: () => api.get('/admin/stats'),
 };
 
+// Region API (страница «О регионе»)
+export const regionAPI = {
+  get: () => api.get('/admin/region'),
+  update: (content) => api.put('/admin/region', { content }),
+};
+
+// Region API (public — для страницы «О регионе»)
+export const publicRegionAPI = {
+  get: () => api.get('/region'),
+};
+
 export default api;

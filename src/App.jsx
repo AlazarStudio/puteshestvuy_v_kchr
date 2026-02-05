@@ -24,6 +24,7 @@ import AdminNewsEditPage from '@/app/admin/news/[id]/page'
 import AdminServicesPage from '@/app/admin/services/page'
 import AdminServiceEditPage from '@/app/admin/services/[id]/page'
 import AdminReviewsPage from '@/app/admin/reviews/page'
+import AdminRegionPage from '@/app/admin/region/page'
 
 function PublicLayout() {
   return (
@@ -91,6 +92,7 @@ export default function App() {
         <Route path="services" element={<AdminServicesPage />} />
         <Route path="services/:id" element={<AdminServiceEditPage />} />
         <Route path="reviews" element={<AdminReviewsPage />} />
+        <Route path="region" element={<AdminRegionPage />} />
       </Route>
 
       {/* 404 */}
