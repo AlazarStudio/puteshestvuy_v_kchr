@@ -49,9 +49,48 @@ export default function NewsGalleryBlock({ images = [], className }) {
 
   if (photos.length === 0) return null
 
-  return (
-    <>
-      <div className={`${styles.gallery} ${className || ''}`}>
+  const count = photos.length
+  const countClass = count === 1 ? styles.galleryCount1 : count === 2 ? styles.galleryCount2 : count === 3 ? styles.galleryCount3 : ''
+
+  const renderGallery = () => {
+    if (count === 1) {
+      return (
+        <div className={styles.galleryFull} onClick={() => openModal(0)}>
+          <img src={photos[0]?.src} alt="" />
+        </div>
+      )
+    }
+    if (count === 2) {
+      return (
+        <>
+          <div className={styles.galleryHalf} onClick={() => openModal(0)}>
+            <img src={photos[0]?.src} alt="" />
+          </div>
+          <div className={styles.galleryHalf} onClick={() => openModal(1)}>
+            <img src={photos[1]?.src} alt="" />
+          </div>
+        </>
+      )
+    }
+    if (count === 3) {
+      return (
+        <>
+          <div className={styles.galleryThirdLeft} onClick={() => openModal(0)}>
+            <img src={photos[0]?.src} alt="" />
+          </div>
+          <div className={styles.galleryThirdRight}>
+            <div className={styles.galleryThirdRightItem} onClick={() => openModal(1)}>
+              <img src={photos[1]?.src} alt="" />
+            </div>
+            <div className={styles.galleryThirdRightItem} onClick={() => openModal(2)}>
+              <img src={photos[2]?.src} alt="" />
+            </div>
+          </div>
+        </>
+      )
+    }
+    return (
+      <>
         <div className={styles.galleryMain} onClick={() => openModal(0)}>
           <img src={photos[0]?.src} alt="" />
         </div>
@@ -84,6 +123,14 @@ export default function NewsGalleryBlock({ images = [], className }) {
             })}
           </div>
         </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div className={`${styles.gallery} ${countClass} ${className || ''}`}>
+        {renderGallery()}
       </div>
 
       <AnimatePresence>

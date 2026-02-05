@@ -180,6 +180,104 @@
   height: 300px;
 }
 
+/* 1 фото — на всю ширину */
+.galleryCount1 {
+  height: 400px;
+}
+
+.galleryCount1 .galleryFull {
+  flex: 1;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.galleryCount1 .galleryFull img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryCount1 .galleryFull:hover img {
+  transform: scale(1.03);
+}
+
+/* 2 фото — два рядом */
+.galleryCount2 {
+  height: 400px;
+}
+
+.galleryCount2 .galleryHalf {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.galleryCount2 .galleryHalf img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryCount2 .galleryHalf:hover img {
+  transform: scale(1.03);
+}
+
+/* 3 фото — слева одна, справа две друг под другом */
+.galleryCount3 {
+  height: 400px;
+}
+
+.galleryCount3 .galleryThirdLeft {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.galleryCount3 .galleryThirdLeft img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryCount3 .galleryThirdLeft:hover img {
+  transform: scale(1.03);
+}
+
+.galleryCount3 .galleryThirdRight {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.galleryCount3 .galleryThirdRightItem {
+  flex: 1;
+  min-height: 0;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.galleryCount3 .galleryThirdRightItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.galleryCount3 .galleryThirdRightItem:hover img {
+  transform: scale(1.03);
+}
+
 .galleryMain {
   flex: 1;
   cursor: pointer;
@@ -934,8 +1032,22 @@
     height: auto;
   }
 
-  .galleryMain {
+  .galleryMain,
+  .galleryFull,
+  .galleryHalf,
+  .galleryThirdLeft {
     height: 200px;
+    min-height: 200px;
+  }
+
+  .galleryThirdRight {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .galleryThirdRightItem {
+    height: 150px;
+    min-height: 150px;
   }
 
   .galleryGrid {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, X, Type, Image, Images, Quote, Video, Heading } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { getImageUrl } from '@/lib/api';
 import styles from './NewsBlockEditor.module.css';
@@ -163,6 +163,51 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     }
   };
 
+  const [draggedGalleryImage, setDraggedGalleryImage] = useState(null);
+  const [dragOverGalleryImage, setDragOverGalleryImage] = useState(null);
+
+  const moveGalleryImageTo = (blockIndex, fromIndex, toIndex) => {
+    const block = sortedBlocks[blockIndex];
+    if (!block) return;
+    const saved = block.data?.images || [];
+    const pending = pendingBlockFiles[block.id]?.images || [];
+    if (fromIndex < saved.length && toIndex < saved.length) {
+      const arr = [...saved];
+      const [item] = arr.splice(fromIndex, 1);
+      const dropIdx = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      arr.splice(dropIdx, 0, item);
+      updateBlock(blockIndex, { data: { images: arr } });
+    } else if (fromIndex >= saved.length && toIndex >= saved.length) {
+      const arr = [...pending];
+      const fi = fromIndex - saved.length;
+      const ti = toIndex - saved.length;
+      const [item] = arr.splice(fi, 1);
+      const dropIdx = fi < ti ? ti - 1 : ti;
+      arr.splice(dropIdx, 0, item);
+      onPendingBlockFilesChange?.(block.id, { images: arr });
+    }
+  };
+
+  const moveGalleryImage = (blockIndex, imgIndex, direction) => {
+    const block = sortedBlocks[blockIndex];
+    if (!block) return;
+    const saved = block.data?.images || [];
+    const pending = pendingBlockFiles[block.id]?.images || [];
+    const newIdx = imgIndex + direction;
+    if (newIdx < 0 || newIdx >= saved.length + pending.length) return;
+    if (imgIndex < saved.length && newIdx < saved.length) {
+      const arr = [...saved];
+      [arr[imgIndex], arr[newIdx]] = [arr[newIdx], arr[imgIndex]];
+      updateBlock(blockIndex, { data: { images: arr } });
+    } else if (imgIndex >= saved.length && newIdx >= saved.length) {
+      const pIdx = imgIndex - saved.length;
+      const pNewIdx = newIdx - saved.length;
+      const arr = [...pending];
+      [arr[pIdx], arr[pNewIdx]] = [arr[pNewIdx], arr[pIdx]];
+      onPendingBlockFilesChange?.(block.id, { images: arr });
+    }
+  };
+
   const clearBlockImage = (blockIndex) => {
     const block = sortedBlocks[blockIndex];
     if (!block) return;
@@ -316,22 +361,141 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                     if (total === 0) return null;
                     return (
                       <div className={styles.galleryPreview}>
-                        {saved.map((img, i) => (
-                          <div key={`s-${i}`} className={styles.galleryItem}>
-                            <img src={getImageUrl(img)} alt="" />
-                            <button type="button" onClick={() => removeGalleryImage(index, i)} className={styles.removeBtn}>
-                              <X size={14} />
-                            </button>
+                        {saved.map((img, i) => {
+                          const isDragged = draggedGalleryImage?.blockIndex === index && draggedGalleryImage?.imgIndex === i;
+                          const isDragOver = dragOverGalleryImage?.blockIndex === index && dragOverGalleryImage?.imgIndex === i;
+                          return (
+                          <div
+                            key={`s-${i}`}
+                            className={`${styles.galleryItemWrap} ${isDragged ? styles.galleryItemDragging : ''} ${isDragOver ? styles.galleryItemDragOver : ''}`}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedGalleryImage({ blockIndex: index, imgIndex: i });
+                              e.dataTransfer.setData('text/plain', JSON.stringify({ blockIndex: index, imgIndex: i }));
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragEnd={() => {
+                              setDraggedGalleryImage(null);
+                              setDragOverGalleryImage(null);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              setDragOverGalleryImage({ blockIndex: index, imgIndex: i });
+                            }}
+                            onDragLeave={() => setDragOverGalleryImage((prev) => (prev?.blockIndex === index && prev?.imgIndex === i ? null : prev))}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              try {
+                                const { blockIndex: bi, imgIndex: fi } = JSON.parse(e.dataTransfer.getData('text/plain'));
+                                setDragOverGalleryImage(null);
+                                if (bi !== index || fi === i) return;
+                                moveGalleryImageTo(index, fi, i);
+                              } catch (_) {}
+                            }}
+                          >
+                            <div className={styles.galleryItem}>
+                              <img src={getImageUrl(img)} alt="" />
+                            </div>
+                            <div className={styles.galleryActions}>
+                              <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
+                                <GripVertical size={18} />
+                              </div>
+                              <div className={styles.moveButtons}>
+                                <button
+                                  type="button"
+                                  onClick={() => moveGalleryImage(index, i, -1)}
+                                  disabled={i === 0}
+                                  className={styles.moveBtn}
+                                  aria-label="Влево"
+                                >
+                                  <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveGalleryImage(index, i, 1)}
+                                  disabled={i === saved.length - 1}
+                                  className={styles.moveBtn}
+                                  aria-label="Вправо"
+                                >
+                                  <ChevronRight size={16} />
+                                </button>
+                              </div>
+                              <button type="button" onClick={() => removeGalleryImage(index, i)} className={styles.removeBtn} aria-label="Удалить" title="Удалить">
+                                <X size={16} />
+                              </button>
+                            </div>
                           </div>
-                        ))}
-                        {pending.map((file, i) => (
-                          <div key={`p-${i}`} className={styles.galleryItem}>
-                            <PendingImage file={file} />
-                            <button type="button" onClick={() => removeGalleryImage(index, saved.length + i)} className={styles.removeBtn}>
-                              <X size={14} />
-                            </button>
+                          );
+                        })}
+                        {pending.map((file, i) => {
+                          const imgIdx = saved.length + i;
+                          const isDragged = draggedGalleryImage?.blockIndex === index && draggedGalleryImage?.imgIndex === imgIdx;
+                          const isDragOver = dragOverGalleryImage?.blockIndex === index && dragOverGalleryImage?.imgIndex === imgIdx;
+                          return (
+                          <div
+                            key={`p-${i}`}
+                            className={`${styles.galleryItemWrap} ${isDragged ? styles.galleryItemDragging : ''} ${isDragOver ? styles.galleryItemDragOver : ''}`}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedGalleryImage({ blockIndex: index, imgIndex: imgIdx });
+                              e.dataTransfer.setData('text/plain', JSON.stringify({ blockIndex: index, imgIndex: imgIdx }));
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragEnd={() => {
+                              setDraggedGalleryImage(null);
+                              setDragOverGalleryImage(null);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              setDragOverGalleryImage({ blockIndex: index, imgIndex: imgIdx });
+                            }}
+                            onDragLeave={() => setDragOverGalleryImage((prev) => (prev?.blockIndex === index && prev?.imgIndex === imgIdx ? null : prev))}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              try {
+                                const { blockIndex: bi, imgIndex: fi } = JSON.parse(e.dataTransfer.getData('text/plain'));
+                                setDragOverGalleryImage(null);
+                                if (bi !== index || fi === imgIdx) return;
+                                moveGalleryImageTo(index, fi, imgIdx);
+                              } catch (_) {}
+                            }}
+                          >
+                            <div className={styles.galleryItem}>
+                              <PendingImage file={file} />
+                            </div>
+                            <div className={styles.galleryActions}>
+                              <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
+                                <GripVertical size={18} />
+                              </div>
+                              <div className={styles.moveButtons}>
+                                <button
+                                  type="button"
+                                  onClick={() => moveGalleryImage(index, saved.length + i, -1)}
+                                  disabled={i === 0}
+                                  className={styles.moveBtn}
+                                  aria-label="Влево"
+                                >
+                                  <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveGalleryImage(index, saved.length + i, 1)}
+                                  disabled={i === pending.length - 1}
+                                  className={styles.moveBtn}
+                                  aria-label="Вправо"
+                                >
+                                  <ChevronRight size={16} />
+                                </button>
+                              </div>
+                              <button type="button" onClick={() => removeGalleryImage(index, saved.length + i)} className={styles.removeBtn} aria-label="Удалить" title="Удалить">
+                                <X size={16} />
+                              </button>
+                            </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     );
                   })()}

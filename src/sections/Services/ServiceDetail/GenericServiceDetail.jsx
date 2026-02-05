@@ -191,36 +191,70 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
             <span>{breadcrumbTitle}</span>
           </div>
 
-          <div className={`${styles.gallery} ${common.gallery}`}>
-            <div className={`${styles.galleryMain} ${common.galleryMain}`} onClick={() => openModal(0)}>
-              <img src={photos[0]?.src} alt="" />
-            </div>
-            <div className={styles.galleryGrid}>
-              <div className={styles.galleryGridRow}>
-                {visiblePhotos.slice(1, 3).map((photo, index) => (
-                  <div key={index} className={`${styles.galleryItem} ${common.galleryItem}`} onClick={() => openModal(index + 1)}>
-                    <img src={photo.src} alt="" />
+          <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${common.gallery}`}>
+            {photos.length === 1 && (
+              <div className={`${styles.galleryFull} ${common.galleryMain}`} onClick={() => openModal(0)}>
+                <img src={photos[0]?.src} alt="" />
+              </div>
+            )}
+            {photos.length === 2 && (
+              <>
+                <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(0)}>
+                  <img src={photos[0]?.src} alt="" />
+                </div>
+                <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(1)}>
+                  <img src={photos[1]?.src} alt="" />
+                </div>
+              </>
+            )}
+            {photos.length === 3 && (
+              <>
+                <div className={`${styles.galleryThirdLeft} ${common.galleryMain}`} onClick={() => openModal(0)}>
+                  <img src={photos[0]?.src} alt="" />
+                </div>
+                <div className={styles.galleryThirdRight}>
+                  <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(1)}>
+                    <img src={photos[1]?.src} alt="" />
                   </div>
-                ))}
-              </div>
-              <div className={styles.galleryGridRow}>
-                {visiblePhotos.slice(3, 5).map((photo, index) => {
-                  const photoIndex = index + 3
-                  const isLast = photoIndex === 4 && showMoreButton
-                  return (
-                    <div key={photoIndex} className={`${styles.galleryItem} ${common.galleryItem} ${isLast ? styles.galleryItemLast : ''}`} onClick={() => openModal(photoIndex)}>
-                      <img src={photo.src} alt="" />
-                      {isLast && (
-                        <div className={`${styles.moreButton} ${common.moreButton}`} onClick={(ev) => { ev.stopPropagation(); openModal(5); }}>
-                          <img src="/morePhoto.png" alt="" />
-                          <span>Еще {remainingCount} фото</span>
+                  <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(2)}>
+                    <img src={photos[2]?.src} alt="" />
+                  </div>
+                </div>
+              </>
+            )}
+            {photos.length >= 4 && (
+              <>
+                <div className={`${styles.galleryMain} ${common.galleryMain}`} onClick={() => openModal(0)}>
+                  <img src={photos[0]?.src} alt="" />
+                </div>
+                <div className={styles.galleryGrid}>
+                  <div className={styles.galleryGridRow}>
+                    {visiblePhotos.slice(1, 3).map((photo, index) => (
+                      <div key={index} className={`${styles.galleryItem} ${common.galleryItem}`} onClick={() => openModal(index + 1)}>
+                        <img src={photo.src} alt="" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className={styles.galleryGridRow}>
+                    {visiblePhotos.slice(3, 5).map((photo, index) => {
+                      const photoIndex = index + 3
+                      const isLast = photoIndex === 4 && showMoreButton
+                      return (
+                        <div key={photoIndex} className={`${styles.galleryItem} ${common.galleryItem} ${isLast ? styles.galleryItemLast : ''}`} onClick={() => openModal(photoIndex)}>
+                          <img src={photo.src} alt="" />
+                          {isLast && (
+                            <div className={`${styles.moreButton} ${common.moreButton}`} onClick={(ev) => { ev.stopPropagation(); openModal(5); }}>
+                              <img src="/morePhoto.png" alt="" />
+                              <span>Еще {remainingCount} фото</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className={styles.serviceBlock}>

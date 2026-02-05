@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, Plus, Trash2, Eye, EyeOff, Map } from 'lucide-react';
+import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -312,6 +312,31 @@ export default function ServiceEditPage() {
       const item = prev.images[index];
       const rest = prev.images.filter((_, i) => i !== index);
       return { ...prev, images: [item, ...rest] };
+    });
+  };
+
+  const moveImage = (index, direction) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= formData.images.length) return;
+    setFormData((prev) => {
+      const arr = [...prev.images];
+      [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+      return { ...prev, images: arr };
+    });
+  };
+
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState(null);
+  const [draggedRoomImage, setDraggedRoomImage] = useState(null);
+  const [dragOverRoomImage, setDragOverRoomImage] = useState(null);
+
+  const moveImageTo = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setFormData((prev) => {
+      const arr = [...prev.images];
+      const [item] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, item);
+      return { ...prev, images: arr };
     });
   };
 
@@ -1128,26 +1153,106 @@ export default function ServiceEditPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                   <span className={styles.formLabel} style={{ marginBottom: 0 }}>Фото номера (можно выбрать несколько)</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {room.images.map((img, imgIdx) => (
-                      <div key={imgIdx} className={styles.previewItem} style={{ position: 'relative' }}>
-                        <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
-                        <button
-                          type="button"
-                          className={styles.removeImage}
-                          style={{ position: 'absolute', top: 4, right: 4 }}
-                          onClick={() => {
-                            if (img.type === 'file' && img.preview) URL.revokeObjectURL(img.preview);
-                            const next = list.map((r, j) =>
-                              j === roomIdx ? { ...r, images: r.images.filter((_, i) => i !== imgIdx) } : r
-                            );
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }}>
+                    {room.images.map((img, imgIdx) => {
+                      const isDragged = draggedRoomImage?.fieldKey === key && draggedRoomImage?.roomIdx === roomIdx && draggedRoomImage?.imgIdx === imgIdx;
+                      const isDragOver = dragOverRoomImage?.fieldKey === key && dragOverRoomImage?.roomIdx === roomIdx && dragOverRoomImage?.imgIdx === imgIdx;
+                      return (
+                      <div
+                        key={imgIdx}
+                        className={`${styles.imagePreviewItemWrap} ${isDragged ? styles.dragging : ''} ${isDragOver ? styles.dragOver : ''}`}
+                        style={{ width: 'auto' }}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedRoomImage({ fieldKey: key, roomIdx, imgIdx });
+                          e.dataTransfer.setData('text/plain', JSON.stringify({ key, roomIdx, imgIdx }));
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => {
+                          setDraggedRoomImage(null);
+                          setDragOverRoomImage(null);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverRoomImage({ fieldKey: key, roomIdx, imgIdx });
+                        }}
+                        onDragLeave={() => setDragOverRoomImage((prev) => (prev?.fieldKey === key && prev?.roomIdx === roomIdx && prev?.imgIdx === imgIdx ? null : prev))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          try {
+                            const { key: k, roomIdx: ri, imgIdx: fi } = JSON.parse(e.dataTransfer.getData('text/plain'));
+                            setDragOverRoomImage(null);
+                            if (k !== key || ri !== roomIdx || fi === imgIdx) return;
+                            const arr = [...room.images];
+                            const [item] = arr.splice(fi, 1);
+                            const dropIdx = fi < imgIdx ? imgIdx - 1 : imgIdx;
+                            arr.splice(dropIdx, 0, item);
+                            const next = list.map((r, j) => (j === roomIdx ? { ...r, images: arr } : r));
                             setData(key, next);
-                          }}
-                        >
-                          <X size={14} />
-                        </button>
+                          } catch (_) {}
+                        }}
+                      >
+                        <div className={styles.previewItem} style={{ width: 100, height: 75, minWidth: 100 }}>
+                          <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                        </div>
+                        <div className={styles.imagePreviewActions}>
+                          <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
+                            <GripVertical size={18} />
+                          </div>
+                          <div className={styles.imageMoveButtonsRow}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newIdx = imgIdx - 1;
+                                if (newIdx < 0) return;
+                                const arr = [...room.images];
+                                [arr[imgIdx], arr[newIdx]] = [arr[newIdx], arr[imgIdx]];
+                                const next = list.map((r, j) => (j === roomIdx ? { ...r, images: arr } : r));
+                                setData(key, next);
+                              }}
+                              disabled={imgIdx === 0}
+                              className={styles.formMoveBtn}
+                              aria-label="Влево"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newIdx = imgIdx + 1;
+                                if (newIdx >= room.images.length) return;
+                                const arr = [...room.images];
+                                [arr[imgIdx], arr[newIdx]] = [arr[newIdx], arr[imgIdx]];
+                                const next = list.map((r, j) => (j === roomIdx ? { ...r, images: arr } : r));
+                                setData(key, next);
+                              }}
+                              disabled={imgIdx === room.images.length - 1}
+                              className={styles.formMoveBtn}
+                              aria-label="Вправо"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.removeImageBtn}
+                            onClick={() => {
+                              if (img.type === 'file' && img.preview) URL.revokeObjectURL(img.preview);
+                              const next = list.map((r, j) =>
+                                j === roomIdx ? { ...r, images: r.images.filter((_, i) => i !== imgIdx) } : r
+                              );
+                              setData(key, next);
+                            }}
+                            aria-label="Удалить"
+                            title="Удалить"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     <button
                       type="button"
                       className={styles.addBtn}
@@ -1451,25 +1556,76 @@ export default function ServiceEditPage() {
                   {formData.images.map((img, index) => (
                     <div
                       key={img.type === 'url' ? img.value : img.preview}
-                      className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
-                      onClick={() => setMainImage(index)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
-                      aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
-                      title={index === 0 ? 'Главное фото' : 'Сделать главным'}
+                      className={`${styles.imagePreviewItemWrap} ${draggedImageIndex === index ? styles.dragging : ''} ${dragOverImageIndex === index ? styles.dragOver : ''}`}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedImageIndex(index);
+                        e.dataTransfer.setData('text/plain', String(index));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        setDraggedImageIndex(null);
+                        setDragOverImageIndex(null);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setDragOverImageIndex(index);
+                      }}
+                      onDragLeave={() => setDragOverImageIndex((i) => (i === index ? null : i))}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                        setDragOverImageIndex(null);
+                        if (!Number.isNaN(from) && from !== index) moveImageTo(from, index);
+                      }}
                     >
-                      <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt={`Превью ${index + 1}`} />
-                      {index === 0 && <span className={styles.previewItemBadge}>Обложка</span>}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                        className={styles.removeImage}
-                        title="Удалить"
-                        aria-label="Удалить"
+                      <div
+                        className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
+                        onClick={() => setMainImage(index)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
+                        aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
+                        title={index === 0 ? 'Главное фото' : 'Сделать главным'}
                       >
-                        <X size={14} />
-                      </button>
+                        <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt={`Превью ${index + 1}`} />
+                        {index === 0 && <span className={styles.previewItemBadge}>Обложка</span>}
+                      </div>
+                      <div className={styles.imagePreviewActions}>
+                        <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
+                          <GripVertical size={18} />
+                        </div>
+                        <div className={styles.imageMoveButtonsRow}>
+                          <button
+                            type="button"
+                            onClick={() => moveImage(index, -1)}
+                            disabled={index === 0}
+                            className={styles.formMoveBtn}
+                            aria-label="Влево"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveImage(index, 1)}
+                            disabled={index === formData.images.length - 1}
+                            className={styles.formMoveBtn}
+                            aria-label="Вправо"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeImage(index); }}
+                          className={styles.removeImageBtn}
+                          aria-label="Удалить"
+                          title="Удалить"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil } from 'lucide-react';
+import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -91,6 +91,7 @@ export default function PlaceEditPage() {
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [savedVersion, setSavedVersion] = useState(0);
   const previewUploadRef = useRef(null);
   const savedFormDataRef = useRef(null);
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
@@ -100,7 +101,7 @@ export default function PlaceEditPage() {
     if (isNew) return false;
     if (!savedFormDataRef.current) return false;
     return !formSnapshotsEqual(formData, savedFormDataRef.current);
-  }, [isNew, formData]);
+  }, [isNew, formData, savedVersion]);
 
   const goToList = useCallback(() => {
     setLeaveModalOpen(false);
@@ -349,6 +350,29 @@ export default function PlaceEditPage() {
     });
   };
 
+  const moveImage = (index, direction) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= formData.images.length) return;
+    setFormData((prev) => {
+      const arr = [...prev.images];
+      [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+      return { ...prev, images: arr };
+    });
+  };
+
+  const [draggedImageIndex, setDraggedImageIndex] = useState(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState(null);
+
+  const moveImageTo = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setFormData((prev) => {
+      const arr = [...prev.images];
+      const [item] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, item);
+      return { ...prev, images: arr };
+    });
+  };
+
   const removeNearbyPlace = (placeId) => {
     setFormData((prev) => ({
       ...prev,
@@ -397,6 +421,7 @@ export default function PlaceEditPage() {
       } else {
         await placesAPI.update(params.id, formData);
         savedFormDataRef.current = { ...formData, image: formData.image, images: [...(formData.images || [])], nearbyPlaceIds: [...(formData.nearbyPlaceIds || [])] };
+        setSavedVersion((v) => v + 1);
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
@@ -745,24 +770,80 @@ export default function PlaceEditPage() {
                 {formData.images.map((img, index) => (
                   <div
                     key={index}
-                    className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
-                    onClick={() => setMainImage(index)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
-                    aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
-                    title={index === 0 ? 'Главное фото' : 'Сделать главным'}
+                    className={`${styles.imagePreviewItemWrap} ${draggedImageIndex === index ? styles.dragging : ''} ${dragOverImageIndex === index ? styles.dragOver : ''}`}
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedImageIndex(index);
+                      e.dataTransfer.setData('text/plain', String(index));
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragEnd={() => {
+                      setDraggedImageIndex(null);
+                      setDragOverImageIndex(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverImageIndex(index);
+                    }}
+                    onDragLeave={() => setDragOverImageIndex((i) => (i === index ? null : i))}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                      setDragOverImageIndex(null);
+                      if (!Number.isNaN(from) && from !== index) moveImageTo(from, index);
+                    }}
                   >
-                    <img src={getImageUrl(img)} alt={`Preview ${index}`} />
-                    {index === 0 && <span className={styles.previewItemBadge}>Главная</span>}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                      className={styles.removeImage}
-                      aria-label="Удалить"
+                    <div
+                      className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
+                      onClick={() => setMainImage(index)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
+                      aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
+                      title={index === 0 ? 'Главное фото' : 'Сделать главным'}
                     >
-                      <X size={14} />
-                    </button>
+                      <img src={getImageUrl(img)} alt={`Preview ${index}`} />
+                      {index === 0 && <span className={styles.previewItemBadge}>Главная</span>}
+                    </div>
+                    <div className={styles.imagePreviewActions}>
+                      <div
+                        className={styles.imageDragHandle}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Перетащите для изменения порядка"
+                      >
+                        <GripVertical size={18} />
+                      </div>
+                      <div className={styles.imageMoveButtonsRow}>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, -1)}
+                          disabled={index === 0}
+                          className={styles.formMoveBtn}
+                          aria-label="Влево"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 1)}
+                          disabled={index === formData.images.length - 1}
+                          className={styles.formMoveBtn}
+                          aria-label="Вправо"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className={styles.removeImageBtn}
+                        aria-label="Удалить"
+                        title="Удалить"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -782,7 +863,27 @@ export default function PlaceEditPage() {
             </p>
             <div className={styles.filterGroups}>
               <div className={styles.filterGroupCard}>
-                <div className={styles.filterGroupTitle}>Направление</div>
+                <div className={styles.filterGroupTitleRow}>
+                  <div className={styles.filterGroupTitle}>Направление</div>
+                  <button
+                    type="button"
+                    className={styles.filterGroupSelectAllBtn}
+                    onClick={() => {
+                      const opts = filterOptions.directions || [];
+                      const current = formData.directions || [];
+                      const allSelected = opts.length > 0 && opts.every((o) => current.includes(o));
+                      setFormData((prev) => ({
+                        ...prev,
+                        directions: allSelected ? [] : [...opts],
+                      }));
+                    }}
+                  >
+                    {(filterOptions.directions || []).length > 0 &&
+                    (formData.directions || []).length === (filterOptions.directions || []).length
+                      ? 'Снять все'
+                      : 'Выбрать все'}
+                  </button>
+                </div>
                 <div className={styles.filterCheckboxList}>
                   {(filterOptions.directions || []).map((v) => (
                     <label key={v} className={styles.filterCheckboxLabel}>
@@ -803,7 +904,27 @@ export default function PlaceEditPage() {
                 </div>
               </div>
               <div className={styles.filterGroupCard}>
-                <div className={styles.filterGroupTitle}>Сезон</div>
+                <div className={styles.filterGroupTitleRow}>
+                  <div className={styles.filterGroupTitle}>Сезон</div>
+                  <button
+                    type="button"
+                    className={styles.filterGroupSelectAllBtn}
+                    onClick={() => {
+                      const opts = filterOptions.seasons || [];
+                      const current = formData.seasons || [];
+                      const allSelected = opts.length > 0 && opts.every((o) => current.includes(o));
+                      setFormData((prev) => ({
+                        ...prev,
+                        seasons: allSelected ? [] : [...opts],
+                      }));
+                    }}
+                  >
+                    {(filterOptions.seasons || []).length > 0 &&
+                    (formData.seasons || []).length === (filterOptions.seasons || []).length
+                      ? 'Снять все'
+                      : 'Выбрать все'}
+                  </button>
+                </div>
                 <div className={styles.filterCheckboxList}>
                   {(filterOptions.seasons || []).map((v) => (
                     <label key={v} className={styles.filterCheckboxLabel}>
@@ -824,7 +945,27 @@ export default function PlaceEditPage() {
                 </div>
               </div>
               <div className={styles.filterGroupCard}>
-                <div className={styles.filterGroupTitle}>Вид объекта</div>
+                <div className={styles.filterGroupTitleRow}>
+                  <div className={styles.filterGroupTitle}>Вид объекта</div>
+                  <button
+                    type="button"
+                    className={styles.filterGroupSelectAllBtn}
+                    onClick={() => {
+                      const opts = filterOptions.objectTypes || [];
+                      const current = formData.objectTypes || [];
+                      const allSelected = opts.length > 0 && opts.every((o) => current.includes(o));
+                      setFormData((prev) => ({
+                        ...prev,
+                        objectTypes: allSelected ? [] : [...opts],
+                      }));
+                    }}
+                  >
+                    {(filterOptions.objectTypes || []).length > 0 &&
+                    (formData.objectTypes || []).length === (filterOptions.objectTypes || []).length
+                      ? 'Снять все'
+                      : 'Выбрать все'}
+                  </button>
+                </div>
                 <div className={styles.filterCheckboxList}>
                   {(filterOptions.objectTypes || []).map((v) => (
                     <label key={v} className={styles.filterCheckboxLabel}>
@@ -845,7 +986,27 @@ export default function PlaceEditPage() {
                 </div>
               </div>
               <div className={styles.filterGroupCard}>
-                <div className={styles.filterGroupTitle}>Доступность</div>
+                <div className={styles.filterGroupTitleRow}>
+                  <div className={styles.filterGroupTitle}>Доступность</div>
+                  <button
+                    type="button"
+                    className={styles.filterGroupSelectAllBtn}
+                    onClick={() => {
+                      const opts = filterOptions.accessibility || [];
+                      const current = formData.accessibility || [];
+                      const allSelected = opts.length > 0 && opts.every((o) => current.includes(o));
+                      setFormData((prev) => ({
+                        ...prev,
+                        accessibility: allSelected ? [] : [...opts],
+                      }));
+                    }}
+                  >
+                    {(filterOptions.accessibility || []).length > 0 &&
+                    (formData.accessibility || []).length === (filterOptions.accessibility || []).length
+                      ? 'Снять все'
+                      : 'Выбрать все'}
+                  </button>
+                </div>
                 <div className={styles.filterCheckboxList}>
                   {(filterOptions.accessibility || []).map((v) => (
                     <label key={v} className={styles.filterCheckboxLabel}>

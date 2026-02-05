@@ -223,14 +223,97 @@
 
 .galleryPreview {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
   margin-top: 12px;
+}
+
+.galleryItemWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  border-radius: 8px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.galleryItemWrap.galleryItemDragging {
+  opacity: 0.6;
+}
+
+.galleryItemWrap.galleryItemDragOver {
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.galleryItemWrap .galleryItem {
+  flex: 1;
+  min-width: 0;
+  order: 1;
+}
+
+.galleryItemWrap .galleryActions {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  order: 2;
+}
+
+.galleryItemWrap .imageDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: #94a3b8;
+  cursor: grab;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.galleryItemWrap .imageDragHandle:hover {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+.galleryItemWrap .imageDragHandle:active {
+  cursor: grabbing;
+}
+
+.galleryItemWrap .moveButtons {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.galleryItemWrap .moveButtons .moveBtn {
+  padding: 6px;
+}
+
+.galleryItemWrap .galleryActions .removeBtn {
+  padding: 6px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.galleryItemWrap .galleryActions .removeBtn:hover {
+  background: #fecaca;
 }
 
 .galleryItem {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4/3;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -239,14 +322,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.galleryItem .removeBtn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
 }
 
 .deleteBtn {

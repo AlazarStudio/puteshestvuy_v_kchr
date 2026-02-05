@@ -979,9 +979,79 @@
 
 .imagePreview {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
   margin-top: 16px;
+}
+
+/* Обёртка картинки: картинка сверху, кнопки снизу */
+.imagePreviewItemWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  border-radius: 8px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.imagePreviewItemWrap.dragging {
+  opacity: 0.6;
+}
+
+.imagePreviewItemWrap.dragOver {
+  box-shadow: 0 0 0 2px #2563eb;
+  border-radius: 8px;
+}
+
+.imagePreviewItemWrap .previewItem {
+  flex: 1;
+  min-width: 0;
+  order: 1;
+}
+
+.imagePreviewItemWrap .imagePreviewActions {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  order: 2;
+}
+
+.imagePreviewItemWrap .imageDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: #94a3b8;
+  cursor: grab;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.imagePreviewItemWrap .imageDragHandle:hover {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+.imagePreviewItemWrap .imageDragHandle:active {
+  cursor: grabbing;
+}
+
+.imagePreviewItemWrap .imageMoveButtonsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.imagePreviewItemWrap .imageMoveButtonsRow .formMoveBtn {
+  padding: 6px;
 }
 
 .previewItem {
@@ -992,6 +1062,22 @@
   cursor: pointer;
   border: 2px solid transparent;
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.imagePreviewItemWrap .imagePreviewActions .removeImageBtn {
+  padding: 6px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imagePreviewItemWrap .imagePreviewActions .removeImageBtn:hover {
+  background: #fecaca;
 }
 
 .previewItem:hover {
@@ -1245,13 +1331,37 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.filterGroupTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
 .filterGroupTitle {
   font-size: 0.95rem;
   font-weight: 600;
   color: #1e293b;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e2e8f0;
+  margin: 0;
+}
+
+.filterGroupSelectAllBtn {
+  font-size: 0.8rem;
+  color: #2563eb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.filterGroupSelectAllBtn:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .filterCheckboxList {
