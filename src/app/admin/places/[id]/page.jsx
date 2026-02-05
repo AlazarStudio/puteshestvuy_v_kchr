@@ -7,7 +7,6 @@ import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
-import ImageCropModal from '../../components/ImageCropModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -90,18 +89,22 @@ export default function PlaceEditPage() {
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
-  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [pendingImages, setPendingImages] = useState({});
   const [savedVersion, setSavedVersion] = useState(0);
   const previewUploadRef = useRef(null);
   const savedFormDataRef = useRef(null);
+  const pendingImagesRef = useRef(pendingImages);
+  pendingImagesRef.current = pendingImages;
+  const pendingGalleryRef = useRef([]);
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
   const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
 
+  const hasPendingImages = Object.keys(pendingImages).length > 0 || pendingGallery.length > 0;
   const isDirty = useMemo(() => {
-    if (isNew) return false;
-    if (!savedFormDataRef.current) return false;
-    return !formSnapshotsEqual(formData, savedFormDataRef.current);
-  }, [isNew, formData, savedVersion]);
+    if (isNew) return hasPendingImages;
+    if (!savedFormDataRef.current) return hasPendingImages;
+    return !formSnapshotsEqual(formData, savedFormDataRef.current) || hasPendingImages;
+  }, [isNew, formData, savedVersion, hasPendingImages]);
 
   const goToList = useCallback(() => {
     setLeaveModalOpen(false);
@@ -281,58 +284,76 @@ export default function PlaceEditPage() {
     setFormData((prev) => ({ ...prev, video: value }));
   };
 
-  /** Загрузка превью: один файл → кроп → замена images[0] */
+  const getImageSrc = (path) => {
+    const pending = pendingImages[path];
+    if (pending) return pending.preview;
+    if (path === 'image') return formData.image ? getImageUrl(formData.image) : null;
+    return null;
+  };
+
+  const hasImage = (path) => {
+    if (pendingImages[path]) return true;
+    if (path === 'image') return !!formData.image;
+    return false;
+  };
+
   const handlePreviewFileSelect = (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setCropImageSrc(URL.createObjectURL(file));
+    setPendingImages((prev) => {
+      const old = prev.image;
+      if (old) URL.revokeObjectURL(old.preview);
+      return { ...prev, image: { file, preview: URL.createObjectURL(file) } };
+    });
   };
 
-  const handleCropComplete = useCallback(async (blob) => {
-    const urlToRevoke = cropImageSrc;
-    const file = new File([blob], 'preview.jpg', { type: 'image/jpeg' });
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      const response = await mediaAPI.upload(formDataUpload);
-      setFormData((prev) => ({
-        ...prev,
-        image: response.data.url,
-      }));
-    } catch (error) {
-      console.error('Ошибка загрузки изображения:', error);
-    }
-    if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
-    setCropImageSrc(null);
-  }, [cropImageSrc]);
-
-  const handleCropCancel = useCallback(() => {
-    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
-    setCropImageSrc(null);
-  }, [cropImageSrc]);
-
-  const removePreview = () => {
+  const clearPreview = () => {
+    setPendingImages((prev) => {
+      const next = { ...prev };
+      if (next.image) {
+        URL.revokeObjectURL(next.image.preview);
+        delete next.image;
+      }
+      return next;
+    });
     setFormData((prev) => ({ ...prev, image: '' }));
   };
 
-  const handleImageUpload = async (e) => {
+  useEffect(() => {
+    return () => {
+      for (const { preview } of Object.values(pendingImagesRef.current)) {
+        URL.revokeObjectURL(preview);
+      }
+      (pendingGalleryRef.current || []).forEach((p) => URL.revokeObjectURL(p.preview));
+    };
+  }, []);
+
+  const [pendingGallery, setPendingGallery] = useState([]);
+
+  useEffect(() => {
+    pendingGalleryRef.current = pendingGallery;
+  }, [pendingGallery]);
+
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
-    for (const file of files) {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      try {
-        const response = await mediaAPI.upload(formDataUpload);
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, response.data.url],
-        }));
-      } catch (error) {
-        console.error('Ошибка загрузки изображения:', error);
-      }
-    }
+    if (!files.length) return;
+    setPendingGallery((prev) => [
+      ...prev,
+      ...files.map((file) => ({ file, preview: URL.createObjectURL(file) })),
+    ]);
   };
+
+  const removePendingGalleryItem = (index) => {
+    setPendingGallery((prev) => {
+      const next = [...prev];
+      URL.revokeObjectURL(next[index].preview);
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
 
   const removeImage = (index) => {
     setFormData((prev) => ({
@@ -410,17 +431,47 @@ export default function PlaceEditPage() {
     setError('');
 
     try {
+      let dataToSave = { ...formData };
+      if (pendingImages.image) {
+        const fd = new FormData();
+        fd.append('file', pendingImages.image.file);
+        const res = await mediaAPI.upload(fd);
+        if (res.data?.url) {
+          dataToSave = { ...dataToSave, image: res.data.url };
+        }
+        URL.revokeObjectURL(pendingImages.image.preview);
+        setPendingImages((prev) => {
+          const next = { ...prev };
+          delete next.image;
+          return next;
+        });
+      }
+      if (pendingGallery.length > 0) {
+        const uploaded = [];
+        for (const { file, preview } of pendingGallery) {
+          const fd = new FormData();
+          fd.append('file', file);
+          const res = await mediaAPI.upload(fd);
+          if (res.data?.url) uploaded.push(res.data.url);
+          URL.revokeObjectURL(preview);
+        }
+        dataToSave = { ...dataToSave, images: [...(dataToSave.images || []), ...uploaded] };
+        setPendingGallery([]);
+      }
+
       if (isNew) {
-        const res = await placesAPI.create(formData);
+        const res = await placesAPI.create(dataToSave);
         const created = res.data;
+        setFormData((prev) => ({ ...prev, image: dataToSave.image }));
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
         if (created?.id) {
           navigate(`/admin/places/${created.id}`, { replace: true });
         }
       } else {
-        await placesAPI.update(params.id, formData);
-        savedFormDataRef.current = { ...formData, image: formData.image, images: [...(formData.images || [])], nearbyPlaceIds: [...(formData.nearbyPlaceIds || [])] };
+        await placesAPI.update(params.id, dataToSave);
+        setFormData((prev) => ({ ...prev, image: dataToSave.image }));
+        savedFormDataRef.current = { ...dataToSave, image: dataToSave.image, images: [...(dataToSave.images || [])], nearbyPlaceIds: [...(dataToSave.nearbyPlaceIds || [])] };
         setSavedVersion((v) => v + 1);
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
@@ -700,7 +751,7 @@ export default function PlaceEditPage() {
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Превью (обложка места)</label>
           <p className={styles.imageHint} style={{ marginBottom: 12 }}>
-            Одна картинка для карточек и слайдера. Можно выбрать нужную область изображения после загрузки.
+            Одна картинка для карточек и слайдера. Загружается при сохранении.
           </p>
           <input
             ref={previewUploadRef}
@@ -710,12 +761,12 @@ export default function PlaceEditPage() {
             style={{ display: 'none' }}
             id="previewUpload"
           />
-          {formData.image ? (
+          {hasImage('image') ? (
             <div
               className={`${styles.previewItem} ${styles.previewItemMain}`}
               style={{ width: 330, aspectRatio: '330 / 390', position: 'relative', overflow: 'hidden', borderRadius: 8 }}
             >
-              <img src={getImageUrl(formData.image)} alt="Превью" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <img src={getImageSrc('image')} alt="Превью" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               <span className={styles.previewItemBadge}>Превью</span>
               <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'row', gap: 6 }}>
                 <button
@@ -723,27 +774,27 @@ export default function PlaceEditPage() {
                   onClick={() => previewUploadRef.current?.click()}
                   className={styles.removeImage}
                   style={{ position: 'relative', top: 0, right: 0 }}
-                  aria-label="Редактировать превью"
-                  title="Редактировать превью"
+                  aria-label="Изменить"
+                  title="Изменить"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
                   type="button"
-                  onClick={removePreview}
+                  onClick={clearPreview}
                   className={styles.removeImage}
                   style={{ position: 'relative', top: 0, right: 0 }}
-                  aria-label="Удалить превью"
-                  title="Удалить превью"
+                  aria-label="Удалить"
+                  title="Удалить"
                 >
                   <X size={14} />
                 </button>
               </div>
             </div>
           ) : (
-            <div className={styles.imageUpload}>
-              <label htmlFor="previewUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                <Upload size={20} /> Загрузить превью
+            <div className={styles.imageUpload} onClick={() => previewUploadRef.current?.click()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') previewUploadRef.current?.click(); }}>
+              <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <Upload size={20} /> Загрузить изображение
               </label>
             </div>
           )}
@@ -751,7 +802,10 @@ export default function PlaceEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Фотогалерея места</label>
-          <div className={styles.imageUpload}>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Изображения загружаются при сохранении.
+          </p>
+          <div className={styles.imageUpload} onClick={() => document.getElementById('imageUpload')?.click()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('imageUpload')?.click(); }}>
             <input
               type="file"
               accept="image/*"
@@ -760,11 +814,11 @@ export default function PlaceEditPage() {
               style={{ display: 'none' }}
               id="imageUpload"
             />
-            <label htmlFor="imageUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Upload size={20} /> Нажмите для загрузки изображений
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+              <Upload size={20} /> Загрузить изображения
             </label>
           </div>
-          {formData.images.length > 0 && (
+          {(formData.images.length > 0 || pendingGallery.length > 0) && (
             <>
               <div className={styles.imagePreview}>
                 {formData.images.map((img, index) => (
@@ -837,6 +891,24 @@ export default function PlaceEditPage() {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
+                        className={styles.removeImageBtn}
+                        aria-label="Удалить"
+                        title="Удалить"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {pendingGallery.map((p, index) => (
+                  <div key={`pending-${index}`} className={styles.imagePreviewItemWrap}>
+                    <div className={styles.previewItem}>
+                      <img src={p.preview} alt={`Новое ${index + 1}`} />
+                    </div>
+                    <div className={styles.imagePreviewActions}>
+                      <button
+                        type="button"
+                        onClick={() => removePendingGalleryItem(index)}
                         className={styles.removeImageBtn}
                         aria-label="Удалить"
                         title="Удалить"
@@ -1142,15 +1214,6 @@ export default function PlaceEditPage() {
           </div>
         </div>
       )}
-
-      {/* Модалка: обрезка изображения для превью */}
-      <ImageCropModal
-        open={!!cropImageSrc}
-        imageSrc={cropImageSrc}
-        title="Обрезка изображения для превью"
-        onComplete={handleCropComplete}
-        onCancel={handleCropCancel}
-      />
 
       {/* Модалка: уход с несохранёнными изменениями */}
       <ConfirmModal

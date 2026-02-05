@@ -1,43 +1,154 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import CenterBlock from '../CenterBlock/CenterBlock'
+import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
+import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
 import styles from './Footer.module.css'
 
+const EMPTY_CONTENT = {
+  left: { logo: '', social: [], phone: '', address: '' },
+  center: { title: '', links: [] },
+  right: { title: '', formPlaceholderName: '', formPlaceholderEmail: '', formPlaceholderText: '', formButtonText: '', formRecipientEmail: '' },
+  bottom: { orgName: '', links: [], partners: [] },
+}
+
 export default function Footer() {
-  const currentYear = new Date().getFullYear()
+  const [content, setContent] = useState(EMPTY_CONTENT)
+
+  const fetchFooter = useCallback(() => {
+    publicFooterAPI.get()
+      .then((res) => {
+        const data = res?.data
+        const apiContent = (data && typeof data === 'object' && !Array.isArray(data))
+          ? data
+          : (data?.content && typeof data.content === 'object')
+            ? data.content
+            : null
+        if (apiContent) {
+          setContent({
+            left: apiContent.left || EMPTY_CONTENT.left,
+            center: apiContent.center || EMPTY_CONTENT.center,
+            right: apiContent.right || EMPTY_CONTENT.right,
+            bottom: apiContent.bottom || EMPTY_CONTENT.bottom,
+          })
+        }
+      })
+      .catch((err) => {
+        console.error('Ошибка загрузки футера:', err?.message || err)
+      })
+  }, [])
+
+  useEffect(() => {
+    fetchFooter()
+    document.addEventListener('visibilitychange', fetchFooter)
+    return () => document.removeEventListener('visibilitychange', fetchFooter)
+  }, [fetchFooter])
+
+  const left = content.left || EMPTY_CONTENT.left
+  const center = content.center || EMPTY_CONTENT.center
+  const right = content.right || EMPTY_CONTENT.right
+  const bottom = content.bottom || EMPTY_CONTENT.bottom
+
+  const phoneHref = (left.phone || '').replace(/\D/g, '')
+
+  const [feedback, setFeedback] = useState({ name: '', email: '', text: '' })
+  const [feedbackStatus, setFeedbackStatus] = useState(null)
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+
+  const [feedbackError, setFeedbackError] = useState('')
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault()
+    if (!right.formRecipientEmail?.trim()) {
+      setFeedbackError('Почта для получения не настроена')
+      return
+    }
+    setFeedbackLoading(true)
+    setFeedbackStatus(null)
+    setFeedbackError('')
+    try {
+      await feedbackAPI.send({
+        name: feedback.name.trim(),
+        email: feedback.email.trim(),
+        text: feedback.text.trim(),
+      })
+      setFeedback({ name: '', email: '', text: '' })
+      setFeedbackStatus('success')
+    } catch (err) {
+      setFeedbackStatus('error')
+      setFeedbackError(err.response?.data?.message || 'Ошибка отправки')
+    } finally {
+      setFeedbackLoading(false)
+    }
+  }
 
   return (
     <footer className={styles.footer}>
       <CenterBlock>
         <div className={styles.footerTop}>
           <div className={styles.column}>
-            <div className={styles.img}><img src="/white_logo.png" alt="" /></div>
+            <div className={styles.img}><img src={getImageUrl(left.logo)} alt="" /></div>
             <div className={styles.social}>
-              <Link to={"/#"} target='_blank' className={styles.imgBlock}><img src="/tg.png" alt="" /></Link>
-              <Link to={"/#"} target='_blank' className={styles.imgBlock}><img src="/vk.png" alt="" /></Link>
+              {(left.social || []).map((s, i) => (
+                <Link key={i} to={s.url || '#'} target="_blank" rel="noopener noreferrer" className={styles.imgBlock}>
+                  <img src={getImageUrl(s.icon)} alt="" />
+                </Link>
+              ))}
             </div>
-            <Link to={"tel:7009090009"} className={styles.phone}>+7 (099) 09 00 09</Link>
-            <Link to={"/#"} className={styles.text}>
-              Карачаево-Черкесская Республика, <br />
-              г. Карачаевск, ул. Ленина, д.15, офис 10
-            </Link>
+            <Link to={phoneHref ? `tel:${phoneHref}` : '#'} className={styles.phone}>{left.phone}</Link>
+            <div className={styles.text} dangerouslySetInnerHTML={{ __html: (left.address || '').replace(/\n/g, '<br />') }} />
           </div>
 
           <div className={styles.column}>
-            <div className={styles.textTitle}>На помощь туристу</div>
-            <Link to={"/#"} className={styles.text}>Этикет региона: дресс-код и культура</Link>
-            <Link to={"/#"} className={styles.text}>Что беру в путешествие?</Link>
-            <Link to={"/#"} className={styles.text}>Полезные контакты Региона</Link>
-            <Link to={"/#"} className={styles.text}>Я иду в горы, кому об этом сообщить и где взять разрешение? </Link>
+            <div className={styles.textTitle}>{center.title}</div>
+            {(center.links || []).map((link, i) => {
+              const { text, url, isFile } = resolveLink(link)
+              const isFileLink = isFile || (url && url.startsWith('/uploads/'))
+              const fileUrl = isFileLink && url ? getImageUrl(url) : url
+              return isFileLink ? (
+                <a key={i} href={fileUrl || '#'} target="_blank" rel="noopener noreferrer" className={`${styles.text} ${styles.linkText}`}>{text}</a>
+              ) : (
+                <Link key={i} to={url || '#'} className={`${styles.text} ${styles.linkText}`}>{text}</Link>
+              )
+            })}
           </div>
 
           <div className={styles.column}>
-            <div className={styles.textTitle}>Обратная связь</div>
-            <form>
-              <input type="text" placeholder='Имя' />
-              <input type="email" placeholder='Email' />
-              <input type="text" placeholder='Ваш текст' />
-              <button type="submit">Отправить</button>
-            </form>
+            <div className={styles.textTitle}>{right.title}</div>
+            {right.formRecipientEmail ? (
+              <form onSubmit={handleFeedbackSubmit}>
+                <input
+                  type="text"
+                  placeholder={right.formPlaceholderName}
+                  value={feedback.name}
+                  onChange={(e) => setFeedback((p) => ({ ...p, name: e.target.value }))}
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder={right.formPlaceholderEmail}
+                  value={feedback.email}
+                  onChange={(e) => setFeedback((p) => ({ ...p, email: e.target.value }))}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder={right.formPlaceholderText}
+                  value={feedback.text}
+                  onChange={(e) => setFeedback((p) => ({ ...p, text: e.target.value }))}
+                  required
+                />
+                <button type="submit" disabled={feedbackLoading}>
+                  {feedbackLoading ? 'Отправка...' : right.formButtonText}
+                </button>
+                {feedbackStatus === 'success' && <p className={styles.feedbackSuccess}>Сообщение отправлено</p>}
+                {feedbackStatus === 'error' && <p className={styles.feedbackError}>{feedbackError}</p>}
+              </form>
+            ) : (
+              <p className={styles.feedbackHint}>Укажите почту для получения сообщений в админке футера</p>
+            )}
           </div>
         </div>
       </CenterBlock>
@@ -47,18 +158,29 @@ export default function Footer() {
       <CenterBlock>
         <div className={styles.orgInfo}>
           <div className={styles.infoCol}>
-            <div className={styles.name}>
-              2021 - 2026 © АНО “Карачаево-Черкесия Туризм" ОГРН 1210900001333  ИНН 0917041946
-            </div>
+            <div className={styles.name}>{bottom.orgName}</div>
             <div className={styles.links}>
-              <Link to={"/#"}>Политика обработки персональных данных</Link>
-              <Link to={"/#"}>Правила использования сервиса</Link>
+              {(bottom.links || []).map((link, i) => {
+                const { text, url, isFile } = resolveLink(link)
+                const isFileLink = isFile || (url && url.startsWith('/uploads/'))
+                const fileUrl = isFileLink && url ? getImageUrl(url) : url
+                return isFileLink ? (
+                  <a key={i} href={fileUrl || '#'} target="_blank" rel="noopener noreferrer" className={styles.linkText}>{text}</a>
+                ) : (
+                  <Link key={i} to={url || '#'} className={styles.linkText}>{text}</Link>
+                )
+              })}
             </div>
           </div>
           <div className={styles.partners}>
-            <Link to={"/#"} target='_blank'><img src="/kch_tourism.png" alt="" /></Link>
-            <Link to={"/#"} target='_blank'><img src="/min_tourism.png" alt="" /></Link>
-            <Link to={"/#"} target='_blank'><img src="/nac_project.png" alt="" /></Link>
+            {(bottom.partners || []).map((p, i) => {
+              const { url } = resolveLink(p)
+              return (
+                <Link key={i} to={url || '#'} target="_blank" rel="noopener noreferrer">
+                  <img src={getImageUrl(p.image)} alt="" />
+                </Link>
+              )
+            })}
           </div>
         </div>
       </CenterBlock>

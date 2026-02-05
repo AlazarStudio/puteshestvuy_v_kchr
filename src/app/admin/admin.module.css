@@ -542,6 +542,28 @@
   transform: translateY(-1px);
 }
 
+.removeBtn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.removeBtn:hover {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
 .filtersBtn {
   display: inline-flex;
   align-items: center;
@@ -1161,6 +1183,102 @@
   font-size: 0.85rem;
   color: #6b7280;
   line-height: 1.45;
+}
+
+/* Footer: превью иконок/логотипов — аккуратный вид */
+.footerImageBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.footerImagePreview {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e293b;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.footerImagePreview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.footerImageActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.footerImageActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.footerImageActions button:hover {
+  background: #f8fafc;
+  color: #2563eb;
+  border-color: #cbd5e1;
+}
+
+.footerImageActions button.footerImageDelete:hover {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.footerSocialRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.footerSocialRow .formInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.footerPartnerCard {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.footerPartnerCard .formLabel {
+  margin-bottom: 6px;
+}
+
+.footerLinkCard {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.footerLinkCard .formLabel {
+  margin-bottom: 0;
 }
 
 /* Списки в формах (места рядом, места на маршруте) — единый стиль */

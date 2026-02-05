@@ -159,6 +159,9 @@ export const mediaAPI = {
   upload: (formData) => api.post('/admin/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  uploadDocument: (formData) => api.post('/admin/media/upload-document', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   delete: (id) => api.delete(`/admin/media/${id}`),
 };
 
@@ -176,6 +179,22 @@ export const regionAPI = {
 // Region API (public — для страницы «О регионе»)
 export const publicRegionAPI = {
   get: () => api.get('/region'),
+};
+
+// Footer API (admin)
+export const footerAPI = {
+  get: () => api.get('/admin/footer'),
+  update: (content) => api.put('/admin/footer', { content }),
+};
+
+// Footer API (public — для футера сайта)
+export const publicFooterAPI = {
+  get: () => api.get('/footer', { params: { _t: Date.now() }, headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } }),
+};
+
+// Feedback API (форма обратной связи в футере)
+export const feedbackAPI = {
+  send: (data) => api.post('/footer/feedback', data),
 };
 
 export default api;
