@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, MapPin, Plus, Search, Lock, Unlock, Map, EyeOff, Eye, Pencil } from 'lucide-react';
+import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -82,8 +82,9 @@ export default function PlaceEditPage() {
   const [addPlacesModalOpen, setAddPlacesModalOpen] = useState(false);
   const [addPlacesSearch, setAddPlacesSearch] = useState('');
   const [addPlacesSelected, setAddPlacesSelected] = useState(new Set());
-  const [locationEditable, setLocationEditable] = useState(false);
-  const [mapVisible, setMapVisible] = useState(false);
+  const [mapSearchMode, setMapSearchMode] = useState('byName'); // 'byName' | 'byCoordinates'
+  const [mapVisible, setMapVisible] = useState(true);
+  const [determineLocationTrigger, setDetermineLocationTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -451,26 +452,26 @@ export default function PlaceEditPage() {
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Локация</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleChange}
-              readOnly={!locationEditable}
               className={styles.formInput}
-              placeholder="Город, район (подставится по названию места)"
-              style={{ flex: 1, ...(!locationEditable && { backgroundColor: '#f1f5f9', cursor: 'not-allowed' }) }}
+              placeholder="Город, район (введите вручную или нажмите «Определить локацию»)"
+              style={{ flex: 1, minWidth: 200 }}
             />
             <button
               type="button"
-              onClick={() => setLocationEditable((v) => !v)}
-              className={locationEditable ? styles.viewBtn : styles.editBtn}
+              onClick={() => setDetermineLocationTrigger((v) => v + 1)}
+              disabled={mapSearchMode === 'byName' ? !formData.title?.trim() : (formData.latitude == null || formData.longitude == null)}
+              className={styles.editBtn}
               style={{ padding: 15 }}
-              title={locationEditable ? 'Заблокировать редактирование локации' : 'Разрешить редактирование локации'}
-              aria-label={locationEditable ? 'Заблокировать локацию' : 'Разблокировать локацию'}
+              title={mapSearchMode === 'byName' ? 'Определить локацию по названию места' : 'Определить локацию по координатам'}
+              aria-label="Определить локацию"
             >
-              {locationEditable ? <Lock size={18} /> : <Unlock size={18} />}
+              <MapPin size={18} />
             </button>
             <button
               type="button"
@@ -485,27 +486,85 @@ export default function PlaceEditPage() {
           </div>
         </div>
 
-        {/* Карта всегда смонтирована, чтобы геокодирование подставляло локацию при вводе названия; блок с картой показывается только при mapVisible */}
-        {mapVisible ? (
+        {/* Карта: поиск по названию или по координатам */}
+        {mapVisible && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Местоположение на карте</label>
+            <div className={styles.mapSearchToggleWrap} style={{ marginBottom: 12 }}>
+              <span className={styles.mapSearchToggleLabel}>Поиск на карте</span>
+              <div className={styles.typeToggle}>
+                <button
+                  type="button"
+                  className={`${styles.typeToggleBtn} ${mapSearchMode === 'byName' ? styles.typeToggleBtnActive : ''}`}
+                  onClick={() => setMapSearchMode('byName')}
+                >
+                  По названию места
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.typeToggleBtn} ${mapSearchMode === 'byCoordinates' ? styles.typeToggleBtnActive : ''}`}
+                  onClick={() => setMapSearchMode('byCoordinates')}
+                >
+                  По координатам
+                </button>
+              </div>
+            </div>
+            {mapSearchMode === 'byCoordinates' && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', marginBottom: 4 }}>Координаты (широта, долгота)</label>
+                <input
+                  type="text"
+                  value={
+                    formData.latitude != null && formData.longitude != null
+                      ? `${formData.latitude}, ${formData.longitude}`
+                      : formData.latitude != null
+                        ? String(formData.latitude)
+                        : formData.longitude != null
+                          ? `, ${formData.longitude}`
+                          : ''
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v) {
+                      setFormData((prev) => ({ ...prev, latitude: null, longitude: null }));
+                      return;
+                    }
+                    const parts = v.split(/[,\s]+/).map((s) => s.replace(',', '.').trim()).filter(Boolean);
+                    const lat = parts[0] ? parseFloat(parts[0].replace(',', '.')) : null;
+                    const lng = parts[1] ? parseFloat(parts[1].replace(',', '.')) : null;
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: Number.isFinite(lat) ? lat : prev.latitude,
+                      longitude: Number.isFinite(lng) ? lng : prev.longitude,
+                    }));
+                  }}
+                  className={styles.formInput}
+                  placeholder="43.526598, 42.067218"
+                />
+              </div>
+            )}
             <YandexMapPicker
               latitude={formData.latitude}
               longitude={formData.longitude}
-              geocodeQuery={formData.title?.trim() || ''}
+              geocodeQuery={mapSearchMode === 'byName' ? (formData.title?.trim() || '') : ''}
               onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
               onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+              determineLocationTrigger={determineLocationTrigger}
+              determineLocationBy={mapSearchMode === 'byName' ? 'name' : 'coordinates'}
               visible={true}
               height={500}
             />
           </div>
-        ) : (
+        )}
+        {!mapVisible && (
           <YandexMapPicker
             latitude={formData.latitude}
             longitude={formData.longitude}
-            geocodeQuery={formData.title?.trim() || ''}
+            geocodeQuery={mapSearchMode === 'byName' ? (formData.title?.trim() || '') : ''}
             onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
             onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+            determineLocationTrigger={determineLocationTrigger}
+            determineLocationBy={mapSearchMode === 'byName' ? 'name' : 'coordinates'}
             visible={false}
             height={500}
           />

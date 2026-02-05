@@ -781,7 +781,20 @@
   gap: 20px;
 }
 
-/* Переключатель типа (Новость / Статья) */
+/* Переключатель типа (Новость / Статья) и поиска на карте */
+.mapSearchToggleWrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mapSearchToggleLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
 .typeToggle {
   display: inline-flex;
   background: #f1f5f9;

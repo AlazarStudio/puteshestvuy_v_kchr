@@ -18,7 +18,18 @@ function getLocationInKchr(first) {
   return notRepublic.length ? notRepublic[0] : '';
 }
 
-export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geocodeTrigger, onCoordinatesChange, onLocationChange, visible = true, height = 500 }) {
+/**
+ * @param {Object} props
+ * @param {number|null} props.latitude
+ * @param {number|null} props.longitude
+ * @param {string} props.geocodeQuery - запрос для поиска на карте (название места или пусто при режиме координат)
+ * @param {number} [props.geocodeTrigger] - при изменении принудительно геокодирует geocodeQuery
+ * @param {function} props.onCoordinatesChange
+ * @param {function} [props.onLocationChange] - вызывается только при явном determineLocationTrigger
+ * @param {number} [props.determineLocationTrigger] - при изменении определяет локацию и вызывает onLocationChange
+ * @param {'name'|'coordinates'} [props.determineLocationBy='name'] - по названию (geocodeQuery) или по координатам (reverse geocode)
+ */
+export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geocodeTrigger, onCoordinatesChange, onLocationChange, determineLocationTrigger, determineLocationBy = 'name', visible = true, height = 500 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const placemarkRef = useRef(null);
@@ -116,7 +127,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
     mapRef.current.setCenter(coords);
   }, [visible, scriptReady, latitude, longitude]);
 
-  // Геокодирование только при изменении запроса. Колбэки через ref, чтобы после перетаскивания маркера эффект не перезапускался и не перезаписывал координаты.
+  // Геокодирование при изменении запроса — только обновляет координаты на карте, локацию НЕ подставляет
   useEffect(() => {
     if (!scriptReady || !window.ymaps) return;
 
@@ -137,11 +148,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
         const coords = first.geometry.getCoordinates();
         const coordCb = onCoordinatesChangeRef.current;
         if (coordCb) coordCb(coords[0], coords[1]);
-        const locationCb = onLocationChangeRef.current;
-        if (locationCb) {
-          const shortLocation = getLocationInKchr(first);
-          if (shortLocation) locationCb(shortLocation);
-        }
+        // Локацию не подставляем — только по кнопке «Определить локацию»
       }).catch(() => {});
     }, GEOCODE_DEBOUNCE_MS);
 
@@ -150,7 +157,7 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
     };
   }, [scriptReady, geocodeQuery]);
 
-  // по кнопке «Найти по адресу» — принудительно геокодируем (даже если координаты уже есть)
+  // По кнопке «Найти» — принудительно геокодируем запрос (только координаты)
   const prevGeocodeTriggerRef = useRef(geocodeTrigger);
   useEffect(() => {
     const query = (geocodeQuery || '').trim();
@@ -162,13 +169,38 @@ export default function YandexMapPicker({ latitude, longitude, geocodeQuery, geo
       const coords = first.geometry.getCoordinates();
       const coordCb = onCoordinatesChangeRef.current;
       if (coordCb) coordCb(coords[0], coords[1]);
-      const locationCb = onLocationChangeRef.current;
-      if (locationCb) {
-        const shortLocation = getLocationInKchr(first);
-        if (shortLocation) locationCb(shortLocation);
-      }
     }).catch(() => {});
   }, [scriptReady, geocodeQuery, geocodeTrigger]);
+
+  // По кнопке «Определить локацию» — геокодируем по названию или обратное геокодирование по координатам
+  const prevDetermineLocationRef = useRef(determineLocationTrigger);
+  useEffect(() => {
+    if (!scriptReady || !window.ymaps || determineLocationTrigger == null || determineLocationTrigger === prevDetermineLocationRef.current) return;
+    prevDetermineLocationRef.current = determineLocationTrigger;
+    const locationCb = onLocationChangeRef.current;
+    if (!locationCb) return;
+
+    if (determineLocationBy === 'name') {
+      const query = (geocodeQuery || '').trim();
+      if (!query) return;
+      window.ymaps.geocode(query).then((res) => {
+        const first = res.geoObjects.get(0);
+        if (!first) return;
+        const shortLocation = getLocationInKchr(first);
+        if (shortLocation) locationCb(shortLocation);
+      }).catch(() => {});
+    } else {
+      const lat = latitude != null && Number(latitude) ? Number(latitude) : null;
+      const lon = longitude != null && Number(longitude) ? Number(longitude) : null;
+      if (lat == null || lon == null) return;
+      window.ymaps.geocode([lat, lon]).then((res) => {
+        const first = res.geoObjects.get(0);
+        if (!first) return;
+        const shortLocation = getLocationInKchr(first);
+        if (shortLocation) locationCb(shortLocation);
+      }).catch(() => {});
+    }
+  }, [scriptReady, determineLocationTrigger, determineLocationBy, geocodeQuery, latitude, longitude]);
 
   if (!visible) return null;
 
