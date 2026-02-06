@@ -122,15 +122,17 @@ export default function MoveLines() {
   )
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.sliderLine}>
-        <Track items={line1Items} />
-      </div>
-      <div className={styles.sliderLine}>
-        <Track items={line2Items} reverse />
-      </div>
-      <div className={styles.sliderLine}>
-        <Track items={line3Items} />
+    <div className={styles.wrapperAll}>
+      <div className={styles.wrapper}>
+        <div className={styles.sliderLine}>
+          <Track items={line1Items} />
+        </div>
+        <div className={styles.sliderLine}>
+          <Track items={line2Items} reverse />
+        </div>
+        <div className={styles.sliderLine}>
+          <Track items={line3Items} />
+        </div>
       </div>
     </div>
   )

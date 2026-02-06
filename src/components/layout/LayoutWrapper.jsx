@@ -14,12 +14,21 @@ export default function LayoutWrapper({ children }) {
   const [searchParams] = useSearchParams()
   const isFirstLoad = useRef(true)
   const prevRoute = useRef(null)
+  const navigationStartRef = useRef(0)
+  const PRELOADER_MIN_MS = 500
 
   // Проверяем, находимся ли мы в админке
   const isAdminPage = pathname?.startsWith('/admin')
 
   // Показываем прелоадер при первой загрузке или при переходе по ссылке
   const showPreloader = isLoading || isNavigating
+
+  // При показе прелоадера прокручиваем страницу вверх
+  useEffect(() => {
+    if (showPreloader) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }
+  }, [showPreloader])
 
   // Управление классом loading на body: в админке всегда снимаем, на сайте — по showPreloader
   useLayoutEffect(() => {
@@ -37,13 +46,13 @@ export default function LayoutWrapper({ children }) {
     }
   }, [showPreloader, isAdminPage])
 
-  // Первоначальная загрузка страницы
+  // Первоначальная загрузка страницы (прелоадер минимум 0.5 сек)
   useEffect(() => {
     const handleLoad = () => {
       setTimeout(() => {
         setIsLoading(false)
         isFirstLoad.current = false
-      }, 800)
+      }, PRELOADER_MIN_MS)
     }
 
     if (document.readyState === 'complete') {
@@ -73,10 +82,14 @@ export default function LayoutWrapper({ children }) {
       const pathAndQuery = href.split('#')[0]
       const currentRoute = pathname + (searchParams?.toString() ? '?' + searchParams.toString() : '')
       if (pathAndQuery === currentRoute || pathAndQuery === '' || pathAndQuery === pathname) return
+      navigationStartRef.current = Date.now()
       setIsNavigating(true)
     }
 
-    const handleNavigateStart = () => setIsNavigating(true)
+    const handleNavigateStart = () => {
+      navigationStartRef.current = Date.now()
+      setIsNavigating(true)
+    }
 
     document.addEventListener('click', handleClick, true)
     window.addEventListener('navigate-start', handleNavigateStart)
@@ -101,12 +114,10 @@ export default function LayoutWrapper({ children }) {
 
     if (currentRoute !== prev) {
       prevRoute.current = currentRoute
-      const timer = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsNavigating(false)
-        })
-      })
-      return () => cancelAnimationFrame(timer)
+      const elapsed = Date.now() - navigationStartRef.current
+      const remaining = Math.max(0, PRELOADER_MIN_MS - elapsed)
+      const timer = setTimeout(() => setIsNavigating(false), remaining)
+      return () => clearTimeout(timer)
     }
   }, [pathname, searchParams, isAdminPage])
 
