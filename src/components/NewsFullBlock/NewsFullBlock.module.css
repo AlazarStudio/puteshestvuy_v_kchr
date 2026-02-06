@@ -3,6 +3,9 @@
     padding: 115px 0;
     color: #fff;
     position: relative;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
 }
 
 .news::before{
@@ -116,4 +119,10 @@
 .shortTitle {
     font-weight: 500;
     font-size: 18px;
+}
+
+.loading {
+    padding: 60px 0;
+    text-align: center;
+    font-size: 16px;
 }

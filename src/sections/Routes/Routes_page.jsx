@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Routes_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -38,12 +39,19 @@ const defaultFilters = Object.fromEntries(
 )
 
 export default function Routes_page() {
+  const [searchParams] = useSearchParams()
   const [sortBy, setSortBy] = useState('popularity')
   const [searchQuery, setSearchQuery] = useState('')
   const [routes, setRoutes] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState(defaultFilters)
+  const [filters, setFilters] = useState(() => {
+    const seasonsFromUrl = searchParams.getAll('seasons').filter(Boolean)
+    if (seasonsFromUrl.length > 0) {
+      return { ...defaultFilters, seasons: seasonsFromUrl }
+    }
+    return defaultFilters
+  })
   const [filterOptions, setFilterOptions] = useState(null)
 
   const handleSortChange = (event) => {
@@ -53,6 +61,12 @@ export default function Routes_page() {
   const handleFiltersChange = (next) => {
     setFilters(next)
   }
+
+  // Синхронизация фильтра сезонов с URL (при переходе с главной по карточкам Зима/Весна/Лето/Осень)
+  useEffect(() => {
+    const seasonsFromUrl = searchParams.getAll('seasons').filter(Boolean)
+    setFilters((prev) => ({ ...prev, seasons: seasonsFromUrl }))
+  }, [searchParams])
 
   // Добавляем ключи extra-групп в filters при первой загрузке опций
   useEffect(() => {

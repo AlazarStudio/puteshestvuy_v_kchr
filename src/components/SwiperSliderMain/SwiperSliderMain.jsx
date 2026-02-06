@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './SwiperSliderMain.module.css'
 
@@ -12,6 +13,7 @@ import { Navigation } from 'swiper/modules';
 import { Link } from 'react-router-dom';
 import TitleButton from '../TitleButton/TitleButton';
 import { useRef } from 'react';
+import { publicNewsAPI, getImageUrl } from '@/lib/api';
 
 function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
   const ref = useRef(null)
@@ -75,32 +77,32 @@ function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
 }
 
 export default function SwiperSliderMain() {
-  const slides = [
-    {
-      id: 1,
-      href: '/#',
-      imgSrc: '/helpfull1.png',
-      title: 'Этикет региона: дресс-код и культура',
-    },
-    {
-      id: 2,
-      href: '/#',
-      imgSrc: '/helpfull2.png',
-      title: 'Дресс-код гор Карачаево-Черкесии',
-    },
-    {
-      id: 3,
-      href: '/#',
-      imgSrc: '/helpfull1.png',
-      title: 'Этикет региона: дресс-код и культура',
-    },
-    {
-      id: 4,
-      href: '/#',
-      imgSrc: '/helpfull2.png',
-      title: 'Дресс-код гор Карачаево-Черкесии',
-    },
-  ]
+  const [slides, setSlides] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    publicNewsAPI.getAll({ type: 'article', limit: 8 })
+      .then(({ data }) => {
+        if (!cancelled && data?.items?.length) {
+          setSlides(data.items.map((item) => ({
+            id: item.id,
+            href: `/news/${item.slug || item.id}`,
+            imgSrc: getImageUrl(item.image || item.preview || item.images?.[0]) || '/helpfull1.png',
+            title: item.title || '',
+          })))
+        } else if (!cancelled) {
+          setSlides([])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSlides([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const renderPattern = (patternColor) => (
     <svg width="255" height="256" viewBox="0 0 255 256" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -112,8 +114,13 @@ export default function SwiperSliderMain() {
 
   return (
     <section className={styles.slider}>
-      <TitleButton title="" buttonLink="/#" />
+      <TitleButton title="" buttonLink="/services?filter=articles" />
 
+      {loading ? (
+        <div className={styles.loading}>Загрузка статей...</div>
+      ) : slides.length === 0 ? (
+        <div className={styles.empty}>Статьи пока не добавлены</div>
+      ) : (
       <Swiper
         navigation={true}
         modules={[Navigation]}
@@ -138,6 +145,7 @@ export default function SwiperSliderMain() {
           )
         })}
       </Swiper>
+      )}
     </section>
   )
 }

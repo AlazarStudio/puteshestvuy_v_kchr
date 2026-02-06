@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './News_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -25,6 +26,8 @@ function formatDate(isoStr) {
 }
 
 export default function News_page() {
+  const [searchParams] = useSearchParams()
+  const typeFilter = searchParams.get('type') || 'news' // 'news' | 'article'
   const [sortBy, setSortBy] = useState('newest')
   const [searchQuery, setSearchQuery] = useState('')
   const [news, setNews] = useState([])
@@ -39,6 +42,7 @@ export default function News_page() {
         page: 1,
         limit: 100,
         search: searchQuery.trim() || undefined,
+        type: typeFilter,
       })
       const items = data?.items || []
       setNews(items)
@@ -49,7 +53,7 @@ export default function News_page() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery])
+  }, [searchQuery, typeFilter])
 
   useEffect(() => {
     const t = setTimeout(fetchNews, searchQuery ? 400 : 0)
