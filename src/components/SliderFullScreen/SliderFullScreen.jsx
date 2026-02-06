@@ -10,6 +10,7 @@ const SLIDER_LIMIT = 6
 const TIME_RUNNING = 500
 const IMAGE_DELAY_MS = 2000
 const FADE_DURATION_MS = 400
+const VIDEO_READY_DELAY_MS = 1000
 
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
@@ -39,8 +40,11 @@ export default function SliderFullScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [direction, setDirection] = useState(null)
   const [showVideoOnCurrentSlide, setShowVideoOnCurrentSlide] = useState(false)
+  const [currentSlideVideoLoaded, setCurrentSlideVideoLoaded] = useState(false)
   const [outgoingVideoVisible, setOutgoingVideoVisible] = useState(true)
   const outgoingWasShowingVideoRef = useRef(false)
+  const currentSlideIdRef = useRef(slides[0]?.id)
+  currentSlideIdRef.current = slides[0]?.id
 
   const currentSlideHasVideo = slides[0]?.video
   const outgoingSlideHasVideo =
@@ -118,16 +122,27 @@ export default function SliderFullScreen() {
     return () => cancelAnimationFrame(id)
   }, [shouldFadeOutgoingVideo, outgoingVideoVisible])
 
-  // При смене слайда с видео: показываем картинку 0.5с, затем плавный переход в видео
+  // При смене слайда с видео: сбрасываем состояние
+  const [delayPassed, setDelayPassed] = useState(false)
   useEffect(() => {
     if (!currentSlideHasVideo) {
       setShowVideoOnCurrentSlide(false)
+      setCurrentSlideVideoLoaded(false)
+      setDelayPassed(false)
       return
     }
     setShowVideoOnCurrentSlide(false)
-    const t = setTimeout(() => setShowVideoOnCurrentSlide(true), IMAGE_DELAY_MS)
+    setCurrentSlideVideoLoaded(false)
+    setDelayPassed(false)
+    const t = setTimeout(() => setDelayPassed(true), IMAGE_DELAY_MS)
     return () => clearTimeout(t)
   }, [slides[0]?.id])
+
+  // Показываем видео только когда прошла задержка И видео загружено
+  const canShowVideo = currentSlideHasVideo && delayPassed && currentSlideVideoLoaded
+  useEffect(() => {
+    setShowVideoOnCurrentSlide(canShowVideo)
+  }, [canShowVideo])
 
   // Отдельный список для thumbnail:
   // первый элемент основного списка показываем в конце,
@@ -205,8 +220,16 @@ export default function SliderFullScreen() {
                     muted
                     loop
                     playsInline
+                    preload="auto"
                     className={styles.mediaLayer}
                     style={{ opacity: showVideoOnCurrentSlide ? 1 : 0 }}
+                    onCanPlayThrough={() => {
+                      if (currentSlideIdRef.current === slide.id) {
+                        setTimeout(() => {
+                          if (currentSlideIdRef.current === slide.id) setCurrentSlideVideoLoaded(true)
+                        }, VIDEO_READY_DELAY_MS)
+                      }
+                    }}
                   />
                 </>
               ) : slide.video && outgoingWasShowingVideoRef.current && ((index === 1 && direction === 'prev') || (index === slides.length - 1 && direction === 'next')) ? (
