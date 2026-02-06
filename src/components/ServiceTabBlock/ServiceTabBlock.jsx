@@ -40,14 +40,15 @@ const TAB_ORDER = [
   'Пожарная охрана',
 ]
 
+const CARDS_PER_TAB = 8
+
 export default function ServiceTabBlock() {
   const [tabs, setTabs] = useState([])
   const [activeTab, setActiveTab] = useState(null)
-  const [services, setServices] = useState([])
+  const [servicesByCategory, setServicesByCategory] = useState({})
   const [loading, setLoading] = useState(true)
-  const [cardsLoading, setCardsLoading] = useState(false)
 
-  // Загрузка всех услуг для определения заполненных категорий
+  // Одна загрузка всех услуг — данные по категориям сохраняются для всех табов
   useEffect(() => {
     let cancelled = false
     publicServicesAPI.getAll({ limit: 500 })
@@ -56,22 +57,30 @@ export default function ServiceTabBlock() {
           const byCategory = {}
           data.items.forEach((s) => {
             const cat = s.category || ''
-            if (cat) byCategory[cat] = (byCategory[cat] || 0) + 1
+            if (cat) {
+              if (!byCategory[cat]) byCategory[cat] = []
+              byCategory[cat].push(s)
+            }
           })
+          setServicesByCategory(byCategory)
           const filledTabs = TAB_ORDER.filter((label) => {
             const cat = FILTER_TO_CATEGORY[label]
-            return cat && (byCategory[cat] || 0) > 0
+            return cat && (byCategory[cat]?.length || 0) > 0
           })
           setTabs(filledTabs)
-          if (filledTabs.length > 0 && !activeTab) {
+          if (filledTabs.length > 0) {
             setActiveTab(filledTabs[0])
           }
         } else if (!cancelled) {
+          setServicesByCategory({})
           setTabs([])
         }
       })
       .catch(() => {
-        if (!cancelled) setTabs([])
+        if (!cancelled) {
+          setServicesByCategory({})
+          setTabs([])
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -79,31 +88,9 @@ export default function ServiceTabBlock() {
     return () => { cancelled = true }
   }, [])
 
-  // Загрузка услуг для выбранной вкладки
-  useEffect(() => {
-    if (!activeTab) {
-      setServices([])
-      return
-    }
-    const category = FILTER_TO_CATEGORY[activeTab]
-    if (!category) return
-
-    let cancelled = false
-    setCardsLoading(true)
-    publicServicesAPI.getAll({ category: [category], limit: 8 })
-      .then(({ data }) => {
-        if (!cancelled) {
-          setServices(data?.items || [])
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setServices([])
-      })
-      .finally(() => {
-        if (!cancelled) setCardsLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [activeTab])
+  const services = activeTab
+    ? (servicesByCategory[FILTER_TO_CATEGORY[activeTab]] || []).slice(0, CARDS_PER_TAB)
+    : []
 
   if (loading || tabs.length === 0) {
     return null
@@ -126,9 +113,7 @@ export default function ServiceTabBlock() {
         <div className={styles.line}></div>
       </nav>
       <div className={styles.cards}>
-        {cardsLoading ? (
-          <div className={styles.loading}>Загрузка...</div>
-        ) : services.length === 0 ? (
+        {services.length === 0 ? (
           <div className={styles.empty}>Услуги не найдены</div>
         ) : (
           services.map((service) => (

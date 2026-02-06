@@ -24,7 +24,16 @@ function duplicateItems(items, times = 4) {
   return result
 }
 
-const MARQUEE_DURATION = 500
+function splitIntoLines(items, numLines = 3) {
+  const shuffled = shuffle([...items])
+  const lines = Array.from({ length: numLines }, () => [])
+  shuffled.forEach((item, i) => {
+    lines[i % numLines].push(item)
+  })
+  return lines.map((line) => line.map((item, idx) => ({ ...item, key: `${item.id}-line-${idx}` })))
+}
+
+const MARQUEE_DURATION = 200
 
 export default function MoveLines() {
   const [items, setItems] = useState([])
@@ -83,7 +92,10 @@ export default function MoveLines() {
     return null
   }
 
-  const lineItems = duplicateItems(items, 4)
+  const [line1, line2, line3] = splitIntoLines(items, 3)
+  const line1Items = duplicateItems(line1, 4)
+  const line2Items = duplicateItems(line2, 4)
+  const line3Items = duplicateItems(line3, 4)
 
   const Tag = ({ item }) => (
     <Link to={item.url} className={styles.tag}>
@@ -94,15 +106,15 @@ export default function MoveLines() {
     </Link>
   )
 
-  const Track = ({ reverse }) => (
+  const Track = ({ items: trackItems, reverse }) => (
     <div className={`${styles.track} ${reverse ? styles.trackReverse : ''}`} style={{ animationDuration: `${MARQUEE_DURATION}s` }}>
       <div className={styles.trackContent}>
-        {lineItems.map((item) => (
+        {trackItems.map((item) => (
           <Tag key={item.key} item={item} />
         ))}
       </div>
       <div className={styles.trackContent} aria-hidden="true">
-        {lineItems.map((item) => (
+        {trackItems.map((item) => (
           <Tag key={`dup-${item.key}`} item={item} />
         ))}
       </div>
@@ -112,13 +124,13 @@ export default function MoveLines() {
   return (
     <div className={styles.wrapper}>
       <div className={styles.sliderLine}>
-        <Track />
+        <Track items={line1Items} />
       </div>
       <div className={styles.sliderLine}>
-        <Track reverse />
+        <Track items={line2Items} reverse />
       </div>
       <div className={styles.sliderLine}>
-        <Track />
+        <Track items={line3Items} />
       </div>
     </div>
   )
