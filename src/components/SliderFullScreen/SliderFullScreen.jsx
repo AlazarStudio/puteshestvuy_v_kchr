@@ -13,13 +13,19 @@ function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
   // Главная картинка — первый из галереи, иначе превью
   const mainImage = place.images?.[0] ?? place.image
+  const reviewsCount = place.reviewsCount ?? 0
+  const hasReviews = reviewsCount > 0
+  const rating = hasReviews && place.rating != null && place.rating !== ''
+    ? (Number(place.rating) % 1 === 0 ? String(place.rating) : Number(place.rating).toFixed(1))
+    : null
   return {
     id: place.id,
     slug: place.slug,
     image: getImageUrl(mainImage),
     place: place.location || '',
     title: place.title || '',
-    rating: place.rating != null && place.rating !== '' ? String(place.rating) : '—',
+    rating,
+    reviewsCount,
     description,
   }
 }
@@ -143,16 +149,25 @@ export default function SliderFullScreen() {
               <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
               <div className={styles.title}>{slide.title}</div>
               <div className={styles.topic}>
-                <div className={styles.stars}>
-                  <img src="/star.png" alt="" />
-                  <img src="/star.png" alt="" />
-                  <img src="/star.png" alt="" />
-                  <img src="/star.png" alt="" />
-                  <img src="/star.png" alt="" />
-                </div>
-                <div className={styles.rating}>
-                  {slide.rating}
-                </div>
+                {slide.rating != null ? (
+                  <>
+                    <div className={styles.stars}>
+                      <img src="/star.png" alt="" />
+                      <img src="/star.png" alt="" />
+                      <img src="/star.png" alt="" />
+                      <img src="/star.png" alt="" />
+                      <img src="/star.png" alt="" />
+                    </div>
+                    <div className={styles.rating}>
+                      {slide.rating}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.stars} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
+                    <div className={styles.rating} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
+                  </>
+                )}
               </div>
               <div className={styles.des}>
                 {slide.description ? (

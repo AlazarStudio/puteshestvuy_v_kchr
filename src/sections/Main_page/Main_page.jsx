@@ -104,6 +104,7 @@ export default function Main_page() {
                   key={place.id}
                   rating={place.rating != null ? String(place.rating) : '—'}
                   feedback={formatReviews(place.reviewsCount ?? 0)}
+                  reviewsCount={place.reviewsCount ?? 0}
                   place={place.location || '—'}
                   title={place.title}
                   desc={stripHtml(place.shortDescription || place.description || '')}

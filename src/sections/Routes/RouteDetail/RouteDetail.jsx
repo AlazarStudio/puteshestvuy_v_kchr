@@ -892,6 +892,7 @@ export default function RouteDetail({ routeSlug }) {
                             width="336px"
                             rating={ratingStr}
                             feedback={feedbackStr}
+                            reviewsCount={place.reviewsCount ?? 0}
                             place={place.location || ''}
                             title={place.title || ''}
                             desc={place.shortDescription || ''}

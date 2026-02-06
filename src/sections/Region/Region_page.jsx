@@ -418,6 +418,7 @@ export default function Region_page() {
                     <PlaceBlock 
                       rating={item.rating || ''} 
                       feedback={item.feedback || ''} 
+                      reviewsCount={item.reviewsCount ?? parseInt((item.feedback || '').match(/\d+/)?.[0] || '0', 10)}
                       place={item.place || ''} 
                       title={item.title || ''} 
                       desc={item.desc || ''} 

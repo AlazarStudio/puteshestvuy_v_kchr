@@ -414,6 +414,7 @@ export default function Places_page() {
                         ? `${place.reviewsCount} отзыва`
                         : `${place.reviewsCount || 0} отзывов`
                   }
+                  reviewsCount={place.reviewsCount ?? 0}
                   place={place.location || '—'}
                   title={place.title}
                   desc={stripHtml(place.shortDescription || place.description || '')}
