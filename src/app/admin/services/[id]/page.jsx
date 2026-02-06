@@ -10,6 +10,7 @@ import { CATEGORY_TO_TEMPLATE_KEY } from '@/sections/Services/ServiceDetail/serv
 import { SERVICE_TYPE_FIELDS } from '@/sections/Services/ServiceDetail/serviceTypeFields';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import ConfirmModal from '../../components/ConfirmModal';
+import SaveProgressModal from '../../components/SaveProgressModal';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
 
@@ -117,6 +118,7 @@ export default function ServiceEditPage() {
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   /** Снимок последнего сохранённого состояния (строка) — для надёжного сравнения и обновления UI */
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState(null);
   const certificateFileInputRef = useRef(null);
@@ -419,30 +421,73 @@ export default function ServiceEditPage() {
     setIsSaving(true);
     setError('');
 
+    const isGuide = formData.category === 'Гид';
+    const countFiles = () => {
+      let n = 0;
+      if (isGuide) {
+        if (formData.data?.avatar?.type === 'file') n++;
+        (formData.data?.galleryImages ?? []).forEach((item) => { if (item?.type === 'file') n++; });
+      } else {
+        if (formData.data?.avatar?.type === 'file') n++;
+        (formData.images ?? []).forEach((item) => { if (item?.type === 'file') n++; });
+      }
+      (formData.data?.roomTypes ?? []).forEach((room) => {
+        (room.images ?? []).forEach((img) => { if (img?.type === 'file') n++; });
+      });
+      return n;
+    };
+    const totalFiles = countFiles();
+    const hasUploads = totalFiles > 0;
+    if (hasUploads) {
+      setSaveProgress({
+        open: true,
+        steps: [
+          { label: 'Загрузка изображений', status: 'active' },
+          { label: 'Сохранение данных', status: 'pending' },
+        ],
+        totalProgress: 0,
+      });
+    }
+
     try {
       const imageUrls = [];
-      const isGuide = formData.category === 'Гид';
       let resolvedGuideAvatar = '';
       let resolvedGuideGallery = [];
       let resolvedOtherAvatar = '';
+      let uploadedCount = 0;
+
+      const uploadWithProgress = (file) =>
+        mediaAPI.upload(
+          (() => { const fd = new FormData(); fd.append('file', file); return fd; })(),
+          {
+            onUploadProgress: (e) => {
+              if (!hasUploads || !totalFiles) return;
+              const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+              const overall = Math.round(((uploadedCount * 100 + pct) / totalFiles));
+              setSaveProgress((prev) => ({
+                ...prev,
+                steps: prev.steps.map((s, i) => (i === 0 ? { ...s, progress: overall, subLabel: `Файл ${uploadedCount + 1} из ${totalFiles}` } : s)),
+                totalProgress: Math.round((overall / 100 / 2) * 100),
+              }));
+            },
+          }
+        );
 
       if (isGuide) {
         const avatarItem = formData.data?.avatar;
         if (avatarItem?.type === 'url') resolvedGuideAvatar = avatarItem.value;
         else if (avatarItem?.type === 'file') {
-          const fd = new FormData();
-          fd.append('file', avatarItem.value);
-          const res = await mediaAPI.upload(fd);
+          const res = await uploadWithProgress(avatarItem.value);
           if (res.data?.url) resolvedGuideAvatar = res.data.url;
+          uploadedCount++;
         }
         const galleryItems = formData.data?.galleryImages ?? [];
         for (const item of galleryItems) {
           if (item.type === 'url') resolvedGuideGallery.push(item.value);
           else {
-            const fd = new FormData();
-            fd.append('file', item.value);
-            const res = await mediaAPI.upload(fd);
+            const res = await uploadWithProgress(item.value);
             if (res.data?.url) resolvedGuideGallery.push(res.data.url);
+            uploadedCount++;
           }
         }
         if (resolvedGuideAvatar) imageUrls.push(resolvedGuideAvatar);
@@ -451,20 +496,22 @@ export default function ServiceEditPage() {
         const avatarItem = formData.data?.avatar;
         if (avatarItem?.type === 'url') resolvedOtherAvatar = avatarItem.value;
         else if (avatarItem?.type === 'file') {
-          const fd = new FormData();
-          fd.append('file', avatarItem.value);
-          const res = await mediaAPI.upload(fd);
+          const res = await uploadWithProgress(avatarItem.value);
           if (res.data?.url) resolvedOtherAvatar = res.data.url;
+          uploadedCount++;
         }
         for (const item of formData.images) {
           if (item.type === 'url') imageUrls.push(item.value);
           else {
-            const fd = new FormData();
-            fd.append('file', item.value);
-            const res = await mediaAPI.upload(fd);
+            const res = await uploadWithProgress(item.value);
             if (res.data?.url) imageUrls.push(res.data.url);
+            uploadedCount++;
           }
         }
+      }
+
+      if (hasUploads) {
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 0 ? { ...s, status: 'done' } : { ...s, status: 'active' })), totalProgress: 50 }));
       }
 
       const dataToSave = { ...formData.data };
@@ -484,10 +531,9 @@ export default function ServiceEditPage() {
           for (const img of images) {
             if (img?.type === 'url' && img.value) urls.push(img.value);
             else if (img?.type === 'file' && img.value) {
-              const fd = new FormData();
-              fd.append('file', img.value);
-              const res = await mediaAPI.upload(fd);
+              const res = await uploadWithProgress(img.value);
               if (res.data?.url) urls.push(res.data.url);
+              uploadedCount++;
             }
           }
           resolvedRoomTypes.push({ name: room.name ?? '', price: room.price ?? '', description: room.description ?? '', images: urls });
@@ -521,6 +567,10 @@ export default function ServiceEditPage() {
       if (isNew) {
         const res = await servicesAPI.create(payload);
         const created = res.data;
+        if (hasUploads) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+          setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
+        }
         if (isGuide) {
           if (formData.data?.avatar?.type === 'file' && formData.data.avatar.preview) URL.revokeObjectURL(formData.data.avatar.preview);
           (formData.data?.galleryImages ?? []).forEach((item) => {
@@ -534,6 +584,10 @@ export default function ServiceEditPage() {
         }
       } else {
         await servicesAPI.update(params.id, payload);
+        if (hasUploads) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+          setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
+        }
         if (isGuide) {
           if (formData.data?.avatar?.type === 'file' && formData.data.avatar.preview) URL.revokeObjectURL(formData.data.avatar.preview);
           (formData.data?.galleryImages ?? []).forEach((item) => {
@@ -575,6 +629,14 @@ export default function ServiceEditPage() {
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       setError(err.response?.data?.message || 'Ошибка сохранения услуги');
+      if (hasUploads) {
+        setSaveProgress((prev) => {
+          const idx = prev.steps.findIndex((s) => s.status === 'active');
+          const newSteps = prev.steps.map((s, i) => (i === idx ? { ...s, status: 'error' } : s));
+          return { ...prev, steps: newSteps };
+        });
+        setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 2000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -1663,6 +1725,12 @@ export default function ServiceEditPage() {
         dialogStyle={{ maxWidth: 500 }}
         onCancel={() => setLeaveModalOpen(false)}
         onConfirm={goToList}
+      />
+
+      <SaveProgressModal
+        open={saveProgress.open}
+        steps={saveProgress.steps}
+        totalProgress={saveProgress.totalProgress}
       />
 
       {showToast && (

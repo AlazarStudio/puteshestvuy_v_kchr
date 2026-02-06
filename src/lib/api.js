@@ -156,11 +156,16 @@ export const reviewsAPI = {
 
 // Media API
 export const mediaAPI = {
-  upload: (formData) => api.post('/admin/media/upload', formData, {
+  upload: (formData, { onUploadProgress } = {}) => api.post('/admin/media/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
   uploadDocument: (formData) => api.post('/admin/media/upload-document', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  uploadVideo: (formData, { onUploadProgress } = {}) => api.post('/admin/media/upload-video', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
   }),
   delete: (id) => api.delete(`/admin/media/${id}`),
 };

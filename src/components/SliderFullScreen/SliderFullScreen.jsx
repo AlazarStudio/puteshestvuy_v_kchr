@@ -11,8 +11,8 @@ const TIME_RUNNING = 500
 
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
-  // Главная картинка — первый из галереи, иначе превью
   const mainImage = place.images?.[0] ?? place.image
+  const sliderVideo = place.sliderVideo || null
   const reviewsCount = place.reviewsCount ?? 0
   const hasReviews = reviewsCount > 0
   const rating = hasReviews && place.rating != null && place.rating !== ''
@@ -22,6 +22,7 @@ function placeToSlide(place) {
     id: place.id,
     slug: place.slug,
     image: getImageUrl(mainImage),
+    video: sliderVideo ? getImageUrl(sliderVideo) : null,
     place: place.location || '',
     title: place.title || '',
     rating,
@@ -143,7 +144,11 @@ export default function SliderFullScreen() {
         {slides.map((slide) => (
           <div key={slide.id} className={styles.item}>
             <div className={styles.image}>
-              <img src={slide.image} alt={slide.title} />
+              {slide.video ? (
+                <video src={slide.video} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <img src={slide.image} alt={slide.title} />
+              )}
             </div>
             <div className={styles.content}>
               <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>

@@ -7,6 +7,7 @@ import { routesAPI, placesAPI, servicesAPI, mediaAPI, routeFiltersAPI, getImageU
 import RichTextEditor from '@/components/RichTextEditor';
 import YandexMapRoute from '@/components/YandexMapRoute';
 import ConfirmModal from '../../components/ConfirmModal';
+import SaveProgressModal from '../../components/SaveProgressModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
@@ -249,15 +250,24 @@ export default function RouteEditPage() {
   const [whatToBringIconPickerIndex, setWhatToBringIconPickerIndex] = useState(null);
   const [whatToBringIconGroup, setWhatToBringIconGroup] = useState('all');
   const [whatToBringIconSearch, setWhatToBringIconSearch] = useState('');
+  const [pendingGallery, setPendingGallery] = useState([]);
+  const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
+  const pendingGalleryRef = useRef([]);
+  pendingGalleryRef.current = pendingGallery;
   const savedFormDataRef = useRef(null);
   /** Снимок формы на момент последнего сохранения — для точного сравнения isDirty. */
   const savedSnapshotRef = useRef(null);
 
+  const allGalleryItems = useMemo(() => [
+    ...(formData.images || []).map((url) => ({ type: 'saved', url })),
+    ...pendingGallery.map((p) => ({ type: 'pending', file: p.file, preview: p.preview })),
+  ], [formData.images, pendingGallery]);
+
   const isDirty = useMemo(() => {
-    if (isNew) return false;
-    if (savedSnapshotRef.current == null) return false;
-    return JSON.stringify(getFormSnapshot(formData)) !== JSON.stringify(savedSnapshotRef.current);
-  }, [isNew, formData]);
+    if (isNew) return pendingGallery.length > 0;
+    if (savedSnapshotRef.current == null) return pendingGallery.length > 0;
+    return JSON.stringify(getFormSnapshot(formData)) !== JSON.stringify(savedSnapshotRef.current) || pendingGallery.length > 0;
+  }, [isNew, formData, pendingGallery.length]);
 
   const goToList = useCallback(() => {
     setLeaveModalOpen(false);
@@ -460,53 +470,52 @@ export default function RouteEditPage() {
     }));
   };
 
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    
-    for (const file of files) {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      
-      try {
-        const response = await mediaAPI.upload(formDataUpload);
-        setFormData((prev) => ({
-          ...prev,
-          images: [...prev.images, response.data.url],
-        }));
-      } catch (error) {
-        console.error('Ошибка загрузки изображения:', error);
-      }
-    }
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    setPendingGallery((prev) => [...prev, ...files.map((file) => ({ file, preview: URL.createObjectURL(file) }))]);
   };
 
-  const removeImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+  const applyGalleryOrder = (items) => {
+    const saved = items.filter((x) => x.type === 'saved').map((x) => x.url);
+    const pending = items.filter((x) => x.type === 'pending').map((x) => ({ file: x.file, preview: x.preview }));
+    setFormData((prev) => ({ ...prev, images: saved }));
+    setPendingGallery(pending);
   };
 
-  const moveImage = (index, direction) => {
+  const removeGalleryItem = (index) => {
+    const item = allGalleryItems[index];
+    if (item?.type === 'pending' && item.preview) URL.revokeObjectURL(item.preview);
+    const next = allGalleryItems.filter((_, i) => i !== index);
+    applyGalleryOrder(next);
+  };
+
+  const setMainGalleryImage = (index) => {
+    if (index === 0) return;
+    const next = [...allGalleryItems];
+    const [item] = next.splice(index, 1);
+    next.unshift(item);
+    applyGalleryOrder(next);
+  };
+
+  const moveGalleryItem = (index, direction) => {
     const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= formData.images.length) return;
-    setFormData((prev) => {
-      const arr = [...prev.images];
-      [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
-      return { ...prev, images: arr };
-    });
+    if (newIndex < 0 || newIndex >= allGalleryItems.length) return;
+    const next = [...allGalleryItems];
+    [next[index], next[newIndex]] = [next[newIndex], next[index]];
+    applyGalleryOrder(next);
   };
 
   const [draggedImageIndex, setDraggedImageIndex] = useState(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState(null);
 
-  const moveImageTo = (fromIndex, toIndex) => {
+  const moveGalleryItemTo = (fromIndex, toIndex) => {
     if (fromIndex === toIndex) return;
-    setFormData((prev) => {
-      const arr = [...prev.images];
-      const [item] = arr.splice(fromIndex, 1);
-      arr.splice(toIndex, 0, item);
-      return { ...prev, images: arr };
-    });
+    const next = [...allGalleryItems];
+    const [item] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, item);
+    applyGalleryOrder(next);
   };
 
   // Функции для работы с местами маршрута
@@ -677,7 +686,53 @@ export default function RouteEditPage() {
     setIsSaving(true);
     setError('');
 
+    let imagesToSend = Array.isArray(formData.images) ? [...formData.images] : [];
+    const hadGalleryUpload = pendingGallery.length > 0;
+
     try {
+      if (hadGalleryUpload) {
+        const initialSteps = [
+          { label: 'Загрузка фотогалереи', status: 'pending' },
+          { label: 'Сохранение данных', status: 'pending' },
+        ];
+        const totalWeight = 2;
+        setSaveProgress({ open: true, steps: initialSteps.map((s, i) => (i === 0 ? { ...s, status: 'active' } : s)), totalProgress: 0 });
+
+        const pendingItems = allGalleryItems.filter((x) => x.type === 'pending');
+        const total = pendingItems.length;
+        const uploadedUrls = [];
+        for (let idx = 0; idx < pendingItems.length; idx++) {
+          const item = pendingItems[idx];
+          const fd = new FormData();
+          fd.append('file', item.file);
+          const res = await mediaAPI.upload(fd, {
+            onUploadProgress: (e) => {
+              const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+              const overall = Math.round(((idx * 100 + pct) / total));
+              setSaveProgress((prev) => {
+                const steps = prev.steps.map((s, i) =>
+                  i === 0 ? { ...s, progress: overall, subLabel: `Файл ${idx + 1} из ${total}` } : s
+                );
+                const totalProgress = Math.round(((1 * (overall / 100)) / totalWeight) * 100);
+                return { ...prev, steps, totalProgress };
+              });
+            },
+          });
+          if (res.data?.url) uploadedUrls.push(res.data.url);
+          URL.revokeObjectURL(item.preview);
+        }
+        let uploadIdx = 0;
+        imagesToSend = allGalleryItems.map((item) =>
+          item.type === 'saved' ? item.url : uploadedUrls[uploadIdx++]
+        ).filter(Boolean);
+        setPendingGallery([]);
+        setFormData((prev) => ({ ...prev, images: imagesToSend }));
+        setSaveProgress((prev) => ({
+          ...prev,
+          steps: prev.steps.map((s, i) => (i === 0 ? { ...s, status: 'done' } : { ...s, status: 'active' })),
+          totalProgress: 50,
+        }));
+      }
       const cf = formData.customFilters && typeof formData.customFilters === 'object' ? formData.customFilters : {};
       const first = (key) => (Array.isArray(cf[key]) ? cf[key][0] : null);
       // Сложность: только из customFilters.difficultyLevels или formData.difficulty (одно место)
@@ -743,7 +798,7 @@ export default function RouteEditPage() {
         importantInfo: formData.importantInfo ?? null,
         mapUrl: formData.mapUrl ?? null,
         isActive: formData.isActive !== false,
-        images: Array.isArray(formData.images) ? formData.images : [],
+        images: Array.isArray(imagesToSend) ? imagesToSend : [],
         placeIds: Array.isArray(formData.placeIds) ? formData.placeIds : [],
         nearbyPlaceIds: Array.isArray(formData.nearbyPlaceIds) ? formData.nearbyPlaceIds : [],
         guideIds: Array.isArray(formData.guideIds) ? formData.guideIds : [],
@@ -752,16 +807,29 @@ export default function RouteEditPage() {
         points: pointsPayload,
       };
 
+      if (hadGalleryUpload) {
+        setSaveProgress((prev) => ({
+          ...prev,
+          steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'active' } : s)),
+        }));
+      }
+
       if (isNew) {
         const res = await routesAPI.create(dataToSend);
         const created = res.data;
+        if (hadGalleryUpload) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+        }
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
-        if (created?.id) {
-          navigate(`/admin/routes/${created.id}`, { replace: true });
-        } else {
-          navigate('/admin/routes');
-        }
+        setTimeout(() => {
+          setSaveProgress({ open: false, steps: [], totalProgress: 0 });
+          if (created?.id) {
+            navigate(`/admin/routes/${created.id}`, { replace: true });
+          } else {
+            navigate('/admin/routes');
+          }
+        }, hadGalleryUpload ? 500 : 0);
       } else {
         const res = await routesAPI.update(params.id, dataToSend);
         let updated = res?.data;
@@ -806,6 +874,10 @@ export default function RouteEditPage() {
           savedFormDataRef.current = { ...formData };
           savedSnapshotRef.current = getFormSnapshot(formData);
         }
+        if (hadGalleryUpload) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+          setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
+        }
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
@@ -815,6 +887,14 @@ export default function RouteEditPage() {
       const msg = error.response?.data?.message ?? error.message ?? 'Ошибка сохранения маршрута';
       const fullMsg = status ? `[${status}] ${msg}` : msg;
       setError(fullMsg);
+      if (hadGalleryUpload) {
+        setSaveProgress((prev) => {
+          const idx = prev.steps.findIndex((s) => s.status === 'active');
+          const newSteps = prev.steps.map((s, i) => (i === idx ? { ...s, status: 'error' } : s));
+          return { ...prev, steps: newSteps };
+        });
+        setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 2000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -828,6 +908,12 @@ export default function RouteEditPage() {
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [isDirty]);
+
+  useEffect(() => {
+    return () => {
+      (pendingGalleryRef.current || []).forEach((p) => URL.revokeObjectURL(p.preview));
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -1762,11 +1848,11 @@ export default function RouteEditPage() {
             </label>
           </div>
           
-          {formData.images.length > 0 && (
+          {allGalleryItems.length > 0 && (
             <div className={styles.imagePreview}>
-              {formData.images.map((img, index) => (
+              {allGalleryItems.map((item, index) => (
                 <div
-                  key={index}
+                  key={item.type === 'saved' ? item.url : item.preview}
                   className={`${styles.imagePreviewItemWrap} ${draggedImageIndex === index ? styles.dragging : ''} ${dragOverImageIndex === index ? styles.dragOver : ''}`}
                   draggable
                   onDragStart={(e) => {
@@ -1788,11 +1874,11 @@ export default function RouteEditPage() {
                     e.preventDefault();
                     const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
                     setDragOverImageIndex(null);
-                    if (!Number.isNaN(from) && from !== index) moveImageTo(from, index);
+                    if (!Number.isNaN(from) && from !== index) moveGalleryItemTo(from, index);
                   }}
                 >
                   <div className={styles.previewItem}>
-                    <img src={getImageUrl(img)} alt={`Preview ${index}`} />
+                    <img src={item.type === 'saved' ? getImageUrl(item.url) : item.preview} alt={`Preview ${index + 1}`} />
                   </div>
                   <div className={styles.imagePreviewActions}>
                     <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
@@ -1801,7 +1887,7 @@ export default function RouteEditPage() {
                     <div className={styles.imageMoveButtonsRow}>
                       <button
                         type="button"
-                        onClick={() => moveImage(index, -1)}
+                        onClick={() => moveGalleryItem(index, -1)}
                         disabled={index === 0}
                         className={styles.formMoveBtn}
                         aria-label="Влево"
@@ -1810,8 +1896,8 @@ export default function RouteEditPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => moveImage(index, 1)}
-                        disabled={index === formData.images.length - 1}
+                        onClick={() => moveGalleryItem(index, 1)}
+                        disabled={index === allGalleryItems.length - 1}
                         className={styles.formMoveBtn}
                         aria-label="Вправо"
                       >
@@ -1820,7 +1906,7 @@ export default function RouteEditPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeGalleryItem(index)}
                       className={styles.removeImageBtn}
                       aria-label="Удалить"
                       title="Удалить"
@@ -2071,6 +2157,12 @@ export default function RouteEditPage() {
         dialogStyle={{ maxWidth: 500 }}
         onCancel={() => setLeaveModalOpen(false)}
         onConfirm={goToList}
+      />
+
+      <SaveProgressModal
+        open={saveProgress.open}
+        steps={saveProgress.steps}
+        totalProgress={saveProgress.totalProgress}
       />
 
       {showToast && (

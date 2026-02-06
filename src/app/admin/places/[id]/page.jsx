@@ -7,6 +7,8 @@ import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
+import SaveProgressModal from '../../components/SaveProgressModal';
+import ImageCropModal from '../../components/ImageCropModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -30,6 +32,7 @@ function getFormSnapshot(data) {
     reviewsCount: Number(data.reviewsCount) || 0,
     isActive: !!data.isActive,
     image: data.image ?? '',
+    sliderVideo: data.sliderVideo ?? '',
     images: Array.isArray(data.images) ? [...data.images] : [],
     directions: Array.isArray(data.directions) ? [...data.directions].sort() : [],
     seasons: Array.isArray(data.seasons) ? [...data.seasons].sort() : [],
@@ -63,6 +66,7 @@ export default function PlaceEditPage() {
     reviewsCount: 0,
     isActive: true,
     image: '',
+    sliderVideo: '',
     images: [],
     directions: [],
     seasons: [],
@@ -89,7 +93,12 @@ export default function PlaceEditPage() {
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropModalImageSrc, setCropModalImageSrc] = useState(null);
+  const cropModalFileUrlRef = useRef(null);
   const [pendingImages, setPendingImages] = useState({});
+  const [pendingSliderVideo, setPendingSliderVideo] = useState(null);
   const [pendingGallery, setPendingGallery] = useState([]);
   const [savedVersion, setSavedVersion] = useState(0);
   const previewUploadRef = useRef(null);
@@ -98,10 +107,19 @@ export default function PlaceEditPage() {
   pendingImagesRef.current = pendingImages;
   const pendingGalleryRef = useRef([]);
   pendingGalleryRef.current = pendingGallery;
+  const pendingSliderVideoRef = useRef(null);
+  pendingSliderVideoRef.current = pendingSliderVideo;
+  const sliderVideoUploadRef = useRef(null);
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
   const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
 
-  const hasPendingImages = Object.keys(pendingImages).length > 0 || pendingGallery.length > 0;
+  const hasPendingImages = Object.keys(pendingImages).length > 0 || pendingGallery.length > 0 || !!pendingSliderVideo;
+
+  const allGalleryItems = useMemo(() => [
+    ...(formData.images || []).map((url) => ({ type: 'saved', url })),
+    ...pendingGallery.map((p) => ({ type: 'pending', file: p.file, preview: p.preview })),
+  ], [formData.images, pendingGallery]);
+
   const isDirty = useMemo(() => {
     if (isNew) return hasPendingImages;
     if (!savedFormDataRef.current) return hasPendingImages;
@@ -303,11 +321,44 @@ export default function PlaceEditPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (cropModalFileUrlRef.current) URL.revokeObjectURL(cropModalFileUrlRef.current);
+    const url = URL.createObjectURL(file);
+    cropModalFileUrlRef.current = url;
+    setCropModalImageSrc(url);
+    setCropModalOpen(true);
+  };
+
+  const openPreviewCropModal = () => {
+    const src = getImageSrc('image');
+    if (!src) return;
+    if (cropModalFileUrlRef.current) URL.revokeObjectURL(cropModalFileUrlRef.current);
+    cropModalFileUrlRef.current = null;
+    setCropModalImageSrc(src);
+    setCropModalOpen(true);
+  };
+
+  const handleCropComplete = (blob) => {
+    const file = new File([blob], 'preview.jpg', { type: 'image/jpeg' });
     setPendingImages((prev) => {
       const old = prev.image;
       if (old) URL.revokeObjectURL(old.preview);
       return { ...prev, image: { file, preview: URL.createObjectURL(file) } };
     });
+    setCropModalOpen(false);
+    setCropModalImageSrc(null);
+    if (cropModalFileUrlRef.current) {
+      URL.revokeObjectURL(cropModalFileUrlRef.current);
+      cropModalFileUrlRef.current = null;
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    setCropModalImageSrc(null);
+    if (cropModalFileUrlRef.current) {
+      URL.revokeObjectURL(cropModalFileUrlRef.current);
+      cropModalFileUrlRef.current = null;
+    }
   };
 
   const clearPreview = () => {
@@ -322,12 +373,30 @@ export default function PlaceEditPage() {
     setFormData((prev) => ({ ...prev, image: '' }));
   };
 
+  const handleSliderVideoFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPendingSliderVideo({ file, preview: URL.createObjectURL(file) });
+  };
+
+  const clearSliderVideo = () => {
+    if (pendingSliderVideo) {
+      URL.revokeObjectURL(pendingSliderVideo.preview);
+      setPendingSliderVideo(null);
+    }
+    setFormData((prev) => ({ ...prev, sliderVideo: '' }));
+  };
+
   useEffect(() => {
     return () => {
       for (const { preview } of Object.values(pendingImagesRef.current)) {
         URL.revokeObjectURL(preview);
       }
       (pendingGalleryRef.current || []).forEach((p) => URL.revokeObjectURL(p.preview));
+      const pv = pendingSliderVideoRef.current;
+      if (pv?.preview) URL.revokeObjectURL(pv.preview);
+      if (cropModalFileUrlRef.current) URL.revokeObjectURL(cropModalFileUrlRef.current);
     };
   }, []);
 
@@ -341,53 +410,45 @@ export default function PlaceEditPage() {
     ]);
   };
 
-  const removePendingGalleryItem = (index) => {
-    setPendingGallery((prev) => {
-      const next = [...prev];
-      URL.revokeObjectURL(next[index].preview);
-      next.splice(index, 1);
-      return next;
-    });
+  const applyGalleryOrder = (items) => {
+    const saved = items.filter((x) => x.type === 'saved').map((x) => x.url);
+    const pending = items.filter((x) => x.type === 'pending').map((x) => ({ file: x.file, preview: x.preview }));
+    setFormData((prev) => ({ ...prev, images: saved }));
+    setPendingGallery(pending);
   };
 
-
-  const removeImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+  const removeGalleryItem = (index) => {
+    const item = allGalleryItems[index];
+    if (item?.type === 'pending' && item.preview) URL.revokeObjectURL(item.preview);
+    const next = allGalleryItems.filter((_, i) => i !== index);
+    applyGalleryOrder(next);
   };
 
-  const setMainImage = (index) => {
+  const setMainGalleryImage = (index) => {
     if (index === 0) return;
-    setFormData((prev) => {
-      const img = prev.images[index];
-      const rest = prev.images.filter((_, i) => i !== index);
-      return { ...prev, images: [img, ...rest] };
-    });
+    const next = [...allGalleryItems];
+    const [item] = next.splice(index, 1);
+    next.unshift(item);
+    applyGalleryOrder(next);
   };
 
-  const moveImage = (index, direction) => {
+  const moveGalleryItem = (index, direction) => {
     const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= formData.images.length) return;
-    setFormData((prev) => {
-      const arr = [...prev.images];
-      [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
-      return { ...prev, images: arr };
-    });
+    if (newIndex < 0 || newIndex >= allGalleryItems.length) return;
+    const next = [...allGalleryItems];
+    [next[index], next[newIndex]] = [next[newIndex], next[index]];
+    applyGalleryOrder(next);
   };
 
   const [draggedImageIndex, setDraggedImageIndex] = useState(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState(null);
 
-  const moveImageTo = (fromIndex, toIndex) => {
+  const moveGalleryItemTo = (fromIndex, toIndex) => {
     if (fromIndex === toIndex) return;
-    setFormData((prev) => {
-      const arr = [...prev.images];
-      const [item] = arr.splice(fromIndex, 1);
-      arr.splice(toIndex, 0, item);
-      return { ...prev, images: arr };
-    });
+    const next = [...allGalleryItems];
+    const [item] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, item);
+    applyGalleryOrder(next);
   };
 
   const removeNearbyPlace = (placeId) => {
@@ -426,12 +487,62 @@ export default function PlaceEditPage() {
     setIsSaving(true);
     setError('');
 
+    const hasPreview = !!pendingImages.image;
+    const hasVideo = !!pendingSliderVideo;
+    const hasGallery = pendingGallery.length > 0;
+
+    const initialSteps = [
+      { label: 'Загрузка превью', status: hasPreview ? 'pending' : 'done' },
+      { label: 'Загрузка видео для слайдера', status: hasVideo ? 'pending' : 'done' },
+      { label: 'Загрузка фотогалереи', status: hasGallery ? 'pending' : 'done' },
+      { label: 'Сохранение данных', status: 'pending' },
+    ];
+    const totalWeight = (hasPreview ? 1 : 0) + (hasVideo ? 1 : 0) + (hasGallery ? 1 : 0) + 1;
+    let completedWeight = 0;
+
+    let currentSteps = [...initialSteps];
+
+    const updateProgress = (stepIndex, status) => {
+      currentSteps = currentSteps.map((s, i) =>
+        i === stepIndex ? { ...s, status } : i < stepIndex && s.status === 'pending' ? { ...s, status: 'done' } : s
+      );
+      if (status === 'done' || status === 'error') completedWeight += 1;
+      setSaveProgress({
+        open: true,
+        steps: [...currentSteps],
+        totalProgress: Math.round((completedWeight / totalWeight) * 100),
+      });
+    };
+
+    const setStepActive = (i) => {
+      currentSteps = currentSteps.map((s, j) => (j === i ? { ...s, status: 'active' } : s));
+      setSaveProgress({ open: true, steps: [...currentSteps], totalProgress: Math.round((completedWeight / totalWeight) * 100) });
+    };
+
+    setSaveProgress({ open: true, steps: initialSteps, totalProgress: 0 });
+
     try {
       let dataToSave = { ...formData };
+
       if (pendingImages.image) {
+        setStepActive(0);
         const fd = new FormData();
         fd.append('file', pendingImages.image.file);
-        const res = await mediaAPI.upload(fd);
+        const res = await mediaAPI.upload(fd, {
+          onUploadProgress: (e) => {
+            const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+            setSaveProgress((prev) => {
+              const steps = prev.steps.map((s, i) =>
+                i === 0 && s.status === 'active' ? { ...s, progress: percent } : s
+              );
+              const completedWeight = steps.filter((s) => s.status === 'done').length;
+              const activeStep = steps.find((s) => s.status === 'active');
+              const activeProgress = activeStep?.progress ?? 0;
+              const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+              return { ...prev, steps, totalProgress };
+            });
+          },
+        });
         if (res.data?.url) {
           dataToSave = { ...dataToSave, image: res.data.url };
         }
@@ -441,40 +552,108 @@ export default function PlaceEditPage() {
           delete next.image;
           return next;
         });
+        updateProgress(0, 'done');
       }
-      if (pendingGallery.length > 0) {
-        const uploaded = [];
-        for (const { file, preview } of pendingGallery) {
-          const fd = new FormData();
-          fd.append('file', file);
-          const res = await mediaAPI.upload(fd);
-          if (res.data?.url) uploaded.push(res.data.url);
-          URL.revokeObjectURL(preview);
+
+      if (pendingSliderVideo) {
+        setStepActive(1);
+        const fd = new FormData();
+        fd.append('file', pendingSliderVideo.file);
+        const res = await mediaAPI.uploadVideo(fd, {
+          onUploadProgress: (e) => {
+            const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+            setSaveProgress((prev) => {
+              const steps = prev.steps.map((s, i) =>
+                i === 1 && s.status === 'active' ? { ...s, progress: percent } : s
+              );
+              const completedWeight = steps.filter((s) => s.status === 'done').length;
+              const activeStep = steps.find((s) => s.status === 'active');
+              const activeProgress = activeStep?.progress ?? 0;
+              const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+              return { ...prev, steps, totalProgress };
+            });
+          },
+        });
+        if (res.data?.url) {
+          dataToSave = { ...dataToSave, sliderVideo: res.data.url };
         }
-        dataToSave = { ...dataToSave, images: [...(dataToSave.images || []), ...uploaded] };
-        setPendingGallery([]);
+        URL.revokeObjectURL(pendingSliderVideo.preview);
+        setPendingSliderVideo(null);
+        updateProgress(1, 'done');
       }
+
+      if (pendingGallery.length > 0) {
+        setStepActive(2);
+        const pendingItems = allGalleryItems.filter((x) => x.type === 'pending');
+        const total = pendingItems.length;
+        const uploadedUrls = [];
+        for (let idx = 0; idx < pendingItems.length; idx++) {
+          const item = pendingItems[idx];
+          const fd = new FormData();
+          fd.append('file', item.file);
+          const res = await mediaAPI.upload(fd, {
+            onUploadProgress: (e) => {
+              const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+              const overall = Math.round(((idx * 100 + pct) / total));
+              setSaveProgress((prev) => {
+                const steps = prev.steps.map((s, i) =>
+                  i === 2 && s.status === 'active' ? { ...s, progress: overall, subLabel: `Файл ${idx + 1} из ${total}` } : s
+                );
+                const completedWeight = steps.filter((s) => s.status === 'done').length;
+                const activeStep = steps.find((s) => s.status === 'active');
+                const activeProgress = activeStep?.progress ?? 0;
+                const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+                return { ...prev, steps, totalProgress };
+              });
+            },
+          });
+          if (res.data?.url) uploadedUrls.push(res.data.url);
+          URL.revokeObjectURL(item.preview);
+        }
+        let uploadIdx = 0;
+        const finalImages = allGalleryItems.map((item) =>
+          item.type === 'saved' ? item.url : uploadedUrls[uploadIdx++]
+        ).filter(Boolean);
+        dataToSave = { ...dataToSave, images: finalImages };
+        setPendingGallery([]);
+        setFormData((prev) => ({ ...prev, images: finalImages }));
+        updateProgress(2, 'done');
+      }
+
+      setStepActive(3);
 
       if (isNew) {
         const res = await placesAPI.create(dataToSave);
         const created = res.data;
-        setFormData((prev) => ({ ...prev, image: dataToSave.image }));
+        setFormData((prev) => ({ ...prev, image: dataToSave.image, sliderVideo: dataToSave.sliderVideo, images: dataToSave.images || [] }));
+        updateProgress(3, 'done');
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
-        if (created?.id) {
-          navigate(`/admin/places/${created.id}`, { replace: true });
-        }
+        setTimeout(() => {
+          setSaveProgress({ open: false, steps: [], totalProgress: 0 });
+          if (created?.id) {
+            navigate(`/admin/places/${created.id}`, { replace: true });
+          }
+        }, 500);
       } else {
         await placesAPI.update(params.id, dataToSave);
-        setFormData((prev) => ({ ...prev, image: dataToSave.image }));
-        savedFormDataRef.current = { ...dataToSave, image: dataToSave.image, images: [...(dataToSave.images || [])], nearbyPlaceIds: [...(dataToSave.nearbyPlaceIds || [])] };
+        setFormData((prev) => ({ ...prev, image: dataToSave.image, sliderVideo: dataToSave.sliderVideo, images: dataToSave.images || [] }));
+        savedFormDataRef.current = { ...dataToSave, image: dataToSave.image, sliderVideo: dataToSave.sliderVideo, images: [...(dataToSave.images || [])], nearbyPlaceIds: [...(dataToSave.nearbyPlaceIds || [])] };
         setSavedVersion((v) => v + 1);
+        updateProgress(3, 'done');
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
+        setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
       }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
+      setSaveProgress((prev) => {
+        const idx = prev.steps.findIndex((s) => s.status === 'active');
+        const newSteps = prev.steps.map((s, i) => (i === idx ? { ...s, status: 'error' } : s));
+        return { ...prev, steps: newSteps };
+      });
       setError(error.response?.data?.message || 'Ошибка сохранения места');
+      setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 2000);
     } finally {
       setIsSaving(false);
     }
@@ -767,13 +946,23 @@ export default function PlaceEditPage() {
               <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'row', gap: 6 }}>
                 <button
                   type="button"
+                  onClick={openPreviewCropModal}
+                  className={styles.removeImage}
+                  style={{ position: 'relative', top: 0, right: 0 }}
+                  aria-label="Обрезать"
+                  title="Обрезать"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => previewUploadRef.current?.click()}
                   className={styles.removeImage}
                   style={{ position: 'relative', top: 0, right: 0 }}
-                  aria-label="Изменить"
-                  title="Изменить"
+                  aria-label="Заменить файл"
+                  title="Заменить файл"
                 >
-                  <Pencil size={14} />
+                  <Upload size={14} />
                 </button>
                 <button
                   type="button"
@@ -797,6 +986,63 @@ export default function PlaceEditPage() {
         </div>
 
         <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Видео для главного слайдера</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Видеофайл (MP4, MOV, AVI, MKV). Загружается при сохранении. Отображается на главной вместо картинки.
+          </p>
+          <input
+            ref={sliderVideoUploadRef}
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,video/m4v"
+            onChange={handleSliderVideoFileSelect}
+            style={{ display: 'none' }}
+            id="sliderVideoUpload"
+          />
+          {(pendingSliderVideo || formData.sliderVideo) ? (
+            <div
+              className={`${styles.previewItem} ${styles.previewItemMain}`}
+              style={{ width: 330, aspectRatio: '16/9', position: 'relative', overflow: 'hidden', borderRadius: 8 }}
+            >
+              <video
+                src={pendingSliderVideo ? pendingSliderVideo.preview : getImageUrl(formData.sliderVideo)}
+                controls
+                muted
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              <span className={styles.previewItemBadge}>Слайдер</span>
+              <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'row', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => sliderVideoUploadRef.current?.click()}
+                  className={styles.removeImage}
+                  style={{ position: 'relative', top: 0, right: 0 }}
+                  aria-label="Изменить"
+                  title="Изменить"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSliderVideo}
+                  className={styles.removeImage}
+                  style={{ position: 'relative', top: 0, right: 0 }}
+                  aria-label="Удалить"
+                  title="Удалить"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.imageUpload} onClick={() => sliderVideoUploadRef.current?.click()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') sliderVideoUploadRef.current?.click(); }}>
+              <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <Upload size={20} /> Загрузить видео
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.formGroup}>
           <label className={styles.formLabel}>Фотогалерея места</label>
           <p className={styles.imageHint} style={{ marginBottom: 12 }}>
             Изображения загружаются при сохранении.
@@ -814,12 +1060,12 @@ export default function PlaceEditPage() {
               <Upload size={20} /> Загрузить изображения
             </label>
           </div>
-          {(formData.images.length > 0 || pendingGallery.length > 0) && (
+          {allGalleryItems.length > 0 && (
             <>
               <div className={styles.imagePreview}>
-                {formData.images.map((img, index) => (
+                {allGalleryItems.map((item, index) => (
                   <div
-                    key={index}
+                    key={item.type === 'saved' ? item.url : item.preview}
                     className={`${styles.imagePreviewItemWrap} ${draggedImageIndex === index ? styles.dragging : ''} ${dragOverImageIndex === index ? styles.dragOver : ''}`}
                     draggable
                     onDragStart={(e) => {
@@ -841,19 +1087,19 @@ export default function PlaceEditPage() {
                       e.preventDefault();
                       const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
                       setDragOverImageIndex(null);
-                      if (!Number.isNaN(from) && from !== index) moveImageTo(from, index);
+                      if (!Number.isNaN(from) && from !== index) moveGalleryItemTo(from, index);
                     }}
                   >
                     <div
                       className={`${styles.previewItem} ${index === 0 ? styles.previewItemMain : ''}`}
-                      onClick={() => setMainImage(index)}
+                      onClick={() => setMainGalleryImage(index)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainImage(index); } }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainGalleryImage(index); } }}
                       aria-label={index === 0 ? 'Главное фото (нажмите на другую картинку, чтобы сделать её главной)' : 'Сделать главным фото'}
                       title={index === 0 ? 'Главное фото' : 'Сделать главным'}
                     >
-                      <img src={getImageUrl(img)} alt={`Preview ${index}`} />
+                      <img src={item.type === 'saved' ? getImageUrl(item.url) : item.preview} alt={`Preview ${index + 1}`} />
                       {index === 0 && <span className={styles.previewItemBadge}>Главная</span>}
                     </div>
                     <div className={styles.imagePreviewActions}>
@@ -867,7 +1113,7 @@ export default function PlaceEditPage() {
                       <div className={styles.imageMoveButtonsRow}>
                         <button
                           type="button"
-                          onClick={() => moveImage(index, -1)}
+                          onClick={() => moveGalleryItem(index, -1)}
                           disabled={index === 0}
                           className={styles.formMoveBtn}
                           aria-label="Влево"
@@ -876,8 +1122,8 @@ export default function PlaceEditPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => moveImage(index, 1)}
-                          disabled={index === formData.images.length - 1}
+                          onClick={() => moveGalleryItem(index, 1)}
+                          disabled={index === allGalleryItems.length - 1}
                           className={styles.formMoveBtn}
                           aria-label="Вправо"
                         >
@@ -886,25 +1132,7 @@ export default function PlaceEditPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeImage(index)}
-                        className={styles.removeImageBtn}
-                        aria-label="Удалить"
-                        title="Удалить"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {pendingGallery.map((p, index) => (
-                  <div key={`pending-${index}`} className={styles.imagePreviewItemWrap}>
-                    <div className={styles.previewItem}>
-                      <img src={p.preview} alt={`Новое ${index + 1}`} />
-                    </div>
-                    <div className={styles.imagePreviewActions}>
-                      <button
-                        type="button"
-                        onClick={() => removePendingGalleryItem(index)}
+                        onClick={() => removeGalleryItem(index)}
                         className={styles.removeImageBtn}
                         aria-label="Удалить"
                         title="Удалить"
@@ -1222,6 +1450,22 @@ export default function PlaceEditPage() {
         dialogStyle={{ maxWidth: 500 }}
         onCancel={() => setLeaveModalOpen(false)}
         onConfirm={goToList}
+      />
+
+      {/* Модалка: прогресс сохранения */}
+      <SaveProgressModal
+        open={saveProgress.open}
+        steps={saveProgress.steps}
+        totalProgress={saveProgress.totalProgress}
+      />
+
+      {/* Модалка: обрезка превью */}
+      <ImageCropModal
+        open={cropModalOpen}
+        imageSrc={cropModalImageSrc}
+        title="Обрезка превью"
+        onComplete={handleCropComplete}
+        onCancel={handleCropCancel}
       />
 
       {/* Toast: успешно сохранено */}

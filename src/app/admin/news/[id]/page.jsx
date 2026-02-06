@@ -6,6 +6,7 @@ import { Upload, X, Eye, EyeOff, Pencil } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import ConfirmModal from '../../components/ConfirmModal';
+import SaveProgressModal from '../../components/SaveProgressModal';
 import NewsBlockEditor from '../../components/NewsBlockEditor';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
@@ -70,6 +71,7 @@ export default function NewsEditPage() {
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   const [pendingImageFile, setPendingImageFile] = useState(null);
   const [pendingBlockFiles, setPendingBlockFiles] = useState({});
   const savedFormDataRef = useRef(null);
@@ -228,37 +230,103 @@ export default function NewsEditPage() {
     let imageUrl = formData.image;
     const blocksToSend = (formData.blocks || []).map((b) => ({ ...b, data: { ...b.data } }));
 
+    const hasPreview = !!pendingImageFile;
+    const hasBlocks = Object.values(pendingBlockFiles).some((p) => p && (p.url || (p.images?.length ?? 0) > 0));
+    const totalWeight = (hasPreview ? 1 : 0) + (hasBlocks ? 1 : 0) + 1;
+    const initialSteps = [
+      { label: 'Загрузка превью', status: hasPreview ? 'pending' : 'done' },
+      { label: 'Загрузка блоков контента', status: hasBlocks ? 'pending' : 'done' },
+      { label: 'Сохранение данных', status: 'pending' },
+    ];
+    if (hasPreview || hasBlocks) {
+      const stepsWithActive = initialSteps.map((s, i) => {
+        if (i === 0 && hasPreview) return { ...s, status: 'active' };
+        if (i === 1 && hasBlocks && !hasPreview) return { ...s, status: 'active' };
+        return s;
+      });
+      setSaveProgress({ open: true, steps: stepsWithActive, totalProgress: 0 });
+    }
+
     try {
       if (pendingImageFile) {
         const fd = new FormData();
         fd.append('file', pendingImageFile);
-        const res = await mediaAPI.upload(fd);
+        const res = await mediaAPI.upload(fd, {
+          onUploadProgress: (e) => {
+            const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+            setSaveProgress((prev) => {
+              const steps = prev.steps.map((s, i) => (i === 0 && s.status === 'active' ? { ...s, progress: percent } : s));
+              const completedWeight = steps.filter((s) => s.status === 'done').length;
+              const activeStep = steps.find((s) => s.status === 'active');
+              const activeProgress = activeStep?.progress ?? 0;
+              const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+              return { ...prev, steps, totalProgress };
+            });
+          },
+        });
         imageUrl = res.data?.url || imageUrl;
         setPendingImageFile(null);
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 0 ? { ...s, status: 'done' } : i === 1 && hasBlocks ? { ...s, status: 'active' } : s)), totalProgress: Math.round((1 / totalWeight) * 100) }));
       }
 
-      for (const [blockId, pending] of Object.entries(pendingBlockFiles)) {
-        if (!pending) continue;
+      const blockEntries = Object.entries(pendingBlockFiles).filter(([, p]) => p && (p.url || (p.images?.length ?? 0) > 0));
+      const totalBlockFiles = blockEntries.reduce((acc, [, p]) => acc + (p.url ? 1 : 0) + (p.images?.length ?? 0), 0);
+      let blockUploadIdx = 0;
+
+      for (const [blockId, pending] of blockEntries) {
         const block = blocksToSend.find((b) => b.id === blockId);
         if (!block) continue;
         if (pending.url) {
           const fd = new FormData();
           fd.append('file', pending.url);
-          const res = await mediaAPI.upload(fd);
+          const res = await mediaAPI.upload(fd, {
+            onUploadProgress: (e) => {
+              const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+              const overall = totalBlockFiles ? Math.round(((blockUploadIdx * 100 + pct) / totalBlockFiles)) : 0;
+              setSaveProgress((prev) => {
+                const steps = prev.steps.map((s, i) => (i === 1 && s.status === 'active' ? { ...s, progress: overall, subLabel: `Файл ${blockUploadIdx + 1} из ${totalBlockFiles}` } : s));
+                const completedWeight = steps.filter((s) => s.status === 'done').length;
+                const activeStep = steps.find((s) => s.status === 'active');
+                const activeProgress = activeStep?.progress ?? 0;
+                const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+                return { ...prev, steps, totalProgress };
+              });
+            },
+          });
           if (res.data?.url) block.data = { ...block.data, url: res.data.url };
+          blockUploadIdx++;
         }
         if (pending.images?.length) {
           const urls = [];
           for (const file of pending.images) {
             const fd = new FormData();
             fd.append('file', file);
-            const res = await mediaAPI.upload(fd);
+            const res = await mediaAPI.upload(fd, {
+              onUploadProgress: (e) => {
+                const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+                const overall = totalBlockFiles ? Math.round(((blockUploadIdx * 100 + pct) / totalBlockFiles)) : 0;
+                setSaveProgress((prev) => {
+                  const steps = prev.steps.map((s, i) => (i === 1 && s.status === 'active' ? { ...s, progress: overall, subLabel: `Файл ${blockUploadIdx + 1} из ${totalBlockFiles}` } : s));
+                  const completedWeight = steps.filter((s) => s.status === 'done').length;
+                  const activeStep = steps.find((s) => s.status === 'active');
+                  const activeProgress = activeStep?.progress ?? 0;
+                  const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+                  return { ...prev, steps, totalProgress };
+                });
+              },
+            });
             if (res.data?.url) urls.push(res.data.url);
+            blockUploadIdx++;
           }
           block.data = { ...block.data, images: [...(block.data?.images || []), ...urls] };
         }
       }
       setPendingBlockFiles({});
+      if (hasBlocks) setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: Math.round(((hasPreview ? 1 : 0) + 1) / totalWeight * 100) }));
+
+      if (hasPreview || hasBlocks) {
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'active' } : s)) }));
+      }
 
       const dataToSend = {
         type: formData.type,
@@ -274,24 +342,48 @@ export default function NewsEditPage() {
       if (isNew) {
         const res = await newsAPI.create(dataToSend);
         const created = res.data;
+        if (hasPreview || hasBlocks) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+          setTimeout(() => {
+            setSaveProgress({ open: false, steps: [], totalProgress: 0 });
+            if (created?.id) {
+              navigate(`/admin/news/${created.id}`, { replace: true });
+            } else {
+              navigate('/admin/news');
+            }
+          }, 500);
+        } else {
+          if (created?.id) {
+            navigate(`/admin/news/${created.id}`, { replace: true });
+          } else {
+            navigate('/admin/news');
+          }
+        }
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
-        if (created?.id) {
-          navigate(`/admin/news/${created.id}`, { replace: true });
-        } else {
-          navigate('/admin/news');
-        }
       } else {
         await newsAPI.update(params.id, dataToSend);
         const updated = { ...formData, image: imageUrl, blocks: blocksToSend };
         savedFormDataRef.current = updated;
         setFormData(updated);
+        if (hasPreview || hasBlocks) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+          setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
+        }
         setShowToast(true);
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       }
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       setError(err.response?.data?.message || 'Ошибка сохранения');
+      if (hasPreview || hasBlocks) {
+        setSaveProgress((prev) => {
+          const idx = prev.steps.findIndex((s) => s.status === 'active');
+          const newSteps = prev.steps.map((s, i) => (i === idx ? { ...s, status: 'error' } : s));
+          return { ...prev, steps: newSteps };
+        });
+        setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 2000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -438,6 +530,12 @@ export default function NewsEditPage() {
         dialogStyle={{ maxWidth: 500 }}
         onCancel={() => setLeaveModalOpen(false)}
         onConfirm={goToList}
+      />
+
+      <SaveProgressModal
+        open={saveProgress.open}
+        steps={saveProgress.steps}
+        totalProgress={saveProgress.totalProgress}
       />
 
       {showToast && (
