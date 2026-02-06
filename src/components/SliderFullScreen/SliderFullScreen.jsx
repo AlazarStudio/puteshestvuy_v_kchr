@@ -8,6 +8,8 @@ import RichTextContent from '@/components/RichTextContent/RichTextContent'
 
 const SLIDER_LIMIT = 6
 const TIME_RUNNING = 500
+const IMAGE_DELAY_MS = 2000
+const FADE_DURATION_MS = 400
 
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
@@ -36,6 +38,14 @@ export default function SliderFullScreen() {
   const initialSlidesRef = useRef([])
   const [isLoading, setIsLoading] = useState(true)
   const [direction, setDirection] = useState(null)
+  const [showVideoOnCurrentSlide, setShowVideoOnCurrentSlide] = useState(false)
+  const [outgoingVideoVisible, setOutgoingVideoVisible] = useState(true)
+  const outgoingWasShowingVideoRef = useRef(false)
+
+  const currentSlideHasVideo = slides[0]?.video
+  const outgoingSlideHasVideo =
+    (direction === 'prev' && slides[1]?.video) ||
+    (direction === 'next' && slides[slides.length - 1]?.video)
 
   useEffect(() => {
     let cancelled = false
@@ -58,15 +68,7 @@ export default function SliderFullScreen() {
     return () => { cancelled = true }
   }, [])
 
-  const handleNext = () => {
-    setSlides((prev) => {
-      const [first, ...rest] = prev
-      return [...rest, first]
-    })
-    setDirection('next')
-  }
-
-  const handlePrev = () => {
+  const doPrevTransition = () => {
     setSlides((prev) => {
       const last = prev[prev.length - 1]
       const rest = prev.slice(0, prev.length - 1)
@@ -75,12 +77,57 @@ export default function SliderFullScreen() {
     setDirection('prev')
   }
 
-  // Сбрасываем направление через TIME_RUNNING, чтобы анимационный класс убирался
+  const handleNext = () => {
+    outgoingWasShowingVideoRef.current = !!(currentSlideHasVideo && showVideoOnCurrentSlide)
+    if (outgoingWasShowingVideoRef.current) {
+      setOutgoingVideoVisible(true)
+    }
+    setSlides((prev) => {
+      const [first, ...rest] = prev
+      return [...rest, first]
+    })
+    setDirection('next')
+  }
+
+  const handlePrev = () => {
+    outgoingWasShowingVideoRef.current = !!(currentSlideHasVideo && showVideoOnCurrentSlide)
+    if (outgoingWasShowingVideoRef.current) {
+      setOutgoingVideoVisible(true)
+    }
+    doPrevTransition()
+  }
+
+  // Сбрасываем направление через TIME_RUNNING
   useEffect(() => {
     if (!direction) return
-    const timeout = setTimeout(() => setDirection(null), TIME_RUNNING)
+    const timeout = setTimeout(() => {
+      setDirection(null)
+      setOutgoingVideoVisible(true)
+      outgoingWasShowingVideoRef.current = false
+    }, TIME_RUNNING)
     return () => clearTimeout(timeout)
   }, [direction])
+
+  // Запускаем затухание видео на уходящем слайде (только если показывали видео)
+  const shouldFadeOutgoingVideo = outgoingSlideHasVideo && outgoingWasShowingVideoRef.current
+  useEffect(() => {
+    if (!shouldFadeOutgoingVideo || !outgoingVideoVisible) return
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setOutgoingVideoVisible(false))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [shouldFadeOutgoingVideo, outgoingVideoVisible])
+
+  // При смене слайда с видео: показываем картинку 0.5с, затем плавный переход в видео
+  useEffect(() => {
+    if (!currentSlideHasVideo) {
+      setShowVideoOnCurrentSlide(false)
+      return
+    }
+    setShowVideoOnCurrentSlide(false)
+    const t = setTimeout(() => setShowVideoOnCurrentSlide(true), IMAGE_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [slides[0]?.id])
 
   // Отдельный список для thumbnail:
   // первый элемент основного списка показываем в конце,
@@ -141,11 +188,45 @@ export default function SliderFullScreen() {
     <section className={carouselClassNames}>
       {/* Основной список */}
       <div className={styles.list}>
-        {slides.map((slide) => (
+        {slides.map((slide, index) => (
           <div key={slide.id} className={styles.item}>
             <div className={styles.image}>
-              {slide.video ? (
-                <video src={slide.video} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {slide.video && index === 0 ? (
+                <>
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className={styles.mediaLayer}
+                    style={{ opacity: showVideoOnCurrentSlide ? 0 : 1 }}
+                  />
+                  <video
+                    src={slide.video}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className={styles.mediaLayer}
+                    style={{ opacity: showVideoOnCurrentSlide ? 1 : 0 }}
+                  />
+                </>
+              ) : slide.video && outgoingWasShowingVideoRef.current && ((index === 1 && direction === 'prev') || (index === slides.length - 1 && direction === 'next')) ? (
+                <>
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className={styles.mediaLayer}
+                    style={{ opacity: outgoingVideoVisible ? 0 : 1 }}
+                  />
+                  <video
+                    src={slide.video}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className={styles.mediaLayer}
+                    style={{ opacity: outgoingVideoVisible ? 1 : 0 }}
+                  />
+                </>
               ) : (
                 <img src={slide.image} alt={slide.title} />
               )}
