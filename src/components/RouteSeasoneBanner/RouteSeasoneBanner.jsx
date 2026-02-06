@@ -1,18 +1,66 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
 import styles from './RouteSeasoneBanner.module.css'
 import { Link } from 'react-router-dom'
 
+const OFFSET_PX = 400
 
-export default function RouteSeasoneBanner({ bgColor, patternColor, title, logo, routeLink, showFrom }) {
-  const translateXValue = showFrom === 'left' ? '-400px' : '400px'
+export default function RouteSeasoneBanner({ bgColor, patternColor, title, logo, routeLink }) {
+  const [isHovering, setIsHovering] = useState(false)
+  const [fromLeft, setFromLeft] = useState(true)
+  const [needsReset, setNeedsReset] = useState(false)
+  const linkRef = useRef(null)
+
+  const handleMouseEnter = (e) => {
+    const el = linkRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const mouseLeftOfCenter = e.clientX < centerX
+    setFromLeft(mouseLeftOfCenter)
+    setNeedsReset(true)
+    setIsHovering(true)
+  }
+
+  const handleMouseLeave = (e) => {
+    const el = linkRef.current
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const mouseLeftOfCenter = e.clientX < centerX
+      setFromLeft(mouseLeftOfCenter)
+    }
+    setIsHovering(false)
+  }
+
+  useEffect(() => {
+    if (!needsReset) return
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setNeedsReset(false)
+      })
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [needsReset])
+
+  const translateXValue = needsReset
+    ? (fromLeft ? `-${OFFSET_PX}px` : `${OFFSET_PX}px`)
+    : (isHovering ? '0px' : (fromLeft ? `-${OFFSET_PX}px` : `${OFFSET_PX}px`))
 
   return (
-    <Link to={routeLink} className={styles.routeSeasoneBanner} style={{
-      backgroundColor: `${bgColor}`,
-      '--translate-x': translateXValue
-    }}>
+    <Link
+      ref={linkRef}
+      to={routeLink}
+      className={styles.routeSeasoneBanner}
+      style={{
+        backgroundColor: `${bgColor}`,
+        '--translate-x': translateXValue
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-reset={needsReset || undefined}
+    >
       <div className={styles.patternBottom}>
         <svg width="100%" height="238" viewBox="0 0 319 238" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M72.3674 56.3172C72.3674 67.2601 64.4903 73.6809 50.9206 73.6809C42.0192 73.6809 34.1422 70.0333 34.1422 66.6783C34.1422 61.5709 50.1925 64.1978 50.1925 52.5268C50.1925 45.9596 44.357 41.7302 35.6019 41.7302C25.3871 41.7302 21.304 46.9839 21.304 53.5475C21.304 61.4246 25.3907 67.1173 25.3907 70.0333C25.3907 71.9285 24.3699 72.9528 22.3284 72.9528H4.2294C1.1671 72.9492 0 71.7821 0 69.5943V3.35505C0 1.16718 1.1671 8.39233e-05 4.08664 8.39233e-05H24.0737C26.5542 8.39233e-05 27.575 1.31351 27.575 3.06239C27.575 4.81125 26.5542 6.56369 25.8225 8.16979L24.8018 10.504C23.1957 14.298 21.4468 22.9067 21.4468 33.8496V34.5777H27.4286L27.575 33.2642C30.2019 9.77589 44.3534 8.39233e-05 67.5526 8.39233e-05C70.4722 8.39233e-05 71.6393 0.874512 71.6393 3.50138V27.8677C71.6393 30.3483 70.9112 32.0971 68.577 32.0971C64.6367 32.0971 62.1561 26.1153 50.4851 26.1153C42.9043 26.1153 37.8255 29.7701 36.1801 34.5777H39.2496C58.5085 34.5777 72.3674 42.601 72.3674 56.3172Z" fill={patternColor} />

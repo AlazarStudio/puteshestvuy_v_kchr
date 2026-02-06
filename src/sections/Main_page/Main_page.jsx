@@ -59,10 +59,10 @@ export default function Main_page() {
 
         <CenterBlock>
           <section className={styles.flexBlock}>
-            <RouteSeasoneBanner showFrom={'left'} routeLink={'/routes?seasons=Зима'} bgColor={'#73BFE7'} patternColor={'#296587'} title={'Зима'} logo={'logoPattern1.png'} />
-            <RouteSeasoneBanner showFrom={'right'} routeLink={'/routes?seasons=Весна'} bgColor={'#FF9397'} patternColor={'#DB224A'} title={'Весна'} logo={'logoPattern2.png'} />
-            <RouteSeasoneBanner showFrom={'left'} routeLink={'/routes?seasons=Лето'} bgColor={'#66D7CA'} patternColor={'#156A60'} title={'Лето'} logo={'logoPattern3.png'} />
-            <RouteSeasoneBanner showFrom={'right'} routeLink={'/routes?seasons=Осень'} bgColor={'#CD8A67'} patternColor={'#7C4B42'} title={'Осень'} logo={'logoPattern4.png'} />
+            <RouteSeasoneBanner routeLink={'/routes?seasons=Зима'} bgColor={'#73BFE7'} patternColor={'#296587'} title={'Зима'} logo={'logoPattern1.png'} />
+            <RouteSeasoneBanner routeLink={'/routes?seasons=Весна'} bgColor={'#FF9397'} patternColor={'#DB224A'} title={'Весна'} logo={'logoPattern2.png'} />
+            <RouteSeasoneBanner routeLink={'/routes?seasons=Лето'} bgColor={'#66D7CA'} patternColor={'#156A60'} title={'Лето'} logo={'logoPattern3.png'} />
+            <RouteSeasoneBanner routeLink={'/routes?seasons=Осень'} bgColor={'#CD8A67'} patternColor={'#7C4B42'} title={'Осень'} logo={'logoPattern4.png'} />
           </section>
         </CenterBlock>
 
