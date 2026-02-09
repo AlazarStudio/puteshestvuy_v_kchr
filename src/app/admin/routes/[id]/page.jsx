@@ -269,18 +269,32 @@ export default function RouteEditPage() {
     return JSON.stringify(getFormSnapshot(formData)) !== JSON.stringify(savedSnapshotRef.current) || pendingGallery.length > 0;
   }, [isNew, formData, pendingGallery.length]);
 
-  const goToList = useCallback(() => {
-    setLeaveModalOpen(false);
+  const navigateToList = useCallback(() => {
+    // Проверяем, есть ли сохраненная страница для возврата
+    const savedReturnPage = localStorage.getItem('admin_routes_return_page');
+    if (savedReturnPage) {
+      const savedPage = parseInt(savedReturnPage, 10);
+      if (savedPage > 0) {
+        navigate(`/admin/routes?page=${savedPage}`);
+        localStorage.removeItem('admin_routes_return_page');
+        return;
+      }
+    }
     navigate('/admin/routes');
   }, [navigate]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    navigateToList();
+  }, [navigateToList]);
 
   const handleCancelClick = useCallback(() => {
     if (isDirty) {
       setLeaveModalOpen(true);
     } else {
-      navigate('/admin/routes');
+      navigateToList();
     }
-  }, [isDirty, navigate]);
+  }, [isDirty, navigateToList]);
 
   useEffect(() => {
     if (!isNew) {

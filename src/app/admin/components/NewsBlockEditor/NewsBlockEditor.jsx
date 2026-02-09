@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading, Plus } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 import { getImageUrl } from '@/lib/api';
 import styles from './NewsBlockEditor.module.css';
@@ -69,19 +69,74 @@ function slugFromText(text) {
 
 export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFiles = {}, onPendingBlockFilesChange }) {
   const [addBlockOpen, setAddBlockOpen] = useState(false);
+  const [hoveredInsertIndex, setHoveredInsertIndex] = useState(null);
+  const [openInsertIndex, setOpenInsertIndex] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({});
   const addBlockRef = useRef(null);
+  const insertRefs = useRef({});
 
   const sortedBlocks = [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const calculateDropdownPosition = (index) => {
+    const insertArea = insertRefs.current[index];
+    if (!insertArea) return 'bottom';
+
+    const rect = insertArea.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropdownHeight = 350; // Примерная высота выпадающего меню с учетом всех опций
+
+    // Если места снизу недостаточно и сверху больше места - показываем сверху
+    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+      return 'top';
+    }
+    // Если места сверху недостаточно и снизу больше места - показываем снизу
+    if (spaceAbove < dropdownHeight && spaceBelow > spaceAbove) {
+      return 'bottom';
+    }
+    // По умолчанию показываем снизу
+    return 'bottom';
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (addBlockRef.current && !addBlockRef.current.contains(e.target)) {
         setAddBlockOpen(false);
       }
+      if (openInsertIndex !== null && insertRefs.current[openInsertIndex] && !insertRefs.current[openInsertIndex].contains(e.target)) {
+        setOpenInsertIndex(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [openInsertIndex]);
+
+  useEffect(() => {
+    if (openInsertIndex !== null) {
+      const position = calculateDropdownPosition(openInsertIndex);
+      setDropdownPosition(prev => ({ ...prev, [openInsertIndex]: position }));
+    }
+  }, [openInsertIndex]);
+
+  useEffect(() => {
+    if (openInsertIndex !== null) {
+      const handleResize = () => {
+        const position = calculateDropdownPosition(openInsertIndex);
+        setDropdownPosition(prev => ({ ...prev, [openInsertIndex]: position }));
+      };
+      const handleScroll = () => {
+        const position = calculateDropdownPosition(openInsertIndex);
+        setDropdownPosition(prev => ({ ...prev, [openInsertIndex]: position }));
+      };
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
+    }
+  }, [openInsertIndex]);
 
   const updateBlock = (index, updates) => {
     const next = sortedBlocks.map((b, i) =>
@@ -95,6 +150,16 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     newBlock.order = sortedBlocks.length;
     onChange([...sortedBlocks, newBlock]);
     setAddBlockOpen(false);
+  };
+
+  const addBlockAfter = (afterIndex, type) => {
+    const newBlock = createEmptyBlock(type);
+    const insertIndex = afterIndex + 1;
+    const next = [...sortedBlocks];
+    next.splice(insertIndex, 0, newBlock);
+    onChange(next.map((b, i) => ({ ...b, order: i })));
+    setOpenInsertIndex(null);
+    setHoveredInsertIndex(null);
   };
 
   const removeBlock = (index) => {
@@ -227,11 +292,11 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     <div className={styles.wrapper}>
       <div className={styles.blocksList}>
         {sortedBlocks.map((block, index) => (
-          <div
-            key={block.id}
-            className={styles.blockRow}
-            data-block-row
-            onDragOver={(e) => {
+          <div key={block.id}>
+            <div
+              className={styles.blockRow}
+              data-block-row
+              onDragOver={(e) => {
               e.preventDefault();
               e.dataTransfer.dropEffect = 'move';
             }}
@@ -541,9 +606,133 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
               <X size={18} />
             </button>
           </div>
+          
+          {index < sortedBlocks.length - 1 && (
+            <div
+              ref={(el) => {
+                if (el) insertRefs.current[index] = el;
+              }}
+              className={`${styles.insertBlockArea} ${(hoveredInsertIndex === index || openInsertIndex === index) ? styles.insertBlockAreaVisible : ''}`}
+              onMouseEnter={() => setHoveredInsertIndex(index)}
+              onMouseLeave={() => {
+                if (openInsertIndex !== index) {
+                  setHoveredInsertIndex(null);
+                }
+              }}
+              data-insert-index={index}
+            >
+            <div className={styles.insertLine} />
+            <button
+              type="button"
+              className={styles.insertPlusBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                const newIndex = openInsertIndex === index ? null : index;
+                setOpenInsertIndex(newIndex);
+                if (newIndex !== null) {
+                  // Расчет позиции после рендера
+                  requestAnimationFrame(() => {
+                    const position = calculateDropdownPosition(newIndex);
+                    setDropdownPosition(prev => ({ ...prev, [newIndex]: position }));
+                  });
+                }
+              }}
+              aria-label="Добавить блок здесь"
+              title="Добавить блок здесь"
+            >
+              <Plus size={20} />
+            </button>
+            {openInsertIndex === index && (
+              <div 
+                className={`${styles.insertDropdown} ${dropdownPosition[index] === 'top' ? styles.insertDropdownTop : styles.insertDropdownBottom}`}
+                onMouseEnter={() => setHoveredInsertIndex(index)}
+                onMouseLeave={() => {
+                  if (openInsertIndex !== index) {
+                    setHoveredInsertIndex(null);
+                  }
+                }}
+              >
+                {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={styles.addBlockOption}
+                    onClick={() => addBlockAfter(index, type)}
+                  >
+                    <Icon size={18} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+          </div>
         ))}
+        {sortedBlocks.length > 0 && (
+          <div
+            ref={(el) => {
+              if (el) insertRefs.current[sortedBlocks.length - 1] = el;
+            }}
+            className={`${styles.insertBlockArea} ${(hoveredInsertIndex === sortedBlocks.length - 1 || openInsertIndex === sortedBlocks.length - 1) ? styles.insertBlockAreaVisible : ''}`}
+            onMouseEnter={() => setHoveredInsertIndex(sortedBlocks.length - 1)}
+            onMouseLeave={() => {
+              if (openInsertIndex !== sortedBlocks.length - 1) {
+                setHoveredInsertIndex(null);
+              }
+            }}
+            data-insert-index={sortedBlocks.length - 1}
+          >
+            <div className={styles.insertLine} />
+            <button
+              type="button"
+              className={styles.insertPlusBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                const lastIndex = sortedBlocks.length - 1;
+                const newIndex = openInsertIndex === lastIndex ? null : lastIndex;
+                setOpenInsertIndex(newIndex);
+                if (newIndex !== null) {
+                  // Расчет позиции после рендера
+                  requestAnimationFrame(() => {
+                    const position = calculateDropdownPosition(newIndex);
+                    setDropdownPosition(prev => ({ ...prev, [newIndex]: position }));
+                  });
+                }
+              }}
+              aria-label="Добавить блок здесь"
+              title="Добавить блок здесь"
+            >
+              <Plus size={20} />
+            </button>
+            {openInsertIndex === sortedBlocks.length - 1 && (
+              <div 
+                className={`${styles.insertDropdown} ${dropdownPosition[sortedBlocks.length - 1] === 'top' ? styles.insertDropdownTop : styles.insertDropdownBottom}`}
+                onMouseEnter={() => setHoveredInsertIndex(sortedBlocks.length - 1)}
+                onMouseLeave={() => {
+                  if (openInsertIndex !== sortedBlocks.length - 1) {
+                    setHoveredInsertIndex(null);
+                  }
+                }}
+              >
+                {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={styles.addBlockOption}
+                    onClick={() => addBlockAfter(sortedBlocks.length - 1, type)}
+                  >
+                    <Icon size={18} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {sortedBlocks.length === 0 && (
       <div className={styles.addBlockWrap} ref={addBlockRef}>
         <button
           type="button"
@@ -568,6 +757,7 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
           </div>
         )}
       </div>
+      )}
 
     </div>
   );

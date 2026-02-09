@@ -126,18 +126,32 @@ export default function PlaceEditPage() {
     return !formSnapshotsEqual(formData, savedFormDataRef.current) || hasPendingImages;
   }, [isNew, formData, savedVersion, hasPendingImages]);
 
-  const goToList = useCallback(() => {
-    setLeaveModalOpen(false);
+  const navigateToList = useCallback(() => {
+    // Проверяем, есть ли сохраненная страница для возврата
+    const savedReturnPage = localStorage.getItem('admin_places_return_page');
+    if (savedReturnPage) {
+      const savedPage = parseInt(savedReturnPage, 10);
+      if (savedPage > 0) {
+        navigate(`/admin/places?page=${savedPage}`);
+        localStorage.removeItem('admin_places_return_page');
+        return;
+      }
+    }
     navigate('/admin/places');
   }, [navigate]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    navigateToList();
+  }, [navigateToList]);
 
   const handleCancelClick = useCallback(() => {
     if (isDirty) {
       setLeaveModalOpen(true);
     } else {
-      navigate('/admin/places');
+      navigateToList();
     }
-  }, [isDirty, navigate]);
+  }, [isDirty, navigateToList]);
 
   useEffect(() => {
     if (!isNew) {

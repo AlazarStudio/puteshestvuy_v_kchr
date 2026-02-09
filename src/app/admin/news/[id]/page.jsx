@@ -97,18 +97,32 @@ export default function NewsEditPage() {
     setImageDisplayUrl(formData.image ? getImageUrl(formData.image) : '');
   }, [pendingImageFile, formData.image]);
 
-  const goToList = useCallback(() => {
-    setLeaveModalOpen(false);
+  const navigateToList = useCallback(() => {
+    // Проверяем, есть ли сохраненная страница для возврата
+    const savedReturnPage = localStorage.getItem('admin_news_return_page');
+    if (savedReturnPage) {
+      const savedPage = parseInt(savedReturnPage, 10);
+      if (savedPage > 0) {
+        navigate(`/admin/news?page=${savedPage}`);
+        localStorage.removeItem('admin_news_return_page');
+        return;
+      }
+    }
     navigate('/admin/news');
   }, [navigate]);
+
+  const goToList = useCallback(() => {
+    setLeaveModalOpen(false);
+    navigateToList();
+  }, [navigateToList]);
 
   const handleCancelClick = useCallback(() => {
     if (isDirty) {
       setLeaveModalOpen(true);
     } else {
-      navigate('/admin/news');
+      navigateToList();
     }
-  }, [isDirty, navigate]);
+  }, [isDirty, navigateToList]);
 
   const fetchNews = useCallback(async () => {
     if (isNew) return;
@@ -349,14 +363,14 @@ export default function NewsEditPage() {
             if (created?.id) {
               navigate(`/admin/news/${created.id}`, { replace: true });
             } else {
-              navigate('/admin/news');
+              navigateToList();
             }
           }, 500);
         } else {
           if (created?.id) {
             navigate(`/admin/news/${created.id}`, { replace: true });
           } else {
-            navigate('/admin/news');
+            navigateToList();
           }
         }
         setShowToast(true);

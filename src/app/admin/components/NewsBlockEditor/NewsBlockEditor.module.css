@@ -26,6 +26,105 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.insertBlockArea {
+  position: relative;
+  height: 24px;
+  margin: 10px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.insertLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #2563eb;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: center;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.insertBlockAreaVisible .insertLine {
+  transform: translateY(-50%) scaleX(1);
+  opacity: 1;
+}
+
+.insertPlusBtn {
+  position: relative;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: #2563eb;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.2s;
+}
+
+.insertBlockAreaVisible .insertPlusBtn {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.insertBlockAreaVisible .insertPlusBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.insertDropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 12px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 260px;
+  /* Плавная смена позиции при прокрутке (через transform) */
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  animation: dropdownFadeIn 0.25s ease forwards;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Снизу — как по умолчанию */
+.insertDropdownBottom {
+  transform: translate(-50%, 0);
+}
+
+/* Сверху — сдвиг вверх через transform для плавной анимации при смене */
+.insertDropdownTop {
+  transform: translate(-50%, calc(-100% - 45px));
+}
+
 .blockControls {
   display: flex;
   flex-direction: column;

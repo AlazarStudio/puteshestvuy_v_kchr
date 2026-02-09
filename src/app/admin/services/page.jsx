@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function ServicesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
@@ -17,15 +18,84 @@ export default function ServicesPage() {
   const [togglingId, setTogglingId] = useState(null);
   const searchDebounceRef = useRef(null);
 
-  const MIN_LOADING_MS = 500;
+  // Загружаем сохраненный limit из localStorage или используем значение по умолчанию
+  const [limit, setLimit] = useState(() => {
+    const saved = localStorage.getItem('admin_services_limit');
+    return saved ? parseInt(saved, 10) : 10;
+  });
 
-  const fetchServices = async (page = 1) => {
+  const MIN_LOADING_MS = 500;
+  const lastFetchedPageRef = useRef(null);
+  const lastFetchedSortRef = useRef({ sortBy: null, sortOrder: 'asc' });
+  
+  // Инициализируем сортировку из URL параметров
+  const [sortBy, setSortBy] = useState(() => {
+    const urlSortBy = searchParams.get('sortBy');
+    return urlSortBy || null;
+  });
+  const [sortOrder, setSortOrder] = useState(() => {
+    const urlSortOrder = searchParams.get('sortOrder');
+    return (urlSortOrder === 'asc' || urlSortOrder === 'desc') ? urlSortOrder : 'asc';
+  });
+
+  const handleSort = (field) => {
+    const newParams = new URLSearchParams(searchParams);
+    let newSortBy, newSortOrder;
+    
+    if (sortBy === field) {
+      newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      newSortBy = field;
+    } else {
+      newSortBy = field;
+      newSortOrder = 'asc';
+    }
+    
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    
+    newParams.set('sortBy', newSortBy);
+    newParams.set('sortOrder', newSortOrder);
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleResetSort = () => {
+    setSortBy(null);
+    setSortOrder('asc');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('sortBy');
+    newParams.delete('sortOrder');
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const fetchServices = async (page, updateUrl = true) => {
     const start = Date.now();
     setIsLoading(true);
     try {
-      const response = await servicesAPI.getAll({ page, limit: 10, search: searchQuery });
+      const params = { page, limit, search: searchQuery };
+      if (sortBy) {
+        params.sortBy = sortBy;
+        params.sortOrder = sortOrder;
+      }
+      const response = await servicesAPI.getAll(params);
       setServices(response.data.items ?? []);
       setPagination(response.data.pagination ?? { page: 1, pages: 1, total: 0 });
+      lastFetchedPageRef.current = page;
+      
+      // Обновляем URL с текущей страницей только если нужно
+      if (updateUrl) {
+        const newParams = new URLSearchParams(searchParams);
+        const urlPage = parseInt(newParams.get('page') || '1', 10);
+        if (page !== urlPage) {
+          if (page === 1) {
+            newParams.delete('page');
+          } else {
+            newParams.set('page', page.toString());
+          }
+          setSearchParams(newParams, { replace: true });
+        }
+      }
     } catch (error) {
       console.error('Ошибка загрузки услуг:', error);
       setServices([]);
@@ -36,15 +106,92 @@ export default function ServicesPage() {
     }
   };
 
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    localStorage.setItem('admin_services_limit', newLimit.toString());
+    // Сбрасываем на первую страницу при изменении limit
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+    fetchServices(1, true);
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchServices(newPage, true);
+  };
+
+  // Синхронизируем состояние сортировки с URL параметрами при их изменении
   useEffect(() => {
+    const urlSortBy = searchParams.get('sortBy');
+    const urlSortOrder = searchParams.get('sortOrder');
+    
+    if (urlSortBy !== sortBy) {
+      setSortBy(urlSortBy || null);
+    }
+    if (urlSortOrder && urlSortOrder !== sortOrder && (urlSortOrder === 'asc' || urlSortOrder === 'desc')) {
+      setSortOrder(urlSortOrder);
+    }
+    if (!urlSortBy && sortBy !== null) {
+      setSortBy(null);
+      setSortOrder('asc');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Загружаем данные при изменении страницы в URL, сортировки или при первой загрузке
+  useEffect(() => {
+    let urlPage = parseInt(searchParams.get('page') || '1', 10);
+    const lastFetchedPage = lastFetchedPageRef.current;
+    
+    // При первой загрузке проверяем, есть ли сохраненная страница для возврата
+    if (lastFetchedPage === null) {
+      const savedReturnPage = localStorage.getItem('admin_services_return_page');
+      if (savedReturnPage) {
+        const savedPage = parseInt(savedReturnPage, 10);
+        if (savedPage > 0 && savedPage !== urlPage) {
+          // Восстанавливаем сохраненную страницу
+          urlPage = savedPage;
+          const newParams = new URLSearchParams(searchParams);
+          if (savedPage === 1) {
+            newParams.delete('page');
+          } else {
+            newParams.set('page', savedPage.toString());
+          }
+          setSearchParams(newParams, { replace: true });
+          // Удаляем сохраненную страницу после использования
+          localStorage.removeItem('admin_services_return_page');
+        }
+      }
+    }
+    
+    // Загружаем данные если:
+    // 1. Это первая загрузка (lastFetchedPage === null)
+    // 2. Страница в URL отличается от последней загруженной
+    // 3. Изменилась сортировка
+    const sortChanged = sortBy !== lastFetchedSortRef.current.sortBy || sortOrder !== lastFetchedSortRef.current.sortOrder;
+    const shouldFetch = lastFetchedPage === null || urlPage !== lastFetchedPage || sortChanged;
+    if (shouldFetch) {
+      lastFetchedSortRef.current = { sortBy, sortOrder };
+      fetchServices(urlPage, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, sortBy, sortOrder]);
+
+  useEffect(() => {
+    if (lastFetchedPageRef.current === null) return;
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
-      fetchServices(1);
+      // При изменении поиска или limit сбрасываем на первую страницу
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('page');
+      setSearchParams(newParams, { replace: true });
+      fetchServices(1, true);
     }, 400);
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
-  }, [searchQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, limit]);
 
   const handleDeleteClick = (id) => {
     setConfirmModal({
@@ -57,7 +204,7 @@ export default function ServicesPage() {
         try {
           await servicesAPI.delete(id);
           setConfirmModal(null);
-          fetchServices(pagination.page);
+          handlePageChange(pagination.page);
         } catch (error) {
           console.error('Ошибка удаления:', error);
           setConfirmModal(null);
@@ -88,30 +235,51 @@ export default function ServicesPage() {
     }
   };
 
+  const renderPagination = () => (
+    <>
+      <div className={styles.paginationLimit}>
+        <label htmlFor="limit-select">Показывать:</label>
+        <select id="limit-select" value={limit} onChange={(e) => handleLimitChange(parseInt(e.target.value, 10))} className={styles.limitSelect}>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </div>
+      {pagination.pages > 1 && (
+        <div className={styles.pagination}>
+          <button onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page === 1} className={styles.pageBtn} aria-label="Предыдущая страница"><ChevronLeft size={18} /></button>
+          {(() => {
+            const pages = [];
+            const totalPages = pagination.pages;
+            const current = pagination.page;
+            if (current > 3) { pages.push(<button key={1} onClick={() => handlePageChange(1)} className={styles.pageBtn}>1</button>); if (current > 4) pages.push(<span key="ellipsis1" className={styles.ellipsis}>...</span>); }
+            const start = Math.max(1, current - 2), end = Math.min(totalPages, current + 2);
+            for (let i = start; i <= end; i++) pages.push(<button key={i} onClick={() => handlePageChange(i)} className={`${styles.pageBtn} ${current === i ? styles.active : ''}`}>{i}</button>);
+            if (current < totalPages - 2) { if (current < totalPages - 3) pages.push(<span key="ellipsis2" className={styles.ellipsis}>...</span>); pages.push(<button key={totalPages} onClick={() => handlePageChange(totalPages)} className={styles.pageBtn}>{totalPages}</button>); }
+            return pages;
+          })()}
+          <button onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page === pagination.pages} className={styles.pageBtn} aria-label="Следующая страница"><ChevronRight size={18} /></button>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <div>
+    <div className={styles.pageWrapper}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Услуги</h1>
-        <Link to="/admin/services/new" className={styles.addBtn}>
-          <Plus size={18} /> Добавить услугу
-        </Link>
-      </div>
-
-      <div className={styles.searchBar}>
-        <div className={styles.searchWrap}>
-          <input
-            type="text"
-            placeholder="Поиск услуг..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-            aria-label="Поиск услуг"
-          />
-          <Search size={18} className={styles.searchIcon} aria-hidden />
+        <div className={styles.pageHeaderActions}>
+          <div className={styles.searchWrap}>
+            <input type="text" placeholder="Поиск услуг..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={styles.searchInput} aria-label="Поиск услуг" />
+            <Search size={18} className={styles.searchIcon} aria-hidden />
+          </div>
+          <Link to="/admin/services/new" className={styles.addBtn}><Plus size={18} /> Добавить услугу</Link>
         </div>
       </div>
 
-      <div className={styles.tableContainer}>
+      <div className={styles.tableWrapper}>
+        <div className={styles.tableContainer}>
         {isLoading ? (
           <div className={styles.emptyState}>
             <div className={styles.spinner}></div>
@@ -128,11 +296,45 @@ export default function ServicesPage() {
             <thead>
               <tr>
                 <th>Изображение</th>
-                <th>Название</th>
-                <th>Категория</th>
-                <th>Рейтинг</th>
-                <th>Видимость</th>
-                <th>Действия</th>
+                <th className={`${styles.titleCell} ${styles.sortableHeader}`} onClick={() => handleSort('title')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Название</span>
+                    {sortBy === 'title' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('category')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Категория</span>
+                    {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('rating')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Рейтинг</span>
+                    {sortBy === 'rating' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('isActive')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Видимость</span>
+                    {sortBy === 'isActive' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Действия</span>
+                    {sortBy && (
+                      <button
+                        onClick={handleResetSort}
+                        className={styles.resetSortIconBtn}
+                        title="Сбросить сортировку"
+                        aria-label="Сбросить сортировку"
+                      >
+                        <RotateCcw size={14} className={styles.sortIconInactive} />
+                      </button>
+                    )}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -147,7 +349,7 @@ export default function ServicesPage() {
                       />
                     </div>
                   </td>
-                  <td className={styles.tableCell}>
+                  <td className={`${styles.tableCell} ${styles.titleCell}`}>
                     <div className={styles.cellInner}>{service.title}</div>
                   </td>
                   <td className={styles.tableCell}>
@@ -194,9 +396,36 @@ export default function ServicesPage() {
                             <Eye size={16} />
                           )}
                         </button>
-                        <Link to={`/admin/services/${service.id}`} className={styles.editBtn} title="Редактировать">
+                        <Link 
+                          to={`/admin/services/${service.id}`}
+                          onClick={() => {
+                            // Сохраняем текущую страницу перед переходом на редактирование
+                            const currentPage = pagination.page || 1;
+                            localStorage.setItem('admin_services_return_page', currentPage.toString());
+                          }}
+                          className={styles.editBtn} 
+                          title="Редактировать"
+                        >
                           <Pencil size={16} />
                         </Link>
+                        {service.isActive ? (
+                          <a
+                            href={`/services/${service.slug || service.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.viewBtn}
+                            title="Просмотреть на сайте"
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                        ) : (
+                          <span
+                            className={`${styles.viewBtn} ${styles.viewBtnDisabled}`}
+                            title="Включите видимость, чтобы просмотреть на сайте"
+                          >
+                            <ExternalLink size={16} />
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDeleteClick(service.id)}
@@ -213,33 +442,12 @@ export default function ServicesPage() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
-      {pagination.pages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            onClick={() => fetchServices(pagination.page - 1)}
-            disabled={pagination.page === 1}
-            className={styles.pageBtn}
-          >
-            Назад
-          </button>
-          {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => fetchServices(page)}
-              className={`${styles.pageBtn} ${pagination.page === page ? styles.active : ''}`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => fetchServices(pagination.page + 1)}
-            disabled={pagination.page === pagination.pages}
-            className={styles.pageBtn}
-          >
-            Вперёд
-          </button>
+      {(pagination.pages > 1 || pagination.total > 0) && (
+        <div className={styles.paginationFooter}>
+          {renderPagination()}
         </div>
       )}
 

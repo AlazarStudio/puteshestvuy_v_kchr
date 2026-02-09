@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Star, Check, X, Trash2, Map, MapPin, Building2 } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Star, Check, X, Trash2, Map, MapPin, Building2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
@@ -14,6 +15,7 @@ const ENTITY_TABS = [
 ];
 
 export default function ReviewsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
@@ -22,15 +24,84 @@ export default function ReviewsPage() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
 
-  const fetchReviews = async (page = 1) => {
+  // Загружаем сохраненный limit из localStorage или используем значение по умолчанию
+  const [limit, setLimit] = useState(() => {
+    const saved = localStorage.getItem('admin_reviews_limit');
+    return saved ? parseInt(saved, 10) : 10;
+  });
+
+  const lastFetchedPageRef = useRef(null);
+  const lastFetchedSortRef = useRef({ sortBy: null, sortOrder: 'asc' });
+  
+  // Инициализируем сортировку из URL параметров
+  const [sortBy, setSortBy] = useState(() => {
+    const urlSortBy = searchParams.get('sortBy');
+    return urlSortBy || null;
+  });
+  const [sortOrder, setSortOrder] = useState(() => {
+    const urlSortOrder = searchParams.get('sortOrder');
+    return (urlSortOrder === 'asc' || urlSortOrder === 'desc') ? urlSortOrder : 'asc';
+  });
+
+  const handleSort = (field) => {
+    const newParams = new URLSearchParams(searchParams);
+    let newSortBy, newSortOrder;
+    
+    if (sortBy === field) {
+      newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      newSortBy = field;
+    } else {
+      newSortBy = field;
+      newSortOrder = 'asc';
+    }
+    
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    
+    newParams.set('sortBy', newSortBy);
+    newParams.set('sortOrder', newSortOrder);
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleResetSort = () => {
+    setSortBy(null);
+    setSortOrder('asc');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('sortBy');
+    newParams.delete('sortOrder');
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const fetchReviews = async (page, updateUrl = true) => {
     setIsLoading(true);
     try {
-      const params = { page, limit: 10 };
+      const params = { page, limit };
       if (filter !== 'all') params.status = filter;
       if (entityTypeTab !== 'all') params.entityType = entityTypeTab;
+      if (sortBy) {
+        params.sortBy = sortBy;
+        params.sortOrder = sortOrder;
+      }
       const response = await reviewsAPI.getAll(params);
       setReviews(response.data.items);
       setPagination(response.data.pagination);
+      lastFetchedPageRef.current = page;
+      
+      // Обновляем URL с текущей страницей только если нужно
+      if (updateUrl) {
+        const newParams = new URLSearchParams(searchParams);
+        const urlPage = parseInt(newParams.get('page') || '1', 10);
+        if (page !== urlPage) {
+          if (page === 1) {
+            newParams.delete('page');
+          } else {
+            newParams.set('page', page.toString());
+          }
+          setSearchParams(newParams, { replace: true });
+        }
+      }
     } catch (error) {
       console.error('Ошибка загрузки отзывов:', error);
       setReviews([]);
@@ -39,14 +110,70 @@ export default function ReviewsPage() {
     }
   };
 
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    localStorage.setItem('admin_reviews_limit', newLimit.toString());
+    // Сбрасываем на первую страницу при изменении limit
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+    fetchReviews(1, true);
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchReviews(newPage, true);
+  };
+
+  // Синхронизируем состояние сортировки с URL параметрами при их изменении
   useEffect(() => {
-    fetchReviews();
-  }, [filter, entityTypeTab]);
+    const urlSortBy = searchParams.get('sortBy');
+    const urlSortOrder = searchParams.get('sortOrder');
+    
+    if (urlSortBy !== sortBy) {
+      setSortBy(urlSortBy || null);
+    }
+    if (urlSortOrder && urlSortOrder !== sortOrder && (urlSortOrder === 'asc' || urlSortOrder === 'desc')) {
+      setSortOrder(urlSortOrder);
+    }
+    if (!urlSortBy && sortBy !== null) {
+      setSortBy(null);
+      setSortOrder('asc');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Загружаем данные при изменении страницы в URL, сортировки или при первой загрузке
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '1', 10);
+    const lastFetchedPage = lastFetchedPageRef.current;
+    
+    // Загружаем данные если:
+    // 1. Это первая загрузка (lastFetchedPage === null)
+    // 2. Страница в URL отличается от последней загруженной
+    // 3. Изменилась сортировка
+    const sortChanged = sortBy !== lastFetchedSortRef.current.sortBy || sortOrder !== lastFetchedSortRef.current.sortOrder;
+    const shouldFetch = lastFetchedPage === null || urlPage !== lastFetchedPage || sortChanged;
+    if (shouldFetch) {
+      lastFetchedSortRef.current = { sortBy, sortOrder };
+      fetchReviews(urlPage, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, sortBy, sortOrder]);
+
+  useEffect(() => {
+    if (lastFetchedPageRef.current === null) return;
+    // При изменении фильтров сбрасываем на первую страницу
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('page');
+    setSearchParams(newParams, { replace: true });
+    fetchReviews(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, entityTypeTab, limit]);
 
   const handleApprove = async (id) => {
     try {
       await reviewsAPI.update(id, { status: 'approved' });
-      fetchReviews(pagination.page);
+      handlePageChange(pagination.page);
     } catch (error) {
       console.error('Ошибка одобрения:', error);
       setAlertModal({ open: true, title: 'Ошибка', message: 'Ошибка одобрения отзыва' });
@@ -64,7 +191,7 @@ export default function ReviewsPage() {
         try {
           await reviewsAPI.update(id, { status: 'rejected' });
           setConfirmModal(null);
-          fetchReviews(pagination.page);
+          handlePageChange(pagination.page);
         } catch (error) {
           console.error('Ошибка отклонения:', error);
           setConfirmModal(null);
@@ -86,7 +213,7 @@ export default function ReviewsPage() {
         try {
           await reviewsAPI.delete(id);
           setConfirmModal(null);
-          fetchReviews(pagination.page);
+          handlePageChange(pagination.page);
         } catch (error) {
           console.error('Ошибка удаления:', error);
           setConfirmModal(null);
@@ -146,10 +273,48 @@ export default function ReviewsPage() {
     }
   };
 
+  const renderPagination = () => (
+    <>
+      <div className={styles.paginationLimit}>
+        <label htmlFor="limit-select">Показывать:</label>
+        <select id="limit-select" value={limit} onChange={(e) => handleLimitChange(parseInt(e.target.value, 10))} className={styles.limitSelect}>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </div>
+      {pagination.pages > 1 && (
+        <div className={styles.pagination}>
+          <button onClick={() => handlePageChange(pagination.page - 1)} disabled={pagination.page === 1} className={styles.pageBtn} aria-label="Предыдущая страница"><ChevronLeft size={18} /></button>
+          {(() => {
+            const pages = [];
+            const totalPages = pagination.pages;
+            const current = pagination.page;
+            if (current > 3) { pages.push(<button key={1} onClick={() => handlePageChange(1)} className={styles.pageBtn}>1</button>); if (current > 4) pages.push(<span key="ellipsis1" className={styles.ellipsis}>...</span>); }
+            const start = Math.max(1, current - 2), end = Math.min(totalPages, current + 2);
+            for (let i = start; i <= end; i++) pages.push(<button key={i} onClick={() => handlePageChange(i)} className={`${styles.pageBtn} ${current === i ? styles.active : ''}`}>{i}</button>);
+            if (current < totalPages - 2) { if (current < totalPages - 3) pages.push(<span key="ellipsis2" className={styles.ellipsis}>...</span>); pages.push(<button key={totalPages} onClick={() => handlePageChange(totalPages)} className={styles.pageBtn}>{totalPages}</button>); }
+            return pages;
+          })()}
+          <button onClick={() => handlePageChange(pagination.page + 1)} disabled={pagination.page === pagination.pages} className={styles.pageBtn} aria-label="Следующая страница"><ChevronRight size={18} /></button>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <div>
+    <div className={styles.pageWrapper}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Модерация отзывов</h1>
+        <div className={styles.pageHeaderActions}>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} className={styles.formSelect} style={{ maxWidth: '200px' }}>
+            <option value="all">Все отзывы</option>
+            <option value="pending">На модерации</option>
+            <option value="approved">Одобренные</option>
+            <option value="rejected">Отклонённые</option>
+          </select>
+        </div>
       </div>
 
       <div className={styles.reviewTabs}>
@@ -166,21 +331,8 @@ export default function ReviewsPage() {
         ))}
       </div>
 
-      <div className={styles.searchBar}>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className={styles.formSelect}
-          style={{ maxWidth: '200px' }}
-        >
-          <option value="all">Все отзывы</option>
-          <option value="pending">На модерации</option>
-          <option value="approved">Одобренные</option>
-          <option value="rejected">Отклонённые</option>
-        </select>
-      </div>
-
-      <div className={styles.tableContainer}>
+      <div className={styles.tableWrapper}>
+        <div className={styles.tableContainer}>
         {isLoading ? (
           <div className={styles.emptyState}>
             <div className={styles.spinner}></div>
@@ -196,14 +348,58 @@ export default function ReviewsPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Автор</th>
-                <th>Тип</th>
-                <th>Объект</th>
-                <th>Рейтинг</th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('authorName')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Автор</span>
+                    {sortBy === 'authorName' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('entityType')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Тип</span>
+                    {sortBy === 'entityType' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('entityTitle')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Объект</span>
+                    {sortBy === 'entityTitle' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('rating')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Рейтинг</span>
+                    {sortBy === 'rating' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
                 <th>Текст</th>
-                <th>Дата</th>
-                <th>Статус</th>
-                <th>Действия</th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('createdAt')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Дата</span>
+                    {sortBy === 'createdAt' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('status')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Статус</span>
+                    {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
+                <th>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Действия</span>
+                    {sortBy && (
+                      <button
+                        onClick={handleResetSort}
+                        className={styles.resetSortIconBtn}
+                        title="Сбросить сортировку"
+                        aria-label="Сбросить сортировку"
+                      >
+                        <RotateCcw size={14} className={styles.sortIconInactive} />
+                      </button>
+                    )}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -268,33 +464,12 @@ export default function ReviewsPage() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
-      {pagination.pages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            onClick={() => fetchReviews(pagination.page - 1)}
-            disabled={pagination.page === 1}
-            className={styles.pageBtn}
-          >
-            Назад
-          </button>
-          {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => fetchReviews(page)}
-              className={`${styles.pageBtn} ${pagination.page === page ? styles.active : ''}`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => fetchReviews(pagination.page + 1)}
-            disabled={pagination.page === pagination.pages}
-            className={styles.pageBtn}
-          >
-            Вперёд
-          </button>
+      {(pagination.pages > 1 || pagination.total > 0) && (
+        <div className={styles.paginationFooter}>
+          {renderPagination()}
         </div>
       )}
 
