@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import styles from './Header.module.css'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 
 // Данные для выпадающего меню "На помощь туристу"
 const dropdownMenuData = {
@@ -146,6 +147,7 @@ export default function Header() {
   const [activeArticleIndex, setActiveArticleIndex] = useState(0)
   const [isArticleHovered, setIsArticleHovered] = useState(false)
   const [dropdownArticles, setDropdownArticles] = useState([])
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const dropdownRef = useRef(null)
   const dropdownTriggerRef = useRef(null)
 
@@ -472,14 +474,17 @@ export default function Header() {
             />
           </Link> */}
 
-          <Link
-            to="/search"
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
             className={styles.iconButton}
             aria-label="Поиск"
             title="Поиск по сайту"
           >
             <img src="/search.png" alt="Поиск" width={17} height={17} />
-          </Link>
+          </button>
+          
+          <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
           {/* <Link
             href="/accessibility"
