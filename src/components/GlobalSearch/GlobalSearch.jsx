@@ -166,28 +166,6 @@ const findSimilarTitles = async (query, existingResults = [], maxResults = 5) =>
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, maxResults)
     
-    // Выводим в консоль все похожие названия с коэффициентами
-    console.log('🔍 Поиск похожих названий для запроса:', query)
-    console.log('📊 Всего проверено названий:', allTitles.length)
-    console.log('✅ Найдено похожих (порог > 0.15):', similar.length)
-    if (similar.length > 0) {
-      console.log('🏆 Топ похожих названий:')
-      similar.forEach((item, index) => {
-        console.log(`  ${index + 1}. "${item.title}" (${item.type}) - похожесть: ${(item.similarity * 100).toFixed(1)}%`)
-      })
-      console.log('⭐ Максимально похожее:', similar[0].title, `(${(similar[0].similarity * 100).toFixed(1)}%)`)
-    } else {
-      console.log('❌ Похожих названий не найдено')
-      // Показываем топ-10 даже если они ниже порога
-      const topSimilar = similarities
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, 10)
-      console.log('📈 Топ-10 по похожести (включая ниже порога):')
-      topSimilar.forEach((item, index) => {
-        console.log(`  ${index + 1}. "${item.title}" (${item.type}) - похожесть: ${(item.similarity * 100).toFixed(1)}%`)
-      })
-    }
-    
     return similar.map(item => ({
       title: item.title,
       type: item.type,
@@ -195,7 +173,6 @@ const findSimilarTitles = async (query, existingResults = [], maxResults = 5) =>
       id: item.id
     }))
   } catch (error) {
-    console.error('Error finding similar titles:', error)
     return []
   }
 }
@@ -249,11 +226,6 @@ const searchWithFallback = async (query) => {
     
     // Убираем поле similarity из результатов перед возвратом
     results = resultsWithSimilarity.map(({ titleSimilarity, ...rest }) => rest)
-    
-    console.log('📊 Результаты отсортированы по похожести названия:')
-    resultsWithSimilarity.forEach((item, index) => {
-      console.log(`  ${index + 1}. "${item.title}" (${item.type}) - похожесть названия: ${(item.titleSimilarity * 100).toFixed(1)}%`)
-    })
   }
   
   // Ищем похожие названия относительно запроса, по которому нашли результаты
@@ -278,7 +250,6 @@ const searchWithFallback = async (query) => {
         slug: resultsWithSimilarity[0].slug,
         id: resultsWithSimilarity[0].id
       }
-      console.log('🎯 BestMatch из найденных результатов:', bestMatch, `похожесть: ${(resultsWithSimilarity[0].similarity * 100).toFixed(1)}%`)
     }
     
     // Также ищем дополнительные похожие названия среди всех сущностей
@@ -370,7 +341,6 @@ const performSearch = async (query) => {
     
     return allResults
   } catch (error) {
-    console.error('Search error:', error)
     return []
   }
 }
@@ -429,13 +399,6 @@ export default function GlobalSearch({ isOpen, onClose }) {
     setIsLoading(true)
     const timer = setTimeout(async () => {
       const { results: searchResults, fallback: fallbackQuery, similarTitles: similar, bestMatch: match } = await searchWithFallback(query)
-      console.log('Search completed:', { 
-        query, 
-        resultsCount: searchResults.length, 
-        fallback: fallbackQuery, 
-        similarCount: similar?.length, 
-        bestMatch: match 
-      })
       setResults(searchResults)
       setFallback(fallbackQuery)
       setSimilarTitles(similar || [])
