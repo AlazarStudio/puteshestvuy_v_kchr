@@ -1,0 +1,47 @@
+.wrap {
+  position: relative;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: scale(1.08);
+}
+
+.icon {
+  width: 20px;
+  height: 21px;
+}
+
+.shape {
+  fill: #fff;
+}
+
+.plus {
+  stroke: #fff;
+}
+
+.btnActive {
+  background: #000;
+}
+
+.btnActive .shape {
+  fill: #fff;
+}
+
+.btnActive .plus {
+  stroke: #fff;
+}

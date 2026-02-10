@@ -17,10 +17,11 @@ function buildYandexRouteUrlMulti(points) {
 
 /**
  * Карта маршрута: точки мест в порядке следования и маршрут между ними.
- * places — массив { id, title, latitude, longitude } в порядке маршрута.
+ * places — массив { id, title, latitude, longitude, ... } в порядке маршрута.
  * showRouteFromMe — показывать кнопки «Построить маршрут» (от меня до первой точки) и «Открыть в Яндекс.Картах» со всеми точками.
+ * onPlacemarkClick — вызывается при клике на маркер, аргумент — объект места.
  */
-export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className, showRouteFromMe = false }) {
+export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className, showRouteFromMe = false, onPlacemarkClick }) {
   const containerRef = useRef(null);
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
@@ -28,6 +29,8 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
   const routeRef = useRef(null);
   const routeFromMeRef = useRef(null); // маршрут от пользователя до первой точки
   const userCoordsRef = useRef(null); // { lat, lon } — сохранённое местоположение пользователя
+  const onPlacemarkClickRef = useRef(onPlacemarkClick);
+  onPlacemarkClickRef.current = onPlacemarkClick;
   const [scriptReady, setScriptReady] = useState(false);
   const [error, setError] = useState(null);
   const [routeStatus, setRouteStatus] = useState(null); // null | 'loading' | 'ready' | 'denied' | 'error'
@@ -112,7 +115,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         const placemark = new window.ymaps.Placemark(
           coords,
           {
-            balloonContent: `<strong>${index + 1}. ${place.title || 'Точка'}</strong>`,
+            balloonContent: onPlacemarkClick ? '' : `<strong>${index + 1}. ${place.title || 'Точка'}</strong>`,
             iconContent: label,
           },
           {
@@ -122,6 +125,9 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
             ),
           }
         );
+        if (typeof onPlacemarkClickRef.current === 'function') {
+          placemark.events.add('click', () => onPlacemarkClickRef.current?.(place));
+        }
         map.geoObjects.add(placemark);
         placemarks.push(placemark);
       });
@@ -382,16 +388,14 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
           >
             <Route size={20} strokeWidth={2} />
           </button>
-          {routeBuiltFromMe && (
-            <button
-              type="button"
-              onClick={handleOpenYandexMaps}
-              title="Открыть в Яндекс.Картах"
-              style={iconBtnStyle}
-            >
-              <ExternalLink size={20} strokeWidth={2} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleOpenYandexMaps}
+            title="Открыть в Яндекс.Картах"
+            style={iconBtnStyle}
+          >
+            <ExternalLink size={20} strokeWidth={2} />
+          </button>
         </div>
       </div>
       {routeStatus === 'denied' && (

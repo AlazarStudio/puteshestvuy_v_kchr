@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 import styles from './Header.module.css'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
+import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 
 // Данные для выпадающего меню "На помощь туристу"
 const dropdownMenuData = {
@@ -161,6 +162,7 @@ const getPageConfig = (pathname) => {
 
 export default function Header() {
   const { pathname } = useLocation()
+  const { placeIds } = useRouteConstructor()
   const [isNotFound, setIsNotFound] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [hasBlur, setHasBlur] = useState(false)
@@ -481,19 +483,17 @@ export default function Header() {
 
         {/* Иконки справа */}
         <div className={styles.icons} aria-label="Дополнительные действия">
-          {/* <Link
-            href="/tours"
+          <Link
+            to="/profile?tab=routes-constructor"
             className={styles.iconButton}
-            aria-label="Конструктор туров"
-            title="Создать свой тур"
+            aria-label="Конструктор маршрутов"
+            title="Конструктор маршрутов"
           >
-            <Image
-              src="/konst_tours.png"
-              alt="Конструктор туров"
-              width={20}
-              height={20}
-            />
-          </Link> */}
+            <img src="/konst_tours.png" alt="Конструктор маршрутов" width={20} height={21} />
+            {placeIds.length > 0 && (
+              <span className={styles.iconBadge}>{placeIds.length}</span>
+            )}
+          </Link>
 
           <button
             type="button"

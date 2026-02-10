@@ -74,6 +74,9 @@ export const userAPI = {
     });
   },
   getFavorites: () => api.get('/users/profile/favorites'),
+  getConstructorPoints: () => api.get('/users/constructor-points'),
+  updateConstructorPoints: (placeIds) =>
+    api.put('/users/constructor-points', { placeIds }),
   addFavorite: (entityType, entityId) =>
     api.post(`/users/favorites/${entityType}/${entityId}`),
   removeFavorite: (entityType, entityId) =>
@@ -81,6 +84,15 @@ export const userAPI = {
 };
 
 export { USER_TOKEN_KEY };
+
+// User Routes API (пользовательские маршруты в профиле)
+export const userRoutesAPI = {
+  getAll: () => api.get('/users/routes'),
+  getById: (id) => api.get(`/users/routes/${id}`),
+  create: (data) => api.post('/users/routes', data),
+  update: (id, data) => api.put(`/users/routes/${id}`, data),
+  delete: (id) => api.delete(`/users/routes/${id}`),
+};
 
 // Routes API
 export const routesAPI = {

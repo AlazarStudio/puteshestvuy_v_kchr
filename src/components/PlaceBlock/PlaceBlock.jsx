@@ -1,6 +1,7 @@
 'use client'
 
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
 import styles from './PlaceBlock.module.css'
 
 function formatRating(value) {
@@ -21,6 +22,7 @@ export default function PlaceBlock({ img, place, title, desc, rating, feedback, 
     >
       {placeId && (
         <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
+          <RouteConstructorButton placeId={placeId} />
           <FavoriteButton entityType="place" entityId={placeId} />
         </div>
       )}

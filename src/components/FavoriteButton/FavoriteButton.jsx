@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModal } from '@/contexts/AuthModalContext'
+import { useToast } from '@/contexts/ToastContext'
 import styles from './FavoriteButton.module.css'
 
 export default function FavoriteButton({ entityType, entityId, className = '' }) {
   const { user, isFavorite, toggleFavorite } = useAuth()
   const { openAuthModal } = useAuthModal()
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
 
   const favorite = isFavorite(entityType, entityId)
@@ -21,7 +23,8 @@ export default function FavoriteButton({ entityType, entityId, className = '' })
     }
     setLoading(true)
     try {
-      await toggleFavorite(entityType, entityId)
+      const added = await toggleFavorite(entityType, entityId)
+      if (added) showToast('Добавлено в избранное')
     } finally {
       setLoading(false)
     }

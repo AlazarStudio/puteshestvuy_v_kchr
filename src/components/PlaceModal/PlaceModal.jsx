@@ -10,6 +10,8 @@ import styles from './PlaceModal.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import YandexMapPlace from '../YandexMapPlace'
 import RichTextContent from '../RichTextContent'
+import RouteConstructorButton from '../RouteConstructorButton/RouteConstructorButton'
+import FavoriteButton from '../FavoriteButton/FavoriteButton'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 
 const formatReviewDate = (dateStr) => {
@@ -162,11 +164,19 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <button className={styles.modalClose} onClick={onClose}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+              <div className={styles.modalImageActions}>
+                {place?.id && (
+                  <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
+                    <RouteConstructorButton placeId={place.id} place={place} />
+                    <FavoriteButton entityType="place" entityId={place.id} />
+                  </div>
+                )}
+                <button className={styles.modalClose} onClick={onClose}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
 
               <div className={styles.modalBody} ref={modalBodyRef}>
                 {isLoading ? (

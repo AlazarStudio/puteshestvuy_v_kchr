@@ -26,14 +26,27 @@
   overflow: hidden;
 }
 
-.modalClose {
+.modalImageActions {
   position: absolute;
   top: 20px;
   right: 20px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalImageIcons {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalClose {
   background: rgba(0, 0, 0, 0.5);
   border: none;
   cursor: pointer;
-  z-index: 10000;
   padding: 10px;
   border-radius: 50%;
   width: 40px;

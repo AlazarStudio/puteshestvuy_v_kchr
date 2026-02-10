@@ -11,11 +11,59 @@
   color: #9ca3af;
 }
 
+/* Хлебные крошки и кнопка назад (страница Мои маршруты) */
+.breadCrumbs {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 150%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.breadCrumbs span,
+.breadCrumbs a {
+  opacity: 0.7;
+  transition: all 0.3s ease-in-out;
+  border-bottom: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadCrumbs a:hover {
+  opacity: 1;
+  border-bottom: 1px solid #000;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  color: #156A60;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.backBtn:hover {
+  opacity: 0.85;
+}
+
+.myRoutesPageTitle {
+  margin: 0 0 24px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+}
+
 .wrap {
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 320px 1fr;
   gap: 32px;
   align-items: start;
 }
@@ -178,6 +226,29 @@
   padding: 32px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.panelTitleRow .panelTitle {
+  margin-bottom: 0;
+}
+
+.myRoutesLink {
+  font-size: 0.95rem;
+  color: #156A60;
+  text-decoration: none;
+}
+
+.myRoutesLink:hover {
+  text-decoration: underline;
 }
 
 .panelTitle {
@@ -419,4 +490,1081 @@
 /* Services grid — карточки как на сайте (стили из Services_page.module.css) */
 .serviceCardWrap {
   position: relative;
+}
+
+/* User routes (constructor) */
+
+.routesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.createRouteBtn {
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: none;
+  background: linear-gradient(135deg, #156A60 0%, #0d4d45 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.createRouteBtn:hover {
+  opacity: 0.95;
+}
+
+.userRoutesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.userRouteCard {
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.userRouteMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.userRouteInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.userRouteTitle {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.98rem;
+  margin-bottom: 2px;
+}
+
+.userRouteMeta {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.userRouteActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.userRouteActionBtn,
+.userRouteActionBtnDanger {
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.userRouteActionBtn {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+.userRouteActionBtn:hover {
+  background: #f3f4f6;
+}
+
+.userRouteActionBtnDanger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.userRouteActionBtnDanger:hover {
+  background: #fee2e2;
+}
+
+.userRouteMapPreview {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.routeDetailView {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.routeDetailTopBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.routeDetailTopBar .backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #156A60;
+  background: linear-gradient(135deg, rgba(21, 106, 96, 0.08) 0%, rgba(13, 77, 69, 0.06) 100%);
+  border: 1px solid rgba(21, 106, 96, 0.25);
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.routeDetailTopBar .backBtn:hover {
+  background: linear-gradient(135deg, rgba(21, 106, 96, 0.12) 0%, rgba(13, 77, 69, 0.1) 100%);
+  border-color: rgba(21, 106, 96, 0.4);
+  box-shadow: 0 2px 8px rgba(21, 106, 96, 0.15);
+}
+
+.routeDetailTopBarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.routeDetailFormBlock {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.routeDetailLayout {
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: 24px;
+  min-height: 360px;
+  max-height: 600px;
+}
+
+@media (max-width: 768px) {
+  .routeDetailLayout {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 400px;
+  }
+
+  .routeDetailMapWrap {
+    height: 400px;
+  }
+}
+
+.routeDetailLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.routeDetailMapWrap {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  min-height: 360px;
+  max-height: 600px;
+}
+
+.routeDetailDeleteBlock {
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.expandedRouteEditor {
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.expandedRouteLayout {
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: 24px;
+  min-height: 320px;
+}
+
+@media (max-width: 768px) {
+  .expandedRouteLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.expandedRouteLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.expandedRouteRight {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 280px;
+  background: #f3f4f6;
+}
+
+.routeDetailPointsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expandedRoutePointsTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.expandedRoutePointsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.expandedRoutePointRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.expandedRouteMoveBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expandedRouteForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expandedRouteFooter {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* Constructor empty state */
+.constructorEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.constructorEmptyLink {
+  display: inline-block;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #156A60 0%, #0d4d45 100%);
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.constructorEmptyLink:hover {
+  opacity: 0.95;
+}
+
+.userRoutesSection {
+  margin-top: 24px;
+}
+
+.userRoutesSectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.constructorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.constructorHeader .panelTitle {
+  margin: 0;
+}
+
+/* Constructor two-column layout */
+.constructorLayout {
+  display: grid;
+  grid-template-columns: 40% 1fr;
+  gap: 24px;
+  min-height: 660px;
+}
+
+@media (max-width: 900px) {
+  .constructorLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.constructorLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.constructorRight {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.constructorMapWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.constructorMapFill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.constructorMapFill > div {
+  flex: 1;
+  min-height: 400px;
+}
+
+.constructorPointsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.constructorPointsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 560px;
+}
+
+.constructorPointRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.constructorPointRow.dragging,
+.expandedRoutePointRow.dragging {
+  opacity: 0.6;
+}
+
+.constructorPointRow.dragOver,
+.expandedRoutePointRow.dragOver {
+  border-color: #156A60;
+  background: #eef2f0;
+}
+
+.constructorDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: #94a3b8;
+  cursor: grab;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.constructorDragHandle:hover {
+  color: #64748b;
+}
+
+.constructorDragHandle:active {
+  cursor: grabbing;
+}
+
+.constructorMoveButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.constructorMoveBtn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+}
+
+.constructorMoveBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.constructorDragHandlePlaceholder,
+.constructorMoveButtonsPlaceholder {
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.constructorStartEndIcons {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: max-width 0.2s ease;
+}
+
+.constructorPointRow:hover .constructorStartEndIcons,
+.constructorPointRow.constructorPointPinned .constructorStartEndIcons {
+  max-width: 56px;
+}
+
+.expandedRoutePointRow:hover .constructorStartEndIcons,
+.expandedRoutePointRow.constructorPointPinned .constructorStartEndIcons {
+  max-width: 56px;
+}
+
+.constructorPinBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
+}
+
+.constructorPinBtn:hover {
+  color: #156A60;
+  background: #eef2f0;
+}
+
+.constructorPinBtn.constructorPinActive {
+  color: #156A60;
+  background: #e5f3f0;
+}
+
+.constructorOrderBadge {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  background: #e5f3f0;
+  color: #156A60;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.constructorPointImg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.constructorPointInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.constructorPointTitle {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.constructorPointMeta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.constructorRemoveBtn {
+  border: none;
+  background: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.constructorRemoveBtn:hover {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.constructorOptimizeBtn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.constructorOptimizeBtn:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.constructorOptimizeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.constructorBottomBtns {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.constructorResetBtn {
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.constructorResetBtn:hover {
+  background: #f9fafb;
+}
+
+.constructorCreateBtn {
+  flex: 1;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: none;
+  background: linear-gradient(135deg, #156A60 0%, #0d4d45 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.constructorCreateBtn:hover {
+  opacity: 0.95;
+}
+
+/* Place popup on map */
+.constructorPopupOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.constructorPopup {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.constructorPopupClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.constructorPopupClose:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.constructorPopupImage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.constructorPopupImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.constructorPopupRating {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+}
+
+.constructorPopupTitle {
+  padding: 16px 16px 8px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.constructorPopupTabs {
+  padding: 0 16px 12px;
+}
+
+.constructorPopupTabActive {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #156A60;
+}
+
+.constructorPopupOverview {
+  padding: 0 16px 16px;
+}
+
+.constructorPopupRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.constructorPopupIcon {
+  flex-shrink: 0;
+}
+
+.constructorPopupMore {
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.constructorPopupMore:hover {
+  background: #f9fafb;
+}
+
+.subPanelTitle {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Modal for route editor */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 999999;
+}
+
+.modalDialog {
+  width: 100%;
+  max-width: 820px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modalClose:hover {
+  color: #111827;
+}
+
+.modalBody {
+  padding: 18px 20px 16px;
+  max-height: min(80vh, 720px);
+  overflow-y: auto;
+}
+
+/* Optimize result modal */
+.optimizeResultModal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  padding: 24px;
+}
+
+.optimizeResultTitle {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.optimizeResultContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.optimizeResultP {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #156A60;
+  box-shadow: 0 0 0 2px rgba(21, 106, 96, 0.15);
+}
+
+.userRoutePlacesList {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  margin-bottom: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.userRoutePlaceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.userRoutePlaceRow:last-child {
+  border-bottom: none;
+}
+
+.userRoutePlaceOrder {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #e5f3f0;
+  color: #156A60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.userRoutePlaceMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.userRoutePlaceTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.userRoutePlaceSub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.userRoutePlaceActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.userRoutePlaceMoveBtn,
+.userRoutePlaceRemoveBtn {
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.userRoutePlaceRemoveBtn {
+  color: #b91c1c;
+}
+
+.userRoutePlaceMoveBtn:hover {
+  background: #f3f4f6;
+}
+
+.userRoutePlaceRemoveBtn:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.userRoutePlacesSearchBlock {
+  margin-top: 10px;
+}
+
+.userRoutePlacesSearchList {
+  margin-top: 8px;
+  max-height: 260px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.userRoutePlaceAddItem {
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.userRoutePlaceAddItem:last-child {
+  border-bottom: none;
+}
+
+.userRoutePlaceAddItem:hover {
+  background: #f9fafb;
+}
+
+.userRoutePlaceAddText {
+  text-align: left;
+}
+
+.userRoutePlaceAddLabel {
+  font-size: 0.8rem;
+  color: #156A60;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.userRouteMapEditor {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.modalFooter {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modalFooterCancel,
+.modalFooterSubmit {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.modalFooterCancel {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+}
+
+.modalFooterCancel:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.modalFooterSubmit {
+  border: none;
+  background: linear-gradient(135deg, #156A60 0%, #0d4d45 100%);
+  color: #fff;
+}
+
+.modalFooterSubmit:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+.modalFooterSubmit:disabled,
+.modalFooterCancel:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: #f3f4f6;
+}
+
+.formEmptyHint {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
