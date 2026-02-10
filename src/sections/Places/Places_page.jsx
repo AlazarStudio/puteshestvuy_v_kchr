@@ -406,6 +406,7 @@ export default function Places_page() {
               {places.map((place) => (
                 <PlaceBlock
                   key={place.id}
+                  placeId={place.id}
                   rating={place.rating != null ? String(place.rating) : '—'}
                   feedback={
                     place.reviewsCount === 1

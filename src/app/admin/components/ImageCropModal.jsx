@@ -59,6 +59,7 @@ export default function ImageCropModal({
   title = 'Обрезка изображения',
   onComplete,
   onCancel,
+  aspect = 330 / 390,
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -123,7 +124,7 @@ export default function ImageCropModal({
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={330 / 390}
+              aspect={aspect}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}

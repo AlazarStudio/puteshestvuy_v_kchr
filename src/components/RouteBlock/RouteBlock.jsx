@@ -1,6 +1,7 @@
 'use client'
 
 import { useNavigate } from 'react-router-dom'
+import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import styles from './RouteBlock.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
@@ -14,7 +15,7 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-export default function RouteBlock({ route: routeProp, title: titleProp }) {
+export default function RouteBlock({ route: routeProp, title: titleProp, hideFavoriteButton }) {
   const route = routeProp || (titleProp ? { title: titleProp, slug: generateSlug(titleProp) } : null)
   if (!route) return null
 
@@ -57,9 +58,10 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
   }
 
   return (
-    <div
-      className={styles.route}
-      onClick={handleCardClick}
+    <div className={styles.routeWrap}>
+      <div
+        className={styles.route}
+        onClick={handleCardClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -73,6 +75,11 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
       }}
     >
       <div className={styles.routeSlider} data-no-navigate>
+        {route.id && !hideFavoriteButton && (
+          <div className={styles.favoriteWrap} data-no-navigate>
+            <FavoriteButton entityType="route" entityId={route.id} />
+          </div>
+        )}
         <Swiper
           navigation={true}
           loop={slides.length > 1}
@@ -144,6 +151,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp }) {
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

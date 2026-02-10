@@ -1,0 +1,40 @@
+.wrap {
+  position: relative;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: scale(1.08);
+}
+
+.btn:disabled {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.heartOutline,
+.heartFilled {
+  width: 20px;
+  height: 20px;
+}
+
+.heartOutline {
+  color: #fff;
+}
+
+.heartFilled {
+  color: #e11d48;
+}

@@ -15,6 +15,7 @@ import routesPageStyles from '@/sections/Routes/Routes_page.module.css'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
+import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 
 const DEFAULT_PHOTOS = [
   { src: '/routeGalery1.png' },
@@ -391,7 +392,14 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                   <img src="/verification.png" alt="" className={styles.verificationBadge} />
                 </div>
                 <div className={styles.serviceInfo}>
-                  <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>{categoryLabel}</div>
+                  <div className={styles.serviceHeaderTopRow}>
+                    <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>{categoryLabel}</div>
+                    {serviceData?.id && (
+                      <div className={styles.serviceFavorite}>
+                        <FavoriteButton entityType="service" entityId={serviceData.id} />
+                      </div>
+                    )}
+                  </div>
                   <div className={`${styles.serviceName} ${g.serviceName}`}>{displayName}</div>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${g.ratingStars}`}>

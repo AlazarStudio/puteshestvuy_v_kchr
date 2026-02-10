@@ -6,6 +6,7 @@ import styles from './Services_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
+import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import { publicServicesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
 import { CATEGORY_TO_TEMPLATE_KEY, DEFAULT_TEMPLATE_KEY } from './ServiceDetail/serviceTypeTemplates'
 
@@ -412,15 +413,10 @@ export default function Services_page() {
                     <div className={styles.serviceCardImg}>
                       <img src={getImageUrl(service.image || service.images?.[0])} alt={service.title} />
                     </div>
-                    {!service.isArticle && (
-                    <div className={styles.serviceCardTopLine}>
-                      {service.isVerified && (
-                        <div className={styles.serviceCardVerification}>
-                          <img src="/verification.png" alt="Верифицирован" />
-                        </div>
-                      )}
+                    {!isArticle && (
+                    <div className={styles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
                       <div className={styles.serviceCardLike}>
-                        <img src="/like.png" alt="В избранное" />
+                        <FavoriteButton entityType="service" entityId={service.id} />
                       </div>
                     </div>
                     )}

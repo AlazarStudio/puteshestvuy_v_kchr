@@ -108,6 +108,27 @@ const pageConfig = [
     enableScrollChange: false,
     backgroundColor: '#f1f3f8b7',
   },
+  {
+    path: '/login',
+    initialColor: 'black',
+    scrollThreshold: 1,
+    enableScrollChange: false,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/register',
+    initialColor: 'black',
+    scrollThreshold: 1,
+    enableScrollChange: false,
+    backgroundColor: '#f1f3f8b7',
+  },
+  {
+    path: '/profile',
+    initialColor: 'black',
+    scrollThreshold: 1,
+    enableScrollChange: false,
+    backgroundColor: '#f1f3f8b7',
+  },
 ]
 
 // Функция для поиска конфигурации страницы
@@ -498,21 +519,16 @@ export default function Header() {
               width={22}
               height={15}
             />
-          </Link>
+          </Link> */}
 
           <Link
-            href="/profile"
+            to="/profile"
             className={styles.iconButton}
             aria-label="Личный кабинет"
             title="Войти в личный кабинет"
           >
-            <Image
-              src="/profile.png"
-              alt="Личный кабинет"
-              width={16}
-              height={18}
-            />
-          </Link> */}
+            <img src="/profile.png" alt="Личный кабинет" width={16} height={18} />
+          </Link>
         </div>
       </div>
     </header>

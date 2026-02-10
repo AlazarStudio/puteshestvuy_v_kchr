@@ -17,41 +17,70 @@ const api = axios.create({
   },
 });
 
-// Request interceptor - добавляем токен к каждому запросу
+const USER_TOKEN_KEY = 'token';
+
+// Request interceptor: admin — adminToken, users/auth — user token
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('adminToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    if (typeof window === 'undefined') return config;
+    const url = config.url || '';
+    const isAdmin = url.includes('/admin');
+    if (isAdmin) {
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) config.headers.Authorization = `Bearer ${adminToken}`;
+    } else if (url.includes('/users')) {
+      const userToken = localStorage.getItem(USER_TOKEN_KEY);
+      if (userToken) config.headers.Authorization = `Bearer ${userToken}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - обработка ошибок
+// Response interceptor: 401 — clear the right token, redirect only for admin
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const url = error.config?.url || '';
+      if (url.includes('/admin')) {
         localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
         window.location.href = '/admin/login';
+      } else if (url.includes('/users')) {
+        localStorage.removeItem(USER_TOKEN_KEY);
+        window.dispatchEvent(new CustomEvent('user-unauthorized'));
       }
     }
     return Promise.reject(error);
   }
 );
 
-// Auth API
+// Auth API (public user)
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
 };
+
+// User API (profile + favorites, requires user token)
+export const userAPI = {
+  getProfile: () => api.get('/users/profile'),
+  updateProfile: (data) => api.put('/users/profile', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/users/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  getFavorites: () => api.get('/users/profile/favorites'),
+  addFavorite: (entityType, entityId) =>
+    api.post(`/users/favorites/${entityType}/${entityId}`),
+  removeFavorite: (entityType, entityId) =>
+    api.delete(`/users/favorites/${entityType}/${entityId}`),
+};
+
+export { USER_TOKEN_KEY };
 
 // Routes API
 export const routesAPI = {

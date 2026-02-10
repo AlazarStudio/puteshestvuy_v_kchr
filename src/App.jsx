@@ -27,6 +27,9 @@ import AdminReviewsPage from '@/app/admin/reviews/page'
 import AdminRegionPage from '@/app/admin/region/page'
 import AdminFooterPage from '@/app/admin/footer/page'
 import AdminPagesPage from '@/app/admin/pages/page'
+import LoginPage from '@/app/login/page'
+import RegisterPage from '@/app/register/page'
+import ProfilePage from '@/app/profile/page'
 
 function PublicLayout() {
   return (
@@ -77,6 +80,9 @@ export default function App() {
         <Route path="services/template" element={<TemplateListPage />} />
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
         <Route path="services/:slug" element={<ServiceDetailWrapper />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Админ: логин без layout */}

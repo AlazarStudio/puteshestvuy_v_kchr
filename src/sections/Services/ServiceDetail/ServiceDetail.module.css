@@ -653,6 +653,16 @@
   gap: 10px;
 }
 
+.serviceHeaderTopRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.serviceFavorite {
+  margin-left: auto;
+}
+
 .serviceCategory {
   display: inline-block;
   width: fit-content;
@@ -1342,6 +1352,15 @@
 
   .serviceInfo {
     align-items: center;
+  }
+
+  .serviceHeaderTopRow {
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .serviceFavorite {
+    margin-left: 0;
   }
 
   .serviceName {
