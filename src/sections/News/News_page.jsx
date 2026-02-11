@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './News_page.module.css'
@@ -10,6 +10,7 @@ import NewsBlock from '@/components/NewsBlock/NewsBlock'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'news_scroll_position'
+const ITEMS_PER_PAGE = 6
 
 function stripHtml(html) {
   if (!html || typeof html !== 'string') return ''
@@ -32,33 +33,95 @@ export default function News_page() {
   const [searchQuery, setSearchQuery] = useState('')
   const [news, setNews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const [error, setError] = useState(null)
+  const observerTarget = useRef(null)
 
-  const fetchNews = useCallback(async () => {
+  const fetchNews = useCallback(async (page = 1, reset = false) => {
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 500 // минимум 500ms
+    
     try {
-      setLoading(true)
+      if (reset) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
       setError(null)
       const { data } = await publicNewsAPI.getAll({
-        page: 1,
-        limit: 100,
+        page,
+        limit: ITEMS_PER_PAGE,
         search: searchQuery.trim() || undefined,
         type: typeFilter,
       })
       const items = data?.items || []
-      setNews(items)
+      const totalItems = data?.pagination?.total ?? 0
+      
+      if (reset) {
+        setNews(items)
+        setHasMore(items.length === ITEMS_PER_PAGE && items.length < totalItems)
+      } else {
+        setNews(prev => {
+          const updated = [...prev, ...items]
+          setHasMore(updated.length < totalItems)
+          return updated
+        })
+      }
+      
+      // Гарантируем минимальное время отображения лоадера
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
     } catch (err) {
       console.error('Ошибка загрузки новостей:', err)
       setError('Не удалось загрузить новости')
-      setNews([])
+      if (reset) {
+        setNews([])
+        setHasMore(false)
+      }
+      // Гарантируем минимальное время отображения лоадера даже при ошибке
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }, [searchQuery, typeFilter])
 
   useEffect(() => {
-    const t = setTimeout(fetchNews, searchQuery ? 400 : 0)
+    setCurrentPage(1)
+    setHasMore(true)
+    const t = setTimeout(() => fetchNews(1, true), searchQuery ? 400 : 0)
     return () => clearTimeout(t)
-  }, [fetchNews, searchQuery])
+  }, [searchQuery, typeFilter, fetchNews])
+
+  // Intersection Observer для lazy load
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          const nextPage = currentPage + 1
+          setCurrentPage(nextPage)
+          fetchNews(nextPage, false)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loading, loadingMore, currentPage, fetchNews])
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -243,6 +306,13 @@ export default function News_page() {
                 slug={item.slug}
               />
             ))}
+            {hasMore && <div ref={observerTarget} style={{ height: '20px', marginTop: '20px' }} />}
+            {loadingMore && (
+              <div className={styles.loadingMore}>
+                <div className={styles.spinner} />
+                <p>Загрузка...</p>
+              </div>
+            )}
           </div>
 
           {!loading && !error && sortedNews.length === 0 && (

@@ -15,6 +15,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Включаем отправку cookies
 });
 
 const USER_TOKEN_KEY = 'token';

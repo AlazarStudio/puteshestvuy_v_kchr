@@ -8,6 +8,121 @@
     min-width: 0;
 }
 
+/* Service Card Styles - same as Services_page */
+.serviceCard {
+    width: 100%;
+    height: 420px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.serviceCard::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.6) 100%);
+    z-index: 2;
+}
+
+.serviceCardImg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.serviceCardImg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.serviceCardTopLine {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+}
+
+.serviceCardLike {
+    /* Поведение как у .favoriteWrap в PlaceBlock:
+       просто контейнер без дополнительных отступов/масштабирования */
+}
+
+.serviceCardInfo {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    color: #fff;
+    z-index: 3;
+}
+
+.serviceCardCategory {
+    display: inline-block;
+    width: fit-content;
+    padding: 4px 12px;
+    background-color: #156A60;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 150%;
+}
+
+.serviceCardRating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.serviceCardStars {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #fff;
+    color: #000;
+    border-radius: 35px;
+    padding: 5px 10px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 5%;
+}
+
+.serviceCardStars img {
+    width: 14px;
+    height: 12px;
+}
+
+.serviceCardFeedback {
+    border-radius: 35px;
+    padding: 5px 10px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 5%;
+    border: 2px solid #FFFFFF;
+}
+
+.serviceCardName {
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 120%;
+    letter-spacing: 0%;
+}
+
 .loading,
 .empty {
     width: 100%;

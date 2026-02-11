@@ -1,12 +1,5 @@
 import { getImageUrl } from '@/lib/api'
 
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-]
 
 /**
  * Собирает config для GenericServiceDetail из ответа API (service + service.data).
@@ -42,13 +35,14 @@ export function buildGenericServiceConfig(service) {
       ? gallerySources.map((path) => ({ src: getImageUrl(path) }))
       : (Array.isArray(service.images) && service.images.length > 0
           ? service.images.map((path) => ({ src: getImageUrl(path) }))
-          : DEFAULT_PHOTOS)
+          : [])
 
   const contacts = Array.isArray(d.contacts) && d.contacts.length > 0
     ? d.contacts.map((c) => ({
         label: c.label || '',
         value: c.value || '',
         href: c.href || null,
+        icon: c.icon || null,
         target: c.target,
         rel: c.rel,
       }))

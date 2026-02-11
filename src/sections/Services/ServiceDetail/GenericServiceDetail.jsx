@@ -10,16 +10,9 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
-import { publicServicesAPI } from '@/lib/api'
+import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
-
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-]
 
 const BreadcrumbArrow = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -57,7 +50,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
     rooms = [],
   } = config
 
-  const photos = config.photos || DEFAULT_PHOTOS
+  const photos = config.photos || []
   const mappedReviews = useMemo(() => {
     return Array.isArray(config.reviews) ? config.reviews : []
   }, [config.reviews])
@@ -109,11 +102,11 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
 
   const anchors = [
     { id: 'main', label: 'Основное' },
-    ...(aboutTitle ? [{ id: 'about', label: aboutTitle }] : []),
+    ...(aboutContent && aboutTitle ? [{ id: 'about', label: aboutTitle }] : []),
     ...(rooms.length > 0 ? [{ id: 'rooms', label: 'Номера' }] : []),
-    ...sections.map((s) => ({ id: s.id, label: s.title })),
+    ...sections.filter((s) => s.content && (Array.isArray(s.content) ? s.content.length > 0 : String(s.content).trim())).map((s) => ({ id: s.id, label: s.title })),
     ...(mapData ? [{ id: 'map', label: 'Как добраться' }] : []),
-    { id: 'contacts', label: 'Контакты' },
+    ...(contacts.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
     ...(showReviews ? [{ id: 'reviews', label: 'Отзывы' }] : []),
   ]
 
@@ -284,7 +277,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                 </div>
               </div>
 
-              {aboutTitle && (
+              {aboutContent && aboutTitle && (
                 <>
                   <div id="about" className={`${styles.title} ${common.title}`}>{aboutTitle}</div>
                   <div className={`${styles.aboutText} ${common.aboutText}`}>
@@ -337,7 +330,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                 </div>
               )}
 
-              {sections.map((sec) => (
+              {sections.filter((sec) => sec.content && (Array.isArray(sec.content) ? sec.content.length > 0 : String(sec.content).trim())).map((sec) => (
                 <div key={sec.id} id={sec.id}>
                   <div className={`${styles.title} ${common.title}`}>{sec.title}</div>
                   <div className={`${styles.aboutText} ${common.aboutText}`}>
@@ -369,21 +362,36 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                 </div>
               )}
 
-              <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
-                <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
+              {contacts.length > 0 && (
+                <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
+                  <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
                 <div className={styles.contactsList}>
-                  {contacts.map((c, i) => (
-                    <div key={i} className={styles.contactItem}>
-                      <span className={styles.contactLabel}>{c.label}:</span>
-                      {c.href ? (
-                        <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
-                      ) : (
-                        <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
-                      )}
-                    </div>
-                  ))}
+                  {contacts.map((c, i) => {
+                    const isIconUrl = c.icon && (typeof c.icon === 'string' && (c.icon.startsWith('http') || c.icon.startsWith('/') || c.icon.includes('uploads')))
+                    const IconComponent = c.icon && !isIconUrl ? getMuiIconComponent(c.icon) : null
+                    return (
+                      <div key={i} className={styles.contactItem}>
+                        {c.icon && (
+                          <span className={styles.contactIcon}>
+                            {isIconUrl ? (
+                              <img src={getImageUrl(c.icon)} alt="" className={styles.contactIconImg} />
+                            ) : IconComponent ? (
+                              <IconComponent size={22} className={styles.contactIconSvg} />
+                            ) : null}
+                          </span>
+                        )}
+                        <span className={styles.contactLabel}>{c.label}:</span>
+                        {c.href ? (
+                          <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                        ) : (
+                          <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-              </div>
+                </div>
+              )}
 
               {showReviews && (
                 <>

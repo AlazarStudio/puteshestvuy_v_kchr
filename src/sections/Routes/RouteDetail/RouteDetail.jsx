@@ -48,6 +48,7 @@ export default function RouteDetail({ routeSlug }) {
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [routeFilterMeta, setRouteFilterMeta] = useState({ fixedGroupMeta: {}, extraGroups: [] })
   const swiperRef = useRef(null)
+  const routeSwiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
   const anchorsRef = useRef([])
 
@@ -406,8 +407,6 @@ export default function RouteDetail({ routeSlug }) {
     ? route.customFilters.transport.join(', ')
     : (route.transport || '')
 
-  console.log(routePlaces)
-
   return (
     <main className={styles.main}>
       <CenterBlock>
@@ -602,6 +601,7 @@ export default function RouteDetail({ routeSlug }) {
               <div className={styles.forSlider}>
                 <div className={styles.slider}>
                   <Swiper
+                    ref={routeSwiperRef}
                     navigation={true}
                     modules={[Navigation]}
                     slidesPerView={1}
@@ -927,14 +927,14 @@ export default function RouteDetail({ routeSlug }) {
                   </button>
                 ))}
               </div>
-              <div className={styles.anchorsButtons}>
+              {/* <div className={styles.anchorsButtons}>
                 <button className={styles.anchorButton}>
                   Скачать маршрут в PDF
                 </button>
                 <button className={styles.anchorButton}>
                   Забронировать
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

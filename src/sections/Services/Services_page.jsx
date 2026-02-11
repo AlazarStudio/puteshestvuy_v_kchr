@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import { Link } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { publicServicesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
 import { CATEGORY_TO_TEMPLATE_KEY, DEFAULT_TEMPLATE_KEY } from './ServiceDetail/serviceTypeTemplates'
 
 const SCROLL_KEY = 'services_scroll_position'
+const ITEMS_PER_PAGE = 12
 
 // Соответствие опций фильтра и категорий в API (как в админке)
 const FILTER_TO_CATEGORY = {
@@ -98,6 +99,10 @@ export default function Services_page() {
   const [services, setServices] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const observerTarget = useRef(null)
   const getFiltersFromUrl = () => {
     const filterValues = searchParams.getAll('filter')
     const result = { articles: [], service: [], emergency: [] }
@@ -162,121 +167,218 @@ export default function Services_page() {
     return [...serviceSelected, ...emergencySelected]
   }
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function fetchData() {
-      setLoading(true)
-      try {
-        const showArticles = (filters.articles || []).includes('Статьи')
-        const categories = buildCategoryParams()
-        const hasServiceFilter = categories.length > 0
-
-        const fetchArticles = () =>
-          publicNewsAPI.getAll({
-            limit: 100,
-            type: 'article',
-            ...(searchQuery.trim() && { search: searchQuery.trim() }),
-          })
-
-        const fetchServices = (cats) =>
-          publicServicesAPI.getAll({
-            limit: 100,
-            ...(searchQuery.trim() && { search: searchQuery.trim() }),
-            ...(cats?.length > 0 && { category: cats }),
-          })
-
-        if (showArticles && !hasServiceFilter) {
-          const { data } = await fetchArticles()
-          if (!cancelled) {
-            const items = (data.items || []).map((a) => ({
-              id: a.id,
-              slug: a.slug,
-              title: a.title,
-              image: a.image,
-              category: 'Статья',
-              isArticle: true,
-            }))
-            setServices(items)
-            setTotal(data.pagination?.total ?? 0)
-          }
-        } else if (hasServiceFilter && !showArticles) {
-          const { data } = await fetchServices(categories)
-          if (!cancelled) {
-            let items = data.items || []
-            if (sortBy === 'rating') {
-              items = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-            } else if (sortBy === 'reviews') {
-              items = [...items].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-            }
-            setServices(items)
-            setTotal(data.pagination?.total ?? 0)
-          }
-        } else if (showArticles && hasServiceFilter) {
-          const [articlesRes, servicesRes] = await Promise.all([
-            fetchArticles(),
-            fetchServices(categories),
-          ])
-          if (!cancelled) {
-            let serviceItems = servicesRes.data?.items || []
-            if (sortBy === 'rating') {
-              serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-            } else if (sortBy === 'reviews') {
-              serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-            }
-            const articleItems = (articlesRes.data?.items || []).map((a) => ({
-              id: a.id,
-              slug: a.slug,
-              title: a.title,
-              image: a.image,
-              category: 'Статья',
-              isArticle: true,
-            }))
-            const combined = [...serviceItems, ...articleItems]
-            setServices(combined)
-            setTotal((servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0))
-          }
-        } else {
-          const [servicesRes, articlesRes] = await Promise.all([
-            fetchServices(),
-            fetchArticles(),
-          ])
-          if (!cancelled) {
-            let serviceItems = servicesRes.data?.items || []
-            if (sortBy === 'rating') {
-              serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-            } else if (sortBy === 'reviews') {
-              serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-            }
-            const articleItems = (articlesRes.data?.items || []).map((a) => ({
-              id: a.id,
-              slug: a.slug,
-              title: a.title,
-              image: a.image,
-              category: 'Статья',
-              isArticle: true,
-            }))
-            const combined = [...serviceItems, ...articleItems]
-            setServices(combined)
-            setTotal((servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0))
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setServices([])
-          setTotal(0)
-          console.error(err)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+  const fetchData = useCallback(async (page = 1, reset = false) => {
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 500 // минимум 500ms
+    
+    try {
+      if (reset) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
       }
-    }
+      
+      const showArticles = (filters.articles || []).includes('Статьи')
+      const categories = buildCategoryParams()
+      const hasServiceFilter = categories.length > 0
 
-    fetchData()
-    return () => {
-      cancelled = true
+      const fetchArticles = () =>
+        publicNewsAPI.getAll({
+          page,
+          limit: ITEMS_PER_PAGE,
+          type: 'article',
+          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+        })
+
+      const fetchServices = (cats) =>
+        publicServicesAPI.getAll({
+          page,
+          limit: ITEMS_PER_PAGE,
+          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          ...(cats?.length > 0 && { category: cats }),
+          ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
+        })
+
+      if (showArticles && !hasServiceFilter) {
+        const { data } = await fetchArticles()
+        const newItems = (data.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
+        const totalItems = data.pagination?.total ?? 0
+        
+        if (reset) {
+          setServices(newItems)
+          setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+        } else {
+          setServices(prev => {
+            const updated = [...prev, ...newItems]
+            setHasMore(updated.length < totalItems)
+            return updated
+          })
+        }
+        setTotal(totalItems)
+      } else if (hasServiceFilter && !showArticles) {
+        const { data } = await fetchServices(categories)
+        let newItems = data.items || []
+        if (sortBy === 'rating') {
+          newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        } else if (sortBy === 'reviews') {
+          newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        } else if (sortBy === 'popularity') {
+          newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        }
+        const totalItems = data.pagination?.total ?? 0
+        
+        if (reset) {
+          setServices(newItems)
+          setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+        } else {
+          setServices(prev => {
+            const updated = [...prev, ...newItems]
+            setHasMore(updated.length < totalItems)
+            return updated
+          })
+        }
+        setTotal(totalItems)
+      } else if (showArticles && hasServiceFilter) {
+        const [articlesRes, servicesRes] = await Promise.all([
+          fetchArticles(),
+          fetchServices(categories),
+        ])
+        
+        let serviceItems = servicesRes.data?.items || []
+        if (sortBy === 'rating') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        } else if (sortBy === 'reviews') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        } else if (sortBy === 'popularity') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        }
+        const articleItems = (articlesRes.data?.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
+        const newItems = [...serviceItems, ...articleItems]
+        if (sortBy === 'popularity') {
+          newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        }
+        const totalItems = (servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0)
+        
+        if (reset) {
+          setServices(newItems)
+          setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+        } else {
+          setServices(prev => {
+            const updated = [...prev, ...newItems]
+            setHasMore(updated.length < totalItems)
+            return updated
+          })
+        }
+        setTotal(totalItems)
+      } else {
+        const [servicesRes, articlesRes] = await Promise.all([
+          fetchServices(),
+          fetchArticles(),
+        ])
+        
+        let serviceItems = servicesRes.data?.items || []
+        if (sortBy === 'rating') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        } else if (sortBy === 'reviews') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        } else if (sortBy === 'popularity') {
+          serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        }
+        const articleItems = (articlesRes.data?.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
+        const newItems = [...serviceItems, ...articleItems]
+        if (sortBy === 'popularity') {
+          newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        }
+        const totalItems = (servicesRes.data?.pagination?.total ?? 0) + (articlesRes.data?.pagination?.total ?? 0)
+        
+        if (reset) {
+          setServices(newItems)
+          setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+        } else {
+          setServices(prev => {
+            const updated = [...prev, ...newItems]
+            setHasMore(updated.length < totalItems)
+            return updated
+          })
+        }
+        setTotal(totalItems)
+      }
+      
+      // Гарантируем минимальное время отображения лоадера
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } catch (err) {
+      console.error(err)
+      if (reset) {
+        setServices([])
+        setTotal(0)
+        setHasMore(false)
+      }
+      // Гарантируем минимальное время отображения лоадера даже при ошибке
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
     }
   }, [filters.service, filters.emergency, filters.articles, searchQuery, sortBy])
+
+  useEffect(() => {
+    setCurrentPage(1)
+    setHasMore(true)
+    fetchData(1, true)
+  }, [filters.service, filters.emergency, filters.articles, searchQuery, sortBy])
+
+  // Intersection Observer для lazy load
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          const nextPage = currentPage + 1
+          setCurrentPage(nextPage)
+          fetchData(nextPage, false)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loading, loadingMore, currentPage, fetchData])
 
   useEffect(() => {
     const savedScroll = sessionStorage.getItem(SCROLL_KEY)
@@ -400,45 +502,54 @@ export default function Services_page() {
                 <p>{showArticlesOnly ? 'Статьи не найдены.' : 'По выбранным фильтрам услуг не найдено.'}</p>
               </div>
             ) : (
-              <div className={styles.servicesGrid}>
-                {services.map((service) => {
-                  const isArticle = service.isArticle === true
-                  const serviceUrl = isArticle ? `/news/${service.slug || service.id}` : `/services/${service.slug || service.id}`
-                  return (
-                  <Link
-                    key={service.id}
-                    to={serviceUrl}
-                    className={styles.serviceCard}
-                  >
-                    <div className={styles.serviceCardImg}>
-                      <img src={getImageUrl(service.image || service.images?.[0])} alt={service.title} />
-                    </div>
-                    {!isArticle && (
-                    <div className={styles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
-                      <div className={styles.serviceCardLike}>
-                        <FavoriteButton entityType="service" entityId={service.id} />
+              <>
+                <div className={styles.servicesGrid}>
+                  {services.map((service) => {
+                    const isArticle = service.isArticle === true
+                    const serviceUrl = isArticle ? `/news/${service.slug || service.id}` : `/services/${service.slug || service.id}`
+                    return (
+                    <Link
+                      key={service.id}
+                      to={serviceUrl}
+                      className={styles.serviceCard}
+                    >
+                      <div className={styles.serviceCardImg}>
+                        <img src={getImageUrl(service.image || service.images?.[0])} alt={service.title} />
                       </div>
-                    </div>
-                    )}
-                    <div className={styles.serviceCardInfo}>
-                      <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
-                      {!service.isArticle && (
-                      <div className={styles.serviceCardRating}>
-                        <div className={styles.serviceCardStars}>
-                          <img src="/star.png" alt="" />
-                          {service.rating ?? '—'}
-                        </div>
-                        <div className={styles.serviceCardFeedback}>
-                          {service.reviewsCount ?? 0} отзывов
+                      {!isArticle && (
+                      <div className={styles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
+                        <div className={styles.serviceCardLike}>
+                          <FavoriteButton entityType="service" entityId={service.id} />
                         </div>
                       </div>
                       )}
-                      <div className={styles.serviceCardName}>{service.title}</div>
-                    </div>
-                  </Link>
-                  )
-                })}
-              </div>
+                      <div className={styles.serviceCardInfo}>
+                        <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
+                        {!service.isArticle && (service.reviewsCount ?? 0) > 0 && (
+                        <div className={styles.serviceCardRating}>
+                          <div className={styles.serviceCardStars}>
+                            <img src="/star.png" alt="" />
+                            {service.rating ?? '—'}
+                          </div>
+                          <div className={styles.serviceCardFeedback}>
+                            {service.reviewsCount ?? 0} {service.reviewsCount === 1 ? 'отзыв' : service.reviewsCount >= 2 && service.reviewsCount <= 4 ? 'отзыва' : 'отзывов'}
+                          </div>
+                        </div>
+                        )}
+                        <div className={styles.serviceCardName}>{service.title}</div>
+                      </div>
+                    </Link>
+                    )
+                  })}
+                </div>
+                {hasMore && <div ref={observerTarget} style={{ height: '20px', marginTop: '20px' }} />}
+                {loadingMore && (
+                  <div className={styles.loadingMore}>
+                    <div className={styles.spinner} />
+                    <p>Загрузка...</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>

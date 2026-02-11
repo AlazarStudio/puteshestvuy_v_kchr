@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Routes_page.module.css'
@@ -11,32 +11,7 @@ import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import { publicRoutesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'routes_scroll_position'
-
-const FIXED_GROUP_KEYS = [
-  'seasons',
-  'transport',
-  'durationOptions',
-  'difficultyLevels',
-  'distanceOptions',
-  'elevationOptions',
-  'isFamilyOptions',
-  'hasOvernightOptions',
-]
-
-const FIXED_GROUP_LABELS = {
-  seasons: 'Сезон',
-  transport: 'Способ передвижения',
-  durationOptions: 'Время прохождения',
-  difficultyLevels: 'Сложность',
-  distanceOptions: 'Расстояние',
-  elevationOptions: 'Перепад высот',
-  isFamilyOptions: 'Семейный маршрут',
-  hasOvernightOptions: 'С ночевкой',
-}
-
-const defaultFilters = Object.fromEntries(
-  FIXED_GROUP_KEYS.map((k) => [k, []])
-)
+const ITEMS_PER_PAGE = 6
 
 export default function Routes_page() {
   const [searchParams] = useSearchParams()
@@ -45,14 +20,12 @@ export default function Routes_page() {
   const [routes, setRoutes] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState(() => {
-    const seasonsFromUrl = searchParams.getAll('seasons').filter(Boolean)
-    if (seasonsFromUrl.length > 0) {
-      return { ...defaultFilters, seasons: seasonsFromUrl }
-    }
-    return defaultFilters
-  })
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [filters, setFilters] = useState({})
   const [filterOptions, setFilterOptions] = useState(null)
+  const observerTarget = useRef(null)
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -65,7 +38,9 @@ export default function Routes_page() {
   // Синхронизация фильтра сезонов с URL (при переходе с главной по карточкам Зима/Весна/Лето/Осень)
   useEffect(() => {
     const seasonsFromUrl = searchParams.getAll('seasons').filter(Boolean)
-    setFilters((prev) => ({ ...prev, seasons: seasonsFromUrl }))
+    if (seasonsFromUrl.length > 0) {
+      setFilters((prev) => ({ ...prev, seasons: seasonsFromUrl }))
+    }
   }, [searchParams])
 
   // Добавляем ключи extra-групп в filters при первой загрузке опций
@@ -85,13 +60,25 @@ export default function Routes_page() {
   }, [filterOptions?.extraGroups])
 
   // Все группы фильтров: встроенные + extra (с опциями или без — для поля ввода)
+  const FIXED_GROUP_KEYS = [
+    'seasons',
+    'transport',
+    'durationOptions',
+    'difficultyLevels',
+    'distanceOptions',
+    'elevationOptions',
+    'isFamilyOptions',
+    'hasOvernightOptions',
+  ]
+  
   const routeFilterGroups = [
     ...FIXED_GROUP_KEYS.map((key) => {
       const meta = filterOptions?.fixedGroupMeta?.[key]
-      const label = (meta?.label && meta.label.trim()) || FIXED_GROUP_LABELS[key] || key
+      const label = (meta?.label && meta.label.trim()) || key
       const options = Array.isArray(filterOptions?.[key]) ? filterOptions[key] : []
-      return { key, label, options }
-    }),
+      // Показываем только группы с опциями
+      return options.length > 0 ? { key, label, options } : null
+    }).filter(Boolean),
     ...(Array.isArray(filterOptions?.extraGroups)
       ? filterOptions.extraGroups.map((g) => ({
           key: g.key,
@@ -119,6 +106,30 @@ export default function Routes_page() {
             extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
             fixedGroupMeta: data.fixedGroupMeta && typeof data.fixedGroupMeta === 'object' ? data.fixedGroupMeta : {},
           })
+          // Инициализируем filters с пустыми массивами для всех групп
+          setFilters((prev) => {
+            const next = { ...prev }
+            const FIXED_GROUP_KEYS = [
+              'seasons',
+              'transport',
+              'durationOptions',
+              'difficultyLevels',
+              'distanceOptions',
+              'elevationOptions',
+              'isFamilyOptions',
+              'hasOvernightOptions',
+            ]
+            for (const key of FIXED_GROUP_KEYS) {
+              const options = Array.isArray(data[key]) ? data[key] : []
+              if (options.length > 0 && next[key] === undefined) next[key] = []
+            }
+            if (Array.isArray(data.extraGroups)) {
+              for (const g of data.extraGroups) {
+                if (g.key && next[g.key] === undefined) next[g.key] = []
+              }
+            }
+            return next
+          })
         }
       })
       .catch((err) => {
@@ -127,48 +138,106 @@ export default function Routes_page() {
     return () => { cancelled = true }
   }, [])
 
-  // Загрузка маршрутов с API (с учётом фильтров и поиска)
+  // Функция загрузки маршрутов
+  const fetchRoutes = useCallback(async (page = 1, reset = false) => {
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 500 // минимум 500ms
+    
+    try {
+      if (reset) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
+      
+      const params = {
+        page,
+        limit: ITEMS_PER_PAGE,
+        ...(searchQuery.trim() && { search: searchQuery.trim() }),
+        ...(sortBy && { sortBy }),
+        ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
+        ...(filters.transport?.length > 0 && { transport: filters.transport }),
+        ...(filters.durationOptions?.length > 0 && { durationOptions: filters.durationOptions }),
+        ...(filters.difficultyLevels?.length > 0 && { difficultyLevels: filters.difficultyLevels }),
+        ...(filters.distanceOptions?.length > 0 && { distanceOptions: filters.distanceOptions }),
+        ...(filters.elevationOptions?.length > 0 && { elevationOptions: filters.elevationOptions }),
+        ...(filters.isFamilyOptions?.length > 0 && { isFamilyOptions: filters.isFamilyOptions }),
+        ...(filters.hasOvernightOptions?.length > 0 && { hasOvernightOptions: filters.hasOvernightOptions }),
+      }
+      for (const g of filterOptions?.extraGroups || []) {
+        if (g.key && filters[g.key]?.length > 0) {
+          params[g.key] = filters[g.key]
+        }
+      }
+      const { data } = await publicRoutesAPI.getAll(params)
+      const newItems = data.items || []
+      const totalItems = data.pagination?.total ?? 0
+      
+      if (reset) {
+        setRoutes(newItems)
+        setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+      } else {
+        setRoutes(prev => {
+          const updated = [...prev, ...newItems]
+          setHasMore(updated.length < totalItems)
+          return updated
+        })
+      }
+      
+      setTotal(totalItems)
+      
+      // Гарантируем минимальное время отображения лоадера
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } catch (err) {
+      console.error(err)
+      if (reset) {
+        setRoutes([])
+        setTotal(0)
+        setHasMore(false)
+      }
+      // Гарантируем минимальное время отображения лоадера даже при ошибке
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }, [filters, searchQuery, sortBy, filterOptions])
+
+  // Загрузка маршрутов при изменении фильтров/поиска/сортировки
   useEffect(() => {
-    let cancelled = false
-    async function fetchRoutes() {
-      setLoading(true)
-      try {
-        const params = {
-          limit: 100,
-          ...(searchQuery.trim() && { search: searchQuery.trim() }),
-          ...(sortBy === 'difficulty' && { sortBy: 'difficulty' }),
-          ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
-          ...(filters.transport?.length > 0 && { transport: filters.transport }),
-          ...(filters.durationOptions?.length > 0 && { durationOptions: filters.durationOptions }),
-          ...(filters.difficultyLevels?.length > 0 && { difficultyLevels: filters.difficultyLevels }),
-          ...(filters.distanceOptions?.length > 0 && { distanceOptions: filters.distanceOptions }),
-          ...(filters.elevationOptions?.length > 0 && { elevationOptions: filters.elevationOptions }),
-          ...(filters.isFamilyOptions?.length > 0 && { isFamilyOptions: filters.isFamilyOptions }),
-          ...(filters.hasOvernightOptions?.length > 0 && { hasOvernightOptions: filters.hasOvernightOptions }),
+    setCurrentPage(1)
+    setHasMore(true)
+    fetchRoutes(1, true)
+  }, [filters, searchQuery, sortBy, filterOptions])
+
+  // Intersection Observer для lazy load
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          const nextPage = currentPage + 1
+          setCurrentPage(nextPage)
+          fetchRoutes(nextPage, false)
         }
-        for (const g of filterOptions?.extraGroups || []) {
-          if (g.key && filters[g.key]?.length > 0) {
-            params[g.key] = filters[g.key]
-          }
-        }
-        const { data } = await publicRoutesAPI.getAll(params)
-        if (!cancelled) {
-          setRoutes(data.items || [])
-          setTotal(data.pagination?.total ?? 0)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setRoutes([])
-          setTotal(0)
-          console.error(err)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
       }
     }
-    fetchRoutes()
-    return () => { cancelled = true }
-  }, [filters, searchQuery, sortBy])
+  }, [hasMore, loading, loadingMore, currentPage, fetchRoutes])
 
   // Восстанавливаем позицию скролла при возврате на страницу
   useEffect(() => {
@@ -319,9 +388,18 @@ export default function Routes_page() {
               ) : routes.length === 0 ? (
                 <div className={styles.empty}>Маршруты не найдены</div>
               ) : (
-                routes.map((route) => (
-                  <RouteBlock key={route.id} route={route} />
-                ))
+                <>
+                  {routes.map((route) => (
+                    <RouteBlock key={route.id} route={route} />
+                  ))}
+                  {hasMore && <div ref={observerTarget} style={{ height: '20px', marginTop: '20px' }} />}
+                  {loadingMore && (
+                    <div className={styles.loadingMore}>
+                      <div className={styles.spinner} />
+                      <p>Загрузка...</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

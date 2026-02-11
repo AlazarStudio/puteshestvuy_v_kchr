@@ -12,32 +12,8 @@ import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
-
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-]
-
-const DEFAULT_EQUIPMENT = [
-  { name: 'Палатка 2-местная', note: 'в комплекте чехол, колышки', price: '500 ₽/сут' },
-  { name: 'Спальник', note: 'до −5 °C', price: '300 ₽/сут' },
-  { name: 'Треккинговые палки', note: 'пара', price: '200 ₽/сут' },
-  { name: 'Рюкзак 50–70 л', note: 'с rain cover', price: '400 ₽/сут' },
-  { name: 'Горелка + газ', note: 'комплект на 2–3 дня', price: '350 ₽/сут' },
-  { name: 'Коврик туристический', note: 'пенка или надувной', price: '150 ₽/сут' },
-]
-
-const DEFAULT_CONDITIONS = [
-  'Залог или документ (паспорт) оставляется на время проката.',
-  'Минимальный срок проката — 1 сутки. При аренде от 3 суток действует скидка.',
-  'Оборудование выдаётся чистым и исправным; при возврате ожидается в том же виде.',
-  'Повреждение или утрата компенсируются согласно прайсу и договору.',
-  'Заблаговременное бронирование рекомендуется в сезон (июль–сентябрь).',
-]
 
 function buildContactsFromService(service) {
   const items = []
@@ -57,27 +33,21 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
     if (serviceData?.images?.length) {
       return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
     }
-    return DEFAULT_PHOTOS
+    return []
   }, [serviceData?.images])
 
   const avatarSrc = useMemo(() => {
     if (serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
     if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
-    return '/serviceImg3.png'
+    return null
   }, [serviceData?.data?.avatar, serviceData?.images])
 
-  const serviceName = serviceData?.title ?? 'Прокат туристического снаряжения'
+  const serviceName = serviceData?.title ?? ''
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
-  const defaultAbout = (
-    <>
-      <p>Предлагаем в аренду туристическое снаряжение для походов и отдыха в горах: палатки, спальники, рюкзаки, горелки, треккинговые палки и другое. Всё оборудование регулярно обслуживается и готово к использованию.</p>
-      <p>Удобное расположение в посёлке Архыз — можно взять снаряжение перед выездом на маршрут и сдать по возвращении. Работаем без выходных в сезон. При аренде от нескольких суток — скидки.</p>
-    </>
-  )
   const equipmentItems = useMemo(() => {
     const fromData = serviceData?.data?.equipmentItems
     if (Array.isArray(fromData) && fromData.length > 0) return fromData
-    return DEFAULT_EQUIPMENT
+    return []
   }, [serviceData?.data?.equipmentItems])
   const criteriaList = useMemo(() => {
     const fromData = serviceData?.data?.criteriaList
@@ -87,7 +57,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
   const conditions = useMemo(() => {
     const fromData = serviceData?.data?.conditions
     if (Array.isArray(fromData) && fromData.length > 0) return fromData.filter((s) => String(s).trim())
-    return DEFAULT_CONDITIONS
+    return []
   }, [serviceData?.data?.conditions])
   const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '0 отзывов'
   const reviews = useMemo(() => {
@@ -102,7 +72,16 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
     }))
   }, [serviceData?.reviews])
   const contactsList = useMemo(() => {
-    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    if (serviceData?.data?.contacts?.length) {
+      return serviceData.data.contacts.map((c) => ({
+        label: c.label || '',
+        value: c.value || '',
+        href: c.href || null,
+        icon: c.icon || null,
+        target: c.target,
+        rel: c.rel,
+      }))
+    }
     return buildContactsFromService(serviceData)
   }, [serviceData])
 
@@ -204,10 +183,11 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
 
   const anchors = [
     { id: 'main', label: 'Основное' },
-    { id: 'about', label: 'О прокате' },
-    { id: 'catalog', label: 'Каталог' },
-    { id: 'conditions', label: 'Условия' },
-    { id: 'contacts', label: 'Контакты' },
+    ...(aboutContent != null && aboutContent !== '' ? [{ id: 'about', label: 'О прокате' }] : []),
+    ...(equipmentItems.length > 0 ? [{ id: 'catalog', label: 'Каталог' }] : []),
+    ...(conditions.length > 0 ? [{ id: 'conditions', label: 'Условия' }] : []),
+    ...(serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    ...(contactsList.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
     { id: 'reviews', label: 'Отзывы' },
   ]
 
@@ -252,7 +232,8 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
             <span>{serviceName}</span>
           </div>
 
-          <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${common.gallery}`}>
+          {photos.length > 0 && (
+            <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${common.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${common.galleryMain}`} onClick={() => openModal(0)}>
                 <img src={photos[0]?.src} alt="Фото проката 1" />
@@ -327,7 +308,8 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                 </div>
               </>
             )}
-          </div>
+            </div>
+          )}
 
           <div className={styles.serviceBlock}>
             <div className={`${styles.serviceBlock_content} ${common.serviceBlock_content}`}>
@@ -354,23 +336,25 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                 </div>
               </div>
 
-              <div id="about" className={`${styles.title} ${common.title}`}>О прокате</div>
-              <div className={`${styles.aboutText} ${common.aboutText}`}>
-                {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? (
-                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
-                  ) : (
-                    aboutContent
-                  )
-                ) : (
-                  defaultAbout
-                )}
-              </div>
+              {aboutContent != null && aboutContent !== '' && (
+                <>
+                  <div id="about" className={`${styles.title} ${common.title}`}>О прокате</div>
+                  <div className={`${styles.aboutText} ${common.aboutText}`}>
+                    {typeof aboutContent === 'string' ? (
+                      <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                    ) : (
+                      aboutContent
+                    )}
+                  </div>
+                </>
+              )}
 
-              <div id="catalog" className={`${styles.title} ${common.title}`}>Каталог оборудования</div>
-              <div className={`${e.equipmentBlock}`}>
-                <div className={e.equipmentList}>
-                  {equipmentItems.map((item, index) => (
+              {equipmentItems.length > 0 && (
+                <>
+                  <div id="catalog" className={`${styles.title} ${common.title}`}>Каталог оборудования</div>
+                  <div className={`${e.equipmentBlock}`}>
+                    <div className={e.equipmentList}>
+                      {equipmentItems.map((item, index) => (
                     <div key={index} className={e.equipmentItem}>
                       <div>
                         <div className={e.equipmentItemName}>{item.name}</div>
@@ -379,21 +363,27 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                       <div className={e.equipmentItemPrice}>{item.price}</div>
                     </div>
                   ))}
-                </div>
-              </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <div id="conditions" className={`${styles.title} ${common.title}`}>Условия проката</div>
-              <div className={`${styles.aboutText} ${common.aboutText}`}>
-                <ul className={e.conditionsList}>
-                  {conditions.map((text, index) => (
-                    <li key={index}>{text}</li>
-                  ))}
-                </ul>
-              </div>
+              {conditions.length > 0 && (
+                <>
+                  <div id="conditions" className={`${styles.title} ${common.title}`}>Условия проката</div>
+                  <div className={`${styles.aboutText} ${common.aboutText}`}>
+                    <ul className={e.conditionsList}>
+                      {conditions.map((text, index) => (
+                        <li key={index}>{text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
 
               {serviceData?.latitude != null && serviceData?.longitude != null && (
                 <>
-                  <div className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div id="map" className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
                   <div style={{ marginBottom: 24 }}>
                     <YandexMapPlace
                       latitude={serviceData.latitude}
@@ -410,16 +400,29 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                 <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
                   <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
                   <div className={styles.contactsList}>
-                    {contactsList.map((c, i) => (
-                      <div key={i} className={styles.contactItem}>
-                        <span className={styles.contactLabel}>{c.label}:</span>
-                        {c.href ? (
-                          <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
-                        ) : (
-                          <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
-                        )}
-                      </div>
-                    ))}
+                    {contactsList.map((c, i) => {
+                      const isIconUrl = c.icon && (typeof c.icon === 'string' && (c.icon.startsWith('http') || c.icon.startsWith('/') || c.icon.includes('uploads')))
+                      const IconComponent = c.icon && !isIconUrl ? getMuiIconComponent(c.icon) : null
+                      return (
+                        <div key={i} className={styles.contactItem}>
+                          {c.icon && (
+                            <span className={styles.contactIcon}>
+                              {isIconUrl ? (
+                                <img src={getImageUrl(c.icon)} alt="" className={styles.contactIconImg} />
+                              ) : IconComponent ? (
+                                <IconComponent size={22} className={styles.contactIconSvg} />
+                              ) : null}
+                            </span>
+                          )}
+                          <span className={styles.contactLabel}>{c.label}:</span>
+                          {c.href ? (
+                            <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                          ) : (
+                            <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

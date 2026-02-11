@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, BarChart3 } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal } from '../components';
 import styles from '../admin.module.css';
@@ -314,6 +314,12 @@ export default function ServicesPage() {
                     {sortBy === 'rating' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
                   </span>
                 </th>
+                <th className={styles.sortableHeader} onClick={() => handleSort('uniqueViewsCount')}>
+                  <span className={styles.sortHeaderInner}>
+                    <span>Просмотры</span>
+                    {sortBy === 'uniqueViewsCount' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
+                  </span>
+                </th>
                 <th className={styles.sortableHeader} onClick={() => handleSort('isActive')}>
                   <span className={styles.sortHeaderInner}>
                     <span>Видимость</span>
@@ -370,6 +376,12 @@ export default function ServicesPage() {
                       ) : (
                         '—'
                       )}
+                    </div>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.cellInner}>
+                      <BarChart3 size={14} style={{ marginRight: '4px', opacity: 0.7 }} />
+                      <span>{service.uniqueViewsCount ?? 0}</span>
                     </div>
                   </td>
                   <td className={styles.tableCell}>

@@ -20,7 +20,7 @@ import serviceStyles from '@/sections/Services/Services_page.module.css'
 const TABS = [
   { id: 'routes', label: 'Маршруты', icon: 'route' },
   { id: 'places', label: 'Интересные места', icon: 'place' },
-  { id: 'services', label: 'Сервисы и услуги', icon: 'service' },
+  { id: 'services', label: 'Сервис и услуги', icon: 'service' },
   { id: 'routes-constructor', label: 'Конструктор маршрутов', icon: 'constructor', iconImage: '/konst_tours_black.svg' },
   { id: 'edit', label: 'Изменить профиль', icon: 'edit' },
 ]
@@ -1575,7 +1575,7 @@ export default function ProfilePage() {
 
           {activeTab === 'services' && (
             <div className={styles.panel}>
-              <h2 className={styles.panelTitle}>Избранные услуги и сервисы</h2>
+              <h2 className={styles.panelTitle}>Избранные сервис и услуги</h2>
               {favLoading ? (
                 <p className={styles.favLoading}>Загрузка...</p>
               ) : favoriteServices.length === 0 ? (

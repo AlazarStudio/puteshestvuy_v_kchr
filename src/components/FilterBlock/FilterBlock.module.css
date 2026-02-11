@@ -9,6 +9,13 @@
     position: sticky;
     top: 105px; /* фиксированный header ~85px + отступ */
     align-self: flex-start;
+    /* Скрываем скроллбар, но сохраняем возможность прокрутки */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+.filter::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .filterBlock {
@@ -80,7 +87,7 @@
 
 .search input:focus {
     outline: none;
-    border-color: #73BFE7;
+    border-color: #156a60;
 }
 
 .filterInput {
@@ -103,7 +110,7 @@
 
 .filterInput input:focus {
     outline: none;
-    border-color: #73BFE7;
+    border-color: #156a60;
 }
 
 .checkBlock {
@@ -136,19 +143,19 @@
 }
 
 .checkbox:hover {
-    border-color: #73BFE7;
+    border-color: #156a60;
 }
 
 .checkbox:checked {
-    background-color: #73BFE7;
-    border-color: #73BFE7;
+    background-color: #156a60;
+    border-color: #156a60;
 }
 
 .checkbox:checked::after {
     content: '';
     position: absolute;
-    left: 6px;
-    top: 2px;
+    left: 5px;
+    top: 1px;
     width: 5px;
     height: 10px;
     border: solid white;
@@ -168,7 +175,7 @@
     margin-top: 8px;
     background: none;
     border: none;
-    color: #73BFE7;
+    color: #156a60;
     font-weight: 400;
     font-size: 16px;
     line-height: 150%;

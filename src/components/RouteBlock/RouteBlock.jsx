@@ -6,14 +6,10 @@ import styles from './RouteBlock.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import 'swiper/css/navigation'
-import { Navigation, Autoplay } from 'swiper/modules'
+import { Navigation } from 'swiper/modules'
 import { Link } from 'react-router-dom'
 import { getImageUrl } from '@/lib/api'
 import { generateSlug } from '@/utils/transliterate'
-
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
 
 export default function RouteBlock({ route: routeProp, title: titleProp, hideFavoriteButton }) {
   const route = routeProp || (titleProp ? { title: titleProp, slug: generateSlug(titleProp) } : null)
@@ -83,8 +79,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
         <Swiper
           navigation={true}
           loop={slides.length > 1}
-          autoplay={slides.length > 1 ? { delay: getRandomInt(10000, 15000), disableOnInteraction: false } : false}
-          modules={[Navigation, Autoplay]}
+          modules={[Navigation]}
           className="routeSlider"
         >
           {slides}

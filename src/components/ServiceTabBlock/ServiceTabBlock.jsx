@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import styles from './ServiceTabBlock.module.css'
-import ServiceCard from '../ServiceCard/ServiceCard'
+import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
 
 const FILTER_TO_CATEGORY = {
@@ -116,21 +116,50 @@ export default function ServiceTabBlock() {
         {services.length === 0 ? (
           <div className={styles.empty}>Услуги не найдены</div>
         ) : (
-          services.map((service) => (
-            <Link
-              key={service.id}
-              to={`/services/${service.slug || service.id}`}
-              className={styles.cardLink}
-            >
-              <ServiceCard
-                img={getImageUrl(service.image || service.images?.[0]) || '/serviceImg1.png'}
-                name={service.title}
-                rating={service.rating ?? '—'}
-                reviewsCount={service.reviewsCount ?? 0}
-                isVerified={service.isVerified}
-              />
-            </Link>
-          ))
+          services.map((service) => {
+            const hasReviews = (service.reviewsCount ?? 0) > 0
+            const displayRating = hasReviews && service.rating != null && service.rating !== '' 
+              ? (Number(service.rating) % 1 === 0 ? String(service.rating) : Number(service.rating).toFixed(1))
+              : null
+            
+            const formatReviews = (n) => {
+              if (n === 1) return '1 отзыв'
+              if (n >= 2 && n <= 4) return `${n} отзыва`
+              return `${n} отзывов`
+            }
+
+            return (
+              <Link
+                key={service.id}
+                to={`/services/${service.slug || service.id}`}
+                className={styles.serviceCard}
+              >
+                <div className={styles.serviceCardImg}>
+                  <img src={getImageUrl(service.image || service.images?.[0]) || '/serviceImg1.png'} alt={service.title} />
+                </div>
+                <div className={styles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
+                  <div className={styles.serviceCardLike}>
+                    <FavoriteButton entityType="service" entityId={service.id} />
+                  </div>
+                </div>
+                <div className={styles.serviceCardInfo}>
+                  <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
+                  {hasReviews && (
+                    <div className={styles.serviceCardRating}>
+                      <div className={styles.serviceCardStars}>
+                        <img src="/star.png" alt="" />
+                        {displayRating}
+                      </div>
+                      <div className={styles.serviceCardFeedback}>
+                        {formatReviews(service.reviewsCount ?? 0)}
+                      </div>
+                    </div>
+                  )}
+                  <div className={styles.serviceCardName}>{service.title}</div>
+                </div>
+              </Link>
+            )
+          })
         )}
       </div>
     </section>

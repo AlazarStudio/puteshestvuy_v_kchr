@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom'
 import styles from './SliderFullScreen.module.css'
 import { publicPlacesAPI, getImageUrl } from '@/lib/api'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
+import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
 
 const SLIDER_LIMIT = 6
 const TIME_RUNNING = 500
@@ -298,13 +300,19 @@ export default function SliderFullScreen() {
       {/* Превью (thumbnail) */}
       <div className={styles.thumbnail}>
         {thumbnailSlides.map((slide) => (
-          <Link to={placeHref(slide)} key={slide.id} className={styles.item}>
-            <img src={slide.image} alt={slide.title} />
-            <div className={styles.content}>
-              <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
-              <div className={styles.title}>{slide.title}</div>
+          <div key={slide.id} className={styles.item}>
+            <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
+              <RouteConstructorButton placeId={slide.id} />
+              <FavoriteButton entityType="place" entityId={slide.id} />
             </div>
-          </Link>
+            <Link to={placeHref(slide)} className={styles.link}>
+              <img src={slide.image} alt={slide.title} />
+              <div className={styles.content}>
+                <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
+                <div className={styles.title}>{slide.title}</div>
+              </div>
+            </Link>
+          </div>
         ))}
       </div>
 

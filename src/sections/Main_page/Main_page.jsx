@@ -102,6 +102,7 @@ export default function Main_page() {
               places.map((place) => (
                 <PlaceBlock
                   key={place.id}
+                  placeId={place.id}
                   rating={place.rating != null ? String(place.rating) : '—'}
                   feedback={formatReviews(place.reviewsCount ?? 0)}
                   reviewsCount={place.reviewsCount ?? 0}

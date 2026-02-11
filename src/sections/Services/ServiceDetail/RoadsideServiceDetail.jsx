@@ -11,15 +11,8 @@ import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
-
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-]
 
 function buildContactsFromService(service) {
   const items = []
@@ -39,16 +32,16 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
     if (serviceData?.images?.length) {
       return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
     }
-    return DEFAULT_PHOTOS
+    return []
   }, [serviceData?.images])
 
   const avatarSrc = useMemo(() => {
     if (serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
     if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
-    return '/serviceImg1.png'
+    return null
   }, [serviceData?.data?.avatar, serviceData?.images])
 
-  const serviceName = serviceData?.title ?? 'Пункт придорожного сервиса'
+  const serviceName = serviceData?.title ?? ''
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
   const criteriaList = useMemo(() => {
     const fromData = serviceData?.data?.criteriaList
@@ -76,7 +69,16 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
     }))
   }, [serviceData?.reviews])
   const contactsList = useMemo(() => {
-    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    if (serviceData?.data?.contacts?.length) {
+      return serviceData.data.contacts.map((c) => ({
+        label: c.label || '',
+        value: c.value || '',
+        href: c.href || null,
+        icon: c.icon || null,
+        target: c.target,
+        rel: c.rel,
+      }))
+    }
     return buildContactsFromService(serviceData)
   }, [serviceData])
 
@@ -178,9 +180,10 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
 
   const anchors = [
     { id: 'main', label: 'Основное' },
-    { id: 'about', label: 'О сервисе' },
+    ...(aboutContent != null && aboutContent !== '' ? [{ id: 'about', label: 'О сервисе' }] : []),
     ...(servicesList.length > 0 ? [{ id: 'services', label: 'Услуги' }] : []),
-    { id: 'contacts', label: 'Контакты' },
+    ...(serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    ...(contactsList.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
     { id: 'reviews', label: 'Отзывы' },
   ]
 
@@ -327,18 +330,18 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
                 </div>
               </div>
 
-              <div id="about" className={`${styles.title} ${common.title}`}>О сервисе</div>
-              <div className={`${styles.aboutText} ${common.aboutText}`}>
-                {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? (
-                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
-                  ) : (
-                    aboutContent
-                  )
-                ) : (
-                  <p>Информация о пункте придорожного сервиса.</p>
-                )}
-              </div>
+              {aboutContent != null && aboutContent !== '' && (
+                <>
+                  <div id="about" className={`${styles.title} ${common.title}`}>О сервисе</div>
+                  <div className={`${styles.aboutText} ${common.aboutText}`}>
+                    {typeof aboutContent === 'string' ? (
+                      <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                    ) : (
+                      aboutContent
+                    )}
+                  </div>
+                </>
+              )}
 
               {servicesList.length > 0 && (
                 <>
@@ -355,7 +358,7 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
 
               {serviceData?.latitude != null && serviceData?.longitude != null && (
                 <>
-                  <div className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div id="map" className={`${styles.title} ${common.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
                   <div style={{ marginBottom: 24 }}>
                     <YandexMapPlace
                       latitude={serviceData.latitude}
@@ -372,16 +375,29 @@ export default function RoadsideServiceDetail({ serviceSlug, serviceData }) {
                 <div id="contacts" className={`${styles.contacts} ${common.contacts}`}>
                   <div className={`${styles.contactsTitle} ${common.contactsTitle}`}>Контакты</div>
                   <div className={styles.contactsList}>
-                    {contactsList.map((c, i) => (
-                      <div key={i} className={styles.contactItem}>
-                        <span className={styles.contactLabel}>{c.label}:</span>
-                        {c.href ? (
-                          <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
-                        ) : (
-                          <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
-                        )}
-                      </div>
-                    ))}
+                    {contactsList.map((c, i) => {
+                      const isIconUrl = c.icon && (typeof c.icon === 'string' && (c.icon.startsWith('http') || c.icon.startsWith('/') || c.icon.includes('uploads')))
+                      const IconComponent = c.icon && !isIconUrl ? getMuiIconComponent(c.icon) : null
+                      return (
+                        <div key={i} className={styles.contactItem}>
+                          {c.icon && (
+                            <span className={styles.contactIcon}>
+                              {isIconUrl ? (
+                                <img src={getImageUrl(c.icon)} alt="" className={styles.contactIconImg} />
+                              ) : IconComponent ? (
+                                <IconComponent size={22} className={styles.contactIconSvg} />
+                              ) : null}
+                            </span>
+                          )}
+                          <span className={styles.contactLabel}>{c.label}:</span>
+                          {c.href ? (
+                            <a href={c.href} className={`${styles.contactValue} ${common.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                          ) : (
+                            <span className={`${styles.contactValue} ${common.contactValue}`}>{c.value}</span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

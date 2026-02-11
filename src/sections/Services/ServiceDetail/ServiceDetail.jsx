@@ -17,24 +17,6 @@ import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-  { src: '/routeGalery6.png' },
-  { src: '/routeGalery7.png' },
-  { src: '/routeGalery8.png' },
-]
-
-const DEFAULT_SERVICES_LIST = [
-  { name: 'Индивидуальная экскурсия (до 4 человек)', price: 'от 5 000 ₽' },
-  { name: 'Групповая экскурсия (до 10 человек)', price: 'от 3 000 ₽/чел' },
-  { name: 'Многодневный тур (2-3 дня)', price: 'от 15 000 ₽' },
-  { name: 'Фототур по живописным местам', price: 'от 7 000 ₽' },
-]
-
 function buildContactsFromService(service) {
   const items = []
   if (service?.address) items.push({ label: 'Адрес', value: service.address })
@@ -58,27 +40,29 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
     if (serviceData?.images?.length) {
       return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
     }
-    return DEFAULT_PHOTOS
+    return []
   }, [isGuide, serviceData?.data?.galleryEnabled, serviceData?.data?.galleryImages, serviceData?.images])
 
   const avatarSrc = useMemo(() => {
     if (isGuide && serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
     if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
-    return '/serviceImg1.png'
+    return null
   }, [isGuide, serviceData?.data?.avatar, serviceData?.images])
 
-  const displayName = serviceData?.title ?? 'Хубиев Артур Арсенович'
-  const categoryLabel = serviceData?.category ?? 'Гид'
+  const displayName = serviceData?.title ?? ''
+  const categoryLabel = serviceData?.category ?? ''
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
-  const defaultAbout = (
-    <>
-      <p>Профессиональный гид с опытом работы более 10 лет. Специализируюсь на горных маршрутах и культурных экскурсиях по Карачаево-Черкесии.</p>
-      <p>Знаю все тайные места региона, провожу авторские экскурсии по историческим местам, горным тропам и живописным ущельям. Работаю как с индивидуальными туристами, так и с группами.</p>
-      <p>Все маршруты разработаны с учётом безопасности и комфорта туристов. Предоставляю необходимое снаряжение для горных походов.</p>
-    </>
-  )
   const contactsList = useMemo(() => {
-    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    if (serviceData?.data?.contacts?.length) {
+      return serviceData.data.contacts.map((c) => ({
+        label: c.label || '',
+        value: c.value || '',
+        href: c.href || null,
+        icon: c.icon || null,
+        target: c.target,
+        rel: c.rel,
+      }))
+    }
     return buildContactsFromService(serviceData)
   }, [serviceData])
   const servicesList = useMemo(() => {
@@ -87,7 +71,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
     if (Array.isArray(serviceData?.prices) && serviceData.prices.length > 0) {
       return serviceData.prices.map((p) => ({ name: p.name || p.title || '', price: p.price || p.value || '' }))
     }
-    return DEFAULT_SERVICES_LIST
+    return []
   }, [serviceData?.data?.pricesInData, serviceData?.prices])
   const certificateList = useMemo(() => {
     const fromData = serviceData?.data?.certificatesInData
@@ -237,9 +221,11 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
 
   const anchors = [
     { id: 'main', label: 'Основное' },
-    { id: 'about', label: 'О специалисте' },
-    { id: 'services', label: 'Услуги' },
-    { id: 'certificates', label: 'Сертификаты' },
+    ...(aboutContent != null && aboutContent !== '' ? [{ id: 'about', label: 'О специалисте' }] : []),
+    ...(serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    ...(contactsList.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
+    ...(servicesList.length > 0 ? [{ id: 'services', label: 'Услуги' }] : []),
+    ...(certificateList.length > 0 ? [{ id: 'certificates', label: 'Сертификаты' }] : []),
     ...(guideRoutes.length > 0 ? [{ id: 'routes', label: 'Маршруты' }] : []),
     { id: 'reviews', label: 'Отзывы' },
   ]
@@ -387,10 +373,14 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
           <div className={styles.serviceBlock}>
             <div className={`${styles.serviceBlock_content} ${g.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${g.serviceHeader}`}>
-                <div className={`${styles.serviceAvatar} ${g.serviceAvatar}`}>
-                  <img src={avatarSrc} alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
-                  <img src="/verification.png" alt="" className={styles.verificationBadge} />
-                </div>
+                {avatarSrc && (
+                  <div className={`${styles.serviceAvatar} ${g.serviceAvatar}`}>
+                    <img src={avatarSrc} alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
+                    {serviceData?.isVerified && (
+                      <img src="/verification.png" alt="" className={styles.verificationBadge} />
+                    )}
+                  </div>
+                )}
                 <div className={styles.serviceInfo}>
                   <div className={styles.serviceHeaderTopRow}>
                     <div className={`${styles.serviceCategory} ${g.serviceCategory}`}>{categoryLabel}</div>
@@ -410,36 +400,36 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                 </div>
               </div>
 
-              <div id="about" className={`${styles.title} ${g.title}`}>О специалисте</div>
-              <div className={`${styles.aboutText} ${g.aboutText}`}>
-                {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? (
-                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
-                  ) : (
-                    aboutContent
-                  )
-                ) : (
-                  defaultAbout
-                )}
-              </div>
+              {aboutContent != null && aboutContent !== '' && (
+                <>
+                  <div id="about" className={`${styles.title} ${g.title}`}>О специалисте</div>
+                  <div className={`${styles.aboutText} ${g.aboutText}`}>
+                    {typeof aboutContent === 'string' ? (
+                      <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                    ) : (
+                      aboutContent
+                    )}
+                  </div>
+                </>
+              )}
 
               {serviceData?.latitude != null && serviceData?.longitude != null && (
-                <div className={`${styles.title} ${g.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
-              )}
-              {serviceData?.latitude != null && serviceData?.longitude != null && (
-                <div style={{ marginBottom: 24 }}>
-                  <YandexMapPlace
-                    latitude={serviceData.latitude}
-                    longitude={serviceData.longitude}
-                    title={displayName}
-                    location={serviceData.address}
-                    image={avatarSrc !== '/serviceImg1.png' ? avatarSrc : null}
-                  />
-                </div>
+                <>
+                  <div id="map" className={`${styles.title} ${g.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div style={{ marginBottom: 24 }}>
+                    <YandexMapPlace
+                      latitude={serviceData.latitude}
+                      longitude={serviceData.longitude}
+                      title={displayName}
+                      location={serviceData.address}
+                      image={avatarSrc || null}
+                    />
+                  </div>
+                </>
               )}
 
               {contactsList.length > 0 && (
-                <div className={`${styles.contacts} ${g.contacts}`}>
+                <div id="contacts" className={`${styles.contacts} ${g.contacts}`}>
                   <div className={`${styles.contactsTitle} ${g.contactsTitle}`}>Контакты</div>
                   <div className={styles.contactsList}>
                     {contactsList.map((c, i) => {
@@ -469,34 +459,30 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                 </div>
               )}
 
-              <div id="services" className={`${styles.title} ${g.title}`}>Услуги и цены</div>
-              <div className={styles.servicesList}>
-                {servicesList.map((service, index) => (
-                  <div key={index} className={`${styles.servicesListItem} ${g.servicesListItem}`}>
-                    <div className={styles.servicesListItemName}>{service.name}</div>
-                    <div className={`${styles.servicesListItemPrice} ${g.servicesListItemPrice}`}>{service.price}</div>
+              {servicesList.length > 0 && (
+                <>
+                  <div id="services" className={`${styles.title} ${g.title}`}>Услуги и цены</div>
+                  <div className={styles.servicesList}>
+                    {servicesList.map((service, index) => (
+                      <div key={index} className={`${styles.servicesListItem} ${g.servicesListItem}`}>
+                        <div className={styles.servicesListItemName}>{service.name}</div>
+                        <div className={`${styles.servicesListItemPrice} ${g.servicesListItemPrice}`}>{service.price}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
-              {(certificateList.length > 0 || (!serviceData && true)) && (
+              {certificateList.length > 0 && (
                 <>
                   <div id="certificates" className={`${styles.title} ${g.title}`}>Сертификаты и документы</div>
                   <div className={styles.certificates}>
-                    {certificateList.length > 0
-                      ? certificateList.map((item, i) => (
-                          <div key={i} className={`${styles.certificateItem} ${g.certificateItem}`}>
-                            <img src={getImageUrl(item.url)} alt={item.caption || 'Сертификат'} />
-                            {item.caption ? <div className={styles.certificateCaption}>{item.caption}</div> : null}
-                          </div>
-                        ))
-                      : (
-                        <>
-                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery1.png" alt="Сертификат" /></div>
-                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery2.png" alt="Сертификат" /></div>
-                          <div className={`${styles.certificateItem} ${g.certificateItem}`}><img src="/routeGalery3.png" alt="Сертификат" /></div>
-                        </>
-                      )}
+                    {certificateList.map((item, i) => (
+                      <div key={i} className={`${styles.certificateItem} ${g.certificateItem}`}>
+                        <img src={getImageUrl(item.url)} alt={item.caption || 'Сертификат'} />
+                        {item.caption ? <div className={styles.certificateCaption}>{item.caption}</div> : null}
+                      </div>
+                    ))}
                   </div>
                 </>
               )}

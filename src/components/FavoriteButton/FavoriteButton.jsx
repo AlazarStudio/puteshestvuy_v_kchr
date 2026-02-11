@@ -24,7 +24,11 @@ export default function FavoriteButton({ entityType, entityId, className = '' })
     setLoading(true)
     try {
       const added = await toggleFavorite(entityType, entityId)
-      if (added) showToast('Добавлено в избранное')
+      if (added) {
+        showToast('Добавлено в избранное')
+      } else {
+        showToast('Убрано из избранного')
+      }
     } finally {
       setLoading(false)
     }

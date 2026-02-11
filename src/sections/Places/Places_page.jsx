@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Places_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -12,19 +12,18 @@ import { publicPlacesAPI } from '@/lib/api'
 import { getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 
-const defaultFilters = {
-  directions: [],
-  seasons: [],
-  objectTypes: [],
-  accessibility: [],
-}
+const ITEMS_PER_PAGE = 12
+
 
 export default function Places_page() {
   const [sortBy, setSortBy] = useState('popularity')
   const [places, setPlaces] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState(defaultFilters)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [filters, setFilters] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -33,6 +32,7 @@ export default function Places_page() {
   const scrollPositionRef = useRef(0)
   const isClosingRef = useRef(false)
   const [currentPath, setCurrentPath] = useState('')
+  const observerTarget = useRef(null)
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -93,10 +93,15 @@ export default function Places_page() {
 
   // Опции фильтров мест с API (группы для FilterBlock)
   const placeFilterGroups = [
-    { key: 'directions', label: 'Направление', options: filterOptions?.directions ?? [] },
-    { key: 'seasons', label: 'Сезон', options: filterOptions?.seasons ?? [] },
-    { key: 'objectTypes', label: 'Вид объекта', options: filterOptions?.objectTypes ?? [] },
-    { key: 'accessibility', label: 'Доступность', options: filterOptions?.accessibility ?? [] },
+    ...(filterOptions?.directions?.length > 0 ? [{ key: 'directions', label: 'Направление', options: filterOptions.directions }] : []),
+    ...(filterOptions?.seasons?.length > 0 ? [{ key: 'seasons', label: 'Сезон', options: filterOptions.seasons }] : []),
+    ...(filterOptions?.objectTypes?.length > 0 ? [{ key: 'objectTypes', label: 'Вид объекта', options: filterOptions.objectTypes }] : []),
+    ...(filterOptions?.accessibility?.length > 0 ? [{ key: 'accessibility', label: 'Доступность', options: filterOptions.accessibility }] : []),
+    ...(Array.isArray(filterOptions?.extraGroups) ? filterOptions.extraGroups.map((g) => ({
+      key: g.key,
+      label: (g.label && g.label.trim()) || g.key,
+      options: Array.isArray(g.values) ? g.values : [],
+    })) : []),
   ]
 
   // Загрузка опций фильтров мест с API
@@ -110,6 +115,21 @@ export default function Places_page() {
             seasons: Array.isArray(data.seasons) ? data.seasons : [],
             objectTypes: Array.isArray(data.objectTypes) ? data.objectTypes : [],
             accessibility: Array.isArray(data.accessibility) ? data.accessibility : [],
+            extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
+          })
+          // Инициализируем filters с пустыми массивами для всех групп
+          setFilters((prev) => {
+            const next = { ...prev }
+            if (Array.isArray(data.directions) && data.directions.length > 0 && next.directions === undefined) next.directions = []
+            if (Array.isArray(data.seasons) && data.seasons.length > 0 && next.seasons === undefined) next.seasons = []
+            if (Array.isArray(data.objectTypes) && data.objectTypes.length > 0 && next.objectTypes === undefined) next.objectTypes = []
+            if (Array.isArray(data.accessibility) && data.accessibility.length > 0 && next.accessibility === undefined) next.accessibility = []
+            if (Array.isArray(data.extraGroups)) {
+              for (const g of data.extraGroups) {
+                if (g.key && next[g.key] === undefined) next[g.key] = []
+              }
+            }
+            return next
           })
         }
       })
@@ -119,38 +139,103 @@ export default function Places_page() {
     return () => { cancelled = true }
   }, [])
 
-  // Загрузка мест с API (с учётом фильтров и поиска)
+  // Функция загрузки мест
+  const fetchPlaces = useCallback(async (page = 1, reset = false) => {
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 500 // минимум 500ms
+    
+    try {
+      if (reset) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
+      
+      const params = {
+        page,
+        limit: ITEMS_PER_PAGE,
+        ...(searchQuery.trim() && { search: searchQuery.trim() }),
+        ...(sortBy && { sortBy }),
+        ...(filters.directions?.length > 0 && { directions: filters.directions }),
+        ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
+        ...(filters.objectTypes?.length > 0 && { objectTypes: filters.objectTypes }),
+        ...(filters.accessibility?.length > 0 && { accessibility: filters.accessibility }),
+      }
+      // Добавляем extraGroups фильтры
+      for (const g of filterOptions?.extraGroups || []) {
+        if (g.key && filters[g.key]?.length > 0) {
+          params[g.key] = filters[g.key]
+        }
+      }
+      const { data } = await publicPlacesAPI.getAll(params)
+      const newItems = data.items || []
+      const totalItems = data.pagination?.total ?? 0
+      
+      if (reset) {
+        setPlaces(newItems)
+        setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
+      } else {
+        setPlaces(prev => {
+          const updated = [...prev, ...newItems]
+          setHasMore(updated.length < totalItems)
+          return updated
+        })
+      }
+      
+      setTotal(totalItems)
+      
+      // Гарантируем минимальное время отображения лоадера
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } catch (err) {
+      console.error(err)
+      if (reset) {
+        setPlaces([])
+        setTotal(0)
+        setHasMore(false)
+      }
+      // Гарантируем минимальное время отображения лоадера даже при ошибке
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise(resolve => setTimeout(resolve, remainingTime))
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }, [filters, searchQuery, sortBy, filterOptions])
+
+  // Загрузка мест при изменении фильтров/поиска/сортировки
   useEffect(() => {
-    let cancelled = false
-    async function fetchPlaces() {
-      setLoading(true)
-      try {
-        const params = {
-          limit: 100,
-          ...(searchQuery.trim() && { search: searchQuery.trim() }),
-          ...(filters.directions?.length > 0 && { directions: filters.directions }),
-          ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
-          ...(filters.objectTypes?.length > 0 && { objectTypes: filters.objectTypes }),
-          ...(filters.accessibility?.length > 0 && { accessibility: filters.accessibility }),
+    setCurrentPage(1)
+    setHasMore(true)
+    fetchPlaces(1, true)
+  }, [filters, searchQuery, sortBy, filterOptions])
+
+  // Intersection Observer для lazy load
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          const nextPage = currentPage + 1
+          setCurrentPage(nextPage)
+          fetchPlaces(nextPage, false)
         }
-        const { data } = await publicPlacesAPI.getAll(params)
-        if (!cancelled) {
-          setPlaces(data.items || [])
-          setTotal(data.pagination?.total ?? 0)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setPlaces([])
-          setTotal(0)
-          console.error(err)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
       }
     }
-    fetchPlaces()
-    return () => { cancelled = true }
-  }, [filters.directions, filters.seasons, filters.objectTypes, filters.accessibility, searchQuery])
+  }, [hasMore, loading, loadingMore, currentPage, fetchPlaces])
 
   // Отслеживаем изменения пути
   useEffect(() => {
@@ -403,26 +488,41 @@ export default function Places_page() {
             </div>
 
             <div className={styles.placesShow}>
-              {places.map((place) => (
-                <PlaceBlock
-                  key={place.id}
-                  placeId={place.id}
-                  rating={place.rating != null ? String(place.rating) : '—'}
-                  feedback={
-                    place.reviewsCount === 1
-                      ? '1 отзыв'
-                      : place.reviewsCount >= 2 && place.reviewsCount <= 4
-                        ? `${place.reviewsCount} отзыва`
-                        : `${place.reviewsCount || 0} отзывов`
-                  }
-                  reviewsCount={place.reviewsCount ?? 0}
-                  place={place.location || '—'}
-                  title={place.title}
-                  desc={stripHtml(place.shortDescription || place.description || '')}
-                  img={getImageUrl(place.image)}
-                  onClick={() => handlePlaceClick(place)}
-                />
-              ))}
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>Загрузка...</div>
+              ) : places.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>Места не найдены</div>
+              ) : (
+                <>
+                  {places.map((place) => (
+                    <PlaceBlock
+                      key={place.id}
+                      placeId={place.id}
+                      rating={place.rating != null ? String(place.rating) : '—'}
+                      feedback={
+                        place.reviewsCount === 1
+                          ? '1 отзыв'
+                          : place.reviewsCount >= 2 && place.reviewsCount <= 4
+                            ? `${place.reviewsCount} отзыва`
+                            : `${place.reviewsCount || 0} отзывов`
+                      }
+                      reviewsCount={place.reviewsCount ?? 0}
+                      place={place.location || '—'}
+                      title={place.title}
+                      desc={stripHtml(place.shortDescription || place.description || '')}
+                      img={getImageUrl(place.image)}
+                      onClick={() => handlePlaceClick(place)}
+                    />
+                  ))}
+                  {hasMore && <div ref={observerTarget} style={{ height: '20px', marginTop: '20px' }} />}
+                  {loadingMore && (
+                    <div className={styles.loadingMore}>
+                      <div className={styles.spinner} />
+                      <p>Загрузка...</p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </section>

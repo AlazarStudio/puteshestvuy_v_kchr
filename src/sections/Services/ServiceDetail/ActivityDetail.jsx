@@ -9,45 +9,11 @@ import 'swiper/css/navigation'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
 
-const DEFAULT_PHOTOS = [
-  { src: '/routeGalery1.png' },
-  { src: '/routeGalery2.png' },
-  { src: '/routeGalery3.png' },
-  { src: '/routeGalery4.png' },
-  { src: '/routeGalery5.png' },
-  { src: '/routeGalery6.png' },
-  { src: '/routeGalery7.png' },
-  { src: '/routeGalery8.png' },
-]
-
-const DEFAULT_PROGRAM = [
-  { title: 'Встреча и инструктаж', text: 'Сбор группы, знакомство с инструкторами, раздача и проверка экипировки, подробный инструктаж по технике безопасности.' },
-  { title: 'Разминка и отработка базовых навыков', text: 'Небольшая разминка и отработка ключевых элементов активности в безопасных условиях.' },
-  { title: 'Основная часть программы', text: 'Маршрут по заранее подготовленному треку с несколькими живописными точками для фото и отдыха.' },
-  { title: 'Финал и обратная связь', text: 'Возвращение в точку старта, разбор программы, рекомендации по дальнейшим маршрутам и активностям.' },
-]
-
-const DEFAULT_EQUIPMENT = [
-  'Удобная треккинговая обувь или кроссовки с хорошей фиксацией',
-  'Ветрозащитная куртка и лёгкая теплая одежда по погоде',
-  'Перчатки и кепка/панама в зависимости от сезона',
-  'Небольшой рюкзак (10–20 л) для личных вещей',
-  'Запас воды (от 0.5 до 1.5 л на человека)',
-  'Солнцезащитный крем и солнцезащитные очки',
-]
-
-const DEFAULT_REQUIREMENTS = [
-  'Возраст участников — от 8 лет (для детей — в сопровождении взрослых)',
-  'Отсутствие серьёзных медицинских противопоказаний к физической нагрузке',
-  'Готовность следовать инструкциям гидов и инструкторов',
-  'Базовый уровень физической подготовки (возможно адаптировать под группу)',
-]
-
-
 function parseProgramSteps(arr) {
-  if (!Array.isArray(arr) || arr.length === 0) return DEFAULT_PROGRAM
+  if (!Array.isArray(arr) || arr.length === 0) return []
   return arr.map((item) => {
     if (item && typeof item === 'object' && ('title' in item || 'text' in item)) {
       return { title: item.title || '', text: item.text || '' }
@@ -90,35 +56,28 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
     if (serviceData?.images?.length) {
       return serviceData.images.map((path) => ({ src: getImageUrl(path) }))
     }
-    return DEFAULT_PHOTOS
+    return []
   }, [serviceData?.images])
 
   const avatarSrc = useMemo(() => {
     if (serviceData?.data?.avatar) return getImageUrl(serviceData.data.avatar)
     if (serviceData?.images?.[0]) return getImageUrl(serviceData.images[0])
-    return '/serviceImg2.png'
+    return null
   }, [serviceData?.data?.avatar, serviceData?.images])
 
-  const serviceName = serviceData?.title ?? 'Приключенческий тур в горах КЧР'
-  const categoryLabel = serviceData?.category ?? 'Активность'
+  const serviceName = serviceData?.title ?? ''
+  const categoryLabel = serviceData?.category ?? ''
   const aboutContent = serviceData?.data?.aboutContent ?? serviceData?.description ?? null
-  const defaultAbout = (
-    <>
-      <p>Это динамичная активность для тех, кто хочет наполнить день яркими эмоциями: живописные виды, лёгкий экстрим и безопасный формат под контролем опытной команды.</p>
-      <p>Программа подойдёт как тем, кто впервые пробует подобный формат отдыха, так и тем, кто уже знаком с активным туризмом и хочет открыть для себя новые маршруты.</p>
-      <p>Мы подберём темп под вашу группу, сделаем несколько остановок для фото и отдыха, а также расскажем интересные факты о природе и истории региона.</p>
-    </>
-  )
   const programSteps = useMemo(() => parseProgramSteps(serviceData?.data?.programSteps), [serviceData?.data?.programSteps])
   const equipmentList = useMemo(() => {
     const fromData = serviceData?.data?.equipmentList
     if (Array.isArray(fromData) && fromData.length > 0) return titleTextListToStrings(fromData)
-    return DEFAULT_EQUIPMENT
+    return []
   }, [serviceData?.data?.equipmentList])
   const requirementsList = useMemo(() => {
     const fromData = serviceData?.data?.requirementsList
     if (Array.isArray(fromData) && fromData.length > 0) return titleTextListToStrings(fromData)
-    return DEFAULT_REQUIREMENTS
+    return []
   }, [serviceData?.data?.requirementsList])
   const safetyContent = useMemo(() => {
     const fromData = serviceData?.data?.safetyNotes
@@ -130,7 +89,16 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
     return null
   }, [serviceData?.data?.safetyNotes])
   const contactsList = useMemo(() => {
-    if (serviceData?.data?.contacts?.length) return serviceData.data.contacts
+    if (serviceData?.data?.contacts?.length) {
+      return serviceData.data.contacts.map((c) => ({
+        label: c.label || '',
+        value: c.value || '',
+        href: c.href || null,
+        icon: c.icon || null,
+        target: c.target,
+        rel: c.rel,
+      }))
+    }
     return buildContactsFromService(serviceData)
   }, [serviceData])
   const reviewsCountLabel = serviceData?.reviewsCount != null ? `${serviceData.reviewsCount} отзывов` : '0 отзывов'
@@ -267,10 +235,12 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
 
   const anchors = [
     { id: 'main', label: 'Основное' },
-    { id: 'about', label: 'О активности' },
-    { id: 'program', label: 'Программа' },
-    { id: 'equipment', label: 'Что взять с собой' },
-    { id: 'safety', label: 'Безопасность' },
+    ...(aboutContent != null && aboutContent !== '' ? [{ id: 'about', label: 'О активности' }] : []),
+    ...(programSteps.length > 0 ? [{ id: 'program', label: 'Программа' }] : []),
+    ...(equipmentList.length > 0 || requirementsList.length > 0 ? [{ id: 'equipment', label: 'Что взять с собой' }] : []),
+    ...(safetyContent ? [{ id: 'safety', label: 'Безопасность' }] : []),
+    ...(serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    ...(contactsList.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
     { id: 'reviews', label: 'Отзывы' },
   ]
 
@@ -321,7 +291,8 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
             <span>{serviceName}</span>
           </div>
 
-          <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${a.gallery}`}>
+          {photos.length > 0 && (
+            <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${a.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${a.galleryMain}`} onClick={() => openModal(0)}>
                 <img src={photos[0]?.src} alt="Фото активности 1" />
@@ -402,23 +373,32 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                 </div>
               </>
             )}
-          </div>
+            </div>
+          )}
 
           <div className={styles.serviceBlock}>
             <div className={`${styles.serviceBlock_content} ${a.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${a.serviceHeader}`}>
-                <div className={`${styles.serviceAvatar} ${a.serviceAvatar}`}>
-                  <img src={avatarSrc} alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
-                </div>
-                <div className={styles.serviceInfo}>
-                  <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>{categoryLabel}</div>
-                  <div className={`${styles.serviceName} ${a.serviceName}`}>{serviceName}</div>
-                  <div className={styles.serviceRating}>
-                    <div className={`${styles.ratingStars} ${a.ratingStars}`}>
-                      <img src="/star.png" alt="" /> 5.0
-                    </div>
-                    <div className={`${styles.ratingFeedback} ${a.ratingFeedback}`}>{reviewsCountLabel}</div>
+                {avatarSrc && (
+                  <div className={`${styles.serviceAvatar} ${a.serviceAvatar}`}>
+                    <img src={avatarSrc} alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
                   </div>
+                )}
+                <div className={styles.serviceInfo}>
+                  {categoryLabel && <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>{categoryLabel}</div>}
+                  {serviceName && <div className={`${styles.serviceName} ${a.serviceName}`}>{serviceName}</div>}
+                  {(serviceData?.rating != null || serviceData?.reviewsCount > 0) && (
+                    <div className={styles.serviceRating}>
+                      {serviceData?.rating != null && (
+                        <div className={`${styles.ratingStars} ${a.ratingStars}`}>
+                          <img src="/star.png" alt="" /> {serviceData.rating}
+                        </div>
+                      )}
+                      {serviceData?.reviewsCount > 0 && (
+                        <div className={`${styles.ratingFeedback} ${a.ratingFeedback}`}>{reviewsCountLabel}</div>
+                      )}
+                    </div>
+                  )}
                   {tagsList.length > 0 && (
                     <div className={`${styles.serviceTags} ${a.serviceTags}`}>
                       {tagsList.map((tag, i) => (
@@ -429,65 +409,76 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                 </div>
               </div>
 
-              <div id="about" className={`${styles.title} ${a.title}`}>О активности</div>
-              <div className={`${styles.aboutText} ${a.aboutText}`}>
-                {aboutContent != null && aboutContent !== '' ? (
-                  typeof aboutContent === 'string' ? (
-                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
-                  ) : (
-                    aboutContent
-                  )
-                ) : (
-                  defaultAbout
-                )}
-              </div>
-
-              <div id="program" className={`${styles.title} ${a.title}`}>Программа дня</div>
-              <div className={`${styles.program} ${a.program}`}>
-                {programSteps.map((step, index) => (
-                  <div key={index} className={`${styles.programStep} ${a.programStep}`}>
-                    <div className={`${styles.programStepNumber} ${a.programStepNumber}`}>{index + 1}</div>
-                    <div className={styles.programStepContent}>
-                      <div className={`${styles.programStepTitle} ${a.programStepTitle}`}>{step.title}</div>
-                      <div className={`${styles.programStepText} ${a.programStepText}`}>{step.text}</div>
-                    </div>
+              {aboutContent != null && aboutContent !== '' && (
+                <>
+                  <div id="about" className={`${styles.title} ${a.title}`}>О активности</div>
+                  <div className={`${styles.aboutText} ${a.aboutText}`}>
+                    {typeof aboutContent === 'string' ? (
+                      <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: aboutContent }} />
+                    ) : (
+                      aboutContent
+                    )}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
-              <div className={`${styles.programColumns} ${a.programColumns}`}>
-                <div className={`${styles.programColumn} ${a.programColumn}`}>
-                  <div id="equipment" className={`${styles.subtitle} ${a.subtitle}`}>Что взять с собой</div>
-                  <ul className={`${styles.bulletList} ${a.bulletList}`}>
-                    {equipmentList.map((item, index) => (
-                      <li key={index}>{item}</li>
+              {programSteps.length > 0 && (
+                <>
+                  <div id="program" className={`${styles.title} ${a.title}`}>Программа дня</div>
+                  <div className={`${styles.program} ${a.program}`}>
+                    {programSteps.map((step, index) => (
+                      <div key={index} className={`${styles.programStep} ${a.programStep}`}>
+                        <div className={`${styles.programStepNumber} ${a.programStepNumber}`}>{index + 1}</div>
+                        <div className={styles.programStepContent}>
+                          <div className={`${styles.programStepTitle} ${a.programStepTitle}`}>{step.title}</div>
+                          <div className={`${styles.programStepText} ${a.programStepText}`}>{step.text}</div>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+                </>
+              )}
 
-                  <div className={`${styles.subtitle} ${a.subtitle}`} style={{ marginTop: 24 }}>Требования к участникам</div>
-                  <ul className={`${styles.bulletList} ${a.bulletList}`}>
-                    {requirementsList.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
+              {(equipmentList.length > 0 || requirementsList.length > 0) && (
+                <div className={`${styles.programColumns} ${a.programColumns}`}>
+                  <div className={`${styles.programColumn} ${a.programColumn}`}>
+                    {equipmentList.length > 0 && (
+                      <>
+                        <div id="equipment" className={`${styles.subtitle} ${a.subtitle}`}>Что взять с собой</div>
+                        <ul className={`${styles.bulletList} ${a.bulletList}`}>
+                          {equipmentList.map((item, index) => (
+                            <li key={index}>{item}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
+                    {requirementsList.length > 0 && (
+                      <>
+                        <div className={`${styles.subtitle} ${a.subtitle}`} style={{ marginTop: 24 }}>Требования к участникам</div>
+                        <ul className={`${styles.bulletList} ${a.bulletList}`}>
+                          {requirementsList.map((item, index) => (
+                            <li key={index}>{item}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div id="safety" className={`${styles.title} ${a.title}`}>Безопасность</div>
-              <div className={`${styles.aboutText} ${a.aboutText}`}>
-                {safetyContent ? (
-                  <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: safetyContent }} />
-                ) : (
-                  <p>
-                    Точную программу, список экипировки и формат активности вы сможете уточнить у организатора
-                    перед бронированием. Мы всегда учитываем сезон, прогноз погоды и уровень группы.
-                  </p>
-                )}
-              </div>
+              {safetyContent && (
+                <>
+                  <div id="safety" className={`${styles.title} ${a.title}`}>Безопасность</div>
+                  <div className={`${styles.aboutText} ${a.aboutText}`}>
+                    <div className={styles.aboutTextHtml} dangerouslySetInnerHTML={{ __html: safetyContent }} />
+                  </div>
+                </>
+              )}
 
               {serviceData?.latitude != null && serviceData?.longitude != null && (
                 <>
-                  <div className={`${styles.title} ${a.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
+                  <div id="map" className={`${styles.title} ${a.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
                   <div style={{ marginBottom: 24 }}>
                     <YandexMapPlace
                       latitude={serviceData.latitude}
@@ -501,19 +492,32 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
               )}
 
               {contactsList.length > 0 && (
-                <div className={`${styles.contacts} ${a.contacts}`}>
+                <div id="contacts" className={`${styles.contacts} ${a.contacts}`}>
                   <div className={`${styles.contactsTitle} ${a.contactsTitle}`}>Контакты</div>
                   <div className={styles.contactsList}>
-                    {contactsList.map((c, i) => (
-                      <div key={i} className={styles.contactItem}>
-                        <span className={styles.contactLabel}>{c.label}:</span>
-                        {c.href ? (
-                          <a href={c.href} className={`${styles.contactValue} ${a.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
-                        ) : (
-                          <span className={`${styles.contactValue} ${a.contactValue}`}>{c.value}</span>
-                        )}
-                      </div>
-                    ))}
+                    {contactsList.map((c, i) => {
+                      const isIconUrl = c.icon && (typeof c.icon === 'string' && (c.icon.startsWith('http') || c.icon.startsWith('/') || c.icon.includes('uploads')))
+                      const IconComponent = c.icon && !isIconUrl ? getMuiIconComponent(c.icon) : null
+                      return (
+                        <div key={i} className={styles.contactItem}>
+                          {c.icon && (
+                            <span className={styles.contactIcon}>
+                              {isIconUrl ? (
+                                <img src={getImageUrl(c.icon)} alt="" className={styles.contactIconImg} />
+                              ) : IconComponent ? (
+                                <IconComponent size={22} className={styles.contactIconSvg} />
+                              ) : null}
+                            </span>
+                          )}
+                          <span className={styles.contactLabel}>{c.label}:</span>
+                          {c.href ? (
+                            <a href={c.href} className={`${styles.contactValue} ${a.contactValue}`} target={c.target} rel={c.rel}>{c.value}</a>
+                          ) : (
+                            <span className={`${styles.contactValue} ${a.contactValue}`}>{c.value}</span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
