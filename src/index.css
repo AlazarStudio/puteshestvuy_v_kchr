@@ -186,21 +186,6 @@ a {
 }
 
 /* Исправление z-index для полноэкранного режима Яндекс.Карт */
-/* Яндекс.Карты создают полноэкранный контейнер, который должен быть выше модалки (z-index: 10001) */
-.ymaps-fullscreen,
-[class*="ymaps-fullscreen"],
-body > div[style*="position: fixed"][style*="z-index"],
-div[class*="ymaps"][style*="position: fixed"] {
-  z-index: 10002 !important;
-}
-
-/* Также для контейнера карты в полноэкранном режиме */
-.ymaps-fullscreen-control,
-[class*="ymaps-fullscreen-control"] {
-  z-index: 10002 !important;
-}
-
-
-ymaps{
-  z-index: 100002 !important
-}
+/* Яндекс.Карты создают полноэкранный контейнер <ymaps> с position: absolute и z-index: 10000 */
+/* Модалка имеет z-index: 10001, поэтому карта должна быть выше */
+/* Примечание: CSS селекторы для кастомных элементов <ymaps> могут не работать, поэтому используем JavaScript */

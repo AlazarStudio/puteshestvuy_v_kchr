@@ -169,23 +169,48 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
 
     // Обработка полноэкранного режима - увеличиваем z-index чтобы карта была выше модалки
     const fixFullscreenZIndex = () => {
-      // Ищем полноэкранный контейнер и увеличиваем его z-index
-      const fullscreenContainer = document.querySelector('[class*="ymaps-fullscreen"], div[style*="position: fixed"][style*="z-index"]');
-      if (fullscreenContainer) {
-        fullscreenContainer.style.zIndex = '10002';
-      }
-      // Также проверяем все элементы с фиксированной позицией, которые могут быть полноэкранным контейнером
-      const allFixedElements = document.querySelectorAll('div[style*="position: fixed"]');
-      allFixedElements.forEach((el) => {
-        const style = window.getComputedStyle(el);
-        if (style.position === 'fixed' && (el.classList.toString().includes('ymaps') || el.querySelector('[class*="ymaps"]'))) {
+      // Яндекс.Карты создают полноэкранный контейнер как <ymaps> с position: absolute и z-index: 10000
+      // Ищем все элементы ymaps в body
+      const allYmapsElements = document.querySelectorAll('ymaps');
+      allYmapsElements.forEach((el) => {
+        const styleAttr = el.getAttribute('style') || '';
+        const computedStyle = window.getComputedStyle(el);
+        
+        // Проверяем, что это полноэкранный контейнер:
+        // - position: absolute
+        // - top: 0px или top:0px
+        // - left: 0px или left:0px
+        // - z-index: 10000 (или близкий к этому)
+        const isFullscreen = 
+          computedStyle.position === 'absolute' &&
+          (styleAttr.includes('top: 0px') || styleAttr.includes('top:0px') || computedStyle.top === '0px') &&
+          (styleAttr.includes('left: 0px') || styleAttr.includes('left:0px') || computedStyle.left === '0px') &&
+          (styleAttr.includes('z-index: 10000') || styleAttr.includes('z-index:10000') || computedStyle.zIndex === '10000');
+        
+        if (isFullscreen) {
           el.style.zIndex = '10002';
+        }
+      });
+      
+      // Также проверяем прямые дочерние элементы body (ymaps обычно добавляется туда)
+      const bodyChildren = Array.from(document.body.children);
+      bodyChildren.forEach((el) => {
+        if (el.tagName && el.tagName.toLowerCase() === 'ymaps') {
+          const styleAttr = el.getAttribute('style') || '';
+          const computedStyle = window.getComputedStyle(el);
+          if (computedStyle.position === 'absolute' && 
+              (styleAttr.includes('top: 0px') || styleAttr.includes('top:0px') || computedStyle.top === '0px')) {
+            el.style.zIndex = '10002';
+          }
         }
       });
     };
 
     const handleFullscreenEnter = () => {
+      // Вызываем несколько раз с задержками, так как элемент может создаваться асинхронно
+      fixFullscreenZIndex();
       setTimeout(fixFullscreenZIndex, 50);
+      setTimeout(fixFullscreenZIndex, 100);
       setTimeout(fixFullscreenZIndex, 200);
       setTimeout(fixFullscreenZIndex, 500);
     };
@@ -205,22 +230,40 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
     }
 
     // Также используем MutationObserver для отслеживания появления полноэкранного контейнера
-    const observer = new MutationObserver(() => {
-      fixFullscreenZIndex();
+    const observer = new MutationObserver((mutations) => {
+      // Проверяем, были ли добавлены новые элементы или изменены стили
+      let shouldFix = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1 && (node.tagName === 'YMAPS' || node.querySelector('ymaps'))) {
+              shouldFix = true;
+            }
+          });
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const target = mutation.target;
+          if (target.tagName === 'YMAPS' || (target.getAttribute && target.getAttribute('style')?.includes('z-index'))) {
+            shouldFix = true;
+          }
+        }
+      });
+      if (shouldFix) {
+        fixFullscreenZIndex();
+      }
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    observer.observe(document.body, { 
+      childList: true, 
+      subtree: true, 
+      attributes: true, 
+      attributeFilter: ['style'] 
+    });
 
     return () => {
-      // Отключаем observer
-      observer.disconnect();
       // Отписываемся от событий
-      if (map.container && typeof map.container.events !== 'undefined') {
-        try {
-          map.container.events.remove('fullscreenenter', handleFullscreenEnter);
-          map.container.events.remove('fullscreenexit', handleFullscreenExit);
-        } catch (e) {
-          // Игнорируем ошибки при отписке
-        }
+      if (map.container && map.container.events) {
+        map.container.events.remove('fullscreenenter', handleFullscreenEnter);
+        map.container.events.remove('fullscreenexit', handleFullscreenExit);
       }
       multiRouteRef.current = null;
       placemarkRef.current = null;
