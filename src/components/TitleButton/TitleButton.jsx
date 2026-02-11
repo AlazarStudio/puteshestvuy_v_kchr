@@ -17,7 +17,7 @@ export default function TitleButton({ title, buttonLink, desc }) {
         </>
       }
 
-      {desc && <div className={styles.desc}>{desc}</div>}
+      {desc && <div className={styles.desc} dangerouslySetInnerHTML={{ __html: desc }} />}
     </section>
   )
 }

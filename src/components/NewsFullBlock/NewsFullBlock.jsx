@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './NewsFullBlock.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
@@ -18,6 +19,73 @@ function formatDate(isoStr) {
 function stripHtml(html) {
   if (!html || typeof html !== 'string') return ''
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function NewsItemParallax({ item, formatDate, styles }) {
+  const cardRef = useRef(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const scaleValue = useMotionValue(1)
+  const xSpring = useSpring(x, { stiffness: 160, damping: 18, mass: 0.5 })
+  const ySpring = useSpring(y, { stiffness: 160, damping: 18, mass: 0.5 })
+  const scaleSpring = useSpring(scaleValue, { stiffness: 100, damping: 25, mass: 1 })
+
+  const handleMouseMove = (e) => {
+    const el = cardRef.current
+    if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    const px = (e.clientX - rect.left) / rect.width
+    const py = (e.clientY - rect.top) / rect.height
+    const dx = px - 0.5
+    const dy = py - 0.5
+
+    x.set(dx * 10)
+    y.set(dy * 10)
+  }
+
+  const handleMouseEnter = () => {
+    scaleValue.set(1.02)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+    scaleValue.set(1)
+  }
+
+  return (
+    <Link 
+      ref={cardRef}
+      to={`/news/${item.slug || item.id}`} 
+      className={styles.anotherNew}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={styles.img}>
+        <motion.img 
+          src={getImageUrl(item.image || item.preview || item.images?.[0]) || '/new1.png'} 
+          alt={item.title}
+          style={{
+            x: xSpring,
+            y: ySpring,
+            scale: scaleSpring,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+      </div>
+      <div className={styles.info}>
+        <div className={styles.tagDate}>
+          <div className={styles.tag}>новости</div>
+          <div className={styles.date}>{formatDate(item.publishedAt)}</div>
+        </div>
+        <div className={styles.shortTitle}>{item.title}</div>
+      </div>
+    </Link>
+  )
 }
 
 export default function NewsFullBlock() {
@@ -81,18 +149,12 @@ export default function NewsFullBlock() {
         {rest.length > 0 && (
           <div className={styles.bottom}>
             {rest.slice(0, 2).map((item) => (
-              <Link to={`/news/${item.slug || item.id}`} key={item.id} className={styles.anotherNew}>
-                <div className={styles.img}>
-                  <img src={getImageUrl(item.image || item.preview || item.images?.[0]) || '/new1.png'} alt={item.title} />
-                </div>
-                <div className={styles.info}>
-                  <div className={styles.tagDate}>
-                    <div className={styles.tag}>новости</div>
-                    <div className={styles.date}>{formatDate(item.publishedAt)}</div>
-                  </div>
-                  <div className={styles.shortTitle}>{item.title}</div>
-                </div>
-              </Link>
+              <NewsItemParallax 
+                key={item.id} 
+                item={item} 
+                formatDate={formatDate}
+                styles={styles}
+              />
             ))}
           </div>
         )}

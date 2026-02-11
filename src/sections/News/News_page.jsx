@@ -7,7 +7,7 @@ import styles from './News_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import NewsBlock from '@/components/NewsBlock/NewsBlock'
-import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import { publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'news_scroll_position'
 const ITEMS_PER_PAGE = 6
@@ -38,6 +38,13 @@ export default function News_page() {
   const [currentPage, setCurrentPage] = useState(1)
   const [error, setError] = useState(null)
   const observerTarget = useRef(null)
+  const [pageContent, setPageContent] = useState({
+    hero: {
+      title: 'НОВОСТИ',
+      description: 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
+      image: '/newBG.png',
+    },
+  })
 
   const fetchNews = useCallback(async (page = 1, reset = false) => {
     const startTime = Date.now()
@@ -170,12 +177,41 @@ export default function News_page() {
     return sortBy === 'newest' ? dateB - dateA : dateA - dateB
   })
 
+  // Загрузка данных страницы
+  useEffect(() => {
+    let cancelled = false
+    publicPagesAPI.get('news')
+      .then(({ data }) => {
+        if (!cancelled && data?.content?.hero) {
+          setPageContent({
+            hero: {
+              title: data.content.hero.title || 'НОВОСТИ',
+              description: data.content.hero.description || 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
+              image: data.content.hero.image || '/newBG.png',
+            },
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPageContent({
+            hero: {
+              title: 'НОВОСТИ',
+              description: 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
+              image: '/newBG.png',
+            },
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <main className={styles.main}>
       <ImgFullWidthBlock
-        img={'/newBG.png'}
-        title={'НОВОСТИ'}
-        desc={'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии'}
+        img={getImageUrl(pageContent.hero.image)}
+        title={pageContent.hero.title}
+        desc={pageContent.hero.description}
       />
 
       <CenterBlock>

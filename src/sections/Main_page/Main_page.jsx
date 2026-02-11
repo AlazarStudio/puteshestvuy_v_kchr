@@ -12,6 +12,7 @@ import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
+import ParallaxImage from '@/components/ParallaxImage'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 
 function stripHtml(html) {
@@ -94,10 +95,10 @@ export default function Main_page() {
   useEffect(() => {
     let cancelled = false
     setPlacesLoading(true)
-    
+
     // Проверяем, есть ли выбранные места в настройках главной страницы
     const placesItems = homeContent.placesItems || []
-    
+
     if (placesItems.length > 0) {
       // Загружаем полные данные мест по их ID, чтобы получить актуальные images[0]
       const placeIds = placesItems.map(p => p.placeId || p.id).filter(Boolean)
@@ -107,23 +108,23 @@ export default function Main_page() {
             if (cancelled) return
             const allPlaces = data?.items || []
             const placesMap = new Map(allPlaces.map(p => [p.id, p]))
-            
+
             // Используем выбранные места из настроек, но берем актуальные данные из API
             const list = placesItems
               .map((savedPlace) => {
                 const placeId = savedPlace.placeId || savedPlace.id
                 const fullPlace = placesMap.get(placeId)
-                
+
                 // Используем полные данные места, если они есть
                 if (fullPlace) {
                   return fullPlace
                 }
-                
+
                 // Если место не найдено в API, возвращаем null (будет отфильтровано)
                 return null
               })
               .filter(Boolean)
-            
+
             if (!cancelled) {
               setPlaces(list)
               setPlacesLoading(false)
@@ -138,7 +139,7 @@ export default function Main_page() {
         return
       }
     }
-    
+
     // Если выбранных мест нет, загружаем из API
     publicPlacesAPI.getAll({ limit: 4, page: 1 })
       .then(({ data }) => {
@@ -183,12 +184,12 @@ export default function Main_page() {
         {homeContent.banners && homeContent.banners.length > 0 && (() => {
           const activeBanners = homeContent.banners.filter((banner) => banner.isActive === true);
           if (activeBanners.length === 0) return null;
-          
+
           return (
             <CenterBlock>
-              <section style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
+              <section style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: 20,
                 width: '100%',
                 gridAutoRows: 'auto',
@@ -204,7 +205,7 @@ export default function Main_page() {
                   // Паттерн: пары баннеров рядом, если нечетное количество - последний на всю ширину
                   const totalBanners = activeBanners.length;
                   let isFullWidth = false;
-                  
+
                   if (totalBanners === 1) {
                     // Один баннер - на всю ширину
                     isFullWidth = true;
@@ -214,7 +215,7 @@ export default function Main_page() {
                     const positionInPair = index % 2;
                     const isLastBanner = index === totalBanners - 1;
                     const isOddTotal = totalBanners % 2 === 1;
-                    
+
                     if (isLastBanner && isOddTotal) {
                       // Последний баннер при нечетном количестве - на всю ширину
                       isFullWidth = true;
@@ -223,9 +224,9 @@ export default function Main_page() {
                       isFullWidth = false;
                     }
                   }
-                  
+
                   const bannerStyle = {
-                    display: 'flex',
+                    display: 'block',
                     borderRadius: '20px',
                     overflow: 'hidden',
                     textDecoration: 'none',
@@ -233,33 +234,38 @@ export default function Main_page() {
                     cursor: 'pointer',
                     gridColumn: isFullWidth ? '1 / -1' : 'auto',
                     width: '100%',
+                    height: isFullWidth ? 'fit-content' : '300px', // Фиксированная высота для ParallaxImage
                   };
-                  
+
                   const BannerComponent = isExternal ? 'a' : Link;
                   const bannerProps = isExternal
                     ? { href: banner.link, target: '_blank', rel: 'noopener noreferrer' }
                     : { to: banner.link || '#' };
-                  
+
                   return (
                     <BannerComponent
                       key={banner.id || index}
                       {...bannerProps}
                       style={bannerStyle}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
+                    // onMouseEnter={(e) => {
+                    //   e.currentTarget.style.transform = 'translateY(-4px)';
+                    // }}
+                    // onMouseLeave={(e) => {
+                    //   e.currentTarget.style.transform = 'translateY(0)';
+                    // }}
                     >
-                      <img
+                      <ParallaxImage
                         src={getImageUrl(banner.image) || '/placeholder.png'}
                         alt="Баннер"
+                        maxOffset={15}
+                        scale={1.03}
                         style={{
                           width: '100%',
-                          height: isFullWidth ? 'auto' : '100%',
+                          height: '100%',
+                          borderRadius: '20px',
+                        }}
+                        imgStyle={{
                           objectFit: 'cover',
-                          display: 'block',
                         }}
                       />
                     </BannerComponent>

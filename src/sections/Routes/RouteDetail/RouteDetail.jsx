@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
+import ParallaxImage from '@/components/ParallaxImage'
 import { publicRoutesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
@@ -451,30 +452,72 @@ export default function RouteDetail({ routeSlug }) {
           <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''}`}>
             {photos.length === 1 && (
               <div className={styles.galleryFull} onClick={() => openModal(0)}>
-                <img src={photos[0]?.src} alt="Фото 1" />
+                <ParallaxImage
+                  src={photos[0]?.src}
+                  alt="Фото 1"
+                  maxOffset={10}
+                  scale={1.03}
+                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                  imgStyle={{ objectFit: 'cover' }}
+                />
               </div>
             )}
             {photos.length === 2 && (
               <>
                 <div className={styles.galleryHalf} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото 1" />
+                  <ParallaxImage
+                    src={photos[0]?.src}
+                    alt="Фото 1"
+                    maxOffset={10}
+                    scale={1.03}
+                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    imgStyle={{ objectFit: 'cover' }}
+                  />
                 </div>
                 <div className={styles.galleryHalf} onClick={() => openModal(1)}>
-                  <img src={photos[1]?.src} alt="Фото 2" />
+                  <ParallaxImage
+                    src={photos[1]?.src}
+                    alt="Фото 2"
+                    maxOffset={10}
+                    scale={1.03}
+                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    imgStyle={{ objectFit: 'cover' }}
+                  />
                 </div>
               </>
             )}
             {photos.length === 3 && (
               <>
                 <div className={styles.galleryThirdLeft} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото 1" />
+                  <ParallaxImage
+                    src={photos[0]?.src}
+                    alt="Фото 1"
+                    maxOffset={10}
+                    scale={1.03}
+                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    imgStyle={{ objectFit: 'cover' }}
+                  />
                 </div>
                 <div className={styles.galleryThirdRight}>
                   <div className={styles.galleryThirdRightItem} onClick={() => openModal(1)}>
-                    <img src={photos[1]?.src} alt="Фото 2" />
+                    <ParallaxImage
+                      src={photos[1]?.src}
+                      alt="Фото 2"
+                      maxOffset={10}
+                      scale={1.03}
+                      style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                      imgStyle={{ objectFit: 'cover' }}
+                    />
                   </div>
                   <div className={styles.galleryThirdRightItem} onClick={() => openModal(2)}>
-                    <img src={photos[2]?.src} alt="Фото 3" />
+                    <ParallaxImage
+                      src={photos[2]?.src}
+                      alt="Фото 3"
+                      maxOffset={10}
+                      scale={1.03}
+                      style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                      imgStyle={{ objectFit: 'cover' }}
+                    />
                   </div>
                 </div>
               </>
@@ -482,7 +525,14 @@ export default function RouteDetail({ routeSlug }) {
             {photos.length >= 4 && (
               <>
                 <div className={styles.galleryMain} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото 1" />
+                  <ParallaxImage
+                    src={photos[0]?.src}
+                    alt="Фото 1"
+                    maxOffset={10}
+                    scale={1.03}
+                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    imgStyle={{ objectFit: 'cover' }}
+                  />
                 </div>
                 <div className={styles.galleryGrid}>
                   <div className={styles.galleryGridRow}>
@@ -494,7 +544,14 @@ export default function RouteDetail({ routeSlug }) {
                           className={styles.galleryItem}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <img src={photo.src} alt={`Фото ${photoIndex + 1}`} />
+                          <ParallaxImage
+                            src={photo.src}
+                            alt={`Фото ${photoIndex + 1}`}
+                            maxOffset={10}
+                            scale={1.03}
+                            style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                            imgStyle={{ objectFit: 'cover' }}
+                          />
                         </div>
                       )
                     })}
@@ -509,7 +566,14 @@ export default function RouteDetail({ routeSlug }) {
                           className={`${styles.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <img src={photo.src} alt={`Фото ${photoIndex + 1}`} />
+                          <ParallaxImage
+                            src={photo.src}
+                            alt={`Фото ${photoIndex + 1}`}
+                            maxOffset={10}
+                            scale={1.03}
+                            style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                            imgStyle={{ objectFit: 'cover' }}
+                          />
                           {isLast && (
                             <div
                               className={styles.moreButton}

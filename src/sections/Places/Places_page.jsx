@@ -9,7 +9,7 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
-import { publicPlacesAPI } from '@/lib/api'
+import { publicPlacesAPI, publicPagesAPI } from '@/lib/api'
 import { getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -45,6 +45,13 @@ export default function Places_page() {
   const observerTarget = useRef(null)
   const searchDebounceRef = useRef(null)
   const isUpdatingFromUrlRef = useRef(false)
+  const [pageContent, setPageContent] = useState({
+    hero: {
+      title: 'ИНТЕРЕСНЫЕ МЕСТА',
+      description: 'Создайте свой уникальный маршрут!',
+      image: '/full_places_bg.jpg',
+    },
+  })
 
   // Синхронизация searchQuery с URL параметром search при изменении URL
   useEffect(() => {
@@ -547,12 +554,41 @@ export default function Places_page() {
     }
   }, [isModalOpen])
 
+  // Загрузка данных страницы
+  useEffect(() => {
+    let cancelled = false
+    publicPagesAPI.get('places')
+      .then(({ data }) => {
+        if (!cancelled && data?.content?.hero) {
+          setPageContent({
+            hero: {
+              title: data.content.hero.title || 'ИНТЕРЕСНЫЕ МЕСТА',
+              description: data.content.hero.description || 'Создайте свой уникальный маршрут!',
+              image: data.content.hero.image || '/full_places_bg.jpg',
+            },
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPageContent({
+            hero: {
+              title: 'ИНТЕРЕСНЫЕ МЕСТА',
+              description: 'Создайте свой уникальный маршрут!',
+              image: '/full_places_bg.jpg',
+            },
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <main className={styles.main}>
       <ImgFullWidthBlock
-        img={'/full_places_bg.jpg'}
-        title={'ИНТЕРЕСНЫЕ МЕСТА'}
-        desc={'Создайте свой уникальный маршрут!'}
+        img={getImageUrl(pageContent.hero.image)}
+        title={pageContent.hero.title}
+        desc={pageContent.hero.description}
       />
 
       <CenterBlock>

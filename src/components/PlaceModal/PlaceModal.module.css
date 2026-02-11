@@ -209,7 +209,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryCount1 .galleryFull:hover img {
@@ -233,7 +233,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryCount2 .galleryHalf:hover img {
@@ -257,7 +257,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryCount3 .galleryThirdLeft:hover img {
@@ -284,7 +284,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryCount3 .galleryThirdRightItem:hover img {
@@ -303,7 +303,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryMain:hover img {
@@ -330,7 +330,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  /* transition: transform 0.3s ease; */
 }
 
 .galleryItem:hover>img {

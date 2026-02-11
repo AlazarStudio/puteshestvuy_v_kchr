@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
-import { Link } from 'react-router-dom'
 import styles from './Services_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
-import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
-import { publicServicesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
+import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
+import { publicServicesAPI, publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { CATEGORY_TO_TEMPLATE_KEY, DEFAULT_TEMPLATE_KEY } from './ServiceDetail/serviceTypeTemplates'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
@@ -134,6 +133,13 @@ export default function Services_page() {
   const [allServicesForSearch, setAllServicesForSearch] = useState([])
   const [allArticlesForSearch, setAllArticlesForSearch] = useState([])
   const [searchFallback, setSearchFallback] = useState(null)
+  const [pageContent, setPageContent] = useState({
+    hero: {
+      title: 'УСЛУГИ И СЕРВИСЫ',
+      description: 'Найдите надёжных гидов, прокат снаряжения и другие услуги для комфортного путешествия по Карачаево-Черкесии',
+      image: '/full_roates_bg.jpg',
+    },
+  })
   const searchDebounceRef = useRef(null)
 
   // Синхронизация фильтров с URL при переходе по ссылке (например, из хедера)
@@ -465,12 +471,41 @@ export default function Services_page() {
 
   const showArticlesOnly = (filters.articles || []).includes('Статьи')
 
+  // Загрузка данных страницы
+  useEffect(() => {
+    let cancelled = false
+    publicPagesAPI.get('services')
+      .then(({ data }) => {
+        if (!cancelled && data?.content?.hero) {
+          setPageContent({
+            hero: {
+              title: data.content.hero.title || 'УСЛУГИ И СЕРВИСЫ',
+              description: data.content.hero.description || 'Найдите надёжных гидов, прокат снаряжения и другие услуги для комфортного путешествия по Карачаево-Черкесии',
+              image: data.content.hero.image || '/full_roates_bg.jpg',
+            },
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPageContent({
+            hero: {
+              title: 'УСЛУГИ И СЕРВИСЫ',
+              description: 'Найдите надёжных гидов, прокат снаряжения и другие услуги для комфортного путешествия по Карачаево-Черкесии',
+              image: '/full_roates_bg.jpg',
+            },
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <main className={styles.main}>
       <ImgFullWidthBlock
-        img="/full_roates_bg.jpg"
-        title="УСЛУГИ И СЕРВИСЫ"
-        desc="Найдите надёжных гидов, прокат снаряжения и другие услуги для комфортного путешествия по Карачаево-Черкесии"
+        img={getImageUrl(pageContent.hero.image)}
+        title={pageContent.hero.title}
+        desc={pageContent.hero.description}
       />
 
       <CenterBlock>
@@ -574,38 +609,15 @@ export default function Services_page() {
                   {services.map((service) => {
                     const isArticle = service.isArticle === true
                     const serviceUrl = isArticle ? `/news/${service.slug || service.id}` : `/services/${service.slug || service.id}`
+                    
                     return (
-                    <Link
-                      key={service.id}
-                      to={serviceUrl}
-                      className={styles.serviceCard}
-                    >
-                      <div className={styles.serviceCardImg}>
-                        <img src={getImageUrl(service.image || service.images?.[0])} alt={service.title} />
-                      </div>
-                      {!isArticle && (
-                      <div className={styles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
-                        <div className={styles.serviceCardLike}>
-                          <FavoriteButton entityType="service" entityId={service.id} />
-                        </div>
-                      </div>
-                      )}
-                      <div className={styles.serviceCardInfo}>
-                        <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
-                        {!service.isArticle && (service.reviewsCount ?? 0) > 0 && (
-                        <div className={styles.serviceCardRating}>
-                          <div className={styles.serviceCardStars}>
-                            <img src="/star.png" alt="" />
-                            {service.rating ?? '—'}
-                          </div>
-                          <div className={styles.serviceCardFeedback}>
-                            {service.reviewsCount ?? 0} {service.reviewsCount === 1 ? 'отзыв' : service.reviewsCount >= 2 && service.reviewsCount <= 4 ? 'отзыва' : 'отзывов'}
-                          </div>
-                        </div>
-                        )}
-                        <div className={styles.serviceCardName}>{service.title}</div>
-                      </div>
-                    </Link>
+                      <ServiceCardWithParallax
+                        key={service.id}
+                        service={service}
+                        serviceUrl={serviceUrl}
+                        isArticle={isArticle}
+                        styles={styles}
+                      />
                     )
                   })}
                 </div>

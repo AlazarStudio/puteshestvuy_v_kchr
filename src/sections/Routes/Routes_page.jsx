@@ -8,7 +8,7 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
-import { publicRoutesAPI, getImageUrl } from '@/lib/api'
+import { publicRoutesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
 const SCROLL_KEY = 'routes_scroll_position'
@@ -30,6 +30,13 @@ export default function Routes_page() {
   const [searchFallback, setSearchFallback] = useState(null)
   const observerTarget = useRef(null)
   const searchDebounceRef = useRef(null)
+  const [pageContent, setPageContent] = useState({
+    hero: {
+      title: 'МАРШРУТЫ',
+      description: 'Наши маршруты созданы для самостоятельного прохождения. Вы можете создать свой собственный маршрут в конструкторе во вкладке "Интересные места"',
+      image: '/full_roates_bg.jpg',
+    },
+  })
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -424,12 +431,41 @@ export default function Routes_page() {
     }
   }, [])
 
+  // Загрузка данных страницы
+  useEffect(() => {
+    let cancelled = false
+    publicPagesAPI.get('routes')
+      .then(({ data }) => {
+        if (!cancelled && data?.content?.hero) {
+          setPageContent({
+            hero: {
+              title: data.content.hero.title || 'МАРШРУТЫ',
+              description: data.content.hero.description || 'Наши маршруты созданы для самостоятельного прохождения. Вы можете создать свой собственный маршрут в конструкторе во вкладке "Интересные места"',
+              image: data.content.hero.image || '/full_roates_bg.jpg',
+            },
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPageContent({
+            hero: {
+              title: 'МАРШРУТЫ',
+              description: 'Наши маршруты созданы для самостоятельного прохождения. Вы можете создать свой собственный маршрут в конструкторе во вкладке "Интересные места"',
+              image: '/full_roates_bg.jpg',
+            },
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <main className={styles.main}>
       <ImgFullWidthBlock
-        img={'/full_roates_bg.jpg'}
-        title={'МАРШРУТЫ'}
-        desc={'Наши маршруты созданы для самостоятельного прохождения. Вы можете создать свой собственный маршрут в конструкторе во вкладке "Интересные места"'}
+        img={getImageUrl(pageContent.hero.image)}
+        title={pageContent.hero.title}
+        desc={pageContent.hero.description}
       />
 
       <CenterBlock>

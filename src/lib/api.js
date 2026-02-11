@@ -255,4 +255,15 @@ export const feedbackAPI = {
   send: (data) => api.post('/footer/feedback', data),
 };
 
+// Pages API (admin — для управления страницами сайта)
+export const pagesAPI = {
+  get: (pageName) => api.get(`/admin/pages/${pageName}`),
+  update: (pageName, content) => api.put(`/admin/pages/${pageName}`, { content }),
+};
+
+// Pages API (public — для страниц сайта)
+export const publicPagesAPI = {
+  get: (pageName) => api.get(`/pages/${pageName}`),
+};
+
 export default api;

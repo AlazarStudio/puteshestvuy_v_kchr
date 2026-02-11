@@ -7,6 +7,7 @@ import { stripHtml } from '@/lib/utils';
 import { AdminHeaderRightContext } from '../layout';
 import ImageCropModal from '../components/ImageCropModal';
 import FooterLinkSelector from '../footer/FooterLinkSelector';
+import RichTextEditor from '@/components/RichTextEditor';
 import styles from '../admin.module.css';
 
 // Ссылки из хедера сайта для выпадающих списков кнопок
@@ -1095,12 +1096,11 @@ export default function AdminHomePage() {
           </div>
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Описание</label>
-            <textarea
+            <RichTextEditor
               value={content.firstTimeDesc ?? ''}
-              onChange={(e) => update('firstTimeDesc', e.target.value)}
-              className={styles.formTextarea}
-              rows={4}
+              onChange={(val) => update('firstTimeDesc', val)}
               placeholder="Специально для вас мы создали раздел..."
+              minHeight={200}
             />
           </div>
           <div className={styles.formGroup}>

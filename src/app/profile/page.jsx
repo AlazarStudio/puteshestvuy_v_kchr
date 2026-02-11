@@ -12,6 +12,7 @@ import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
 import { ImageCropModal, ConfirmModal } from '@/app/admin/components'
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor'
 import styles from './profile.module.css'
@@ -1621,29 +1622,12 @@ export default function ProfilePage() {
                 <div className={serviceStyles.servicesGrid}>
                   {favoriteServices.map((service) => (
                     <div key={service.id} className={styles.serviceCardWrap}>
-                      <Link to={`/services/${service.slug || service.id}`} className={serviceStyles.serviceCard}>
-                        <div className={serviceStyles.serviceCardImg}>
-                          <img src={getImageUrl(service.image || service.images?.[0]) || '/placeholder.jpg'} alt={service.title} onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder.jpg' }} />
-                        </div>
-                        <div className={serviceStyles.serviceCardTopLine} data-no-navigate onClick={(e) => e.preventDefault()}>
-                          <div className={serviceStyles.serviceCardLike}>
-                            <FavoriteButton entityType="service" entityId={service.id} />
-                          </div>
-                        </div>
-                        <div className={serviceStyles.serviceCardInfo}>
-                          <div className={serviceStyles.serviceCardCategory}>{service.category || 'Услуга'}</div>
-                          <div className={serviceStyles.serviceCardRating}>
-                            <div className={serviceStyles.serviceCardStars}>
-                              <img src="/star.png" alt="" />
-                              {service.rating ?? '—'}
-                            </div>
-                            <div className={serviceStyles.serviceCardFeedback}>
-                              {service.reviewsCount ?? 0} отзывов
-                            </div>
-                          </div>
-                          <div className={serviceStyles.serviceCardName}>{service.title}</div>
-                        </div>
-                      </Link>
+                      <ServiceCardWithParallax
+                        service={service}
+                        serviceUrl={`/services/${service.slug || service.id}`}
+                        isArticle={false}
+                        styles={serviceStyles}
+                      />
                     </div>
                   ))}
                 </div>

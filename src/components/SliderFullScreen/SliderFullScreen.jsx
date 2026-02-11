@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './SliderFullScreen.module.css'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
@@ -13,6 +14,70 @@ const TIME_RUNNING = 500
 const IMAGE_DELAY_MS = 2000
 const FADE_DURATION_MS = 400
 const VIDEO_READY_DELAY_MS = 1000
+
+function ThumbnailItem({ slide, placeHref, styles, maxOffset = 10, scale = 1.02 }) {
+  const cardRef = useRef(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const scaleValue = useMotionValue(1)
+  const xSpring = useSpring(x, { stiffness: 160, damping: 18, mass: 0.5 })
+  const ySpring = useSpring(y, { stiffness: 160, damping: 18, mass: 0.5 })
+  const scaleSpring = useSpring(scaleValue, { stiffness: 80, damping: 25, mass: 1 })
+
+  const handleMouseMove = (e) => {
+    const el = cardRef.current
+    if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    const px = (e.clientX - rect.left) / rect.width
+    const py = (e.clientY - rect.top) / rect.height
+    const dx = px - 0.5
+    const dy = py - 0.5
+
+    x.set(dx * maxOffset)
+    y.set(dy * maxOffset)
+  }
+
+  const handleMouseEnter = () => {
+    scaleValue.set(scale)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+    scaleValue.set(1)
+  }
+
+  return (
+    <Link 
+      ref={cardRef}
+      to={placeHref(slide)} 
+      className={styles.link}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+        <motion.img
+          src={slide.image}
+          alt={slide.title}
+          style={{
+            x: xSpring,
+            y: ySpring,
+            scale: scaleSpring,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+      </div>
+      <div className={styles.content}>
+        <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
+        <div className={styles.title}>{slide.title}</div>
+      </div>
+    </Link>
+  )
+}
 
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
@@ -36,7 +101,7 @@ function placeToSlide(place) {
   }
 }
 
-export default function SliderFullScreen() {
+export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScale = 1.03 }) {
   const [slides, setSlides] = useState([])
   const initialSlidesRef = useRef([])
   const [isLoading, setIsLoading] = useState(true)
@@ -381,13 +446,13 @@ export default function SliderFullScreen() {
               <RouteConstructorButton placeId={slide.id} />
               <FavoriteButton entityType="place" entityId={slide.id} />
             </div>
-            <Link to={placeHref(slide)} className={styles.link}>
-              <img src={slide.image} alt={slide.title} />
-              <div className={styles.content}>
-                <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
-                <div className={styles.title}>{slide.title}</div>
-              </div>
-            </Link>
+            <ThumbnailItem 
+              slide={slide} 
+              placeHref={placeHref} 
+              styles={styles}
+              maxOffset={thumbnailMaxOffset}
+              scale={thumbnailScale}
+            />
           </div>
         ))}
       </div>

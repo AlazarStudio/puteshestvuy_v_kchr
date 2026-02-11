@@ -12,7 +12,7 @@ export default function ImgFullWidthBlock({ img, title, desc }) {
       </div>
       <div className={styles.text}>
         <div className={styles.title}>{title}</div>
-        <div className={styles.desc}>{desc}</div>
+        <div className={styles.desc} dangerouslySetInnerHTML={{ __html: desc || '' }} />
       </div>
     </div>
   )
