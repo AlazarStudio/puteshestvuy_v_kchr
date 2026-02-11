@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Places_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
@@ -11,11 +12,15 @@ import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import { publicPlacesAPI } from '@/lib/api'
 import { getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
+import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
 const ITEMS_PER_PAGE = 12
 
 
 export default function Places_page() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [sortBy, setSortBy] = useState('popularity')
   const [places, setPlaces] = useState([])
   const [total, setTotal] = useState(0)
@@ -24,15 +29,50 @@ export default function Places_page() {
   const [hasMore, setHasMore] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [filters, setFilters] = useState({})
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // Инициализируем из URL параметра search при первом рендере
+    return searchParams.get('search') || ''
+  })
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [filterOptions, setFilterOptions] = useState(null)
+  const [allPlacesForSearch, setAllPlacesForSearch] = useState([])
+  const [searchFallback, setSearchFallback] = useState(null)
   const scrollPositionRef = useRef(0)
   const isClosingRef = useRef(false)
-  const [currentPath, setCurrentPath] = useState('')
+  const isOpeningRef = useRef(false)
   const observerTarget = useRef(null)
+  const searchDebounceRef = useRef(null)
+  const isUpdatingFromUrlRef = useRef(false)
+
+  // Синхронизация searchQuery с URL параметром search при изменении URL
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search') || ''
+    if (searchFromUrl !== searchQuery) {
+      isUpdatingFromUrlRef.current = true
+      setSearchQuery(searchFromUrl)
+    }
+  }, [searchParams, location.search]) // Добавляем location.search для надежности
+
+  // Обновление URL при изменении searchQuery пользователем (но не создаем цикл)
+  useEffect(() => {
+    if (isUpdatingFromUrlRef.current) {
+      isUpdatingFromUrlRef.current = false
+      return
+    }
+    
+    const currentSearchInUrl = searchParams.get('search') || ''
+    if (searchQuery !== currentSearchInUrl) {
+      if (searchQuery) {
+        setSearchParams({ search: searchQuery }, { replace: true })
+      } else {
+        const newParams = new URLSearchParams(searchParams)
+        newParams.delete('search')
+        setSearchParams(newParams, { replace: true })
+      }
+    }
+  }, [searchQuery])
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -41,6 +81,7 @@ export default function Places_page() {
   const handlePlaceClick = async (place) => {
     scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
     isClosingRef.current = false
+    isOpeningRef.current = true
     setModalLoading(true)
     setIsModalOpen(true)
     setSelectedPlace(null)
@@ -48,9 +89,14 @@ export default function Places_page() {
     try {
       const { data } = await publicPlacesAPI.getByIdOrSlug(place.id)
       setSelectedPlace(data)
-      window.history.pushState({ place: data.slug }, '', `/places/${data.slug}`)
+      navigate(`/places/${data.slug}`, { replace: false })
+      // Сбрасываем флаг открытия после небольшой задержки
+      setTimeout(() => {
+        isOpeningRef.current = false
+      }, 100)
     } catch (err) {
       setIsModalOpen(false)
+      isOpeningRef.current = false
       console.error(err)
     } finally {
       setModalLoading(false)
@@ -61,8 +107,8 @@ export default function Places_page() {
     isClosingRef.current = true
     setIsModalOpen(false)
 
-    // Возвращаем URL обратно используя history API
-    window.history.pushState({}, '', '/places')
+    // Возвращаем URL обратно используя navigate
+    navigate('/places', { replace: true })
 
     // Очищаем selectedPlace после завершения анимации
     setTimeout(() => {
@@ -81,7 +127,7 @@ export default function Places_page() {
       publicPlacesAPI.getByIdOrSlug(placeId)
         .then(({ data }) => {
           setSelectedPlace(data)
-          window.history.pushState({ place: data.slug }, '', `/places/${data.slug}`)
+          navigate(`/places/${data.slug}`, { replace: false })
         })
         .catch((err) => {
           console.error(err)
@@ -139,6 +185,71 @@ export default function Places_page() {
     return () => { cancelled = true }
   }, [])
 
+  // Загрузка всех мест для умного поиска (один раз при монтировании)
+  useEffect(() => {
+    let cancelled = false
+    publicPlacesAPI.getAll({ limit: 1000 })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setAllPlacesForSearch(data?.items || [])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAllPlacesForSearch([])
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  // Умный поиск с fallback логикой
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+
+    if (!searchQuery || !searchQuery.trim()) {
+      setSearchFallback(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const performSearch = async (query) => {
+        if (!query || !query.trim()) return []
+        const lowerQuery = query.toLowerCase().trim()
+        
+        // Ищем в названии, описании и локации
+        return allPlacesForSearch.filter(item => {
+          // Стандартный поиск в объекте (название, описание)
+          if (searchInObject(item, lowerQuery)) {
+            return true
+          }
+          
+          // Дополнительно ищем в локации
+          const location = item.location || ''
+          if (location && location.toLowerCase().includes(lowerQuery)) {
+            return true
+          }
+          
+          return false
+        })
+      }
+
+      const { results, fallback } = await searchWithFallback(searchQuery, performSearch)
+      setSearchFallback(fallback)
+      
+      // Если есть fallback, используем его для поиска через API
+      if (fallback && fallback !== searchQuery.trim()) {
+        // Обновляем searchQuery на fallback значение для API запроса
+        // Но это может вызвать бесконечный цикл, поэтому лучше использовать отдельное состояние
+      }
+    }, 300)
+
+    searchDebounceRef.current = timer
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchQuery, allPlacesForSearch])
+
   // Функция загрузки мест
   const fetchPlaces = useCallback(async (page = 1, reset = false) => {
     const startTime = Date.now()
@@ -151,10 +262,13 @@ export default function Places_page() {
         setLoadingMore(true)
       }
       
+      // Используем fallback запрос, если он есть, иначе оригинальный
+      const effectiveSearchQuery = searchFallback || searchQuery.trim()
+      
       const params = {
         page,
         limit: ITEMS_PER_PAGE,
-        ...(searchQuery.trim() && { search: searchQuery.trim() }),
+        ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
         ...(sortBy && { sortBy }),
         ...(filters.directions?.length > 0 && { directions: filters.directions }),
         ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
@@ -168,8 +282,47 @@ export default function Places_page() {
         }
       }
       const { data } = await publicPlacesAPI.getAll(params)
-      const newItems = data.items || []
-      const totalItems = data.pagination?.total ?? 0
+      let newItems = data.items || []
+      let totalItems = data.pagination?.total ?? 0
+      
+      // Если есть поисковый запрос и результатов нет или мало, ищем в локации
+      if (effectiveSearchQuery && newItems.length === 0 && allPlacesForSearch.length > 0) {
+        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
+        
+        // Ищем места, где в локации есть совпадение
+        const placesWithMatchingLocation = allPlacesForSearch.filter(place => {
+          const location = place.location || ''
+          return location.toLowerCase().includes(lowerQuery)
+        })
+        
+        if (placesWithMatchingLocation.length > 0) {
+          // Берем только нужное количество для текущей страницы
+          const startIndex = (page - 1) * ITEMS_PER_PAGE
+          const endIndex = startIndex + ITEMS_PER_PAGE
+          newItems = placesWithMatchingLocation.slice(startIndex, endIndex)
+          totalItems = placesWithMatchingLocation.length
+        }
+      } else if (effectiveSearchQuery && newItems.length > 0) {
+        // Если есть результаты от API, дополнительно проверяем локацию для полноты
+        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
+        
+        // Проверяем, может быть есть еще места с локацией, которые API не вернул
+        const placesWithMatchingLocation = allPlacesForSearch.filter(place => {
+          // Пропускаем уже найденные места
+          if (newItems.some(item => item.id === place.id || item._id === place._id)) {
+            return false
+          }
+          
+          const location = place.location || ''
+          return location.toLowerCase().includes(lowerQuery)
+        })
+        
+        // Добавляем найденные места с локацией к результатам
+        if (placesWithMatchingLocation.length > 0) {
+          newItems = [...newItems, ...placesWithMatchingLocation.slice(0, ITEMS_PER_PAGE - newItems.length)]
+          totalItems = Math.max(totalItems, newItems.length)
+        }
+      }
       
       if (reset) {
         setPlaces(newItems)
@@ -203,14 +356,14 @@ export default function Places_page() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [filters, searchQuery, sortBy, filterOptions])
+  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, allPlacesForSearch])
 
   // Загрузка мест при изменении фильтров/поиска/сортировки
   useEffect(() => {
     setCurrentPage(1)
     setHasMore(true)
     fetchPlaces(1, true)
-  }, [filters, searchQuery, sortBy, filterOptions])
+  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, fetchPlaces])
 
   // Intersection Observer для lazy load
   useEffect(() => {
@@ -237,21 +390,7 @@ export default function Places_page() {
     }
   }, [hasMore, loading, loadingMore, currentPage, fetchPlaces])
 
-  // Отслеживаем изменения пути
-  useEffect(() => {
-    const updatePath = () => {
-      setCurrentPath(window.location.pathname)
-    }
-
-    updatePath()
-    window.addEventListener('popstate', updatePath)
-
-    return () => {
-      window.removeEventListener('popstate', updatePath)
-    }
-  }, [])
-
-  // Проверяем URL при загрузке страницы или изменении пути
+  // Проверяем URL при изменении location (для переходов со слайдера, из поиска или навигации)
   useEffect(() => {
     // Если модалка закрывается, сбрасываем флаг и выходим
     if (isClosingRef.current) {
@@ -259,29 +398,63 @@ export default function Places_page() {
       return
     }
 
-    // Проверяем текущий URL (может быть /places/slug)
-    const path = window.location.pathname
+    // Если модалка открывается программно (через handlePlaceClick), не обрабатываем изменение URL
+    if (isOpeningRef.current) {
+      return
+    }
+
+    // Проверяем текущий путь из location
+    const path = location.pathname
     const pathParts = path.split('/').filter(Boolean)
     const placeSlug = pathParts[pathParts.length - 1]
 
     // Если это не просто /places, значит есть slug
-    if (placeSlug && placeSlug !== 'places' && !isModalOpen && places.length > 0) {
-      const place = places.find((p) => p.slug === placeSlug)
+    if (placeSlug && placeSlug !== 'places' && !isModalOpen) {
+      // Сначала пытаемся найти место в текущем списке
+      const place = places.find((p) => p.slug === placeSlug || String(p.id) === placeSlug)
+      
       if (place) {
+        // Место найдено в списке, открываем модалку
         scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
+        setModalLoading(true)
+        setIsModalOpen(true)
         publicPlacesAPI.getByIdOrSlug(place.id)
           .then(({ data }) => {
             setSelectedPlace(data)
-            setIsModalOpen(true)
+            setModalLoading(false)
           })
-          .catch(console.error)
+          .catch((err) => {
+            console.error(err)
+            setIsModalOpen(false)
+            setModalLoading(false)
+          })
+      } else {
+        // Место не найдено в списке (например, из-за фильтров или еще не загружено)
+        // Загружаем место напрямую по slug
+        scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
+        setModalLoading(true)
+        setIsModalOpen(true)
+        setSelectedPlace(null)
+        publicPlacesAPI.getByIdOrSlug(placeSlug)
+          .then(({ data }) => {
+            setSelectedPlace(data)
+            setModalLoading(false)
+          })
+          .catch((err) => {
+            console.error(err)
+            setIsModalOpen(false)
+            setModalLoading(false)
+            // Если место не найдено, возвращаем на /places
+            navigate('/places', { replace: true })
+          })
       }
-    } else if (path === '/places' && isModalOpen && !modalLoading) {
+    } else if (path === '/places' && isModalOpen && !modalLoading && !isClosingRef.current && !isOpeningRef.current) {
       // Если вернулись на /places, закрываем модалку (не закрываем во время загрузки нового места — URL ещё /places)
+      // Но только если это не было вызвано программно
       setIsModalOpen(false)
       setSelectedPlace(null)
     }
-  }, [currentPath, isModalOpen, places.length, modalLoading])
+  }, [location.pathname, isModalOpen, places, modalLoading])
 
   // Обработка навигации браузера (назад/вперед)
   useEffect(() => {
@@ -391,6 +564,9 @@ export default function Places_page() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Введите запрос"
+            suggestionsData={allPlacesForSearch || []}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
           />
           <div className={styles.places}>
             <div className={styles.placesSort}>

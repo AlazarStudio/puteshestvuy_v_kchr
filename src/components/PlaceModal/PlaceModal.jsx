@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
 import 'swiper/css'
@@ -29,6 +30,7 @@ const hasTextContent = (html) => {
 }
 
 export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoading = false }) {
+
   const photos = useMemo(() => {
     if (!place?.images?.length) return [{ src: getImageUrl(place?.images?.[0]) || '/placeholder.jpg' }]
     return place.images.map((url) => ({ src: getImageUrl(url) }))
@@ -196,10 +198,17 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                   <div className={styles.modalImage_text}>
                     <CenterBlock>
                       <div className={styles.modalImage_text_block}>
-                        <div className={styles.modalImage_text_place}>
-                          <img src="/place.png" alt="" />
-                          {place.location}
-                        </div>
+                        {place.location && (
+                          <Link 
+                            to={`/places?search=${encodeURIComponent(place.location)}`}
+                            className={styles.modalImage_text_place}
+                            onClick={onClose}
+                            style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <img src="/place.png" alt="" />
+                            {place.location}
+                          </Link>
+                        )}
                         <div className={styles.modalImage_text_title}>
                           {place.title}
                         </div>

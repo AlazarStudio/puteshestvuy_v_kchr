@@ -406,6 +406,31 @@ export default function RouteDetail({ routeSlug }) {
   const transportDisplay = Array.isArray(route.customFilters?.transport) && route.customFilters.transport.length > 0
     ? route.customFilters.transport.join(', ')
     : (route.transport || '')
+  
+  // Функция для формирования URL с фильтрами
+  const buildFilterUrl = (filterKey, filterValue) => {
+    const params = new URLSearchParams()
+    if (Array.isArray(filterValue)) {
+      filterValue.forEach(val => params.append(filterKey, val))
+    } else {
+      params.append(filterKey, String(filterValue))
+    }
+    return `/routes?${params.toString()}`
+  }
+  
+  // Функция для получения значения булевого фильтра
+  const getBooleanFilterValue = () => {
+    // Для булевых фильтров передаем "Да"
+    return 'Да'
+  }
+  
+  // Получаем массивы значений для фильтров
+  const seasonsArray = Array.isArray(route.customFilters?.seasons) && route.customFilters.seasons.length > 0
+    ? route.customFilters.seasons
+    : (route.season ? [route.season] : [])
+  const transportArray = Array.isArray(route.customFilters?.transport) && route.customFilters.transport.length > 0
+    ? route.customFilters.transport
+    : (route.transport ? [route.transport] : [])
 
   return (
     <main className={styles.main}>
@@ -511,42 +536,62 @@ export default function RouteDetail({ routeSlug }) {
               <div id="main" className={styles.title}>{route.title}</div>
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('distanceOptions', route.distance)}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('distanceOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Расстояние</div>
                       <div className={styles.textDesc}>{route.distance} км</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
-                {seasonDisplay && (
-                  <div className={styles.item}>
+                {seasonDisplay && seasonsArray.length > 0 && (
+                  <Link 
+                    to={buildFilterUrl('seasons', seasonsArray)}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('seasons')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Сезон</div>
                       <div className={styles.textDesc}>{seasonDisplay}</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
                 {route.elevationGain != null && route.elevationGain !== '' && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('elevationOptions', route.elevationGain)}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('elevationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Перепад высот</div>
                       <div className={styles.textDesc}>{route.elevationGain} м</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
                 {route.hasOvernight && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('hasOvernightOptions', getBooleanFilterValue())}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('hasOvernightOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>С ночевкой</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
                 {route.difficulty != null && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('difficultyLevels', String(route.difficulty))}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('difficultyLevels')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>
@@ -567,33 +612,45 @@ export default function RouteDetail({ routeSlug }) {
                       </div>
                       <div className={styles.textDesc}>{route.difficulty}</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
                 {route.duration && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('durationOptions', route.duration)}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('durationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Время прохождения</div>
                       <div className={styles.textDesc}>{route.duration}</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
                 {route.isFamily && (
-                  <div className={styles.item}>
+                  <Link 
+                    to={buildFilterUrl('isFamilyOptions', getBooleanFilterValue())}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('isFamilyOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Семейный маршрут</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
-                {transportDisplay && (
-                  <div className={styles.item}>
+                {transportDisplay && transportArray.length > 0 && (
+                  <Link 
+                    to={buildFilterUrl('transport', transportArray)}
+                    className={styles.item}
+                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                  >
                     {renderInfoBlockIcon('transport')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Способ передвижения</div>
                       <div className={styles.textDesc}>{transportDisplay}</div>
                     </div>
-                  </div>
+                  </Link>
                 )}
               </div>
 

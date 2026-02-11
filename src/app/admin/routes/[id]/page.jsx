@@ -48,7 +48,6 @@ const TEXT_TO_ICON_MAP = {
   'дождевик': 'Umbrella',
   'одежда': 'Shirt',
   'теплая': 'Shirt',
-  'одежда': 'Shirt',
 };
 
 /**

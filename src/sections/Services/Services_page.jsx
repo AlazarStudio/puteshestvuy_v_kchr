@@ -9,6 +9,7 @@ import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import { publicServicesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
 import { CATEGORY_TO_TEMPLATE_KEY, DEFAULT_TEMPLATE_KEY } from './ServiceDetail/serviceTypeTemplates'
+import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
 const SCROLL_KEY = 'services_scroll_position'
 const ITEMS_PER_PAGE = 12
@@ -130,6 +131,10 @@ export default function Services_page() {
 
   const [filters, setFilters] = useState(() => getFiltersFromUrl())
   const [searchQuery, setSearchQuery] = useState('')
+  const [allServicesForSearch, setAllServicesForSearch] = useState([])
+  const [allArticlesForSearch, setAllArticlesForSearch] = useState([])
+  const [searchFallback, setSearchFallback] = useState(null)
+  const searchDebounceRef = useRef(null)
 
   // Синхронизация фильтров с URL при переходе по ссылке (например, из хедера)
   const filterParamsStr = searchParams.toString()
@@ -140,6 +145,58 @@ export default function Services_page() {
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
   }
+
+  // Загрузка всех услуг и статей для умного поиска (один раз при монтировании)
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      publicServicesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
+      publicNewsAPI.getAll({ limit: 1000, type: 'article' }).catch(() => ({ data: { items: [] } })),
+    ])
+      .then(([servicesRes, articlesRes]) => {
+        if (!cancelled) {
+          setAllServicesForSearch(servicesRes.data?.items || [])
+          setAllArticlesForSearch(articlesRes.data?.items || [])
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  // Умный поиск с fallback логикой
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+
+    if (!searchQuery || !searchQuery.trim()) {
+      setSearchFallback(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const performSearch = async (query) => {
+        if (!query || !query.trim()) return []
+        const lowerQuery = query.toLowerCase().trim()
+        
+        // Объединяем услуги и статьи для поиска
+        const allItems = [
+          ...allServicesForSearch.map(item => ({ ...item, _searchType: 'service' })),
+          ...allArticlesForSearch.map(item => ({ ...item, _searchType: 'article' })),
+        ]
+        
+        return allItems.filter(item => searchInObject(item, lowerQuery))
+      }
+
+      const { results, fallback } = await searchWithFallback(searchQuery, performSearch)
+      setSearchFallback(fallback)
+    }, 300)
+
+    searchDebounceRef.current = timer
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchQuery, allServicesForSearch, allArticlesForSearch])
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters)
@@ -186,19 +243,22 @@ export default function Services_page() {
       const categories = buildCategoryParams()
       const hasServiceFilter = categories.length > 0
 
+      // Используем fallback запрос, если он есть, иначе оригинальный
+      const effectiveSearchQuery = searchFallback || searchQuery.trim()
+
       const fetchArticles = () =>
         publicNewsAPI.getAll({
           page,
           limit: ITEMS_PER_PAGE,
           type: 'article',
-          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
         })
 
       const fetchServices = (cats) =>
         publicServicesAPI.getAll({
           page,
           limit: ITEMS_PER_PAGE,
-          ...(searchQuery.trim() && { search: searchQuery.trim() }),
+          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
           ...(cats?.length > 0 && { category: cats }),
           ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
         })
@@ -351,13 +411,13 @@ export default function Services_page() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [filters.service, filters.emergency, filters.articles, searchQuery, sortBy])
+  }, [filters.service, filters.emergency, filters.articles, searchQuery, searchFallback, sortBy])
 
   useEffect(() => {
     setCurrentPage(1)
     setHasMore(true)
     fetchData(1, true)
-  }, [filters.service, filters.emergency, filters.articles, searchQuery, sortBy])
+  }, [filters.service, filters.emergency, filters.articles, searchQuery, searchFallback, sortBy, fetchData])
 
   // Intersection Observer для lazy load
   useEffect(() => {
@@ -422,6 +482,9 @@ export default function Services_page() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Поиск по услугам..."
+            suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
           />
           <div className={styles.services}>
             <div className={styles.servicesSort}>

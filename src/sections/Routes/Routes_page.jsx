@@ -9,6 +9,7 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import { publicRoutesAPI, getImageUrl } from '@/lib/api'
+import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
 const SCROLL_KEY = 'routes_scroll_position'
 const ITEMS_PER_PAGE = 6
@@ -25,7 +26,10 @@ export default function Routes_page() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filters, setFilters] = useState({})
   const [filterOptions, setFilterOptions] = useState(null)
+  const [allRoutesForSearch, setAllRoutesForSearch] = useState([])
+  const [searchFallback, setSearchFallback] = useState(null)
   const observerTarget = useRef(null)
+  const searchDebounceRef = useRef(null)
 
   const handleSortChange = (event) => {
     setSortBy(event.target.value)
@@ -35,13 +39,45 @@ export default function Routes_page() {
     setFilters(next)
   }
 
-  // Синхронизация фильтра сезонов с URL (при переходе с главной по карточкам Зима/Весна/Лето/Осень)
+  // Синхронизация всех фильтров с URL (при переходе с детальной страницы маршрута)
   useEffect(() => {
-    const seasonsFromUrl = searchParams.getAll('seasons').filter(Boolean)
-    if (seasonsFromUrl.length > 0) {
-      setFilters((prev) => ({ ...prev, seasons: seasonsFromUrl }))
+    const filtersFromUrl = {}
+    const FIXED_GROUP_KEYS = [
+      'seasons',
+      'transport',
+      'durationOptions',
+      'difficultyLevels',
+      'distanceOptions',
+      'elevationOptions',
+      'isFamilyOptions',
+      'hasOvernightOptions',
+    ]
+    
+    // Читаем все фильтры из URL
+    FIXED_GROUP_KEYS.forEach(key => {
+      const values = searchParams.getAll(key).filter(Boolean)
+      if (values.length > 0) {
+        filtersFromUrl[key] = values
+      }
+    })
+    
+    // Читаем extraGroups из URL (если они есть в filterOptions)
+    if (filterOptions?.extraGroups) {
+      filterOptions.extraGroups.forEach(group => {
+        if (group.key) {
+          const values = searchParams.getAll(group.key).filter(Boolean)
+          if (values.length > 0) {
+            filtersFromUrl[group.key] = values
+          }
+        }
+      })
     }
-  }, [searchParams])
+    
+    // Устанавливаем фильтры из URL
+    if (Object.keys(filtersFromUrl).length > 0) {
+      setFilters((prev) => ({ ...prev, ...filtersFromUrl }))
+    }
+  }, [searchParams, filterOptions])
 
   // Добавляем ключи extra-групп в filters при первой загрузке опций
   useEffect(() => {
@@ -76,9 +112,9 @@ export default function Routes_page() {
       const meta = filterOptions?.fixedGroupMeta?.[key]
       const label = (meta?.label && meta.label.trim()) || key
       const options = Array.isArray(filterOptions?.[key]) ? filterOptions[key] : []
-      // Показываем только группы с опциями
-      return options.length > 0 ? { key, label, options } : null
-    }).filter(Boolean),
+      // Показываем все группы: с опциями (чекбоксы) и без опций (поля ввода)
+      return { key, label, options }
+    }),
     ...(Array.isArray(filterOptions?.extraGroups)
       ? filterOptions.extraGroups.map((g) => ({
           key: g.key,
@@ -87,6 +123,67 @@ export default function Routes_page() {
         }))
       : []),
   ]
+
+  // Загрузка всех маршрутов для умного поиска (один раз при монтировании)
+  useEffect(() => {
+    let cancelled = false
+    publicRoutesAPI.getAll({ limit: 1000 })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setAllRoutesForSearch(data?.items || [])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAllRoutesForSearch([])
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  // Умный поиск с fallback логикой
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+
+    if (!searchQuery || !searchQuery.trim()) {
+      setSearchFallback(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const performSearch = async (query) => {
+        if (!query || !query.trim()) return []
+        const lowerQuery = query.toLowerCase().trim()
+        
+        // Ищем в названии, описании и местах маршрута
+        return allRoutesForSearch.filter(item => {
+          // Стандартный поиск в объекте (название, описание)
+          if (searchInObject(item, lowerQuery)) {
+            return true
+          }
+          
+          // Дополнительно ищем в местах маршрута
+          if (Array.isArray(item.places) && item.places.length > 0) {
+            return item.places.some(place => {
+              const placeTitle = place.title || place.name || ''
+              return placeTitle.toLowerCase().includes(lowerQuery)
+            })
+          }
+          
+          return false
+        })
+      }
+
+      const { results, fallback } = await searchWithFallback(searchQuery, performSearch)
+      setSearchFallback(fallback)
+    }, 300)
+
+    searchDebounceRef.current = timer
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchQuery, allRoutesForSearch])
 
   // Загрузка опций фильтров маршрутов с API
   useEffect(() => {
@@ -150,10 +247,13 @@ export default function Routes_page() {
         setLoadingMore(true)
       }
       
+      // Используем fallback запрос, если он есть, иначе оригинальный
+      const effectiveSearchQuery = searchFallback || searchQuery.trim()
+      
       const params = {
         page,
         limit: ITEMS_PER_PAGE,
-        ...(searchQuery.trim() && { search: searchQuery.trim() }),
+        ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
         ...(sortBy && { sortBy }),
         ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
         ...(filters.transport?.length > 0 && { transport: filters.transport }),
@@ -170,8 +270,60 @@ export default function Routes_page() {
         }
       }
       const { data } = await publicRoutesAPI.getAll(params)
-      const newItems = data.items || []
-      const totalItems = data.pagination?.total ?? 0
+      let newItems = data.items || []
+      let totalItems = data.pagination?.total ?? 0
+      
+      // Если есть поисковый запрос и результатов нет или мало, ищем в местах маршрута
+      if (effectiveSearchQuery && newItems.length === 0 && allRoutesForSearch.length > 0) {
+        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
+        
+        // Ищем маршруты, где в местах есть совпадение
+        const routesWithMatchingPlaces = allRoutesForSearch.filter(route => {
+          // Проверяем места в маршруте
+          if (Array.isArray(route.places) && route.places.length > 0) {
+            return route.places.some(place => {
+              const placeTitle = place.title || place.name || ''
+              return placeTitle.toLowerCase().includes(lowerQuery)
+            })
+          }
+          return false
+        })
+        
+        if (routesWithMatchingPlaces.length > 0) {
+          // Берем только нужное количество для текущей страницы
+          const startIndex = (page - 1) * ITEMS_PER_PAGE
+          const endIndex = startIndex + ITEMS_PER_PAGE
+          newItems = routesWithMatchingPlaces.slice(startIndex, endIndex)
+          totalItems = routesWithMatchingPlaces.length
+        }
+      } else if (effectiveSearchQuery && newItems.length > 0) {
+        // Если есть результаты от API, дополнительно проверяем места для полноты
+        // Но не перезаписываем результаты, так как API уже что-то нашел
+        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
+        
+        // Проверяем, может быть есть еще маршруты с местами, которые API не вернул
+        const routesWithMatchingPlaces = allRoutesForSearch.filter(route => {
+          // Пропускаем уже найденные маршруты
+          if (newItems.some(item => item.id === route.id || item._id === route._id)) {
+            return false
+          }
+          
+          // Проверяем места в маршруте
+          if (Array.isArray(route.places) && route.places.length > 0) {
+            return route.places.some(place => {
+              const placeTitle = place.title || place.name || ''
+              return placeTitle.toLowerCase().includes(lowerQuery)
+            })
+          }
+          return false
+        })
+        
+        // Добавляем найденные маршруты с местами к результатам
+        if (routesWithMatchingPlaces.length > 0) {
+          newItems = [...newItems, ...routesWithMatchingPlaces.slice(0, ITEMS_PER_PAGE - newItems.length)]
+          totalItems = Math.max(totalItems, newItems.length)
+        }
+      }
       
       if (reset) {
         setRoutes(newItems)
@@ -205,14 +357,14 @@ export default function Routes_page() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [filters, searchQuery, sortBy, filterOptions])
+  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, allRoutesForSearch])
 
   // Загрузка маршрутов при изменении фильтров/поиска/сортировки
   useEffect(() => {
     setCurrentPage(1)
     setHasMore(true)
     fetchRoutes(1, true)
-  }, [filters, searchQuery, sortBy, filterOptions])
+  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, fetchRoutes])
 
   // Intersection Observer для lazy load
   useEffect(() => {
@@ -289,6 +441,9 @@ export default function Routes_page() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Введите запрос"
+            suggestionsData={allRoutesForSearch || []}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
           />
           <div className={styles.routes}>
             <div className={styles.routesSort}>

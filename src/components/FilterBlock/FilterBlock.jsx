@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { calculateSimilarity } from '@/lib/searchUtils'
 import styles from './FilterBlock.module.css'
 
 /**
@@ -17,6 +18,10 @@ export default function FilterBlock({
   searchQuery = '',
   onSearchChange,
   searchPlaceholder = 'Введите запрос',
+  suggestionsData = [], // Массив элементов для поиска подсказок
+  getSuggestionTitle = (item) => item.title || item.name, // Функция для получения названия
+  maxSuggestions = 5, // Максимальное количество подсказок
+  initialOpenKeys = {}, // Начальное состояние открытых блоков
 }) {
   const groupsWithOptions = filterGroups.filter(
     (g) => Array.isArray(g.options) && g.options.length > 0
@@ -27,8 +32,28 @@ export default function FilterBlock({
   const hasSearch = typeof onSearchChange === 'function'
   const hasFilters = groupsWithOptions.length > 0 || groupsWithInputOnly.length > 0
 
-  const [openKeys, setOpenKeys] = useState({})
+  const [openKeys, setOpenKeys] = useState(initialOpenKeys)
+  
+  // Автоматически открываем блоки с активными фильтрами
+  useEffect(() => {
+    const keysToOpen = {}
+    filterGroups.forEach((group) => {
+      const hasActiveFilter = filters[group.key] && filters[group.key].length > 0
+      if (hasActiveFilter) {
+        keysToOpen[group.key] = true
+      }
+    })
+    if (Object.keys(keysToOpen).length > 0) {
+      setOpenKeys((prev) => ({ ...prev, ...keysToOpen }))
+    }
+  }, [filters, filterGroups])
   const [isSearchOpen, setIsSearchOpen] = useState(true)
+  const [similarTitles, setSimilarTitles] = useState([])
+  const [bestMatch, setBestMatch] = useState(null)
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const searchInputRef = useRef(null)
+  const suggestionsRef = useRef(null)
+  const debounceTimerRef = useRef(null)
 
   const isGroupOpen = (key, index) => openKeys[key] ?? index === 0
 
@@ -45,6 +70,210 @@ export default function FilterBlock({
   const setInputFilter = (field, value) => {
     const trimmed = typeof value === 'string' ? value.trim() : ''
     onFiltersChange?.({ ...filters, [field]: trimmed ? [trimmed] : [] })
+  }
+
+  // Функция для поиска похожих названий (ищет в названии и кратком описании)
+  const findSimilarTitles = (query, existingResults = []) => {
+    if (!query || query.trim().length < 2) return []
+    
+    const lowerQuery = query.toLowerCase().trim()
+    
+    // Проверяем, есть ли точное совпадение в названии
+    const exactMatch = suggestionsData.find(item => {
+      const title = getSuggestionTitle(item)
+      return title && title.toLowerCase().includes(lowerQuery)
+    })
+    
+    // Если есть точное совпадение, не показываем подсказки
+    if (exactMatch) {
+      return []
+    }
+    
+    // Проверяем, есть ли совпадение в местах маршрута
+    const matchInPlaces = suggestionsData.find(item => {
+      if (Array.isArray(item.places) && item.places.length > 0) {
+        return item.places.some(place => {
+          const placeTitle = place.title || place.name || ''
+          return placeTitle.toLowerCase().includes(lowerQuery)
+        })
+      }
+      return false
+    })
+    
+    // Если найдено в местах маршрута, не показываем подсказки (фильтрация найдет)
+    if (matchInPlaces) {
+      return []
+    }
+    
+    // Проверяем, есть ли совпадение в локации (для мест)
+    const matchInLocation = suggestionsData.find(item => {
+      const location = item.location || ''
+      return location && location.toLowerCase().includes(lowerQuery)
+    })
+    
+    // Если найдено в локации, не показываем подсказки (фильтрация найдет)
+    if (matchInLocation) {
+      return []
+    }
+    
+    // Создаем Set существующих названий из результатов, чтобы исключить их
+    const existingTitles = new Set(existingResults.map(r => {
+      const title = getSuggestionTitle(r)
+      return title ? title.toLowerCase() : ''
+    }).filter(Boolean))
+    
+    // Собираем все названия, ищем в названии И в кратком описании И в местах маршрута
+    const allTitles = suggestionsData
+      .map(item => {
+        const title = getSuggestionTitle(item)
+        if (!title || existingTitles.has(title.toLowerCase())) {
+          return null
+        }
+        
+        // Ищем в названии
+        const titleMatch = title.toLowerCase().includes(lowerQuery)
+        const titleSimilarity = calculateSimilarity(lowerQuery, title.toLowerCase())
+        
+        // Ищем в кратком описании
+        const shortDescription = item.shortDescription || item.description || ''
+        const descriptionMatch = shortDescription.toLowerCase().includes(lowerQuery)
+        
+        // Ищем в локации (если это место)
+        const location = item.location || ''
+        const locationMatch = location && location.toLowerCase().includes(lowerQuery)
+        const locationSimilarity = locationMatch ? calculateSimilarity(lowerQuery, location.toLowerCase()) : 0
+        
+        // Ищем в местах маршрута (если это маршрут)
+        let placeMatch = false
+        let placeSimilarity = 0
+        if (Array.isArray(item.places) && item.places.length > 0) {
+          placeMatch = item.places.some(place => {
+            const placeTitle = place.title || place.name || ''
+            const placeTitleLower = placeTitle.toLowerCase()
+            if (placeTitleLower.includes(lowerQuery)) {
+              placeSimilarity = Math.max(placeSimilarity, calculateSimilarity(lowerQuery, placeTitleLower))
+              return true
+            }
+            return false
+          })
+        }
+        
+        // Если найдено в названии, описании, локации или местах
+        if (titleMatch || descriptionMatch || locationMatch || placeMatch) {
+          // Приоритет: название > локация/места > описание
+          let similarity = 0
+          if (titleMatch) {
+            similarity = titleSimilarity
+          } else if (locationMatch) {
+            similarity = locationSimilarity * 0.7 // Локация имеет меньший приоритет чем название
+          } else if (placeMatch) {
+            similarity = placeSimilarity * 0.7 // Места имеют меньший приоритет чем название
+          } else if (descriptionMatch) {
+            similarity = 0.3 // Описание имеет наименьший приоритет
+          }
+          
+          return {
+            ...item,
+            title,
+            similarity
+          }
+        }
+        
+        // Если не найдено точно, проверяем похожесть названия
+        if (titleSimilarity > 0.15) {
+          return {
+            ...item,
+            title,
+            similarity: titleSimilarity
+          }
+        }
+        
+        return null
+      })
+      .filter(item => item !== null)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 1) // Только один лучший результат
+    
+    return allTitles.map(item => ({
+      title: item.title,
+      ...item
+    }))
+  }
+
+  // Поиск подсказок при изменении searchQuery (как в GlobalSearch)
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    if (!searchQuery || !searchQuery.trim()) {
+      setSimilarTitles([])
+      setBestMatch(null)
+      setIsLoadingSuggestions(false)
+      return
+    }
+
+    if (suggestionsData.length === 0) {
+      console.log('FilterBlock: suggestionsData is empty!')
+      setSimilarTitles([])
+      setBestMatch(null)
+      setIsLoadingSuggestions(false)
+      return
+    }
+
+    const query = searchQuery.trim()
+    if (query.length < 2) {
+      setSimilarTitles([])
+      setBestMatch(null)
+      setIsLoadingSuggestions(false)
+      return
+    }
+
+    setIsLoadingSuggestions(true)
+    const timer = setTimeout(() => {
+      // Ищем похожие названия
+      const similar = findSimilarTitles(query, [])
+      
+      if (similar.length > 0) {
+        setBestMatch(similar[0])
+        setSimilarTitles([]) // Не используем больше
+      } else {
+        setBestMatch(null)
+        setSimilarTitles([])
+      }
+      setIsLoadingSuggestions(false)
+    }, 300)
+
+    debounceTimerRef.current = timer
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchQuery, suggestionsData, getSuggestionTitle, maxSuggestions])
+
+  // Закрытие подсказок при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        // Не закрываем подсказки при клике вне - они должны оставаться видимыми
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  const handleSuggestionClick = (suggestion) => {
+    const title = suggestion.title || getSuggestionTitle(suggestion)
+    onSearchChange?.(title)
+    searchInputRef.current?.focus()
   }
 
   // Не рендерить только когда нет ни поиска, ни групп фильтров
@@ -75,27 +304,47 @@ export default function FilterBlock({
               />
             </motion.svg>
           </div>
-          <AnimatePresence>
-            {isSearchOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div className={styles.search}>
-                  <input
-                    type="text"
-                    placeholder={searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange?.(e.target.value)}
-                  />
-                  <img src="/search_gray.png" alt="" className={styles.searchIcon} />
+          <div className={styles.searchWrapper} ref={suggestionsRef}>
+            <AnimatePresence>
+              {isSearchOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div className={styles.search}>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder={searchPlaceholder}
+                      value={searchQuery}
+                      onChange={(e) => onSearchChange?.(e.target.value)}
+                      onFocus={() => {}}
+                    />
+                    <img src="/search_gray.png" alt="" className={styles.searchIcon} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {isSearchOpen && searchQuery && searchQuery.trim().length >= 2 && bestMatch && (
+              <div className={styles.suggestionsInline}>
+                <div className={styles.fallbackInline}>
+                  <span className={styles.fallbackTextInline}>
+                    Возможно вы искали:{' '}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.fallbackButtonInline}
+                    onClick={() => handleSuggestionClick(bestMatch)}
+                  >
+                    <strong>{bestMatch.title}</strong>
+                  </button>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
       )}
 
