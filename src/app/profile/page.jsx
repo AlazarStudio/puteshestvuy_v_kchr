@@ -18,11 +18,10 @@ import styles from './profile.module.css'
 import serviceStyles from '@/sections/Services/Services_page.module.css'
 
 const TABS = [
-  { id: 'routes', label: 'Маршруты', icon: 'route' },
-  { id: 'places', label: 'Интересные места', icon: 'place' },
-  { id: 'services', label: 'Сервис и услуги', icon: 'service' },
-  { id: 'routes-constructor', label: 'Конструктор маршрутов', icon: 'constructor', iconImage: '/konst_tours_black.svg' },
-  { id: 'edit', label: 'Изменить профиль', icon: 'edit' },
+  { id: 'routes', label: 'Маршруты', icon: 'route', countKey: 'routes' },
+  { id: 'places', label: 'Интересные места', icon: 'place', countKey: 'places' },
+  { id: 'services', label: 'Сервис и услуги', icon: 'service', countKey: 'services' },
+  { id: 'routes-constructor', label: 'Конструктор маршрутов', icon: 'constructor', iconImage: '/konst_tours_black.svg', countKey: 'constructor' },
 ]
 
 function NavIcon({ icon, iconImage, className }) {
@@ -82,7 +81,7 @@ export default function ProfilePage() {
     optimizeRoute,
   } = useRouteConstructor()
   const tabFromUrl = searchParams.get('tab')
-  const activeTab = TABS.some((t) => t.id === tabFromUrl) ? tabFromUrl : 'routes'
+  const activeTab = (TABS.some((t) => t.id === tabFromUrl) || tabFromUrl === 'edit') ? tabFromUrl : 'routes'
 
   const setActiveTab = (tabId) => {
     setSearchParams((prev) => {
@@ -836,19 +835,57 @@ export default function ProfilePage() {
                 </svg>
               </span>
             </div>
-            <h2 className={styles.userName}>{displayName}</h2>
-            <nav className={styles.nav}>
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`${styles.navItem} ${activeTab === tab.id ? styles.navItemActive : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
+            <div className={styles.userNameWrap}>
+              <h2 className={styles.userName}>{displayName}</h2>
+              <button
+                type="button"
+                className={styles.editProfileBtn}
+                onClick={() => setActiveTab('edit')}
+                aria-label="Изменить профиль"
+                title="Изменить профиль"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <NavIcon icon={tab.icon} iconImage={tab.iconImage} className={styles.navIcon} />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            </div>
+            <nav className={styles.nav}>
+              {TABS.map((tab) => {
+                let count = null
+                if (tab.countKey === 'routes') {
+                  count = favoriteRoutes.length
+                } else if (tab.countKey === 'places') {
+                  count = favoritePlaces.length
+                } else if (tab.countKey === 'services') {
+                  count = favoriteServices.length
+                } else if (tab.countKey === 'constructor') {
+                  count = userRoutes.length
+                }
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`${styles.navItem} ${activeTab === tab.id ? styles.navItemActive : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <NavIcon icon={tab.icon} iconImage={tab.iconImage} className={styles.navIcon} />
+                    <span className={styles.navLabel}>{tab.label}</span>
+                    {count !== null && count > 0 && (
+                      <span className={styles.navCount}>{count}</span>
+                    )}
+                  </button>
+                )
+              })}
             </nav>
             <button type="button" onClick={logout} className={styles.logoutBtn}>
               Выйти

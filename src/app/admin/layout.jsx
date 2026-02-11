@@ -12,19 +12,20 @@ import {
   ChevronRight,
   FileText
 } from 'lucide-react';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI } from '@/lib/api';
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
 export const AdminBreadcrumbContext = createContext(null);
 
 const menuItems = [
-  { href: '/admin', label: 'Главная', icon: LayoutDashboard },
-  { href: '/admin/pages', label: 'Страницы сайта', icon: FileText },
-  { href: '/admin/places', label: 'Места', icon: MapPin },
-  { href: '/admin/routes', label: 'Маршруты', icon: Map },
-  { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper },
-  { href: '/admin/services', label: 'Услуги', icon: Building2 },
-  { href: '/admin/reviews', label: 'Отзывы', icon: Star },
+  { href: '/admin', label: 'Главная', icon: LayoutDashboard, key: null },
+  { href: '/admin/pages', label: 'Страницы сайта', icon: FileText, key: null },
+  { href: '/admin/places', label: 'Места', icon: MapPin, key: 'places' },
+  { href: '/admin/routes', label: 'Маршруты', icon: Map, key: 'routes' },
+  { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper, key: 'news' },
+  { href: '/admin/services', label: 'Услуги', icon: Building2, key: 'services' },
+  { href: '/admin/reviews', label: 'Отзывы', icon: Star, key: 'reviews' },
 ];
 
 export default function AdminLayout() {
@@ -35,6 +36,13 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [headerRight, setHeaderRight] = useState(null);
   const [breadcrumbLabel, setBreadcrumbLabel] = useState(null);
+  const [counts, setCounts] = useState({
+    places: null,
+    routes: null,
+    news: null,
+    services: null,
+    reviews: null,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -66,6 +74,35 @@ export default function AdminLayout() {
     
     setIsLoading(false);
   }, [pathname, navigate]);
+
+  // Загрузка счетчиков объектов
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchCounts = async () => {
+      try {
+        const [placesRes, routesRes, newsRes, servicesRes, reviewsRes] = await Promise.all([
+          placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          servicesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+        ]);
+
+        setCounts({
+          places: placesRes.data?.pagination?.total ?? 0,
+          routes: routesRes.data?.pagination?.total ?? 0,
+          news: newsRes.data?.pagination?.total ?? 0,
+          services: servicesRes.data?.pagination?.total ?? 0,
+          reviews: reviewsRes.data?.pagination?.total ?? 0,
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки счетчиков:', error);
+      }
+    };
+
+    fetchCounts();
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -105,6 +142,7 @@ export default function AdminLayout() {
             const isActive = item.href === '/admin'
               ? pathname === '/admin'
               : pathname === item.href || pathname.startsWith(item.href + '/');
+            const count = item.key ? counts[item.key] : null;
             return (
               <Link
                 key={item.href}
@@ -112,7 +150,14 @@ export default function AdminLayout() {
                 className={`${styles.navItem} ${isActive ? styles.active : ''}`}
               >
                 <span className={styles.navIcon}><Icon size={20} /></span>
-                {sidebarOpen && <span className={styles.navLabel}>{item.label}</span>}
+                {sidebarOpen && (
+                  <>
+                    <span className={styles.navLabel}>{item.label}</span>
+                    {count !== null && (
+                      <span className={styles.navCount}>{count}</span>
+                    )}
+                  </>
+                )}
               </Link>
             );
           })}

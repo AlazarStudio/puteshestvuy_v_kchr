@@ -828,7 +828,8 @@
 
 .tab {
   padding: 12px 24px;
-  border: 1px solid #00000033;
+  border: 1px solid #E5E5E5;
+  background-color: #fff;
   font-weight: 400;
   font-size: 16px;
   line-height: 150%;
@@ -836,26 +837,32 @@
   border-radius: 30px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
+  color: #333;
 }
 
 .tab:hover {
-  background-color: #ffffff;
+  background-color: #F5F5F5;
+  border-color: #D0D0D0;
 }
 
 .tabActive {
-  border: 1px solid #ffffff;
-  background-color: #FFFFFF;
-  color: #000000;
+  border: 1px solid #156A60;
+  background-color: #156A60;
+  color: #FFFFFF;
 }
 
 .tabActive:hover {
-  background-color: #FFFFFF;
+  background-color: #156A60;
 }
 
 .tabsContent {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background-color: #fff;
+  border: 1px solid #E5E5E5;
+  border-radius: 15px;
+  padding: 25px 30px;
 }
 
 .tabsContentTitle {

@@ -14,6 +14,82 @@ import styles from '../../admin.module.css';
 
 const TOAST_DURATION_MS = 3000;
 
+// Предзаполненные пункты "Что взять с собой" для часто используемых вещей
+const COMMON_WHAT_TO_BRING_ITEMS = [
+  { iconType: 'mui', icon: 'Backpack', text: 'Рюкзак' },
+  { iconType: 'mui', icon: 'WaterDrop', text: 'Вода' },
+  { iconType: 'mui', icon: 'Utensils', text: 'Еда' },
+  { iconType: 'mui', icon: 'Sun', text: 'Солнцезащитный крем' },
+  { iconType: 'mui', icon: 'Flashlight', text: 'Фонарик' },
+  { iconType: 'mui', icon: 'Phone', text: 'Телефон' },
+  { iconType: 'mui', icon: 'Battery', text: 'Power Bank' },
+  { iconType: 'mui', icon: 'Map', text: 'Карта' },
+  { iconType: 'mui', icon: 'Bandage', text: 'Аптечка' },
+  { iconType: 'mui', icon: 'Flame', text: 'Спички/зажигалка' },
+  { iconType: 'mui', icon: 'Umbrella', text: 'Дождевик' },
+  { iconType: 'mui', icon: 'Shirt', text: 'Теплая одежда' },
+];
+
+// Маппинг текста на иконки для автоматического подбора
+const TEXT_TO_ICON_MAP = {
+  'рюкзак': 'Backpack',
+  'вода': 'Droplet',
+  'еда': 'Utensils',
+  'солнцезащитный': 'Sun',
+  'крем': 'Sun',
+  'фонарик': 'Flashlight',
+  'телефон': 'Phone',
+  'power bank': 'Battery',
+  'powerbank': 'Battery',
+  'карта': 'Map',
+  'аптечка': 'Bandage',
+  'спички': 'Flame',
+  'зажигалка': 'Flame',
+  'дождевик': 'Umbrella',
+  'одежда': 'Shirt',
+  'теплая': 'Shirt',
+  'одежда': 'Shirt',
+};
+
+/**
+ * Автоматически подбирает иконку для текста на основе ключевых слов
+ */
+function findIconForText(text) {
+  if (!text || typeof text !== 'string') return null;
+  const lowerText = text.toLowerCase().trim();
+  
+  // Сначала проверяем точные совпадения
+  for (const [key, icon] of Object.entries(TEXT_TO_ICON_MAP)) {
+    if (lowerText.includes(key)) {
+      return icon;
+    }
+  }
+  
+  // Затем проверяем по ключевым словам в названиях иконок
+  const keywords = [
+    { words: ['рюкзак', 'backpack'], icon: 'Backpack' },
+    { words: ['вода', 'water', 'droplet'], icon: 'Droplet' },
+    { words: ['еда', 'food', 'utensils', 'restaurant'], icon: 'Utensils' },
+    { words: ['солнце', 'sun', 'sunscreen'], icon: 'Sun' },
+    { words: ['фонарик', 'flashlight', 'torch'], icon: 'Flashlight' },
+    { words: ['телефон', 'phone', 'smartphone'], icon: 'Phone' },
+    { words: ['батарея', 'battery', 'power'], icon: 'Battery' },
+    { words: ['карта', 'map'], icon: 'Map' },
+    { words: ['аптечка', 'firstaid', 'medical', 'health'], icon: 'Bandage' },
+    { words: ['спички', 'зажигалка', 'flame', 'fire', 'lighter'], icon: 'Flame' },
+    { words: ['дождевик', 'umbrella', 'rain'], icon: 'Umbrella' },
+    { words: ['одежда', 'shirt', 'clothing', 'warm'], icon: 'Shirt' },
+  ];
+  
+  for (const { words, icon } of keywords) {
+    if (words.some(word => lowerText.includes(word))) {
+      return icon;
+    }
+  }
+  
+  return null;
+}
+
 const FIXED_GROUPS_CONFIG = [
   { key: 'seasons', label: 'Сезон', optionsKey: 'seasons' },
   { key: 'transport', label: 'Способ передвижения', optionsKey: 'transport' },
@@ -250,6 +326,9 @@ export default function RouteEditPage() {
   const [whatToBringIconPickerIndex, setWhatToBringIconPickerIndex] = useState(null);
   const [whatToBringIconGroup, setWhatToBringIconGroup] = useState('all');
   const [whatToBringIconSearch, setWhatToBringIconSearch] = useState('');
+  const [addExistingItemsModalOpen, setAddExistingItemsModalOpen] = useState(false);
+  const [addExistingItemsSelected, setAddExistingItemsSelected] = useState(new Set());
+  const [addExistingItemsSearch, setAddExistingItemsSearch] = useState('');
   const [pendingGallery, setPendingGallery] = useState([]);
   const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   const pendingGalleryRef = useRef([]);
@@ -573,7 +652,109 @@ export default function RouteEditPage() {
     });
   };
 
+  const moveWhatToBringItem = (index, direction) => {
+    const newItems = [...(formData.whatToBringItems ?? [])];
+    const newIndex = index + direction;
+
+    if (newIndex < 0 || newIndex >= newItems.length) return;
+
+    [newItems[index], newItems[newIndex]] = [newItems[newIndex], newItems[index]];
+
+    setFormData((prev) => ({
+      ...prev,
+      whatToBringItems: newItems,
+    }));
+  };
+
+  const moveWhatToBringItemByDrag = (draggedIndex, targetIndex) => {
+    if (draggedIndex === targetIndex) return;
+    setFormData((prev) => {
+      const items = [...(prev.whatToBringItems ?? [])];
+      const [removed] = items.splice(draggedIndex, 1);
+      items.splice(targetIndex, 0, removed);
+      return { ...prev, whatToBringItems: items };
+    });
+  };
+
   const getPlaceById = (id) => allPlaces.find((p) => p.id === id);
+
+  // Получаем все уникальные пункты "Что взять с собой" из всех маршрутов
+  const allExistingItems = useMemo(() => {
+    const itemsMap = new Map();
+    allRoutes.forEach((route) => {
+      if (!route.whatToBring) return;
+      const items = parseWhatToBring(route.whatToBring);
+      items.forEach((item) => {
+        if (!item.text || !item.text.trim()) return;
+        const key = item.text.toLowerCase().trim();
+        // Если такого пункта еще нет или у текущего есть иконка, а у сохраненного нет
+        if (!itemsMap.has(key) || (!itemsMap.get(key).icon && item.icon)) {
+          let icon = item.icon || '';
+          // Если иконка не указана или не существует, подбираем автоматически
+          if (!icon || !getMuiIconComponent(icon)) {
+            const autoIcon = findIconForText(item.text);
+            if (autoIcon && getMuiIconComponent(autoIcon)) {
+              icon = autoIcon;
+            }
+          }
+          itemsMap.set(key, {
+            iconType: item.iconType || 'mui',
+            icon: icon,
+            text: item.text.trim(),
+          });
+        }
+      });
+    });
+    // Также добавляем часто используемые пункты
+    COMMON_WHAT_TO_BRING_ITEMS.forEach((item) => {
+      const key = item.text.toLowerCase().trim();
+      if (!itemsMap.has(key)) {
+        let icon = item.icon || '';
+        if (!icon || !getMuiIconComponent(icon)) {
+          const autoIcon = findIconForText(item.text);
+          if (autoIcon && getMuiIconComponent(autoIcon)) {
+            icon = autoIcon;
+          }
+        }
+        itemsMap.set(key, {
+          iconType: item.iconType || 'mui',
+          icon: icon,
+          text: item.text.trim(),
+        });
+      }
+    });
+    return Array.from(itemsMap.values()).sort((a, b) => a.text.localeCompare(b.text));
+  }, [allRoutes]);
+
+  const toggleAddExistingItemSelection = (itemKey) => {
+    setAddExistingItemsSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemKey)) next.delete(itemKey);
+      else next.add(itemKey);
+      return next;
+    });
+  };
+
+  const addSelectedExistingItems = () => {
+    const existingTexts = new Set((formData.whatToBringItems ?? []).map((item) => item.text.toLowerCase().trim()));
+    const itemsToAdd = allExistingItems
+      .filter((item) => addExistingItemsSelected.has(item.text.toLowerCase().trim()))
+      .filter((item) => !existingTexts.has(item.text.toLowerCase().trim()))
+      .map((item) => ({
+        iconType: item.iconType || 'mui',
+        icon: item.icon || '',
+        text: item.text,
+      }));
+    if (itemsToAdd.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        whatToBringItems: [...(prev.whatToBringItems ?? []), ...itemsToAdd],
+      }));
+    }
+    setAddExistingItemsModalOpen(false);
+    setAddExistingItemsSelected(new Set());
+    setAddExistingItemsSearch('');
+  };
 
   // Локации мест маршрута (для фильтра «места рядом с маршрутом»)
   const routeLocations = useMemo(() => {
@@ -589,6 +770,7 @@ export default function RouteEditPage() {
 
   const filteredPlaces = allPlaces.filter(
     (place) =>
+      place.isActive !== false &&
       !formData.placeIds.includes(place.id) &&
       place.title.toLowerCase().includes(placesSearch.toLowerCase())
   );
@@ -1578,9 +1760,6 @@ export default function RouteEditPage() {
                     )}
                     <div className={styles.formCardRowContent}>
                       <div className={styles.formCardRowTitle}>{route.title}</div>
-                      {route.shortDescription && (
-                        <div className={styles.formCardRowSub}>{route.shortDescription}</div>
-                      )}
                     </div>
                     <button
                       type="button"
@@ -1603,99 +1782,156 @@ export default function RouteEditPage() {
           <p className={styles.imageHint} style={{ marginBottom: 12 }}>
             Каждый пункт: иконка (своя загрузка или из библиотеки) и текст.
           </p>
-          <div className={styles.whatToBringList}>
-            {(formData.whatToBringItems ?? []).map((item, index) => (
-              <div key={`wtb-${index}`} className={styles.whatToBringBlock}>
-                <div className={styles.whatToBringIconCell}>
-                  <div className={styles.whatToBringTypeSwitcher} role="group" aria-label="Источник иконки">
-                    <button
-                      type="button"
-                      className={`${styles.whatToBringTypeSegment} ${item.iconType === 'upload' ? styles.whatToBringTypeSegmentActive : ''}`}
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          whatToBringItems: prev.whatToBringItems.map((it, i) =>
-                            i === index ? { ...it, iconType: 'upload', icon: '' } : it
-                          ),
-                        }))
-                      }
+          {(formData.whatToBringItems ?? []).length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <p className={styles.formListHint}>
+                Порядок пунктов (можно изменить):
+              </p>
+              <div className={styles.whatToBringList}>
+                {(formData.whatToBringItems ?? []).map((item, index) => (
+                  <div
+                    key={`wtb-${index}`}
+                    className={styles.whatToBringBlock}
+                    data-wtb-row
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const raw = e.dataTransfer.getData('text/plain');
+                      const draggedIndex = parseInt(raw, 10);
+                      if (Number.isNaN(draggedIndex) || draggedIndex === index) return;
+                      moveWhatToBringItemByDrag(draggedIndex, index);
+                    }}
+                  >
+                    <div
+                      className={styles.formCardRowDragHandle}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', String(index));
+                        e.dataTransfer.effectAllowed = 'move';
+                        const row = e.currentTarget.closest('[data-wtb-row]');
+                        if (row) e.dataTransfer.setDragImage(row, 0, 0);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Перетащить для изменения порядка"
+                      title="Перетащить для изменения порядка"
                     >
-                      Загрузить
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.whatToBringTypeSegment} ${item.iconType === 'mui' ? styles.whatToBringTypeSegmentActive : ''}`}
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          whatToBringItems: prev.whatToBringItems.map((it, i) =>
-                            i === index ? { ...it, iconType: 'mui', icon: it.iconType === 'mui' ? it.icon : '' } : it
-                          ),
-                        }))
-                      }
-                    >
-                      Библиотека
-                    </button>
-                  </div>
-                  <div className={styles.whatToBringIconPreview}>
-                    {item.iconType === 'upload' ? (
-                      <>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          id={`wtb-upload-${index}`}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const fd = new FormData();
-                              fd.append('file', file);
-                              const res = await mediaAPI.upload(fd);
-                              setFormData((prev) => ({
-                                ...prev,
-                                whatToBringItems: prev.whatToBringItems.map((it, i) =>
-                                  i === index ? { ...it, icon: res.data.url } : it
-                                ),
-                              }));
-                            } catch (err) {
-                              console.error(err);
-                            }
-                            e.target.value = '';
-                          }}
-                        />
-                        <label htmlFor={`wtb-upload-${index}`} className={styles.whatToBringUploadBtn}>
-                          {item.icon ? (
-                            <img src={getImageUrl(item.icon)} alt="" className={styles.whatToBringUploadImg} />
-                          ) : (
-                            <Upload size={24} />
-                          )}
-                        </label>
-                      </>
-                    ) : (
+                      <GripVertical size={20} />
+                    </div>
+                    <div className={styles.formMoveButtons}>
                       <button
                         type="button"
-                        className={styles.whatToBringMuiBtn}
-                        onClick={() => {
-                          setWhatToBringIconGroup('all');
-                          setWhatToBringIconSearch('');
-                          setWhatToBringIconPickerIndex(index);
-                        }}
-                        title="Выбрать иконку"
+                        onClick={() => moveWhatToBringItem(index, -1)}
+                        disabled={index === 0}
+                        className={styles.formMoveBtn}
+                        aria-label="Поднять"
                       >
-                        {item.icon && getMuiIconComponent(item.icon) ? (
-                          (() => {
-                            const Icon = getMuiIconComponent(item.icon);
-                            return <Icon size={28} />;
-                          })()
-                        ) : (
-                          <span className={styles.whatToBringMuiPlaceholder}>Иконка</span>
-                        )}
+                        <ChevronUp size={16} />
                       </button>
-                    )}
-                  </div>
-                </div>
-                <input
+                      <button
+                        type="button"
+                        onClick={() => moveWhatToBringItem(index, 1)}
+                        disabled={index === (formData.whatToBringItems ?? []).length - 1}
+                        className={styles.formMoveBtn}
+                        aria-label="Опустить"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+                    <span className={styles.formOrderBadge}>{index + 1}</span>
+                    <div className={styles.whatToBringIconCell}>
+                      <div className={styles.whatToBringTypeSwitcher} role="group" aria-label="Источник иконки">
+                        <button
+                          type="button"
+                          className={`${styles.whatToBringTypeSegment} ${item.iconType === 'upload' ? styles.whatToBringTypeSegmentActive : ''}`}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                i === index ? { ...it, iconType: 'upload', icon: '' } : it
+                              ),
+                            }))
+                          }
+                        >
+                          Загрузить
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.whatToBringTypeSegment} ${item.iconType === 'mui' ? styles.whatToBringTypeSegmentActive : ''}`}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                i === index ? { ...it, iconType: 'mui', icon: it.iconType === 'mui' ? it.icon : '' } : it
+                              ),
+                            }))
+                          }
+                        >
+                          Библиотека
+                        </button>
+                      </div>
+                      <div className={styles.whatToBringIconPreview}>
+                        {item.iconType === 'upload' ? (
+                          <>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              id={`wtb-upload-${index}`}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  const fd = new FormData();
+                                  fd.append('file', file);
+                                  const res = await mediaAPI.upload(fd);
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                      i === index ? { ...it, icon: res.data.url } : it
+                                    ),
+                                  }));
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                            <label htmlFor={`wtb-upload-${index}`} className={styles.whatToBringUploadBtn}>
+                              {item.icon ? (
+                                <img src={getImageUrl(item.icon)} alt="" className={styles.whatToBringUploadImg} />
+                              ) : (
+                                <Upload size={24} />
+                              )}
+                            </label>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.whatToBringMuiBtn}
+                            onClick={() => {
+                              setWhatToBringIconGroup('all');
+                              setWhatToBringIconSearch('');
+                              setWhatToBringIconPickerIndex(index);
+                            }}
+                            title="Выбрать иконку"
+                          >
+                            {item.icon && getMuiIconComponent(item.icon) ? (
+                              (() => {
+                                const Icon = getMuiIconComponent(item.icon);
+                                return <Icon size={28} />;
+                              })()
+                            ) : (
+                              <span className={styles.whatToBringMuiPlaceholder}>Иконка</span>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <input
                   type="text"
                   className={styles.whatToBringTextInput}
                   value={item.text}
@@ -1709,23 +1945,38 @@ export default function RouteEditPage() {
                   }
                   placeholder="Текст пункта"
                 />
-                <button
-                  type="button"
-                  className={styles.deleteBtn}
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      whatToBringItems: prev.whatToBringItems.filter((_, i) => i !== index),
-                    }))
-                  }
-                  aria-label="Удалить"
-                  title="Удалить"
-                >
-                  <X size={18} />
-                </button>
+                    <button
+                      type="button"
+                      className={styles.deleteBtn}
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          whatToBringItems: prev.whatToBringItems.filter((_, i) => i !== index),
+                        }))
+                      }
+                      aria-label="Удалить"
+                      title="Удалить"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-            <div className={styles.whatToBringAddWrap}>
+            </div>
+          )}
+          <div className={styles.whatToBringAddWrap} style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+              <button
+                type="button"
+                className={styles.addBtn}
+                style={{ backgroundColor: '#f0f0f0', color: '#333' }}
+                onClick={() => {
+                  setAddExistingItemsSelected(new Set());
+                  setAddExistingItemsSearch('');
+                  setAddExistingItemsModalOpen(true);
+                }}
+              >
+                <Plus size={18} /> Уже добавленные
+              </button>
               <button
                 type="button"
                 className={styles.addBtn}
@@ -1739,101 +1990,6 @@ export default function RouteEditPage() {
                 <Plus size={18} /> Добавить пункт
               </button>
             </div>
-          </div>
-          {whatToBringIconPickerIndex !== null && (
-            <div
-              className={styles.modalOverlay}
-              onClick={(e) => e.target === e.currentTarget && setWhatToBringIconPickerIndex(null)}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Выбор иконки"
-            >
-              <div className={styles.modalDialog} style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-                <div className={styles.modalHeader}>
-                  <h2 className={styles.modalTitle}>Выберите иконку</h2>
-                  <button
-                    type="button"
-                    onClick={() => setWhatToBringIconPickerIndex(null)}
-                    className={styles.modalClose}
-                    aria-label="Закрыть"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-                <div className={styles.modalBody} style={{ maxHeight: 440, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <div className={styles.whatToBringIconFilters}>
-                    <input
-                      type="search"
-                      className={styles.whatToBringIconSearch}
-                      placeholder="Поиск иконки..."
-                      value={whatToBringIconSearch}
-                      onChange={(e) => setWhatToBringIconSearch(e.target.value)}
-                      aria-label="Поиск иконки"
-                      autoComplete="off"
-                    />
-                    <select
-                      className={styles.whatToBringIconGroupSelect}
-                      value={whatToBringIconGroup}
-                      onChange={(e) => setWhatToBringIconGroup(e.target.value)}
-                      aria-label="Группа иконок"
-                    >
-                      <option value="all">Все иконки</option>
-                      {getIconGroups().map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.label} ({g.iconNames.length})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {(() => {
-                    const groups = getIconGroups();
-                    const baseNames =
-                      whatToBringIconGroup === 'all'
-                        ? MUI_ICON_NAMES
-                        : (groups.find((g) => g.id === whatToBringIconGroup)?.iconNames ?? []);
-                    const searchLower = (whatToBringIconSearch || '').trim().toLowerCase();
-                    const namesToShow = searchLower
-                      ? baseNames.filter((name) => name.toLowerCase().includes(searchLower))
-                      : baseNames;
-                    return (
-                      <>
-                        <div className={styles.whatToBringIconGridWrap}>
-                          {namesToShow.map((name) => {
-                            const IconComponent = MUI_ICONS[name];
-                            if (!IconComponent) return null;
-                            return (
-                              <button
-                                key={name}
-                                type="button"
-                                className={styles.whatToBringIconGridItem}
-                                onClick={() => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    whatToBringItems: prev.whatToBringItems.map((it, i) =>
-                                      i === whatToBringIconPickerIndex ? { ...it, icon: name } : it
-                                    ),
-                                  }));
-                                  setWhatToBringIconPickerIndex(null);
-                                  setWhatToBringIconGroup('all');
-                                  setWhatToBringIconSearch('');
-                                }}
-                                title={name}
-                              >
-                                <IconComponent size={28} />
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {namesToShow.length === 0 && (
-                          <p className={styles.whatToBringIconEmpty}>В этой группе нет иконок.</p>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className={styles.formGroup}>
@@ -1934,6 +2090,101 @@ export default function RouteEditPage() {
           )}
         </div>
 
+        {whatToBringIconPickerIndex !== null && (
+          <div
+            className={styles.modalOverlay}
+            onClick={(e) => e.target === e.currentTarget && setWhatToBringIconPickerIndex(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Выбор иконки"
+          >
+            <div className={styles.modalDialog} style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>Выберите иконку</h2>
+                <button
+                  type="button"
+                  onClick={() => setWhatToBringIconPickerIndex(null)}
+                  className={styles.modalClose}
+                  aria-label="Закрыть"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className={styles.modalBody} style={{ maxHeight: 440, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div className={styles.whatToBringIconFilters}>
+                  <input
+                    type="search"
+                    className={styles.whatToBringIconSearch}
+                    placeholder="Поиск иконки..."
+                    value={whatToBringIconSearch}
+                    onChange={(e) => setWhatToBringIconSearch(e.target.value)}
+                    aria-label="Поиск иконки"
+                    autoComplete="off"
+                  />
+                  <select
+                    className={styles.whatToBringIconGroupSelect}
+                    value={whatToBringIconGroup}
+                    onChange={(e) => setWhatToBringIconGroup(e.target.value)}
+                    aria-label="Группа иконок"
+                  >
+                    <option value="all">Все иконки</option>
+                    {getIconGroups().map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.label} ({g.iconNames.length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {(() => {
+                  const groups = getIconGroups();
+                  const baseNames =
+                    whatToBringIconGroup === 'all'
+                      ? MUI_ICON_NAMES
+                      : (groups.find((g) => g.id === whatToBringIconGroup)?.iconNames ?? []);
+                  const searchLower = (whatToBringIconSearch || '').trim().toLowerCase();
+                  const namesToShow = searchLower
+                    ? baseNames.filter((name) => name.toLowerCase().includes(searchLower))
+                    : baseNames;
+                  return (
+                    <>
+                      <div className={styles.whatToBringIconGridWrap}>
+                        {namesToShow.map((name) => {
+                          const IconComponent = MUI_ICONS[name];
+                          if (!IconComponent) return null;
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              className={styles.whatToBringIconGridItem}
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  whatToBringItems: prev.whatToBringItems.map((it, i) =>
+                                    i === whatToBringIconPickerIndex ? { ...it, icon: name } : it
+                                  ),
+                                }));
+                                setWhatToBringIconPickerIndex(null);
+                                setWhatToBringIconGroup('all');
+                                setWhatToBringIconSearch('');
+                              }}
+                              title={name}
+                            >
+                              <IconComponent size={28} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {namesToShow.length === 0 && (
+                        <p className={styles.whatToBringIconEmpty}>В этой группе нет иконок.</p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+
       </form>
 
       {/* Модалка: выбор мест для «Места рядом с маршрутом» — только места с совпадающей локацией */}
@@ -1980,7 +2231,8 @@ export default function RouteEditPage() {
                 const alreadyIds = new Set([...(formData.placeIds || []), ...(formData.nearbyPlaceIds || [])]);
                 const searchLower = (addNearbyPlacesSearch || '').trim().toLowerCase();
                 const list = allPlaces.filter(
-                  (p) => !alreadyIds.has(p.id) &&
+                  (p) => p.isActive !== false &&
+                    !alreadyIds.has(p.id) &&
                     (p.location || '').trim() &&
                     routeLocations.has((p.location || '').trim().toLowerCase())
                 ).filter(
@@ -2045,6 +2297,130 @@ export default function RouteEditPage() {
                 className={styles.submitBtn}
               >
                 Добавить выбранные ({addNearbyPlacesSelected.size})
+              </button>
+            </div>
+          </div>
+          </div>
+        )}
+
+      {/* Модалка: выбор уже добавленных пунктов "Что взять с собой" */}
+      {addExistingItemsModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={(e) => e.target === e.currentTarget && setAddExistingItemsModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-existing-items-title"
+        >
+          <div
+            className={styles.modalDialog}
+            style={{ maxWidth: 520 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h2 id="add-existing-items-title" className={styles.modalTitle}>Выберите пункты</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddExistingItemsModalOpen(false);
+                  setAddExistingItemsSelected(new Set());
+                  setAddExistingItemsSearch('');
+                }}
+                className={styles.modalClose}
+                aria-label="Закрыть"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p className={styles.formListHint} style={{ marginBottom: 12 }}>
+                Выберите пункты из тех, что уже использовались в других маршрутах.
+              </p>
+              <div style={{ position: 'relative', marginBottom: 12 }}>
+                <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                <input
+                  type="text"
+                  value={addExistingItemsSearch}
+                  onChange={(e) => setAddExistingItemsSearch(e.target.value)}
+                  className={styles.formInput}
+                  placeholder="Поиск по тексту..."
+                  style={{ paddingLeft: 40 }}
+                />
+              </div>
+              {(() => {
+                const existingTexts = new Set((formData.whatToBringItems ?? []).map((item) => item.text.toLowerCase().trim()));
+                const searchLower = (addExistingItemsSearch || '').trim().toLowerCase();
+                const filteredItems = allExistingItems.filter(
+                  (item) => !existingTexts.has(item.text.toLowerCase().trim()) &&
+                    (!searchLower || item.text.toLowerCase().includes(searchLower))
+                );
+                return (
+                  <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+                    {filteredItems.length === 0 ? (
+                      <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>
+                        {searchLower ? 'Ничего не найдено' : 'Нет доступных пунктов'}
+                      </div>
+                    ) : (
+                      filteredItems.map((item) => {
+                        const itemKey = item.text.toLowerCase().trim();
+                        const IconComponent = item.icon && getMuiIconComponent(item.icon);
+                        return (
+                          <label
+                            key={itemKey}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '10px 14px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #f1f5f9',
+                              background: addExistingItemsSelected.has(itemKey) ? '#eff6ff' : 'transparent',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={addExistingItemsSelected.has(itemKey)}
+                              onChange={() => toggleAddExistingItemSelection(itemKey)}
+                            />
+                            {IconComponent ? (
+                              <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <IconComponent size={24} />
+                              </div>
+                            ) : (
+                              <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#f1f5f9', borderRadius: 6 }}>
+                                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>?</span>
+                              </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.text}</div>
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddExistingItemsModalOpen(false);
+                  setAddExistingItemsSelected(new Set());
+                  setAddExistingItemsSearch('');
+                }}
+                className={styles.cancelBtn}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={addSelectedExistingItems}
+                disabled={addExistingItemsSelected.size === 0}
+                className={styles.submitBtn}
+              >
+                Добавить выбранные ({addExistingItemsSelected.size})
               </button>
             </div>
           </div>
@@ -2130,9 +2506,6 @@ export default function RouteEditPage() {
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{route.title}</div>
-                            {route.shortDescription && (
-                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{route.shortDescription}</div>
-                            )}
                           </div>
                           <span style={{ fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }} title="Общих мест с маршрутом">
                             {sharedPlaceCount} общих мест

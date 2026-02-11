@@ -191,7 +191,10 @@ export default function NewsDetail({ slug }) {
                   const quoteContent = block.data?.content || block.data?.text || ''
                   return (
                     <div key={block.id} className={styles.quoteBlock}>
-                      <RichTextContent html={quoteContent} />
+                      <div className={styles.quoteContent}>
+                        <RichTextContent html={quoteContent} />
+                      </div>
+                      <div className={styles.quoteMarks}>&rdquo;</div>
                     </div>
                   )
                 }
