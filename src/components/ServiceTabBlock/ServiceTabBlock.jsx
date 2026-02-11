@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import styles from './ServiceTabBlock.module.css'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
-import { publicServicesAPI, getImageUrl } from '@/lib/api'
+import { publicServicesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 
 const FILTER_TO_CATEGORY = {
   'Гиды': 'Гид',
@@ -42,13 +42,34 @@ const TAB_ORDER = [
   'Пожарная охрана',
 ]
 
-const CARDS_PER_TAB = 8
+const DEFAULT_CARDS_PER_TAB = 8
 
 export default function ServiceTabBlock() {
   const [tabs, setTabs] = useState([])
   const [activeTab, setActiveTab] = useState(null)
   const [servicesByCategory, setServicesByCategory] = useState({})
   const [loading, setLoading] = useState(true)
+  const [cardsLimit, setCardsLimit] = useState(DEFAULT_CARDS_PER_TAB)
+
+  // Загружаем настройки главной страницы для получения лимита карточек
+  useEffect(() => {
+    let cancelled = false
+    publicHomeAPI.get()
+      .then(({ data }) => {
+        if (!cancelled && data?.servicesCardsLimit) {
+          const limit = typeof data.servicesCardsLimit === 'number' && data.servicesCardsLimit > 0 
+            ? data.servicesCardsLimit 
+            : DEFAULT_CARDS_PER_TAB
+          setCardsLimit(limit)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCardsLimit(DEFAULT_CARDS_PER_TAB)
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
 
   // Одна загрузка всех услуг — данные по категориям сохраняются для всех табов
   useEffect(() => {
@@ -64,6 +85,16 @@ export default function ServiceTabBlock() {
               byCategory[cat].push(s)
             }
           })
+          
+          // Сортируем услуги в каждой категории по популярности (uniqueViewsCount) от большего к меньшему
+          Object.keys(byCategory).forEach((cat) => {
+            byCategory[cat].sort((a, b) => {
+              const viewsA = a.uniqueViewsCount ?? 0
+              const viewsB = b.uniqueViewsCount ?? 0
+              return viewsB - viewsA // От большего к меньшему
+            })
+          })
+          
           setServicesByCategory(byCategory)
           const filledTabs = TAB_ORDER.filter((label) => {
             const cat = FILTER_TO_CATEGORY[label]
@@ -91,7 +122,7 @@ export default function ServiceTabBlock() {
   }, [])
 
   const services = activeTab
-    ? (servicesByCategory[FILTER_TO_CATEGORY[activeTab]] || []).slice(0, CARDS_PER_TAB)
+    ? (servicesByCategory[FILTER_TO_CATEGORY[activeTab]] || []).slice(0, cardsLimit)
     : []
 
   if (loading || tabs.length === 0) {

@@ -13,7 +13,7 @@ import { Navigation } from 'swiper/modules';
 import { Link } from 'react-router-dom';
 import TitleButton from '../TitleButton/TitleButton';
 import { useRef } from 'react';
-import { publicNewsAPI, getImageUrl } from '@/lib/api';
+import { publicNewsAPI, publicHomeAPI, getImageUrl } from '@/lib/api';
 
 function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
   const ref = useRef(null)
@@ -82,21 +82,97 @@ export default function SwiperSliderMain() {
 
   useEffect(() => {
     let cancelled = false
-    publicNewsAPI.getAll({ type: 'article', limit: 8 })
+    setLoading(true)
+    
+    // Сначала проверяем, есть ли выбранные статьи в настройках главной страницы
+    publicHomeAPI.get()
       .then(({ data }) => {
-        if (!cancelled && data?.items?.length) {
-          setSlides(data.items.map((item) => ({
-            id: item.id,
-            href: `/news/${item.slug || item.id}`,
-            imgSrc: getImageUrl(item.image || item.preview || item.images?.[0]) || '/helpfull1.png',
-            title: item.title || '',
-          })))
-        } else if (!cancelled) {
-          setSlides([])
+        if (cancelled) return
+        const firstTimeArticles = data?.firstTimeArticles || []
+        
+        if (firstTimeArticles.length > 0) {
+          // Загружаем полные данные статей по их ID, чтобы получить актуальные images[0]
+          const articleIds = firstTimeArticles.map(a => a.articleId || a.id).filter(Boolean)
+          if (articleIds.length > 0) {
+            return publicNewsAPI.getAll({ type: 'article', limit: 500 })
+              .then((res) => {
+                if (cancelled) return
+                const allArticles = res.data?.items || res.data || []
+                const articlesMap = new Map(allArticles.map(a => [a.id, a]))
+                
+                // Используем выбранные статьи из настроек, но берем актуальные данные из API
+                const list = firstTimeArticles
+                  .map((savedArticle) => {
+                    const articleId = savedArticle.articleId || savedArticle.id
+                    const fullArticle = articlesMap.get(articleId)
+                    
+                    // Используем полные данные статьи, если они есть
+                    if (fullArticle) {
+                      return {
+                        id: fullArticle.id,
+                        href: `/news/${fullArticle.slug || fullArticle.id}`,
+                        imgSrc: getImageUrl(fullArticle.images?.[0] || fullArticle.image || fullArticle.preview) || '/helpfull1.png',
+                        title: fullArticle.title || '',
+                      }
+                    }
+                    
+                    // Если статья не найдена в API, используем сохраненные данные как fallback
+                    return {
+                      id: articleId,
+                      href: `/news/${savedArticle.slug || articleId}`,
+                      imgSrc: getImageUrl(savedArticle.image) || '/helpfull1.png',
+                      title: savedArticle.title || '',
+                    }
+                  })
+                  .filter(Boolean)
+                
+                if (list.length > 0) {
+                  setSlides(list)
+                  setLoading(false)
+                  return Promise.resolve()
+                }
+              })
+          }
         }
+        
+        // Если выбранных статей нет, загружаем из API
+        return publicNewsAPI.getAll({ type: 'article', limit: 8 })
+          .then(({ data }) => {
+            if (!cancelled && data?.items?.length) {
+              setSlides(data.items.map((item) => ({
+                id: item.id,
+                href: `/news/${item.slug || item.id}`,
+                imgSrc: getImageUrl(item.images?.[0] || item.image || item.preview) || '/helpfull1.png',
+                title: item.title || '',
+              })))
+            } else if (!cancelled) {
+              setSlides([])
+            }
+          })
       })
       .catch(() => {
-        if (!cancelled) setSlides([])
+        if (!cancelled) {
+          // В случае ошибки загрузки настроек, пробуем загрузить статьи напрямую
+          publicNewsAPI.getAll({ type: 'article', limit: 8 })
+            .then(({ data }) => {
+              if (!cancelled && data?.items?.length) {
+                setSlides(data.items.map((item) => ({
+                  id: item.id,
+                  href: `/news/${item.slug || item.id}`,
+                  imgSrc: getImageUrl(item.images?.[0] || item.image || item.preview) || '/helpfull1.png',
+                  title: item.title || '',
+                })))
+              } else if (!cancelled) {
+                setSlides([])
+              }
+            })
+            .catch(() => {
+              if (!cancelled) setSlides([])
+            })
+            .finally(() => {
+              if (!cancelled) setLoading(false)
+            })
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

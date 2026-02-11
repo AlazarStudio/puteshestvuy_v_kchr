@@ -228,6 +228,17 @@ export const publicRegionAPI = {
   get: () => api.get('/region'),
 };
 
+// Home API (главная страница)
+export const homeAPI = {
+  get: () => api.get('/admin/home'),
+  update: (content) => api.put('/admin/home', { content }),
+};
+
+// Home API (public — для главной страницы)
+export const publicHomeAPI = {
+  get: () => api.get('/home'),
+};
+
 // Footer API (admin)
 export const footerAPI = {
   get: () => api.get('/admin/footer'),

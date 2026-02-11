@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import styles from './SliderFullScreen.module.css'
-import { publicPlacesAPI, getImageUrl } from '@/lib/api'
+import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
@@ -55,18 +55,94 @@ export default function SliderFullScreen() {
 
   useEffect(() => {
     let cancelled = false
-    publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
-      .then((res) => {
+    setIsLoading(true)
+    
+    // Сначала проверяем, есть ли выбранные места в настройках главной страницы
+    publicHomeAPI.get()
+      .then(({ data }) => {
         if (cancelled) return
-        const items = res.data?.items || res.data || []
-        const list = items.map(placeToSlide)
-        if (list.length > 0) {
-          setSlides(list)
-          initialSlidesRef.current = list
+        const sliderPlaces = data?.sliderPlaces || []
+        
+        if (sliderPlaces.length > 0) {
+          // Загружаем полные данные мест по их ID, чтобы получить актуальные images[0]
+          const placeIds = sliderPlaces.map(p => p.placeId || p.id).filter(Boolean)
+          if (placeIds.length > 0) {
+            return publicPlacesAPI.getAll({ limit: 500 })
+              .then((res) => {
+                if (cancelled) return
+                const allPlaces = res.data?.items || res.data || []
+                const placesMap = new Map(allPlaces.map(p => [p.id, p]))
+                
+                // Используем выбранные места из настроек, но берем актуальные данные из API
+                const list = sliderPlaces
+                  .map((savedPlace) => {
+                    const placeId = savedPlace.placeId || savedPlace.id
+                    const fullPlace = placesMap.get(placeId)
+                    
+                    // Используем полные данные места, если они есть
+                    if (fullPlace) {
+                      return placeToSlide(fullPlace)
+                    }
+                    
+                    // Если место не найдено в API, используем сохраненные данные как fallback
+                    const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
+                    const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
+                    return {
+                      id: placeId,
+                      slug: savedPlace.slug || placeId,
+                      image: getImageUrl(savedPlace.image),
+                      video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
+                      place: savedPlace.location || '',
+                      title: savedPlace.title || '',
+                      rating: hasReviews && ratingValue != null ? (ratingValue % 1 === 0 ? String(ratingValue) : ratingValue.toFixed(1)) : null,
+                      reviewsCount: savedPlace.reviewsCount ?? 0,
+                      description: savedPlace.shortDescription || '',
+                    }
+                  })
+                  .filter(Boolean)
+                
+                if (list.length > 0) {
+                  setSlides(list)
+                  initialSlidesRef.current = list
+                  setIsLoading(false)
+                  return Promise.resolve()
+                }
+              })
+          }
         }
+        
+        // Если выбранных мест нет, загружаем из API
+        return publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
+          .then((res) => {
+            if (cancelled) return
+            const items = res.data?.items || res.data || []
+            const list = items.map(placeToSlide)
+            if (list.length > 0) {
+              setSlides(list)
+              initialSlidesRef.current = list
+            }
+          })
       })
       .catch(() => {
-        if (!cancelled) setSlides([])
+        if (!cancelled) {
+          // В случае ошибки загрузки настроек, пробуем загрузить места напрямую
+          publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
+            .then((res) => {
+              if (cancelled) return
+              const items = res.data?.items || res.data || []
+              const list = items.map(placeToSlide)
+              if (list.length > 0) {
+                setSlides(list)
+                initialSlidesRef.current = list
+              }
+            })
+            .catch(() => {
+              if (!cancelled) setSlides([])
+            })
+            .finally(() => {
+              if (!cancelled) setIsLoading(false)
+            })
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false)

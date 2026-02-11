@@ -186,7 +186,7 @@ export default function AdminLayout() {
                   part === 'reviews' ? 'Отзывы' :
                   part === 'pages' ? 'Страницы сайта' :
                   part === 'region' ? 'О регионе' :
-                  part === 'footer' ? 'Футер' : part;
+                  part === 'footer' ? 'Подвал сайта' : part;
               const href = '/' + arr.slice(0, index + 1).join('/');
               return (
                 <span key={index}>

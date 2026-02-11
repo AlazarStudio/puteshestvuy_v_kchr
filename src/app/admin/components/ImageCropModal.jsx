@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { X } from 'lucide-react';
 import styles from './Modal.module.css';
@@ -45,8 +45,8 @@ export async function getCroppedImageBlob(imageSrc, pixelCrop) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))),
-      'image/jpeg',
-      0.9
+      'image/png',
+      1.0
     );
   });
 }
@@ -64,6 +64,14 @@ export default function ImageCropModal({
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const croppedAreaPixelsRef = useRef(null);
+
+  // Сбрасываем состояние при открытии/закрытии модалки
+  useEffect(() => {
+    if (open && imageSrc) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    }
+  }, [open, imageSrc]);
 
   const onCropComplete = useCallback((_croppedArea, croppedAreaPixels) => {
     croppedAreaPixelsRef.current = croppedAreaPixels;
