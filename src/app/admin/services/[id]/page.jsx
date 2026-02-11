@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -112,6 +112,8 @@ export default function ServiceEditPage() {
     data: {},
   });
   const [mapVisible, setMapVisible] = useState(false);
+  const [mapSearchMode, setMapSearchMode] = useState('byAddress'); // 'byAddress' | 'byCoordinates'
+  const [determineLocationTrigger, setDetermineLocationTrigger] = useState(0);
 
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
@@ -1522,9 +1524,20 @@ export default function ServiceEditPage() {
                 value={formData.address}
                 onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
                 className={styles.formInput}
-                placeholder="Введите адрес — на карте появится точка"
+                placeholder={mapSearchMode === 'byAddress' ? 'Введите адрес — на карте появится точка' : 'Или укажите точку по координатам ниже'}
                 style={{ flex: '1 1 280px' }}
               />
+              <button
+                type="button"
+                onClick={() => setDetermineLocationTrigger((v) => v + 1)}
+                disabled={mapSearchMode === 'byAddress' ? !formData.address?.trim() : (formData.latitude == null || formData.longitude == null)}
+                className={styles.editBtn}
+                style={{ padding: 15 }}
+                title={mapSearchMode === 'byAddress' ? 'Определить локацию по адресу' : 'Определить локацию по координатам'}
+                aria-label="Определить локацию"
+              >
+                <MapPin size={18} />
+              </button>
               <button
                 type="button"
                 onClick={() => setMapVisible((v) => !v)}
@@ -1542,23 +1555,80 @@ export default function ServiceEditPage() {
         {formData.category && mapVisible && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Местоположение на карте</label>
+            <div className={styles.mapSearchToggleWrap} style={{ marginBottom: 12 }}>
+              <span className={styles.mapSearchToggleLabel}>Поиск на карте</span>
+              <div className={styles.typeToggle}>
+                <button
+                  type="button"
+                  className={`${styles.typeToggleBtn} ${mapSearchMode === 'byAddress' ? styles.typeToggleBtnActive : ''}`}
+                  onClick={() => setMapSearchMode('byAddress')}
+                >
+                  По адресу
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.typeToggleBtn} ${mapSearchMode === 'byCoordinates' ? styles.typeToggleBtnActive : ''}`}
+                  onClick={() => setMapSearchMode('byCoordinates')}
+                >
+                  По координатам
+                </button>
+              </div>
+            </div>
+            {mapSearchMode === 'byCoordinates' && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', marginBottom: 4 }}>Координаты (широта, долгота)</label>
+                <input
+                  type="text"
+                  value={
+                    formData.latitude != null && formData.longitude != null
+                      ? `${formData.latitude}, ${formData.longitude}`
+                      : formData.latitude != null
+                        ? String(formData.latitude)
+                        : formData.longitude != null
+                          ? `, ${formData.longitude}`
+                          : ''
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v) {
+                      setFormData((prev) => ({ ...prev, latitude: null, longitude: null }));
+                      return;
+                    }
+                    const parts = v.split(/[,\s]+/).map((s) => s.replace(',', '.').trim()).filter(Boolean);
+                    const lat = parts[0] ? parseFloat(parts[0].replace(',', '.')) : null;
+                    const lng = parts[1] ? parseFloat(parts[1].replace(',', '.')) : null;
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: Number.isFinite(lat) ? lat : prev.latitude,
+                      longitude: Number.isFinite(lng) ? lng : prev.longitude,
+                    }));
+                  }}
+                  className={styles.formInput}
+                  placeholder="43.526598, 42.067218"
+                />
+              </div>
+            )}
             <YandexMapPicker
               latitude={formData.latitude}
               longitude={formData.longitude}
-              geocodeQuery={formData.address?.trim() || ''}
+              geocodeQuery={mapSearchMode === 'byAddress' ? (formData.address?.trim() || '') : ''}
               onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+              determineLocationTrigger={determineLocationTrigger}
+              determineLocationBy={mapSearchMode === 'byAddress' ? 'name' : 'coordinates'}
               visible={true}
               height={500}
             />
           </div>
         )}
 
-        {formData.category && !mapVisible && formData.address?.trim() && (
+        {formData.category && !mapVisible && (
           <YandexMapPicker
             latitude={formData.latitude}
             longitude={formData.longitude}
-            geocodeQuery={formData.address.trim()}
+            geocodeQuery={mapSearchMode === 'byAddress' ? (formData.address?.trim() || '') : ''}
             onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+            determineLocationTrigger={determineLocationTrigger}
+            determineLocationBy={mapSearchMode === 'byAddress' ? 'name' : 'coordinates'}
             visible={false}
             height={500}
           />

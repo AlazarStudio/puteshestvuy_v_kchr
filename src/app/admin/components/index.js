@@ -4,3 +4,4 @@ export { default as ImageCropModal } from './ImageCropModal';
 export { default as PlaceFiltersModal } from './PlaceFiltersModal';
 export { default as RouteFiltersModal } from './RouteFiltersModal';
 export { default as NewsBlockEditor } from './NewsBlockEditor';
+export { default as ReviewDetailModal } from './ReviewDetailModal';

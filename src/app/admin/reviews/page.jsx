@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Star, Check, X, Trash2, Map, MapPin, Building2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { Star, Check, X, Trash2, Map, MapPin, Building2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, Eye } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
-import { ConfirmModal, AlertModal } from '../components';
+import { ConfirmModal, AlertModal, ReviewDetailModal } from '../components';
 import styles from '../admin.module.css';
 
 const ENTITY_TABS = [
@@ -23,6 +23,7 @@ export default function ReviewsPage() {
   const [filter, setFilter] = useState('all');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
+  const [selectedReview, setSelectedReview] = useState(null);
 
   // Загружаем сохраненный limit из localStorage или используем значение по умолчанию
   const [limit, setLimit] = useState(() => {
@@ -228,7 +229,7 @@ export default function ReviewsPage() {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('ru-RU', {
       day: 'numeric',
-      month: 'long',
+      month: 'short',
       year: 'numeric',
     });
   };
@@ -354,12 +355,6 @@ export default function ReviewsPage() {
                     {sortBy === 'authorName' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
                   </span>
                 </th>
-                <th className={styles.sortableHeader} onClick={() => handleSort('entityType')}>
-                  <span className={styles.sortHeaderInner}>
-                    <span>Тип</span>
-                    {sortBy === 'entityType' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
-                  </span>
-                </th>
                 <th className={styles.sortableHeader} onClick={() => handleSort('entityTitle')}>
                   <span className={styles.sortHeaderInner}>
                     <span>Объект</span>
@@ -372,7 +367,6 @@ export default function ReviewsPage() {
                     {sortBy === 'rating' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} className={styles.sortIconInactive} />}
                   </span>
                 </th>
-                <th>Текст</th>
                 <th className={styles.sortableHeader} onClick={() => handleSort('createdAt')}>
                   <span className={styles.sortHeaderInner}>
                     <span>Дата</span>
@@ -406,58 +400,73 @@ export default function ReviewsPage() {
               {reviews.map((review) => (
                 <tr key={review.id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className={styles.cellInner} style={{ gap: '10px' }}>
                       <img
                         src={review.authorAvatar || '/no-avatar.png'}
                         alt={review.authorName}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                       />
                       <span>{review.authorName}</span>
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className={styles.cellInner} style={{ gap: '8px' }}>
                       {getEntityIcon(review.entityType)}
-                      {getEntityLabel(review.entityType)}
+                      <span style={{ fontWeight: 500 }}>{review.entityTitle || '—'}</span>
                     </div>
                   </td>
-                  <td>{review.entityTitle || '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', gap: '2px' }}>
+                  <td>
+                    <div className={styles.cellInner} style={{ gap: '4px' }}>
                       {renderStars(review.rating)}
                     </div>
                   </td>
-                  <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {review.text}
+                  <td>
+                    <div className={styles.cellInner}>
+                      {formatDate(review.createdAt)}
+                    </div>
                   </td>
-                  <td>{formatDate(review.createdAt)}</td>
-                  <td>{getStatusBadge(review.status)}</td>
-                  <td className={styles.actions}>
-                    {review.status === 'pending' && (
-                      <>
+                  <td>
+                    <div className={styles.cellInner}>
+                      {getStatusBadge(review.status)}
+                    </div>
+                  </td>
+                  <td className={`${styles.tableCell} ${styles.actionsCell}`}>
+                    <div className={styles.cellInner}>
+                      <div className={styles.actions}>
                         <button
-                          onClick={() => handleApprove(review.id)}
+                          onClick={() => setSelectedReview(review)}
                           className={styles.viewBtn}
-                          title="Одобрить"
+                          title="Просмотреть детали"
                         >
-                          <Check size={16} />
+                          <Eye size={16} />
                         </button>
+                        {review.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(review.id)}
+                              className={styles.viewBtn}
+                              title="Одобрить"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleRejectClick(review.id)}
+                              className={styles.editBtn}
+                              title="Отклонить"
+                            >
+                              <X size={16} />
+                            </button>
+                          </>
+                        )}
                         <button
-                          onClick={() => handleRejectClick(review.id)}
-                          className={styles.editBtn}
-                          title="Отклонить"
+                          onClick={() => handleDeleteClick(review.id)}
+                          className={styles.deleteBtn}
+                          title="Удалить"
                         >
-                          <X size={16} />
+                          <Trash2 size={16} />
                         </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleDeleteClick(review.id)}
-                      className={styles.deleteBtn}
-                      title="Удалить"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -488,6 +497,11 @@ export default function ReviewsPage() {
         title={alertModal.title}
         message={alertModal.message}
         onClose={() => setAlertModal({ open: false, title: '', message: '' })}
+      />
+      <ReviewDetailModal
+        open={!!selectedReview}
+        review={selectedReview}
+        onClose={() => setSelectedReview(null)}
       />
     </div>
   );

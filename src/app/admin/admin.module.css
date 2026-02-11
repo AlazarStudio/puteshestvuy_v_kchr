@@ -706,12 +706,6 @@
   table-layout: fixed;
 }
 
-.tableContainer .table tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -719,7 +713,7 @@
 
 .table th {
   background: #f8fafc;
-  padding: 14px 16px;
+  padding: 14px 12px;
   text-align: left;
   font-weight: 600;
   color: #475569;
@@ -727,6 +721,13 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid #e2e8f0;
+}
+
+/* Минимальная оптимизация ширины - только уменьшаем padding в колонке действий */
+.table th.actionsCell,
+.table td.actionsCell {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .sortableHeader {
@@ -790,12 +791,18 @@
 }
 
 .table td {
-  padding: 16px;
+  padding: 16px 12px;
   border-bottom: 1px solid #f1f5f9;
   color: #334155;
   min-height: 72px;
   vertical-align: middle;
   box-sizing: border-box;
+}
+
+/* Минимальная оптимизация - уменьшаем padding в колонке действий */
+.table td.actionsCell {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .table tr:hover {
@@ -832,10 +839,11 @@
   color: #64748b;
 }
 
+
 .actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: 32px;
 }
 
@@ -849,18 +857,26 @@
   min-height: 32px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .table .actions .editBtn,
 .table .actions .deleteBtn,
 .table .actions .viewBtn {
   min-height: 32px;
-  min-width: 36px;
+  min-width: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 8px 10px;
+}
+
+/* Минимальная оптимизация - немного уменьшаем размер кнопок действий */
+.table td.actionsCell .actions .editBtn,
+.table td.actionsCell .actions .deleteBtn,
+.table td.actionsCell .actions .viewBtn {
+  min-width: 30px;
+  padding: 6px 8px;
 }
 
 .editBtn, .deleteBtn, .viewBtn {

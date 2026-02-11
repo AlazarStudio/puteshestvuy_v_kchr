@@ -21,6 +21,13 @@ const formatReviewDate = (dateStr) => {
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
+const hasTextContent = (html) => {
+  if (!html || typeof html !== 'string') return false
+  // Удаляем HTML-теги и проверяем, остался ли текст
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  return text.length > 0
+}
+
 export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoading = false }) {
   const photos = useMemo(() => {
     if (!place?.images?.length) return [{ src: getImageUrl(place?.images?.[0]) || '/placeholder.jpg' }]
@@ -296,11 +303,15 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                         <div className={styles.title}>Описание</div>
                         <RichTextContent html={place.description} className={styles.descriptionText} />
 
+                        {/* Как добраться */}
+                        {hasTextContent(place.howToGet) && (
+                          <>
+                            <div className={styles.title}>Как добраться</div>
+                            <RichTextContent html={place.howToGet} className={styles.descriptionText} />
+                          </>
+                        )}
+
                         {/* Карта */}
-                        <div className={styles.title}>Как добраться</div>
-
-                        <RichTextContent html={place.howToGet} className={styles.descriptionText} />
-
                         {place.latitude != null && place.longitude != null && Number(place.latitude) && Number(place.longitude) ? (
                           <YandexMapPlace
                             latitude={place.latitude}
@@ -331,6 +342,14 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <img src="/map.png" alt="Карта" />
                               </div>
                             )}
+                          </>
+                        )}
+
+                        {/* Важно знать */}
+                        {hasTextContent(place.importantInfo) && (
+                          <>
+                            <div className={styles.title}>Важно знать</div>
+                            <RichTextContent html={place.importantInfo} className={styles.descriptionText} />
                           </>
                         )}
 

@@ -25,6 +25,7 @@ function getFormSnapshot(data) {
     description: data.description ?? '',
     shortDescription: data.shortDescription ?? '',
     howToGet: data.howToGet ?? '',
+    importantInfo: data.importantInfo ?? '',
     mapUrl: data.mapUrl ?? '',
     audioGuide: data.audioGuide ?? '',
     video: data.video ?? '',
@@ -59,6 +60,7 @@ export default function PlaceEditPage() {
     description: '',
     shortDescription: '',
     howToGet: '',
+    importantInfo: '',
     mapUrl: '',
     audioGuide: '',
     video: '',
@@ -861,6 +863,16 @@ export default function PlaceEditPage() {
             value={formData.howToGet}
             onChange={(value) => setFormData((prev) => ({ ...prev, howToGet: value }))}
             placeholder="Инструкции как добраться до места"
+            minHeight={300}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Важно знать</label>
+          <RichTextEditor
+            value={formData.importantInfo}
+            onChange={(value) => setFormData((prev) => ({ ...prev, importantInfo: value }))}
+            placeholder="Важная информация о месте"
             minHeight={300}
           />
         </div>
