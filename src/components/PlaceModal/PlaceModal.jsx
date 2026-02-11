@@ -174,19 +174,11 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={styles.modalImageActions}>
-                {place?.id && (
-                  <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
-                    <RouteConstructorButton placeId={place.id} place={place} />
-                    <FavoriteButton entityType="place" entityId={place.id} />
-                  </div>
-                )}
-                <button className={styles.modalClose} onClick={onClose}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
+              <button className={styles.modalClose} onClick={onClose}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
 
               <div className={styles.modalBody} ref={modalBodyRef}>
                 {isLoading ? (
@@ -196,6 +188,14 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                 {/* Главное изображение */}
                 <div className={styles.modalImage}>
                   <img src={getImageUrl(place.images?.[0])} alt={place.title} />
+                  {place?.id && (
+                    <div className={styles.modalImageActions}>
+                      <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
+                        <RouteConstructorButton placeId={place.id} place={place} />
+                        <FavoriteButton entityType="place" entityId={place.id} />
+                      </div>
+                    </div>
+                  )}
                   <div className={styles.modalImage_text}>
                     <CenterBlock>
                       <div className={styles.modalImage_text_block}>
@@ -583,10 +583,10 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               >
                                 <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
                                 <div className={styles.sidebarPlaceInfo}>
-                                  <div className={styles.sidebarPlaceRating}>
+                                  {/* <div className={styles.sidebarPlaceRating}>
                                     <img src="/star.png" alt="" />
                                     {nearbyPlace.rating}
-                                  </div>
+                                  </div> */}
                                   <div className={styles.sidebarPlaceTitle}>{nearbyPlace.title}</div>
                                   <div className={styles.sidebarPlaceLocation}>
                                     <img src="/place_black.png" alt="" />

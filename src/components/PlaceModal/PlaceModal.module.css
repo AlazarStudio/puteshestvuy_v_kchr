@@ -29,7 +29,7 @@
 .modalImageActions {
   position: absolute;
   top: 20px;
-  right: 20px;
+  right: 70px;
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -44,6 +44,10 @@
 }
 
 .modalClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10001;
   background: rgba(0, 0, 0, 0.5);
   border: none;
   cursor: pointer;
@@ -150,7 +154,7 @@
 /* Контент */
 .modalInfo {
   flex: 1;
-  padding: 50px 0;
+  padding: 50px 0 0 0;
   background-color: #F1F3F8;
 }
 
@@ -766,6 +770,9 @@
   position: sticky;
   top: 20px;
   align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 90px);
 }
 
 .sidebarTitle {
@@ -773,6 +780,7 @@
   font-size: 24px;
   line-height: 120%;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .sidebarEmpty {
@@ -787,6 +795,15 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  /* height: calc(110px * 6 + 15px * 5); */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebarPlaces::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebarPlaceCard {
@@ -815,6 +832,7 @@
 .sidebarPlaceInfo {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
   flex: 1;
 }

@@ -85,6 +85,16 @@ export default function ProfilePage() {
   const activeTab = (TABS.some((t) => t.id === tabFromUrl) || tabFromUrl === 'edit') ? tabFromUrl : 'routes'
 
   const setActiveTab = (tabId) => {
+    // Закрываем открытый маршрут и редактор при переключении вкладок
+    if (openedRouteId) {
+      setOpenedRouteId(null)
+      setOpenedRouteEdit(null)
+      setOpenedRouteStartPlaceId(null)
+      setOpenedRouteEndPlaceId(null)
+    }
+    if (isRouteEditorOpen) {
+      setIsRouteEditorOpen(false)
+    }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       if (tabId === 'routes') {
@@ -92,11 +102,13 @@ export default function ProfilePage() {
       } else {
         next.set('tab', tabId)
       }
+      next.delete('route') // Удаляем параметр route из URL
       return next
     })
   }
   const [selectedPlacePopup, setSelectedPlacePopup] = useState(null)
   const [optimizeResultModal, setOptimizeResultModal] = useState(null)
+  const [constructorResetConfirm, setConstructorResetConfirm] = useState(false)
   const [constructorDraggedIndex, setConstructorDraggedIndex] = useState(null)
   const [constructorDragOverIndex, setConstructorDragOverIndex] = useState(null)
   const constructorLastDragOverRef = useRef(null)
@@ -1497,9 +1509,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         className={styles.constructorResetBtn}
-                        onClick={() => {
-                          if (window.confirm('Очистить все точки?')) clearConstructor()
-                        }}
+                        onClick={() => setConstructorResetConfirm(true)}
                       >
                         Сбросить
                       </button>
@@ -1662,6 +1672,19 @@ export default function ProfilePage() {
         variant="danger"
         onConfirm={() => routeDeleteConfirm && handleRouteDelete(routeDeleteConfirm.routeId)}
         onCancel={() => setRouteDeleteConfirm(null)}
+      />
+      <ConfirmModal
+        open={constructorResetConfirm}
+        title="Очистить все точки?"
+        message="Вы уверены, что хотите очистить все точки из конструктора маршрутов? Это действие нельзя отменить."
+        confirmLabel="Очистить"
+        cancelLabel="Отмена"
+        variant="danger"
+        onConfirm={() => {
+          clearConstructor()
+          setConstructorResetConfirm(false)
+        }}
+        onCancel={() => setConstructorResetConfirm(false)}
       />
       {optimizeResultModal && (
         <div

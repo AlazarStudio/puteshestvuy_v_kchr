@@ -167,7 +167,61 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
 
     map.events.add('actionbegin', () => setCustomBalloon(null));
 
+    // Обработка полноэкранного режима - увеличиваем z-index чтобы карта была выше модалки
+    const fixFullscreenZIndex = () => {
+      // Ищем полноэкранный контейнер и увеличиваем его z-index
+      const fullscreenContainer = document.querySelector('[class*="ymaps-fullscreen"], div[style*="position: fixed"][style*="z-index"]');
+      if (fullscreenContainer) {
+        fullscreenContainer.style.zIndex = '10002';
+      }
+      // Также проверяем все элементы с фиксированной позицией, которые могут быть полноэкранным контейнером
+      const allFixedElements = document.querySelectorAll('div[style*="position: fixed"]');
+      allFixedElements.forEach((el) => {
+        const style = window.getComputedStyle(el);
+        if (style.position === 'fixed' && (el.classList.toString().includes('ymaps') || el.querySelector('[class*="ymaps"]'))) {
+          el.style.zIndex = '10002';
+        }
+      });
+    };
+
+    const handleFullscreenEnter = () => {
+      setTimeout(fixFullscreenZIndex, 50);
+      setTimeout(fixFullscreenZIndex, 200);
+      setTimeout(fixFullscreenZIndex, 500);
+    };
+
+    const handleFullscreenExit = () => {
+      // При выходе из полноэкранного режима можно сбросить z-index, но это не обязательно
+    };
+
+    // Подписываемся на события полноэкранного режима через container
+    if (map.container && typeof map.container.events !== 'undefined') {
+      try {
+        map.container.events.add('fullscreenenter', handleFullscreenEnter);
+        map.container.events.add('fullscreenexit', handleFullscreenExit);
+      } catch (e) {
+        console.warn('Could not attach fullscreen events:', e);
+      }
+    }
+
+    // Также используем MutationObserver для отслеживания появления полноэкранного контейнера
+    const observer = new MutationObserver(() => {
+      fixFullscreenZIndex();
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+
     return () => {
+      // Отключаем observer
+      observer.disconnect();
+      // Отписываемся от событий
+      if (map.container && typeof map.container.events !== 'undefined') {
+        try {
+          map.container.events.remove('fullscreenenter', handleFullscreenEnter);
+          map.container.events.remove('fullscreenexit', handleFullscreenExit);
+        } catch (e) {
+          // Игнорируем ошибки при отписке
+        }
+      }
       multiRouteRef.current = null;
       placemarkRef.current = null;
       routeFromRef.current = null;
