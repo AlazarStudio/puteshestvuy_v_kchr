@@ -30,6 +30,7 @@ const dropdownMenuData = {
         { title: 'Трансфер', href: '/services?filter=transfer' },
         { title: 'АЗС', href: '/services?filter=gas-stations' },
         { title: 'Санитарные узлы', href: '/services?filter=restrooms' },
+        { title: 'Музеи', href: '/services?filter=museums' },
       ],
     ],
     viewAllHref: '/services',

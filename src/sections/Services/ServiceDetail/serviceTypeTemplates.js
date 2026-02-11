@@ -20,6 +20,7 @@ export const CATEGORY_TO_TEMPLATE_KEY = {
   'Туроператор': 'tour-operator',
   'Торговая точка': 'shop',
   'Придорожный пункт': 'roadside-point',
+  'Музей': 'museum',
 }
 
 /** Ключ шаблона по умолчанию, если категория не найдена */

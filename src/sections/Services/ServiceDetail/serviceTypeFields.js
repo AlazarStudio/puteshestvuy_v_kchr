@@ -102,6 +102,14 @@ export const SERVICE_TYPE_FIELDS = {
     { key: 'toursList', label: 'Туры и программы (каждый пункт отдельно)', type: 'tagList' },
     { key: 'contacts', label: 'Контакты', type: 'contactList' },
   ],
+  museum: [
+    { key: 'aboutContent', label: 'О музее (описание)', type: 'richtext' },
+    { key: 'criteriaList', label: 'Критерии (каждый пункт отдельно)', type: 'tagList' },
+    { key: 'exhibitionsList', label: 'Экспозиции и выставки (каждый пункт отдельно)', type: 'tagList' },
+    { key: 'collectionsList', label: 'Коллекции (каждый пункт отдельно)', type: 'tagList' },
+    { key: 'workingHours', label: 'Режим работы (текст)', type: 'richtext' },
+    { key: 'contacts', label: 'Контакты', type: 'contactList' },
+  ],
 }
 
 /** Типы полей для формы */

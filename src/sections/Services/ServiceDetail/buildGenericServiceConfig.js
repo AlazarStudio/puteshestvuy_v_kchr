@@ -68,11 +68,18 @@ export function buildGenericServiceConfig(service) {
     [d.howtoList, 'Как добраться', 'howto'],
     [d.toursList, 'Туры и программы', 'tours'],
     [d.conditions, 'Условия', 'conditions'],
+    [d.exhibitionsList, 'Экспозиции и выставки', 'exhibitions'],
+    [d.collectionsList, 'Коллекции', 'collections'],
   ]
   listSections.forEach(([arr, title, id]) => {
     const list = normalizeList(arr)
     if (list.length > 0) sections = [...sections, { id, title, content: list }]
   })
+  
+  // Режим работы для музея
+  if (service.category === 'Музей' && d.workingHours && d.workingHours.trim()) {
+    sections = [...sections, { id: 'workingHours', title: 'Режим работы', content: d.workingHours }]
+  }
 
   const aboutContent = d.aboutContent || service.description || service.shortDescription || ''
 

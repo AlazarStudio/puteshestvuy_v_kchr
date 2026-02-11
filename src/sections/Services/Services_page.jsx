@@ -29,6 +29,7 @@ const FILTER_TO_CATEGORY = {
   'Пункты медпомощи': 'Пункт медпомощи',
   'МВД': 'МВД',
   'Пожарная охрана': 'Пожарная охрана',
+  'Музеи': 'Музей',
 }
 
 const SERVICE_FILTER_OPTIONS = [
@@ -43,6 +44,7 @@ const SERVICE_FILTER_OPTIONS = [
   'Трансфер',
   'АЗС',
   'Санитарные узлы',
+  'Музеи',
 ]
 
 const EMERGENCY_FILTER_OPTIONS = [
@@ -67,6 +69,7 @@ const LABEL_TO_URL_FILTER = {
   'Пункты медпомощи': 'medical',
   'МВД': 'police',
   'Пожарная охрана': 'fire-department',
+  'Музеи': 'museums',
 }
 
 const URL_FILTER_TO_LABEL = {
@@ -85,6 +88,7 @@ const URL_FILTER_TO_LABEL = {
   medical: 'Пункты медпомощи',
   police: 'МВД',
   'fire-department': 'Пожарная охрана',
+  museums: 'Музеи',
 }
 
 const filterGroups = [

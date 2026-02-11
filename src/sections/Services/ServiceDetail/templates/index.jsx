@@ -16,6 +16,7 @@ import PoliceTemplate from './PoliceTemplate'
 import FireTemplate from './FireTemplate'
 import TourOperatorTemplate from './TourOperatorTemplate'
 import RoadsidePointTemplate from './RoadsidePointTemplate'
+import MuseumTemplate from './MuseumTemplate'
 
 const TEMPLATE_MAP = {
   guide: GuideTemplate,
@@ -34,6 +35,7 @@ const TEMPLATE_MAP = {
   fire: FireTemplate,
   'tour-operator': TourOperatorTemplate,
   'roadside-point': RoadsidePointTemplate,
+  museum: MuseumTemplate,
 }
 
 export const TEMPLATE_COMPONENTS = TEMPLATE_MAP
@@ -66,6 +68,7 @@ export function ServiceTemplateByType({ type }) {
     case 'fire': return <FireTemplate key="fire" />
     case 'tour-operator': return <TourOperatorTemplate key="tour-operator" />
     case 'roadside-point': return <RoadsidePointTemplate key="roadside-point" />
+    case 'museum': return <MuseumTemplate key="museum" />
     default: return <GuideTemplate key="default" />
   }
 }
