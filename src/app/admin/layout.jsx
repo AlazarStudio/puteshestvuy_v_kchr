@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   Map, 
@@ -10,13 +11,15 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  FileText
+  FileText,
+  Users
 } from 'lucide-react';
-import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI } from '@/lib/api';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI } from '@/lib/api';
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
 export const AdminBreadcrumbContext = createContext(null);
+export const AdminCountsContext = createContext(null);
 
 const menuItems = [
   { href: '/admin', label: 'Главная', icon: LayoutDashboard, key: null },
@@ -26,11 +29,13 @@ const menuItems = [
   { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper, key: 'news' },
   { href: '/admin/services', label: 'Услуги', icon: Building2, key: 'services' },
   { href: '/admin/reviews', label: 'Отзывы', icon: Star, key: 'reviews' },
+  { href: '/admin/users', label: 'Пользователи', icon: Users, key: 'users' },
 ];
 
 export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user, loading: authLoading, logout } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -42,38 +47,36 @@ export default function AdminLayout() {
     news: null,
     services: null,
     reviews: null,
+    users: null,
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const user = localStorage.getItem('adminUser');
-    
-    if (!token || !user) {
+    // Ждем загрузки AuthContext
+    if (authLoading) {
+      return;
+    }
+
+    // Если пользователь не авторизован, редиректим на логин с returnUrl
+    if (!user) {
       if (pathname !== '/admin/login') {
-        navigate('/admin/login');
+        navigate(`/login?returnUrl=${encodeURIComponent(pathname)}`);
       }
       setIsLoading(false);
       return;
     }
 
-    try {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'SUPERADMIN') {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        navigate('/admin/login');
-        setIsLoading(false);
-        return;
-      }
-      setIsAuthenticated(true);
-    } catch {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
-      navigate('/admin/login');
+    // Проверяем роль пользователя
+    if (user.role !== 'SUPERADMIN' && user.role !== 'ADMIN') {
+      // Если не админ, редиректим на главную
+      navigate('/');
+      setIsLoading(false);
+      return;
     }
-    
+
+    // Пользователь авторизован и имеет права админа
+    setIsAuthenticated(true);
     setIsLoading(false);
-  }, [pathname, navigate]);
+  }, [user, authLoading, pathname, navigate]);
 
   // Загрузка счетчиков объектов
   useEffect(() => {
@@ -81,12 +84,13 @@ export default function AdminLayout() {
 
     const fetchCounts = async () => {
       try {
-        const [placesRes, routesRes, newsRes, servicesRes, reviewsRes] = await Promise.all([
+        const [placesRes, routesRes, newsRes, servicesRes, reviewsRes, usersRes] = await Promise.all([
           placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           servicesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          adminUsersAPI.getAll({ page: 1, limit: 1, includeSuperadmin: 'true' }).catch(() => ({ data: { pagination: { total: 0 } } })),
         ]);
 
         setCounts({
@@ -95,6 +99,7 @@ export default function AdminLayout() {
           news: newsRes.data?.pagination?.total ?? 0,
           services: servicesRes.data?.pagination?.total ?? 0,
           reviews: reviewsRes.data?.pagination?.total ?? 0,
+          users: usersRes.data?.pagination?.total ?? 0,
         });
       } catch (error) {
         console.error('Ошибка загрузки счетчиков:', error);
@@ -105,9 +110,9 @@ export default function AdminLayout() {
   }, [isAuthenticated]);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminUser');
-    navigate('/admin/login');
+    // Используем logout из AuthContext, который очистит все токены
+    logout();
+    navigate('/');
   };
 
   if (isLoading) {
@@ -184,6 +189,7 @@ export default function AdminLayout() {
                   part === 'news' ? 'Новости и статьи' :
                   part === 'services' ? 'Услуги' :
                   part === 'reviews' ? 'Отзывы' :
+                  part === 'users' ? 'Пользователи' :
                   part === 'pages' ? 'Страницы сайта' :
                   part === 'region' ? 'О регионе' :
                   part === 'footer' ? 'Подвал сайта' : part;
@@ -208,7 +214,9 @@ export default function AdminLayout() {
         <div className={styles.content}>
           <AdminHeaderRightContext.Provider value={{ setHeaderRight }}>
             <AdminBreadcrumbContext.Provider value={{ setBreadcrumbLabel }}>
-              <Outlet />
+              <AdminCountsContext.Provider value={{ counts, setCounts }}>
+                <Outlet />
+              </AdminCountsContext.Provider>
             </AdminBreadcrumbContext.Provider>
           </AdminHeaderRightContext.Provider>
         </div>

@@ -1,112 +1,15 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { authAPI } from '@/lib/api';
-import styles from './login.module.css';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    login: '',
-    password: '',
-  });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/admin';
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError('');
-  };
+  useEffect(() => {
+    // Редиректим на общую страницу логина с returnUrl
+    navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, { replace: true });
+  }, [navigate, returnUrl]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await authAPI.login(formData);
-      const { user, token } = response.data;
-
-      if (user.role !== 'SUPERADMIN') {
-        setError('Доступ запрещён. Требуются права администратора.');
-        setIsLoading(false);
-        return;
-      }
-
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminUser', JSON.stringify(user));
-      navigate('/admin');
-    } catch (err) {
-      setError(
-        err.response?.data?.message || 
-        'Ошибка авторизации. Проверьте логин и пароль.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className={styles.loginContainer}>
-      <div className={styles.loginCard}>
-        <div className={styles.loginHeader}>
-          <h1>КЧР Туризм</h1>
-          <p>Панель администратора</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className={styles.loginForm}>
-          {error && <div className={styles.error}>{error}</div>}
-
-          <div className={styles.formGroup}>
-            <label htmlFor="login" className={styles.label}>
-              Логин
-            </label>
-            <input
-              type="text"
-              id="login"
-              name="login"
-              value={formData.login}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Введите логин"
-              required
-              autoComplete="username"
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>
-              Пароль
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="Введите пароль"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Вход...' : 'Войти'}
-          </button>
-        </form>
-
-        <div className={styles.loginFooter}>
-          <a href="/" className={styles.backLink}>
-            <ArrowLeft size={16} /> Вернуться на сайт
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

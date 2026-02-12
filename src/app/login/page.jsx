@@ -25,8 +25,16 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
     try {
-      await login(formData)
-      navigate(returnUrl, { replace: true })
+      const user = await login(formData)
+      
+      // Если returnUrl начинается с /admin и пользователь админ - редиректим в админку (защита админки)
+      // Во всех остальных случаях - в профиль
+      if (returnUrl.startsWith('/admin') && (user.role === 'ADMIN' || user.role === 'SUPERADMIN')) {
+        navigate(returnUrl, { replace: true })
+      } else {
+        // Всегда в профиль по умолчанию
+        navigate('/profile', { replace: true })
+      }
     } catch (err) {
       setError(
         err.response?.data?.message || err.message || 'Ошибка входа. Проверьте логин и пароль.'

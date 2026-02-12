@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { GripVertical, ChevronUp, ChevronDown, X, ArrowLeft, Flag, MapPin } from 'lucide-react'
+import { GripVertical, ChevronUp, ChevronDown, X, ArrowLeft, Flag, MapPin, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
@@ -899,6 +899,18 @@ export default function ProfilePage() {
                   </button>
                 )
               })}
+              {(user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') && (
+                <Link
+                  to="/admin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.navItem}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Settings className={styles.navIcon} size={20} />
+                  <span className={styles.navLabel}>Админ панель</span>
+                </Link>
+              )}
             </nav>
             <button type="button" onClick={logout} className={styles.logoutBtn}>
               Выйти

@@ -22,7 +22,9 @@ export function AuthProvider({ children }) {
   }
 
   const refreshProfile = useCallback(async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem(USER_TOKEN_KEY) : null
+    const token = typeof window !== 'undefined' 
+      ? (localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem('adminToken'))
+      : null
     if (!token) {
       setUser(null)
       setLoading(false)
@@ -31,19 +33,34 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await userAPI.getProfile()
       setUser(data)
+      // Синхронизируем с админскими токенами для совместимости
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('adminToken', token)
+        localStorage.setItem('adminUser', JSON.stringify(data))
+      }
     } catch {
       setUser(null)
-      if (typeof window !== 'undefined') localStorage.removeItem(USER_TOKEN_KEY)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(USER_TOKEN_KEY)
+        localStorage.removeItem('adminToken')
+        localStorage.removeItem('adminUser')
+      }
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem(USER_TOKEN_KEY) : null
+    const token = typeof window !== 'undefined' 
+      ? (localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem('adminToken'))
+      : null
     if (!token) {
       setLoading(false)
       return
+    }
+    // Если есть adminToken но нет USER_TOKEN_KEY, синхронизируем
+    if (typeof window !== 'undefined' && localStorage.getItem('adminToken') && !localStorage.getItem(USER_TOKEN_KEY)) {
+      localStorage.setItem(USER_TOKEN_KEY, localStorage.getItem('adminToken'))
     }
     refreshProfile()
   }, [refreshProfile])
@@ -59,7 +76,12 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (loginData) => {
     const response = await authAPI.login(loginData)
     const { user: u, token } = response.data
-    if (typeof window !== 'undefined') localStorage.setItem(USER_TOKEN_KEY, token)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_TOKEN_KEY, token)
+      // Также сохраняем для совместимости с админкой
+      localStorage.setItem('adminToken', token)
+      localStorage.setItem('adminUser', JSON.stringify(u))
+    }
     setUser(u)
     return u
   }, [])
@@ -74,7 +96,12 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     setUser(null)
-    if (typeof window !== 'undefined') localStorage.removeItem(USER_TOKEN_KEY)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(USER_TOKEN_KEY)
+      // Также удаляем админские токены
+      localStorage.removeItem('adminToken')
+      localStorage.removeItem('adminUser')
+    }
   }, [])
 
   const isFavorite = useCallback(

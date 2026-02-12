@@ -20,37 +20,38 @@ const api = axios.create({
 
 const USER_TOKEN_KEY = 'token';
 
-// Request interceptor: admin — adminToken, users/auth — user token
+// Request interceptor: используем один токен для всех запросов
 api.interceptors.request.use(
   (config) => {
     if (typeof window === 'undefined') return config;
-    const url = config.url || '';
-    const isAdmin = url.includes('/admin');
-    if (isAdmin) {
-      const adminToken = localStorage.getItem('adminToken');
-      if (adminToken) config.headers.Authorization = `Bearer ${adminToken}`;
-    } else if (url.includes('/users')) {
-      const userToken = localStorage.getItem(USER_TOKEN_KEY);
-      if (userToken) config.headers.Authorization = `Bearer ${userToken}`;
+    // Используем основной токен для всех запросов
+    const token = localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem('adminToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: 401 — clear the right token, redirect only for admin
+// Response interceptor: 401 — очищаем токены и редиректим
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       const url = error.config?.url || '';
+      // Очищаем все токены
+      localStorage.removeItem(USER_TOKEN_KEY);
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      
+      // Отправляем событие для AuthContext
+      window.dispatchEvent(new CustomEvent('user-unauthorized'));
+      
+      // Редиректим на логин с returnUrl
       if (url.includes('/admin')) {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        window.location.href = '/admin/login';
-      } else if (url.includes('/users')) {
-        localStorage.removeItem(USER_TOKEN_KEY);
-        window.dispatchEvent(new CustomEvent('user-unauthorized'));
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
       }
     }
     return Promise.reject(error);
@@ -259,6 +260,15 @@ export const feedbackAPI = {
 export const pagesAPI = {
   get: (pageName) => api.get(`/admin/pages/${pageName}`),
   update: (pageName, content) => api.put(`/admin/pages/${pageName}`, { content }),
+};
+
+// Users API (admin — для управления пользователями)
+export const adminUsersAPI = {
+  getAll: (params) => api.get('/admin/users', { params }),
+  getById: (id) => api.get(`/admin/users/${id}`),
+  updateRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  ban: (id) => api.put(`/admin/users/${id}/ban`),
+  unban: (id) => api.put(`/admin/users/${id}/unban`),
 };
 
 // Pages API (public — для страниц сайта)
