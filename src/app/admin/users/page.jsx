@@ -39,7 +39,7 @@ export default function UsersPage() {
         const userData = JSON.parse(adminUser);
         setCurrentUserRole(userData.role);
       } catch (e) {
-        console.error('Ошибка парсинга adminUser:', e);
+        // Игнорируем ошибку парсинга
       }
     }
   }, []);
@@ -119,7 +119,6 @@ export default function UsersPage() {
         }
       }
     } catch (error) {
-      console.error('Ошибка загрузки пользователей:', error);
       setAlertModal({
         open: true,
         title: 'Ошибка',
@@ -216,28 +215,19 @@ export default function UsersPage() {
     const handleClickOutside = (event) => {
       // Проверяем, что клик был вне меню
       if (roleMenuRef.current && !roleMenuRef.current.contains(event.target)) {
-        // Проверяем, что клик не был на кнопке открытия меню
-        const clickedButton = event.target.closest('button');
-        if (clickedButton && clickedButton.querySelector('svg')) {
-          const isRoleButton = Array.from(clickedButton.querySelectorAll('svg')).some(
-            svg => svg.parentElement === clickedButton && clickedButton.title === 'Изменить роль пользователя'
-          );
-          if (isRoleButton) {
-            return; // Не закрываем, если клик на кнопке открытия меню
-          }
-        }
         setRoleMenuOpen(null);
       }
     };
 
-    // Используем небольшую задержку, чтобы onClick на кнопках меню успел сработать
+    // Используем click вместо mousedown и без capture phase, чтобы onClick успел сработать
+    // Небольшая задержка, чтобы дать время onClick на кнопках меню сработать
     const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside, true);
-    }, 150);
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [roleMenuOpen]);
 
@@ -246,8 +236,6 @@ export default function UsersPage() {
   };
 
   const handleRoleSelect = (user, newRole) => {
-    console.log('handleRoleSelect called', { userId: user.id, currentRole: user.role, newRole });
-    
     if (user.role === newRole) {
       setRoleMenuOpen(null);
       return;
@@ -264,7 +252,6 @@ export default function UsersPage() {
     
     // Небольшая задержка перед показом модалки, чтобы меню успело закрыться
     setTimeout(() => {
-      console.log('Setting confirm modal', { userEmail: user.email, newRole });
       setConfirmModal({
         title: `Изменить роль пользователя?`,
         message: `Вы уверены, что хотите изменить роль пользователя "${user.email}" на "${roleNames[newRole]}"?`,
@@ -272,36 +259,52 @@ export default function UsersPage() {
         cancelLabel: 'Отмена',
         variant: 'default',
         onConfirm: async () => {
-          console.log('Confirming role change', { userId: user.id, newRole });
           setUpdatingRoleId(user.id);
           try {
-            await adminUsersAPI.updateRole(user.id, newRole);
-            // Обновляем пользователя в списке
-            setUsers((prev) =>
-              prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-            );
+            const response = await adminUsersAPI.updateRole(user.id, newRole);
+            
+            // Если пользователь стал ADMIN и текущий пользователь ADMIN, удаляем его из списка
+            // Если пользователь стал USER и текущий пользователь SUPERADMIN, он останется в списке
+            if (currentUserRole === 'ADMIN' && newRole !== 'USER') {
+              // Админ не должен видеть других админов - удаляем из списка
+              setUsers((prev) => prev.filter((u) => u.id !== user.id));
+              setPagination((prev) => ({
+                ...prev,
+                total: Math.max(0, prev.total - 1),
+              }));
+            } else {
+              // Обновляем пользователя в списке
+              setUsers((prev) =>
+                prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+              );
+            }
+            
             setConfirmModal(null);
             setAlertModal({
               open: true,
               title: 'Успешно',
               message: `Роль пользователя изменена на "${roleNames[newRole]}"`,
             });
+            
+            // Если нужно, перезагружаем список пользователей
+            if (currentUserRole === 'ADMIN' && newRole !== 'USER') {
+              // Перезагружаем список, чтобы обновить счетчик
+              setTimeout(() => {
+                fetchUsers(pagination.page, false);
+              }, 500);
+            }
           } catch (error) {
-            console.error('Ошибка изменения роли:', error);
             setAlertModal({
               open: true,
               title: 'Ошибка',
-              message: error.response?.data?.message || 'Не удалось изменить роль пользователя',
+              message: error.response?.data?.message || error.message || 'Не удалось изменить роль пользователя',
             });
           } finally {
             setUpdatingRoleId(null);
             setConfirmModal(null);
           }
         },
-        onCancel: () => {
-          console.log('Role change cancelled');
-          setConfirmModal(null);
-        },
+        onCancel: () => setConfirmModal(null),
       });
     }, 100);
   };
@@ -327,7 +330,6 @@ export default function UsersPage() {
             message: 'Пользователь заблокирован',
           });
         } catch (error) {
-          console.error('Ошибка блокировки пользователя:', error);
           setAlertModal({
             open: true,
             title: 'Ошибка',
@@ -363,7 +365,6 @@ export default function UsersPage() {
             message: 'Пользователь разблокирован',
           });
         } catch (error) {
-          console.error('Ошибка разблокировки пользователя:', error);
           setAlertModal({
             open: true,
             title: 'Ошибка',
@@ -667,6 +668,10 @@ export default function UsersPage() {
                             {roleMenuOpen === user.id && (
                               <div 
                                 className={styles.dropdownMenu}
+                                onMouseDown={(e) => {
+                                  // Предотвращаем закрытие меню при клике внутри него
+                                  e.stopPropagation();
+                                }}
                                 onClick={(e) => {
                                   // Предотвращаем всплытие клика из меню
                                   e.stopPropagation();
@@ -674,10 +679,12 @@ export default function UsersPage() {
                               >
                                 <button
                                   type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('USER role button clicked');
                                     handleRoleSelect(user, 'USER');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'USER' ? styles.dropdownItemActive : ''}`}
@@ -689,10 +696,12 @@ export default function UsersPage() {
                                 </button>
                                 <button
                                   type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('ADMIN role button clicked');
                                     handleRoleSelect(user, 'ADMIN');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'ADMIN' ? styles.dropdownItemActive : ''}`}
@@ -704,10 +713,12 @@ export default function UsersPage() {
                                 </button>
                                 <button
                                   type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('SUPERADMIN role button clicked');
                                     handleRoleSelect(user, 'SUPERADMIN');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'SUPERADMIN' ? styles.dropdownItemActive : ''}`}
