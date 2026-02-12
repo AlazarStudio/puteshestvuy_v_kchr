@@ -211,24 +211,34 @@ export default function UsersPage() {
 
   // Закрытие выпадающего меню при клике вне его
   useEffect(() => {
+    if (!roleMenuOpen) return;
+
     const handleClickOutside = (event) => {
       // Проверяем, что клик был вне меню
       if (roleMenuRef.current && !roleMenuRef.current.contains(event.target)) {
+        // Проверяем, что клик не был на кнопке открытия меню
+        const clickedButton = event.target.closest('button');
+        if (clickedButton && clickedButton.querySelector('svg')) {
+          const isRoleButton = Array.from(clickedButton.querySelectorAll('svg')).some(
+            svg => svg.parentElement === clickedButton && clickedButton.title === 'Изменить роль пользователя'
+          );
+          if (isRoleButton) {
+            return; // Не закрываем, если клик на кнопке открытия меню
+          }
+        }
         setRoleMenuOpen(null);
       }
     };
 
-    if (roleMenuOpen) {
-      // Используем небольшую задержку, чтобы onClick на кнопках меню успел сработать
-      const timeoutId = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 100);
+    // Используем небольшую задержку, чтобы onClick на кнопках меню успел сработать
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside, true);
+    }, 150);
 
-      return () => {
-        clearTimeout(timeoutId);
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
   }, [roleMenuOpen]);
 
   const handleRoleChangeClick = (user) => {
@@ -236,6 +246,8 @@ export default function UsersPage() {
   };
 
   const handleRoleSelect = (user, newRole) => {
+    console.log('handleRoleSelect called', { userId: user.id, currentRole: user.role, newRole });
+    
     if (user.role === newRole) {
       setRoleMenuOpen(null);
       return;
@@ -252,6 +264,7 @@ export default function UsersPage() {
     
     // Небольшая задержка перед показом модалки, чтобы меню успело закрыться
     setTimeout(() => {
+      console.log('Setting confirm modal', { userEmail: user.email, newRole });
       setConfirmModal({
         title: `Изменить роль пользователя?`,
         message: `Вы уверены, что хотите изменить роль пользователя "${user.email}" на "${roleNames[newRole]}"?`,
@@ -259,6 +272,7 @@ export default function UsersPage() {
         cancelLabel: 'Отмена',
         variant: 'default',
         onConfirm: async () => {
+          console.log('Confirming role change', { userId: user.id, newRole });
           setUpdatingRoleId(user.id);
           try {
             await adminUsersAPI.updateRole(user.id, newRole);
@@ -284,7 +298,10 @@ export default function UsersPage() {
             setConfirmModal(null);
           }
         },
-        onCancel: () => setConfirmModal(null),
+        onCancel: () => {
+          console.log('Role change cancelled');
+          setConfirmModal(null);
+        },
       });
     }, 100);
   };
@@ -648,11 +665,19 @@ export default function UsersPage() {
                               )}
                             </button>
                             {roleMenuOpen === user.id && (
-                              <div className={styles.dropdownMenu}>
+                              <div 
+                                className={styles.dropdownMenu}
+                                onClick={(e) => {
+                                  // Предотвращаем всплытие клика из меню
+                                  e.stopPropagation();
+                                }}
+                              >
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    console.log('USER role button clicked');
                                     handleRoleSelect(user, 'USER');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'USER' ? styles.dropdownItemActive : ''}`}
@@ -663,9 +688,11 @@ export default function UsersPage() {
                                   {user.role === 'USER' && <span className={styles.checkmark}>✓</span>}
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    console.log('ADMIN role button clicked');
                                     handleRoleSelect(user, 'ADMIN');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'ADMIN' ? styles.dropdownItemActive : ''}`}
@@ -676,9 +703,11 @@ export default function UsersPage() {
                                   {user.role === 'ADMIN' && <span className={styles.checkmark}>✓</span>}
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    console.log('SUPERADMIN role button clicked');
                                     handleRoleSelect(user, 'SUPERADMIN');
                                   }}
                                   className={`${styles.dropdownItem} ${user.role === 'SUPERADMIN' ? styles.dropdownItemActive : ''}`}
