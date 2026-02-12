@@ -416,6 +416,7 @@ export default function Region_page() {
                 {(places.items || []).map((item, index) => (
                   <Link key={index} to={item.link || '/places'} className={styles.placeBlockLink}>
                     <PlaceBlock 
+                      width="100%"
                       rating={item.rating || ''} 
                       feedback={item.feedback || ''} 
                       reviewsCount={item.reviewsCount ?? parseInt((item.feedback || '').match(/\d+/)?.[0] || '0', 10)}

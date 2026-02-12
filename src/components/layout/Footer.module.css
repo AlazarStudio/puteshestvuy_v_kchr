@@ -196,3 +196,245 @@
   overflow: hidden;
   max-width: 100%;
 }
+
+/* Ноутбуки 1024–1399px */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .footer {
+    padding: 46px 32px 40px;
+  }
+
+  .footerTop {
+    gap: 36px;
+  }
+
+  .column {
+    gap: 18px;
+  }
+
+  .textTitle {
+    font-size: 20px;
+  }
+}
+
+/* ПК 1400px и выше */
+@media (min-width: 1400px) {
+  .footer {
+    padding: 50px 0;
+  }
+}
+
+/* Мобилка и планшет до 1023px */
+@media (max-width: 1023px) {
+  .footer {
+    background-color: #0B131E;
+    padding: 32px 20px 24px;
+  }
+
+  .footerTop {
+    flex-direction: column;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* Показываем только первую колонку */
+  .column:first-child {
+    width: 100%;
+    gap: 16px;
+  }
+
+  /* Скрываем среднюю и правую колонки */
+  .column:nth-child(2),
+  .column:nth-child(3) {
+    display: none;
+  }
+
+  /* Логотип */
+  .img {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    margin-bottom: 16px;
+  }
+
+  .img img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  /* Соцсети - белые квадраты */
+  .social {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .footer .imgBlock {
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .footer .imgBlock img {
+    filter: brightness(0);
+    margin-top: 0;
+  }
+
+  /* Телефон и адрес */
+  .phone,
+  .text {
+    font-size: 16px;
+    line-height: 150%;
+    color: #fff;
+  }
+
+  /* Разделительная линия */
+  .line {
+    margin: 24px 0;
+    background-color: #fff;
+    opacity: 0.2;
+  }
+
+  /* Нижняя часть */
+  .orgInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .infoCol {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .name {
+    font-size: 14px;
+    line-height: 150%;
+    color: #fff;
+  }
+
+  .links {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .linkText {
+    font-size: 14px;
+    line-height: 150%;
+    color: #fff;
+    -webkit-line-clamp: unset;
+  }
+
+  /* Партнеры - горизонтально внизу */
+  .partners {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .partners a {
+    width: auto;
+    max-width: 120px;
+    height: 40px;
+    opacity: 0.8;
+  }
+
+  .partners a img {
+    filter: brightness(0) invert(1);
+  }
+}
+
+/* Мобильные 320–767px - дополнительные стили */
+@media (max-width: 767px) {
+  .footer {
+    padding: 28px 16px 20px;
+  }
+
+  .img {
+    max-width: 240px;
+    margin-bottom: 14px;
+  }
+
+  .social {
+    gap: 10px;
+  }
+
+  .footer .imgBlock {
+    width: 36px;
+    height: 36px;
+    padding: 7px;
+  }
+
+  .phone,
+  .text {
+    font-size: 15px;
+  }
+
+  .line {
+    margin: 20px 0;
+  }
+
+  .infoCol {
+    font-size: 13px;
+  }
+
+  .partners {
+    gap: 16px;
+  }
+
+  .partners a {
+    max-width: 100px;
+    height: 36px;
+  }
+}
+
+/* Очень маленькие экраны 320–480px */
+@media (max-width: 480px) {
+  .footer {
+    padding: 24px 12px 16px;
+  }
+
+  .img {
+    max-width: 200px;
+    margin-bottom: 12px;
+  }
+
+  .social {
+    gap: 8px;
+  }
+
+  .footer .imgBlock {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+
+  .phone,
+  .text {
+    font-size: 14px;
+  }
+
+  .line {
+    margin: 18px 0;
+  }
+
+  .infoCol {
+    font-size: 12px;
+  }
+
+  .partners {
+    gap: 12px;
+  }
+
+  .partners a {
+    max-width: 80px;
+    height: 32px;
+  }
+}

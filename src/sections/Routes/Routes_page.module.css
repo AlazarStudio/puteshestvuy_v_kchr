@@ -85,3 +85,179 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Ноутбуки 1024–1199px (без бокового фильтра) */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 40px;
+    padding: 0 28px;
+  }
+
+  .routes {
+    width: 100%;
+  }
+
+  .routesSort {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .selectWrapper {
+    min-width: 180px;
+  }
+}
+
+/* Ноутбуки 1200–1399px (с боковым фильтром) */
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .flexBlock {
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 0 24px;
+  }
+
+  .routes {
+    width: 70%;
+  }
+
+  .routesSort {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .selectWrapper {
+    min-width: 160px;
+  }
+}
+
+/* ПК 1400px и выше */
+@media (min-width: 1400px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 44px;
+    padding: 0 32px;
+  }
+
+  .routes {
+    width: 72%;
+  }
+}
+
+/* Планшет 768–1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 40px;
+    padding: 0 28px;
+  }
+
+  .routes {
+    width: 100%;
+  }
+
+  .routesSort {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .selectWrapper {
+    min-width: 180px;
+  }
+}
+
+/* Мобильные 320–767px */
+@media (max-width: 767px) {
+  .main {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Переопределяем фиксированную ширину CenterBlock на мобильных */
+  .main :global(.widthBlock) {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .main :global(.centerBlock) {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .flexBlock {
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 0 16px;
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .routes {
+    width: 100%;
+    max-width: 100%;
+    order: 1;
+    box-sizing: border-box;
+  }
+
+  .routesSort {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .selectWrapper {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .routesSortSort {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .routesShow {
+    gap: 16px;
+  }
+
+  .loading,
+  .empty {
+    padding: 1.5rem;
+    font-size: 15px;
+  }
+
+  .loadingMore {
+    padding: 32px 16px;
+  }
+}
+
+/* Очень узкие экраны 320–480px */
+@media (max-width: 480px) {
+  .flexBlock {
+    padding: 0 12px;
+    margin-bottom: 32px;
+    gap: 16px;
+  }
+
+  .routesSort {
+    gap: 10px;
+  }
+
+  .routesSortFind,
+  .routesSortSort .title {
+    font-size: 14px;
+  }
+
+  .routesShow {
+    gap: 12px;
+  }
+}

@@ -7,6 +7,7 @@ import styles from './Routes_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
+import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import { publicRoutesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -412,6 +413,7 @@ export default function Routes_page() {
     }
   }, [])
 
+
   // Сохраняем позицию скролла перед уходом со страницы
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -470,7 +472,20 @@ export default function Routes_page() {
 
       <CenterBlock>
         <section className={styles.flexBlock}>
+          {/* Десктопная версия фильтров (показывается через CSS на 1200px+) */}
           <FilterBlock
+            filterGroups={routeFilterGroups}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Введите запрос"
+            suggestionsData={allRoutesForSearch || []}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
+          />
+          {/* Мобильная версия фильтров (показывается через CSS до 1199px) */}
+          <FilterBlockMobile
             filterGroups={routeFilterGroups}
             filters={filters}
             onFiltersChange={handleFiltersChange}

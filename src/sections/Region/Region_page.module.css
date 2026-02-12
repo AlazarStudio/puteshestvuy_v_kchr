@@ -1,5 +1,7 @@
 .main {
   background-color: #F1F3F8;
+  overflow-x: hidden;
+  min-width: 320px;
 }
 
 /* Hero Section */
@@ -110,40 +112,55 @@
   position: sticky;
   top: 100px;
   background-color: #fff;
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(21, 106, 96, 0.08);
+  border: 1px solid rgba(21, 106, 96, 0.12);
 }
 
 .anchorsList {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 4px;
 }
 
 .anchorItem {
   background: none;
   border: none;
   text-align: left;
-  padding: 12px 0;
-  padding-left: 20px;
+  padding: 12px 16px;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 150%;
-  color: #999999;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   position: relative;
-  border-left: 3px solid transparent;
+  border-radius: 12px;
+  margin-left: -4px;
 }
 
 .anchorItem:hover {
-  color: #666666;
+  color: #374151;
+  background-color: rgba(21, 106, 96, 0.06);
 }
 
 .anchorItemActive {
-  font-weight: 700;
-  color: #000000;
-  border-left-color: #156A60;
+  font-weight: 600;
+  color: #156A60;
+  background-color: rgba(21, 106, 96, 0.1);
+}
+
+.anchorItemActive::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: #156A60;
+  border-radius: 0 2px 2px 0;
 }
 
 /* Content */
@@ -441,8 +458,8 @@
 
 /* Places Section */
 .placesGrid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -558,7 +575,39 @@
   transform: translateY(-2px);
 }
 
-/* Responsive */
+/* Небольшие ноутбуки 1025–1600px */
+@media (min-width: 1025px) and (max-width: 1600px) {
+  .pageContent {
+    padding: 50px 32px;
+    gap: 32px;
+  }
+
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .sectionTitle {
+    font-size: 36px;
+  }
+
+  .sidebarSticky {
+    padding: 22px;
+  }
+
+  .introImage {
+    height: 360px;
+  }
+
+  .natureCardImg {
+    height: 190px;
+  }
+
+  .ctaSection {
+    padding: 80px 32px;
+  }
+}
+
+/* Responsive - от 320px и выше */
 @media (max-width: 1200px) {
   .heroTitle {
     font-size: 56px;
@@ -583,17 +632,27 @@
   .anchorsList {
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
   }
 
   .anchorItem {
-    border-left: none;
-    border-bottom: 3px solid transparent;
-    padding: 10px 15px;
+    padding: 10px 14px;
+    margin-left: 0;
+  }
+
+  .anchorItemActive::before {
+    display: none;
   }
 
   .anchorItemActive {
-    border-bottom-color: #156A60;
+    background-color: rgba(21, 106, 96, 0.12);
+    color: #156A60;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .anchorsList {
+    justify-content: space-between;
   }
 }
 
@@ -614,6 +673,12 @@
   .culturesGrid {
     grid-template-columns: 1fr;
   }
+
+  .placesGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -632,6 +697,12 @@
 
   .factsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .placesGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .factCard {
@@ -663,5 +734,321 @@
   .ctaButtons {
     flex-direction: column;
     align-items: center;
+  }
+
+  .pageContent {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .ctaSection {
+    padding: 60px 16px;
+    background-attachment: scroll;
+  }
+}
+
+/* Очень узкие экраны 320–480px */
+@media (max-width: 480px) {
+  .hero {
+    min-height: 100vh;
+  }
+
+  .heroTitle {
+    font-size: 24px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+
+  .heroSubtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.4;
+  }
+
+  .heroButton {
+    padding: 14px 28px;
+    font-size: 16px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .heroContent {
+    padding: 0 16px;
+  }
+
+  .scrollIndicator {
+    bottom: 24px;
+  }
+
+  .scrollIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sectionTitle {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .introText p,
+  .introRichText p {
+    font-size: 16px;
+  }
+
+  .introImage {
+    height: 220px;
+  }
+
+  .factCard {
+    padding: 20px 16px;
+  }
+
+  .factNumber {
+    font-size: 24px;
+  }
+
+  .factDescription {
+    font-size: 14px;
+  }
+
+  .historyIntro {
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+
+  .timeline {
+    padding-left: 24px;
+  }
+
+  .timeline::before {
+    left: 8px;
+    width: 2px;
+  }
+
+  .timelineItem {
+    margin-bottom: 24px;
+    padding-left: 20px;
+  }
+
+  .timelineItem::before {
+    left: -18px;
+    width: 10px;
+    height: 10px;
+  }
+
+  .timelineContent {
+    padding: 16px 18px;
+  }
+
+  .timelineTitle {
+    font-size: 18px;
+  }
+
+  .timelineDescription {
+    font-size: 14px;
+  }
+
+  .natureCardImg {
+    height: 160px;
+  }
+
+  .natureCardContent {
+    padding: 18px;
+  }
+
+  .natureCardContent h3 {
+    font-size: 18px;
+  }
+
+  .natureCardContent p,
+  .natureCardDesc {
+    font-size: 14px;
+  }
+
+  .cultureCard {
+    padding: 20px;
+  }
+
+  .cultureName {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .cultureDescription {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .cultureIntro {
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+
+  .traditionTag {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .placesGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .placeBlockLink {
+    min-width: 0;
+  }
+
+  .placesMore {
+    margin-top: 28px;
+  }
+
+  .placesMoreButton {
+    padding: 12px 28px;
+    font-size: 15px;
+  }
+
+  .ctaSection {
+    padding: 48px 16px;
+  }
+
+  .ctaTitle {
+    font-size: 22px;
+  }
+
+  .ctaText {
+    font-size: 16px;
+    margin-bottom: 28px;
+  }
+
+  .ctaButtonPrimary,
+  .ctaButtonSecondary {
+    padding: 14px 28px;
+    font-size: 15px;
+    min-height: 48px;
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .anchorsList {
+    gap: 8px;
+  }
+
+  .anchorItem {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Планшеты и крупные телефоны 481–768px */
+@media (min-width: 481px) and (max-width: 768px) {
+  .pageContent {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* Планшеты 769–1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .heroTitle {
+    font-size: 48px;
+    letter-spacing: 3px;
+  }
+
+  .heroSubtitle {
+    font-size: 20px;
+  }
+
+  .hero {
+    min-height: 70vh;
+  }
+
+  .pageContent {
+    padding-left: 28px;
+    padding-right: 28px;
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .section {
+    margin-bottom: 56px;
+  }
+
+  .sectionTitle {
+    font-size: 32px;
+    margin-bottom: 24px;
+  }
+
+  .introImage {
+    height: 320px;
+  }
+
+  .introText p,
+  .introRichText p {
+    font-size: 17px;
+  }
+
+  .sidebarSticky {
+    padding: 20px 24px;
+  }
+
+  .anchorsList {
+    gap: 10px;
+  }
+
+  .anchorItem {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .natureCardImg {
+    height: 180px;
+  }
+
+  .natureCardContent {
+    padding: 22px;
+  }
+
+  .cultureCard {
+    padding: 26px;
+  }
+
+  .ctaSection {
+    padding: 80px 28px;
+  }
+
+  .ctaTitle {
+    font-size: 34px;
+  }
+
+  .ctaText {
+    font-size: 17px;
+  }
+
+  .placesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+/* Планшеты 769–992px — сетки */
+@media (min-width: 769px) and (max-width: 992px) {
+  .natureGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .culturesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 }

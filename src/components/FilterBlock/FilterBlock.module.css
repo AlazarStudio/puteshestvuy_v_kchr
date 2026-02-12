@@ -13,6 +13,15 @@
     /* Скрываем скроллбар, но сохраняем возможность прокрутки */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE и Edge */
+    /* По умолчанию скрываем фильтр */
+    display: none;
+}
+
+/* Показываем фильтр только на экранах 1200px и выше */
+@media (min-width: 1200px) {
+    .filter {
+        display: block !important;
+    }
 }
 
 .filter::-webkit-scrollbar {
@@ -243,11 +252,23 @@
     font-weight: 600;
 }
 
-@media (max-width: 768px) {
+/* Ноутбуки 1200–1399px (с боковым фильтром) */
+@media (min-width: 1200px) and (max-width: 1399px) {
     .filter {
-        width: 100%;
-        position: sticky;
-        top: 85px;
-        max-height: 50vh;
+        width: 30%;
+        min-width: 220px;
+        padding: 18px;
+        top: 95px;
     }
 }
+
+/* ПК 1400px и выше */
+@media (min-width: 1400px) {
+    .filter {
+        width: 28%;
+        min-width: 240px;
+        padding: 22px;
+    }
+}
+
+/* Мобильные 320–767px - фильтр скрыт через display: none выше */

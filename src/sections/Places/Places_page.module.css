@@ -75,3 +75,43 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Небольшие ноутбуки 1025–1600px */
+@media (min-width: 1025px) and (max-width: 1600px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 44px;
+    padding: 0 32px;
+  }
+
+  .places {
+    width: 72%;
+  }
+
+  .placesShow {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* Планшет 769–1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 40px;
+    padding: 0 28px;
+  }
+
+  .places {
+    width: 68%;
+  }
+
+  .placesShow {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  .placesSort {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
