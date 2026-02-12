@@ -212,18 +212,23 @@ export default function UsersPage() {
   // Закрытие выпадающего меню при клике вне его
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Проверяем, что клик был вне меню
       if (roleMenuRef.current && !roleMenuRef.current.contains(event.target)) {
         setRoleMenuOpen(null);
       }
     };
 
     if (roleMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+      // Используем небольшую задержку, чтобы onClick на кнопках меню успел сработать
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
   }, [roleMenuOpen]);
 
   const handleRoleChangeClick = (user) => {
@@ -242,41 +247,46 @@ export default function UsersPage() {
       SUPERADMIN: 'Суперадминистратор',
     };
     
+    // Закрываем меню
     setRoleMenuOpen(null);
-    setConfirmModal({
-      title: `Изменить роль пользователя?`,
-      message: `Вы уверены, что хотите изменить роль пользователя "${user.email}" на "${roleNames[newRole]}"?`,
-      confirmLabel: 'Изменить',
-      cancelLabel: 'Отмена',
-      variant: 'default',
-      onConfirm: async () => {
-        setUpdatingRoleId(user.id);
-        try {
-          await adminUsersAPI.updateRole(user.id, newRole);
-          // Обновляем пользователя в списке
-          setUsers((prev) =>
-            prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-          );
-          setConfirmModal(null);
-          setAlertModal({
-            open: true,
-            title: 'Успешно',
-            message: `Роль пользователя изменена на "${roleNames[newRole]}"`,
-          });
-        } catch (error) {
-          console.error('Ошибка изменения роли:', error);
-          setAlertModal({
-            open: true,
-            title: 'Ошибка',
-            message: error.response?.data?.message || 'Не удалось изменить роль пользователя',
-          });
-        } finally {
-          setUpdatingRoleId(null);
-          setConfirmModal(null);
-        }
-      },
-      onCancel: () => setConfirmModal(null),
-    });
+    
+    // Небольшая задержка перед показом модалки, чтобы меню успело закрыться
+    setTimeout(() => {
+      setConfirmModal({
+        title: `Изменить роль пользователя?`,
+        message: `Вы уверены, что хотите изменить роль пользователя "${user.email}" на "${roleNames[newRole]}"?`,
+        confirmLabel: 'Изменить',
+        cancelLabel: 'Отмена',
+        variant: 'default',
+        onConfirm: async () => {
+          setUpdatingRoleId(user.id);
+          try {
+            await adminUsersAPI.updateRole(user.id, newRole);
+            // Обновляем пользователя в списке
+            setUsers((prev) =>
+              prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+            );
+            setConfirmModal(null);
+            setAlertModal({
+              open: true,
+              title: 'Успешно',
+              message: `Роль пользователя изменена на "${roleNames[newRole]}"`,
+            });
+          } catch (error) {
+            console.error('Ошибка изменения роли:', error);
+            setAlertModal({
+              open: true,
+              title: 'Ошибка',
+              message: error.response?.data?.message || 'Не удалось изменить роль пользователя',
+            });
+          } finally {
+            setUpdatingRoleId(null);
+            setConfirmModal(null);
+          }
+        },
+        onCancel: () => setConfirmModal(null),
+      });
+    }, 100);
   };
 
   const handleBanUser = (user) => {
@@ -640,7 +650,11 @@ export default function UsersPage() {
                             {roleMenuOpen === user.id && (
                               <div className={styles.dropdownMenu}>
                                 <button
-                                  onClick={() => handleRoleSelect(user, 'USER')}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleRoleSelect(user, 'USER');
+                                  }}
                                   className={`${styles.dropdownItem} ${user.role === 'USER' ? styles.dropdownItemActive : ''}`}
                                   disabled={user.role === 'USER'}
                                 >
@@ -649,7 +663,11 @@ export default function UsersPage() {
                                   {user.role === 'USER' && <span className={styles.checkmark}>✓</span>}
                                 </button>
                                 <button
-                                  onClick={() => handleRoleSelect(user, 'ADMIN')}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleRoleSelect(user, 'ADMIN');
+                                  }}
                                   className={`${styles.dropdownItem} ${user.role === 'ADMIN' ? styles.dropdownItemActive : ''}`}
                                   disabled={user.role === 'ADMIN'}
                                 >
@@ -658,7 +676,11 @@ export default function UsersPage() {
                                   {user.role === 'ADMIN' && <span className={styles.checkmark}>✓</span>}
                                 </button>
                                 <button
-                                  onClick={() => handleRoleSelect(user, 'SUPERADMIN')}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleRoleSelect(user, 'SUPERADMIN');
+                                  }}
                                   className={`${styles.dropdownItem} ${user.role === 'SUPERADMIN' ? styles.dropdownItemActive : ''}`}
                                   disabled={user.role === 'SUPERADMIN'}
                                 >
