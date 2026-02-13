@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
@@ -5,6 +7,7 @@ import styles from './Services_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
+import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
 import { publicServicesAPI, publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -192,8 +195,7 @@ export default function Services_page() {
     }
   }, [searchParams])
 
-  // Синхронизация фильтров с URL при переходе по ссылке (например, из хедера),
-  // но не трогаем page (page контролируется отдельно)
+  // Синхронизация фильтров с URL при переходе по ссылке (но page отдельно)
   const filterParamsStr = searchParams.toString()
   useEffect(() => {
     setFilters((prev) => {
@@ -206,7 +208,7 @@ export default function Services_page() {
     setSortBy(event.target.value)
   }
 
-  // Загрузка всех услуг и статей для умного поиска (один раз при монтировании)
+  // Загрузка всех услуг и статей для умного поиска
   useEffect(() => {
     let cancelled = false
     Promise.all([
@@ -222,11 +224,9 @@ export default function Services_page() {
     }
   }, [])
 
-  // Умный поиск с fallback логикой
+  // Умный поиск с fallback
   useEffect(() => {
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current)
-    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
 
     if (!searchQuery || !searchQuery.trim()) {
       setSearchFallback(null)
@@ -251,15 +251,12 @@ export default function Services_page() {
     }, 300)
 
     searchDebounceRef.current = timer
-
     return () => {
       if (timer) clearTimeout(timer)
     }
   }, [searchQuery, allServicesForSearch, allArticlesForSearch])
 
-  const handleFiltersChange = (newFilters) => {
-    setFilters(newFilters)
-
+  const applyFiltersToUrl = useCallback((newFilters) => {
     const articles = newFilters.articles || []
     const service = newFilters.service || []
     const emergency = newFilters.emergency || []
@@ -275,8 +272,6 @@ export default function Services_page() {
       if (v) filterValues.push(v)
     })
 
-    // IMPORTANT: сохраняем остальные query-параметры (например page),
-    // а filter обновляем точечно
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       next.delete('filter')
@@ -284,7 +279,16 @@ export default function Services_page() {
       if (filterValues.length === 0) next.delete('filter')
       return next
     }, { replace: true })
-  }
+  }, [setSearchParams])
+
+  // Важно: не обновлять filters, если они те же (как в Routes/Places)
+  const handleFiltersChange = useCallback((next) => {
+    setFilters((prev) => {
+      const same = areFiltersEqual(prev, next)
+      if (!same) applyFiltersToUrl(next)
+      return same ? prev : next
+    })
+  }, [applyFiltersToUrl])
 
   const buildCategoryParams = useCallback(() => {
     const serviceSelected = (filters.service || []).map((v) => FILTER_TO_CATEGORY[v] || v)
@@ -292,179 +296,150 @@ export default function Services_page() {
     return [...serviceSelected, ...emergencySelected]
   }, [filters.service, filters.emergency])
 
-  const fetchData = useCallback(
-    async (page = 1) => {
-      const startTime = Date.now()
-      const MIN_LOADING_TIME = 500
+  const fetchData = useCallback(async (page = 1) => {
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 500
 
-      try {
-        setLoading(true)
+    try {
+      setLoading(true)
 
-        const showArticles = (filters.articles || []).includes('Статьи')
-        const categories = buildCategoryParams()
-        const hasServiceFilter = categories.length > 0
+      const showArticles = (filters.articles || []).includes('Статьи')
+      const categories = buildCategoryParams()
+      const hasServiceFilter = categories.length > 0
+      const effectiveSearchQuery = searchFallback || searchQuery.trim()
 
-        const effectiveSearchQuery = searchFallback || searchQuery.trim()
+      const fetchArticles = () =>
+        publicNewsAPI.getAll({
+          page,
+          limit: ITEMS_PER_PAGE,
+          type: 'article',
+          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
+        })
 
-        const fetchArticles = () =>
-          publicNewsAPI.getAll({
-            page,
-            limit: ITEMS_PER_PAGE,
-            type: 'article',
-            ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
-          })
+      const fetchServices = (cats) =>
+        publicServicesAPI.getAll({
+          page,
+          limit: ITEMS_PER_PAGE,
+          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
+          ...(cats?.length > 0 && { category: cats }),
+          ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
+        })
 
-        const fetchServices = (cats) =>
-          publicServicesAPI.getAll({
-            page,
-            limit: ITEMS_PER_PAGE,
-            ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
-            ...(cats?.length > 0 && { category: cats }),
-            ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
-          })
+      let newItems = []
+      let totalItems = 0
+      let pages = 1
 
-        let newItems = []
-        let totalItems = 0
-        let pages = 1
+      if (showArticles && !hasServiceFilter) {
+        const { data } = await fetchArticles()
+        newItems = (data.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
+        totalItems = data.pagination?.total ?? 0
+        pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
+      } else if (hasServiceFilter && !showArticles) {
+        const { data } = await fetchServices(categories)
+        newItems = data.items || []
 
-        if (showArticles && !hasServiceFilter) {
-          const { data } = await fetchArticles()
-          newItems = (data.items || []).map((a) => ({
-            id: a.id,
-            slug: a.slug,
-            title: a.title,
-            image: a.image,
-            category: 'Статья',
-            isArticle: true,
-            uniqueViewsCount: 0,
-          }))
-          totalItems = data.pagination?.total ?? 0
-          pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
-        } else if (hasServiceFilter && !showArticles) {
-          const { data } = await fetchServices(categories)
-          newItems = data.items || []
+        if (sortBy === 'rating') newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        else if (sortBy === 'reviews') newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        else if (sortBy === 'popularity') newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
 
-          if (sortBy === 'rating') {
-            newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-          } else if (sortBy === 'reviews') {
-            newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-          } else if (sortBy === 'popularity') {
-            newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          }
+        totalItems = data.pagination?.total ?? 0
+        pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
+      } else if (showArticles && hasServiceFilter) {
+        const [articlesRes, servicesRes] = await Promise.all([fetchArticles(), fetchServices(categories)])
 
-          totalItems = data.pagination?.total ?? 0
-          pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
-        } else if (showArticles && hasServiceFilter) {
-          const [articlesRes, servicesRes] = await Promise.all([fetchArticles(), fetchServices(categories)])
+        const servicesTotal = servicesRes.data?.pagination?.total ?? 0
+        const articlesTotal = articlesRes.data?.pagination?.total ?? 0
 
-          const servicesTotal = servicesRes.data?.pagination?.total ?? 0
-          const articlesTotal = articlesRes.data?.pagination?.total ?? 0
+        const servicesPages =
+          servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
+        const articlesPages =
+          articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
 
-          const servicesPages =
-            servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
-          const articlesPages =
-            articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
+        let serviceItems = servicesRes.data?.items || []
+        if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
 
-          let serviceItems = servicesRes.data?.items || []
-          if (sortBy === 'rating') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-          } else if (sortBy === 'reviews') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-          } else if (sortBy === 'popularity') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          }
+        const articleItems = (articlesRes.data?.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
 
-          const articleItems = (articlesRes.data?.items || []).map((a) => ({
-            id: a.id,
-            slug: a.slug,
-            title: a.title,
-            image: a.image,
-            category: 'Статья',
-            isArticle: true,
-            uniqueViewsCount: 0,
-          }))
+        newItems = [...serviceItems, ...articleItems]
+        if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
 
-          newItems = [...serviceItems, ...articleItems]
-          if (sortBy === 'popularity') {
-            newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          }
+        totalItems = servicesTotal + articlesTotal
+        pages = Math.max(servicesPages, articlesPages)
+      } else {
+        const [servicesRes, articlesRes] = await Promise.all([fetchServices(), fetchArticles()])
 
-          totalItems = servicesTotal + articlesTotal
-          // IMPORTANT FIX: в mixed-режиме page относится к двум источникам → берем MAX(pages)
-          pages = Math.max(servicesPages, articlesPages)
-        } else {
-          // нет фильтров — показываем и услуги и статьи
-          const [servicesRes, articlesRes] = await Promise.all([fetchServices(), fetchArticles()])
+        const servicesTotal = servicesRes.data?.pagination?.total ?? 0
+        const articlesTotal = articlesRes.data?.pagination?.total ?? 0
 
-          const servicesTotal = servicesRes.data?.pagination?.total ?? 0
-          const articlesTotal = articlesRes.data?.pagination?.total ?? 0
+        const servicesPages =
+          servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
+        const articlesPages =
+          articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
 
-          const servicesPages =
-            servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
-          const articlesPages =
-            articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
+        let serviceItems = servicesRes.data?.items || []
+        if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+        else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
 
-          let serviceItems = servicesRes.data?.items || []
-          if (sortBy === 'rating') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-          } else if (sortBy === 'reviews') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-          } else if (sortBy === 'popularity') {
-            serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          }
+        const articleItems = (articlesRes.data?.items || []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          title: a.title,
+          image: a.image,
+          category: 'Статья',
+          isArticle: true,
+          uniqueViewsCount: 0,
+        }))
 
-          const articleItems = (articlesRes.data?.items || []).map((a) => ({
-            id: a.id,
-            slug: a.slug,
-            title: a.title,
-            image: a.image,
-            category: 'Статья',
-            isArticle: true,
-            uniqueViewsCount: 0,
-          }))
+        newItems = [...serviceItems, ...articleItems]
+        if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
 
-          newItems = [...serviceItems, ...articleItems]
-          if (sortBy === 'popularity') {
-            newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          }
-
-          totalItems = servicesTotal + articlesTotal
-          // IMPORTANT FIX: в mixed-режиме page относится к двум источникам → берем MAX(pages)
-          pages = Math.max(servicesPages, articlesPages)
-        }
-
-        setServices(newItems)
-        setTotal(totalItems)
-        setTotalPages(Math.max(1, pages))
-
-        const elapsedTime = Date.now() - startTime
-        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
-        await new Promise((resolve) => setTimeout(resolve, remainingTime))
-      } catch (err) {
-        console.error(err)
-        setServices([])
-        setTotal(0)
-        setTotalPages(1)
-
-        const elapsedTime = Date.now() - startTime
-        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
-        await new Promise((resolve) => setTimeout(resolve, remainingTime))
-      } finally {
-        setLoading(false)
+        totalItems = servicesTotal + articlesTotal
+        pages = Math.max(servicesPages, articlesPages)
       }
-    },
-    [filters.articles, buildCategoryParams, searchQuery, searchFallback, sortBy]
-  )
 
-  // При изменении критериев → page=1, но НЕ на первом запуске (чтобы refresh не ломался)
+      setServices(newItems)
+      setTotal(totalItems)
+      setTotalPages(Math.max(1, pages))
+
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise((resolve) => setTimeout(resolve, remainingTime))
+    } catch (err) {
+      console.error(err)
+      setServices([])
+      setTotal(0)
+      setTotalPages(1)
+
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+      await new Promise((resolve) => setTimeout(resolve, remainingTime))
+    } finally {
+      setLoading(false)
+    }
+  }, [filters, buildCategoryParams, searchQuery, searchFallback, sortBy])
+
+  // При изменении критериев → page=1 (но НЕ на первом запуске)
   useEffect(() => {
-    const criteria = JSON.stringify({
-      filters,
-      searchQuery,
-      searchFallback,
-      sortBy,
-    })
-
+    const criteria = JSON.stringify({ filters, searchQuery, searchFallback, sortBy })
     if (criteria === lastCriteriaRef.current) return
     lastCriteriaRef.current = criteria
 
@@ -511,17 +486,13 @@ export default function Services_page() {
 
       const tick = () => {
         const y = window.scrollY
-        if (Math.abs(y - lastY) < 2) {
-          stableFrames += 1
-        } else {
+        if (Math.abs(y - lastY) < 2) stableFrames += 1
+        else {
           stableFrames = 0
           lastY = y
         }
 
-        if (stableFrames >= 2) {
-          resolve()
-          return
-        }
+        if (stableFrames >= 2) return resolve()
         requestAnimationFrame(tick)
       }
 
@@ -529,38 +500,27 @@ export default function Services_page() {
     })
   }, [])
 
-  const goToPage = useCallback(
-    async (page) => {
-      const nextPage = Math.max(1, page)
-      if (nextPage === currentPage) return
+  const goToPage = useCallback(async (page) => {
+    const nextPage = Math.max(1, page)
+    if (nextPage === currentPage) return
 
-      const token = ++navTokenRef.current
-      pendingNavPageRef.current = nextPage
-      navStartedAtRef.current = Date.now()
+    const token = ++navTokenRef.current
+    pendingNavPageRef.current = nextPage
+    navStartedAtRef.current = Date.now()
 
-      setPageOverlayLoading(true)
+    setPageOverlayLoading(true)
 
-      // 1) мгновенно скроллим
-      scrollToAfterHeroInstant()
+    scrollToAfterHeroInstant()
+    await waitForScrollToSettle()
+    if (token !== navTokenRef.current) return
 
-      // 2) ждём стабилизации
-      await waitForScrollToSettle()
-      if (token !== navTokenRef.current) return
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', String(nextPage))
+      return next
+    }, { replace: true })
+  }, [currentPage, scrollToAfterHeroInstant, waitForScrollToSettle, setSearchParams])
 
-      // 3) меняем URL
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev)
-        next.set('page', String(nextPage))
-        return next
-      }, { replace: true })
-    },
-    [currentPage, scrollToAfterHeroInstant, waitForScrollToSettle, setSearchParams]
-  )
-
-  // гасим оверлей только когда:
-  // - была навигация (pendingNavPageRef != null)
-  // - загрузка завершилась (loading=false)
-  // - прошло минимум 500мс
   useEffect(() => {
     if (!pageOverlayLoading) return
     if (loading) return
@@ -667,7 +627,21 @@ export default function Services_page() {
 
       <CenterBlock>
         <section className={styles.flexBlock}>
+          {/* Desktop filter */}
           <FilterBlock
+            filterGroups={filterGroups}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Поиск по услугам..."
+            suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
+          />
+
+          {/* Mobile filter */}
+          <FilterBlockMobile
             filterGroups={filterGroups}
             filters={filters}
             onFiltersChange={handleFiltersChange}
@@ -739,39 +713,9 @@ export default function Services_page() {
                       '& .MuiSvgIcon-root': { color: '#000' },
                     }}
                   >
-                    <MenuItem
-                      value="popularity"
-                      sx={{
-                        fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
-                        fontSize: '16px',
-                        fontWeight: 400,
-                        lineHeight: '150%',
-                      }}
-                    >
-                      По популярности
-                    </MenuItem>
-                    <MenuItem
-                      value="rating"
-                      sx={{
-                        fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
-                        fontSize: '16px',
-                        fontWeight: 400,
-                        lineHeight: '150%',
-                      }}
-                    >
-                      По рейтингу
-                    </MenuItem>
-                    <MenuItem
-                      value="reviews"
-                      sx={{
-                        fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
-                        fontSize: '16px',
-                        fontWeight: 400,
-                        lineHeight: '150%',
-                      }}
-                    >
-                      По отзывам
-                    </MenuItem>
+                    <MenuItem value="popularity">По популярности</MenuItem>
+                    <MenuItem value="rating">По рейтингу</MenuItem>
+                    <MenuItem value="reviews">По отзывам</MenuItem>
                   </Select>
                 </FormControl>
               </div>
@@ -807,7 +751,6 @@ export default function Services_page() {
                   })}
                 </div>
 
-                {/* Пагинация */}
                 {totalPages > 1 && (
                   <div className={styles.pagination}>
                     <button
@@ -822,18 +765,12 @@ export default function Services_page() {
 
                     <div className={styles.paginationPages}>
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
+                        if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
                           return (
                             <button
                               key={page}
                               type="button"
-                              className={`${styles.paginationPage} ${
-                                currentPage === page ? styles.paginationPageActive : ''
-                              }`}
+                              className={`${styles.paginationPage} ${currentPage === page ? styles.paginationPageActive : ''}`}
                               onClick={() => handlePageClick(page)}
                               disabled={loading}
                               aria-label={`Страница ${page}`}
