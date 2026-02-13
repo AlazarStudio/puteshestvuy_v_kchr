@@ -2,7 +2,7 @@
   background-color: #F1F3F8;
   padding-top: 88px;
   width: 100%;
-  overflow: hidden;
+  /* overflow-x: hidden;s */
 }
 
 .routePage {
@@ -442,6 +442,7 @@
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  z-index: 10; /* Добавили z-index для правильного отображения поверх других элементов */
 }
 
 .routeBlock_anchors::-webkit-scrollbar {
@@ -490,8 +491,8 @@
 
 .anchorItemActive {
   font-weight: 700;
-  color: #000000;
-  border-left-color: #000000;
+  color: #0d9488;
+  border-left-color: #0d9488;
 }
 
 .anchorsButtons {
@@ -1266,6 +1267,7 @@
 @media (min-width: 320px) and (max-width: 1400px) {
   .main {
     padding: 50px 10px 10px 10px;
+    overflow: hidden;
   }
 
   .gallery {
