@@ -281,3 +281,12 @@
     gap: 4px;
   }
 }
+
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .newsSection{
+    padding: 0 10px;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+}

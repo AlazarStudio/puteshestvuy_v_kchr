@@ -1291,6 +1291,17 @@
     border-radius: 10px;
   }
 
+  .galleryItem,
+  .galleryMain,
+  .galleryCount3 .galleryThirdRightItem,
+  .galleryCount3 .galleryThirdLeft,
+  .galleryCount2 .galleryHalf,
+  .galleryItem,
+  .galleryMain {
+    border-radius: 10px;
+  }
+
+
   .moreButton {
     font-size: 8px;
     bottom: 5px;

@@ -418,7 +418,7 @@
 /* Мобильные до 768px */
 @media (max-width: 768px) {
   .container {
-    padding: 1rem 16px;
+    padding: 1rem 16px 1rem 26px;
     gap: 1rem;
   }
 
@@ -452,7 +452,7 @@
 /* Планшет/небольшие ноутбуки 769–1000px (бургер) */
 @media (min-width: 769px) and (max-width: 1000px) {
   .container {
-    padding: 16px 24px;
+    padding: 16px 24px 16px 34px;
     gap: 1rem;
   }
 
@@ -556,7 +556,7 @@
 
 @media (max-width: 480px) {
   .container {
-    padding: 0.75rem 12px;
+    padding: 10px 10px 10px 20px;
   }
 
   .logo img {

@@ -146,7 +146,7 @@ export default function NewsDetail({ slug }) {
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {news.type === 'article' ? (
-              <Link to="/services?filter=articles">Услуги и сервисы</Link>
+              <Link to="/services?filter=articles" className={styles.serviceLink}>Услуги и сервисы</Link>
             ) : (
               <Link to="/news">Новости</Link>
             )}
@@ -213,7 +213,7 @@ export default function NewsDetail({ slug }) {
                 return null
               })}
 
-              <div className={styles.share}>
+              {/* <div className={styles.share}>
                 <span className={styles.shareLabel}>Поделиться:</span>
                 <div className={styles.shareButtons}>
                   <button className={styles.shareButton}>
@@ -223,7 +223,7 @@ export default function NewsDetail({ slug }) {
                     <img src="/tg.png" alt="Telegram" />
                   </button>
                 </div>
-              </div>
+              </div> */}
             </article>
 
             {sections.length > 0 && (

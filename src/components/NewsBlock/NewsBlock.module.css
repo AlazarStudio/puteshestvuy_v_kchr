@@ -91,9 +91,10 @@
   gap: 12px;
 }
 
-@media (max-width: 900px) {
+@media (min-width: 320px) and (max-width: 1400px) {
   .news {
     flex-direction: column;
+    gap: 20px;
   }
 
   .newsImage {
@@ -103,6 +104,27 @@
   }
 
   .newsInfo {
-    padding: 20px;
+    padding: 0 20px 20px 20px;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+
+  .readMore {
+    font-size: 14px;
+  }
+
+  .tag {
+    font-size: 12px;
+  }
+
+  .date {
+    font-size: 12px;
   }
 }
