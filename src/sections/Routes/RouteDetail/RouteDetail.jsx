@@ -64,7 +64,7 @@ export default function RouteDetail({ routeSlug }) {
           })
         }
       })
-      .catch(() => {})
+      .catch(() => { })
     return () => { cancelled = true }
   }, [])
 
@@ -407,7 +407,7 @@ export default function RouteDetail({ routeSlug }) {
   const transportDisplay = Array.isArray(route.customFilters?.transport) && route.customFilters.transport.length > 0
     ? route.customFilters.transport.join(', ')
     : (route.transport || '')
-  
+
   // Функция для формирования URL с фильтрами
   const buildFilterUrl = (filterKey, filterValue) => {
     const params = new URLSearchParams()
@@ -418,13 +418,13 @@ export default function RouteDetail({ routeSlug }) {
     }
     return `/routes?${params.toString()}`
   }
-  
+
   // Функция для получения значения булевого фильтра
   const getBooleanFilterValue = () => {
     // Для булевых фильтров передаем "Да"
     return 'Да'
   }
-  
+
   // Получаем массивы значений для фильтров
   const seasonsArray = Array.isArray(route.customFilters?.seasons) && route.customFilters.seasons.length > 0
     ? route.customFilters.seasons
@@ -440,11 +440,11 @@ export default function RouteDetail({ routeSlug }) {
           <div className={styles.bread_crumbs}>
             <Link to="/">Главная</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <Link to="/routes">Маршруты</Link>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span>{route.title}</span>
           </div>
@@ -457,7 +457,7 @@ export default function RouteDetail({ routeSlug }) {
                   alt="Фото 1"
                   maxOffset={10}
                   scale={1.03}
-                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                  style={{ width: '100%', height: '100%' }}
                   imgStyle={{ objectFit: 'cover' }}
                 />
               </div>
@@ -470,7 +470,7 @@ export default function RouteDetail({ routeSlug }) {
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
-                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    style={{ width: '100%', height: '100%' }}
                     imgStyle={{ objectFit: 'cover' }}
                   />
                 </div>
@@ -480,7 +480,7 @@ export default function RouteDetail({ routeSlug }) {
                     alt="Фото 2"
                     maxOffset={10}
                     scale={1.03}
-                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    style={{ width: '100%', height: '100%' }}
                     imgStyle={{ objectFit: 'cover' }}
                   />
                 </div>
@@ -494,7 +494,7 @@ export default function RouteDetail({ routeSlug }) {
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
-                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    style={{ width: '100%', height: '100%' }}
                     imgStyle={{ objectFit: 'cover' }}
                   />
                 </div>
@@ -505,7 +505,7 @@ export default function RouteDetail({ routeSlug }) {
                       alt="Фото 2"
                       maxOffset={10}
                       scale={1.03}
-                      style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                      style={{ width: '100%', height: '100%' }}
                       imgStyle={{ objectFit: 'cover' }}
                     />
                   </div>
@@ -515,7 +515,7 @@ export default function RouteDetail({ routeSlug }) {
                       alt="Фото 3"
                       maxOffset={10}
                       scale={1.03}
-                      style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                      style={{ width: '100%', height: '100%' }}
                       imgStyle={{ objectFit: 'cover' }}
                     />
                   </div>
@@ -530,7 +530,7 @@ export default function RouteDetail({ routeSlug }) {
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
-                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                    style={{ width: '100%', height: '100%' }}
                     imgStyle={{ objectFit: 'cover' }}
                   />
                 </div>
@@ -549,7 +549,7 @@ export default function RouteDetail({ routeSlug }) {
                             alt={`Фото ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
-                            style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                            style={{ width: '100%', height: '100%' }}
                             imgStyle={{ objectFit: 'cover' }}
                           />
                         </div>
@@ -571,7 +571,7 @@ export default function RouteDetail({ routeSlug }) {
                             alt={`Фото ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
-                            style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                            style={{ width: '100%', height: '100%' }}
                             imgStyle={{ objectFit: 'cover' }}
                           />
                           {isLast && (
@@ -600,7 +600,7 @@ export default function RouteDetail({ routeSlug }) {
               <div id="main" className={styles.title}>{route.title}</div>
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('distanceOptions', route.distance)}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -613,7 +613,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {seasonDisplay && seasonsArray.length > 0 && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('seasons', seasonsArray)}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -626,7 +626,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.elevationGain != null && route.elevationGain !== '' && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('elevationOptions', route.elevationGain)}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -639,7 +639,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.hasOvernight && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('hasOvernightOptions', getBooleanFilterValue())}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -651,7 +651,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.difficulty != null && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('difficultyLevels', String(route.difficulty))}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -679,7 +679,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.duration && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('durationOptions', route.duration)}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -692,7 +692,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.isFamily && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('isFamilyOptions', getBooleanFilterValue())}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -704,7 +704,7 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {transportDisplay && transportArray.length > 0 && (
-                  <Link 
+                  <Link
                     to={buildFilterUrl('transport', transportArray)}
                     className={styles.item}
                     style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
@@ -794,7 +794,9 @@ export default function RouteDetail({ routeSlug }) {
                               <img src="/infoTable_icon1.png" alt="" />
                             )}
                           </div>
-                          {item.text || '—'}
+                          <div className={styles.infoTable_blocks_block_text}>
+                            {item.text || '—'}
+                          </div>
                         </div>
                       )
                     })}
@@ -920,69 +922,73 @@ export default function RouteDetail({ routeSlug }) {
                   </button>
                 </form>
 
-                <div className={styles.feedbackList}>
-                  {(reviews.length > 5 && !showAllReviews ? reviews.slice(0, 5) : reviews).map((review) => {
-                    const isExpanded = expandedReviews[review.id]
-                    const shortText = review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text
-                    const showExpandButton = review.text.length > 200 && !isExpanded
+                {reviews.length > 0 &&
+                  (
+                    <div className={styles.feedbackList}>
+                      {(reviews.length > 5 && !showAllReviews ? reviews.slice(0, 5) : reviews).map((review) => {
+                        const isExpanded = expandedReviews[review.id]
+                        const shortText = review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text
+                        const showExpandButton = review.text.length > 200 && !isExpanded
 
-                    return (
-                      <div key={review.id} className={styles.feedbackItem}>
-                        <div className={styles.feedbackItemHeader}>
-                          <div className={styles.feedbackItemLeft}>
-                            <img 
-                              src={review.avatar ? getImageUrl(review.avatar) : '/no-avatar.png'} 
-                              alt={review.name} 
-                              className={styles.feedbackAvatar}
-                              onError={(e) => { e.target.src = '/no-avatar.png' }}
-                            />
-                            <div className={styles.feedbackItemInfo}>
-                              <div className={styles.feedbackItemNameRow}>
-                                <div className={styles.feedbackItemName}>{review.name}</div>
-                                {review.status === 'pending' && (
-                                  <span className={styles.feedbackItemPending}>На модерации</span>
-                                )}
-                                <div className={styles.feedbackItemDate}>{review.date}</div>
-                              </div>
-                              <div className={styles.feedbackItemRating}>
-                                <svg
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="#FFD700"
-                                  stroke="#FFD700"
-                                  strokeWidth="2"
-                                >
-                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                </svg>
-                                <span>{review.rating}</span>
+                        return (
+                          <div key={review.id} className={styles.feedbackItem}>
+                            <div className={styles.feedbackItemHeader}>
+                              <div className={styles.feedbackItemLeft}>
+                                <img
+                                  src={review.avatar ? getImageUrl(review.avatar) : '/no-avatar.png'}
+                                  alt={review.name}
+                                  className={styles.feedbackAvatar}
+                                  onError={(e) => { e.target.src = '/no-avatar.png' }}
+                                />
+                                <div className={styles.feedbackItemInfo}>
+                                  <div className={styles.feedbackItemNameRow}>
+                                    <div className={styles.feedbackItemName}>{review.name}</div>
+                                    {review.status === 'pending' && (
+                                      <span className={styles.feedbackItemPending}>На модерации</span>
+                                    )}
+                                    <div className={styles.feedbackItemDate}>{review.date}</div>
+                                  </div>
+                                  <div className={styles.feedbackItemRating}>
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="#FFD700"
+                                      stroke="#FFD700"
+                                      strokeWidth="2"
+                                    >
+                                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                    </svg>
+                                    <span>{review.rating}</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
+                            <div className={styles.feedbackItemText}>
+                              {isExpanded ? review.text : shortText}
+                            </div>
+                            {showExpandButton && (
+                              <button
+                                className={styles.feedbackExpandButton}
+                                onClick={() => toggleReview(review.id)}
+                              >
+                                Показать полностью
+                              </button>
+                            )}
+                            {isExpanded && review.text.length > 200 && (
+                              <button
+                                className={styles.feedbackExpandButton}
+                                onClick={() => toggleReview(review.id)}
+                              >
+                                Свернуть
+                              </button>
+                            )}
                           </div>
-                        </div>
-                        <div className={styles.feedbackItemText}>
-                          {isExpanded ? review.text : shortText}
-                        </div>
-                        {showExpandButton && (
-                          <button
-                            className={styles.feedbackExpandButton}
-                            onClick={() => toggleReview(review.id)}
-                          >
-                            Показать полностью
-                          </button>
-                        )}
-                        {isExpanded && review.text.length > 200 && (
-                          <button
-                            className={styles.feedbackExpandButton}
-                            onClick={() => toggleReview(review.id)}
-                          >
-                            Свернуть
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                        )
+                      })}
+                    </div>
+                  )
+                }
 
                 {reviews.length > 5 && (
                   <div className={styles.feedbackShowAll}>
@@ -1127,6 +1133,6 @@ export default function RouteDetail({ routeSlug }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </main>
+    </main >
   )
 }

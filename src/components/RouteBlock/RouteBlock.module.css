@@ -71,7 +71,7 @@
     background-color: #F1F3F8;
     font-weight: 400;
     font-size: 14px;
-    line-height: 120%;
+    line-height: 150%;
     letter-spacing: 0%;
     gap: 8px;
 }
@@ -163,7 +163,7 @@
 .typeText {
     font-weight: 500;
     font-size: 14px;
-    line-height: 120%;
+    line-height: 150%;
     letter-spacing: 0%;
 }
 
@@ -177,7 +177,7 @@
 .desc {
     font-weight: 400;
     font-size: 16px;
-    line-height: 120%;
+    line-height: 150%;
     letter-spacing: 0%;
     width: 95%;
     display: -webkit-box;
@@ -197,7 +197,7 @@
 .routePlaces .title {
     font-weight: 400;
     font-size: 16px;
-    line-height: 120%;
+    line-height: 150%;
     letter-spacing: 0%;
     color: #767B78;
 }
@@ -205,7 +205,7 @@
 .place {
     font-weight: 400;
     font-size: 16px;
-    line-height: 120%;
+    line-height: 150%;
     letter-spacing: 0%;
     cursor: pointer;
 }

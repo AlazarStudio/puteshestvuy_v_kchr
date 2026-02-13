@@ -266,7 +266,7 @@
 @media (min-width: 1400px) {
     .filter {
         width: 28%;
-        min-width: 240px;
+        min-width: 330px;
         padding: 22px;
     }
 }

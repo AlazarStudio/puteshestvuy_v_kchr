@@ -13,7 +13,7 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(21, 106, 96, 0.4);
   transition: all 0.3s ease;
-  z-index: 999;
+  z-index: 1000;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -62,7 +62,7 @@
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 1002;
   backdrop-filter: blur(2px);
 }
 
@@ -75,7 +75,7 @@
   max-height: 90vh;
   background-color: #fff;
   border-radius: 20px 20px 0 0;
-  z-index: 1001;
+  z-index: 1003;
   display: flex;
   flex-direction: column;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);

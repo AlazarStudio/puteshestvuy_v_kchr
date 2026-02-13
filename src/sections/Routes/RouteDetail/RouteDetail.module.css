@@ -2,6 +2,7 @@
   background-color: #F1F3F8;
   padding-top: 88px;
   width: 100%;
+  overflow: hidden;
 }
 
 .routePage {
@@ -382,7 +383,7 @@
   font-size: 24px;
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .gallery {
     flex-direction: column;
     height: auto;
@@ -413,7 +414,7 @@
   .modalContent {
     height: 80vh;
   }
-}
+} */
 
 
 /* content */
@@ -532,7 +533,7 @@
 .title {
   font-weight: 700;
   font-size: 40px;
-  line-height: 120%;
+  line-height: 150%;
   letter-spacing: 0%;
   margin-top: 20px;
   /* z-index: 10; */
@@ -865,7 +866,7 @@
 .tabsContentTitle {
   font-weight: 700;
   font-size: 24px;
-  line-height: 120%;
+  line-height: 150%;
   letter-spacing: 0%;
 }
 
@@ -1258,6 +1259,196 @@
   gap: 5px;
 }
 
-.guide_man_rating_feedback_item img{
+.guide_man_rating_feedback_item img {
   width: 15px;
+}
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .main {
+    padding: 50px 10px 10px 10px;
+  }
+
+  .gallery {
+    height: 150px;
+    gap: 5px;
+  }
+
+  .galleryGridRow {
+    gap: 5px;
+  }
+
+  .galleryGrid {
+    gap: 5px;
+  }
+
+  .galleryMain {
+    border-radius: 10px;
+  }
+
+  .galleryItem {
+    border-radius: 10px;
+  }
+
+  .moreButton {
+    font-size: 8px;
+    bottom: 5px;
+    right: 5px;
+    padding: 6px;
+    border-radius: 5px;
+  }
+
+  .moreButton img {
+    width: 10px;
+  }
+
+  .bread_crumbs {
+    font-size: 10px;
+    margin-bottom: 20px;
+    gap: 1px
+  }
+
+  .bread_crumbs svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .bread_crumbs span {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .routeBlock_anchors {
+    display: none;
+  }
+
+  .routeBlock {
+    margin-top: 10px;
+  }
+
+  .routeBlock_content {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .title {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+
+  .item {
+    width: 48%;
+  }
+
+  .slide {
+    padding: 20px;
+  }
+
+  .slideBlock {
+    flex-direction: column;
+  }
+
+  .slideTitle {
+    font-size: 18px;
+  }
+
+  .slideDesc {
+    font-size: 12px;
+    -webkit-line-clamp: 10;
+  }
+
+  .slideBtn {
+    width: 100%;
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .slideImg {
+    width: 100%;
+  }
+
+  .forSlider {
+    margin-top: -60px;
+    padding-top: 80px;
+  }
+
+  .infoTable_blocks_block {
+    font-size: 12px;
+    width: 100%;
+    background-color: #fff;
+    padding: 12px 10px;
+    border-radius: 10px;
+  }
+
+  .infoTable_blocks_block_text {
+    line-height: 150%;
+  }
+
+  .tab {
+    font-size: 12px;
+    width: 100%;
+    padding: 12px;
+  }
+
+  .tabsContent {
+    padding: 20px;
+    font-size: 12px;
+  }
+
+  .text {
+    font-size: 12px;
+  }
+
+  .feedbackForm {
+    padding: 20px;
+  }
+
+  .feedbackFormInput,
+  .feedbackFormTextarea,
+  .feedbackSubmitButton {
+    font-size: 12px;
+  }
+
+  .modalThumbnails {
+    display: none;
+  }
+
+  .modalSwiper :global(.swiper-button-next),
+  .modalSwiper :global(.swiper-button-prev) {
+    top: 53%;
+  }
+
+  .modalSwiper :global(.swiper-button-next svg),
+  .modalSwiper :global(.swiper-button-prev svg) {
+    width: 60%;
+    height: 60%;
+  }
+
+  .guide_man_title {
+    font-size: 18px;
+  }
+
+  .guide_man {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .guide_man_img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .guide_man_desc {
+    width: calc(100% - 110px);
+  }
+
+  .guide_man_img_verification {
+    top: 0;
+    right: 0;
+  }
 }

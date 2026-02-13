@@ -185,6 +185,21 @@ a {
   display: none;
 }
 
+@media (min-width: 320px) and (max-width: 1400px) {
+  .mySwiperRoute .swiper-button-next{
+    width: 60px;
+    height: 60px;
+    top: -50px !important;
+  }
+
+  .mySwiperRoute .swiper-button-prev{
+    width: 60px;
+    height: 60px;
+    top: -50px !important;
+    right: 80px !important;
+  }
+}
+
 /* Исправление z-index для полноэкранного режима Яндекс.Карт */
 /* Яндекс.Карты создают полноэкранный контейнер <ymaps> с position: absolute и z-index: 10000 */
 /* Модалка имеет z-index: 10001, поэтому карта должна быть выше */

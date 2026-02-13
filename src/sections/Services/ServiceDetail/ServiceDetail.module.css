@@ -678,7 +678,7 @@
 .serviceName {
   font-weight: 700;
   font-size: 32px;
-  line-height: 120%;
+  line-height: 150%;
 }
 
 .serviceRating {
@@ -714,7 +714,7 @@
 .title {
   font-weight: 700;
   font-size: 32px;
-  line-height: 120%;
+  line-height: 150%;
   margin-top: 20px;
 }
 

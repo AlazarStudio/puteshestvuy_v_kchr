@@ -177,7 +177,7 @@
 .sectionTitle {
   font-weight: 700;
   font-size: 40px;
-  line-height: 120%;
+  line-height: 150%;
   margin-bottom: 30px;
   color: #000;
 }
@@ -522,7 +522,7 @@
 .ctaTitle {
   font-weight: 700;
   font-size: 40px;
-  line-height: 120%;
+  line-height: 150%;
   /* margin-bottom: 20px; */
 }
 

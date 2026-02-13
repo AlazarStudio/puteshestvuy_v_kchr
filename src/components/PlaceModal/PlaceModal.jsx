@@ -234,7 +234,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 alt="Фото 1"
                                 maxOffset={5}
                                 scale={1.03}
-                                style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                style={{ width: '100%', height: '100%' }}
                                 imgStyle={{ objectFit: 'cover' }}
                               />
                             </div>
@@ -247,7 +247,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
-                                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                  style={{ width: '100%', height: '100%' }}
                                   imgStyle={{ objectFit: 'cover' }}
                                 />
                               </div>
@@ -257,7 +257,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   alt="Фото 2"
                                   maxOffset={5}
                                   scale={1.03}
-                                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                  style={{ width: '100%', height: '100%' }}
                                   imgStyle={{ objectFit: 'cover' }}
                                 />
                               </div>
@@ -271,7 +271,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
-                                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                  style={{ width: '100%', height: '100%' }}
                                   imgStyle={{ objectFit: 'cover' }}
                                 />
                               </div>
@@ -282,7 +282,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                     alt="Фото 2"
                                     maxOffset={5}
                                     scale={1.03}
-                                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                    style={{ width: '100%', height: '100%' }}
                                     imgStyle={{ objectFit: 'cover' }}
                                   />
                                 </div>
@@ -292,7 +292,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                     alt="Фото 3"
                                     maxOffset={5}
                                     scale={1.03}
-                                    style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                    style={{ width: '100%', height: '100%' }}
                                     imgStyle={{ objectFit: 'cover' }}
                                   />
                                 </div>
@@ -307,7 +307,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
-                                  style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                  style={{ width: '100%', height: '100%' }}
                                   imgStyle={{ objectFit: 'cover' }}
                                 />
                               </div>
@@ -326,7 +326,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                           alt={`Фото ${photoIndex + 1}`}
                                           maxOffset={5}
                                           scale={1.03}
-                                          style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                          style={{ width: '100%', height: '100%' }}
                                           imgStyle={{ objectFit: 'cover' }}
                                         />
                                       </div>
@@ -348,7 +348,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                           alt={`Фото ${photoIndex + 1}`}
                                           maxOffset={5}
                                           scale={1.03}
-                                          style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                                          style={{ width: '100%', height: '100%' }}
                                           imgStyle={{ objectFit: 'cover' }}
                                         />
                                         {isLast && (

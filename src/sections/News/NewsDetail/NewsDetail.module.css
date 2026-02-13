@@ -75,7 +75,7 @@
 .heroTitle {
   font-weight: 700;
   font-size: 48px;
-  line-height: 120%;
+  line-height: 150%;
   max-width: 900px;
   text-transform: uppercase;
 }
@@ -359,7 +359,7 @@
 .popularTitle {
   font-weight: 700;
   font-size: 32px;
-  line-height: 120%;
+  line-height: 150%;
   margin-bottom: 30px;
 }
 

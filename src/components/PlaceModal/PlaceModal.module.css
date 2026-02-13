@@ -103,7 +103,7 @@
   content: "";
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
   position: absolute;
   top: 0;
   left: 0;
@@ -182,7 +182,7 @@
 .title {
   font-weight: 700;
   font-size: 28px;
-  line-height: 120%;
+  line-height: 150%;
   margin-top: 15px;
 }
 
@@ -778,7 +778,7 @@
 .sidebarTitle {
   font-weight: 700;
   font-size: 24px;
-  line-height: 120%;
+  line-height: 150%;
   margin-bottom: 20px;
   flex-shrink: 0;
 }
@@ -1013,7 +1013,7 @@
 }
 
 /* Адаптив */
-@media (max-width: 1200px) {
+/* @media (max-width: 1200px) {
   .contentWrapper {
     flex-direction: column;
   }
@@ -1035,9 +1035,9 @@
   .sidebarPlaceCard {
     width: calc(50% - 8px);
   }
-}
+} */
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .modalContent {
     height: 95%;
   }
@@ -1091,5 +1091,107 @@
 
   .sidebarPlaceCard {
     width: 100%;
+  }
+} */
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .modalContent {
+    width: calc(100% - 30px);
+    height: calc(100% - 15px);
+  }
+
+  .modalImage {
+    height: 300px;
+  }
+
+  .modalImage_text_block {
+    padding: 0 20px;
+  }
+
+  .modalImage_text_title {
+    font-size: 24px;
+  }
+
+  .modalImage_text {
+    bottom: 20px;
+  }
+
+  .modalImage_text_place {
+    font-size: 12px;
+  }
+
+  .modalImage_text_place>img {
+    width: 10px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .contentMain {
+    max-width: 100%;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .modalInfo {
+    padding: 10px 0;
+  }
+
+  .title {
+    font-size: 18px;
+    margin: 10px 0;
+  }
+
+  .descriptionText {
+    font-size: 14px;
+  }
+
+  .feedbackForm {
+    padding: 20px;
+  }
+
+  .gallery {
+    height: 150px;
+    gap: 5px;
+  }
+
+  .galleryGridRow {
+    gap: 5px;
+  }
+
+  .galleryGrid {
+    gap: 5px;
+  }
+
+  .galleryMain {
+    border-radius: 10px;
+  }
+
+  .galleryItem {
+    border-radius: 10px;
+  }
+
+  
+  .galleryModalThumbnails {
+    display: none;
+  }
+
+  .galleryModalSwiper :global(.swiper-button-next svg),
+  .galleryModalSwiper :global(.swiper-button-prev svg) {
+    width: 60%;
+    height: 60%;
+  }
+
+  .galleryModalSwiper :global(.swiper-button-next),
+  .galleryModalSwiper :global(.swiper-button-prev) {
+    top: 53%;
+  }
+
+
+  .feedbackFormInput,
+  .feedbackFormTextarea,
+  .feedbackSubmitButton {
+    font-size: 12px;
   }
 }
