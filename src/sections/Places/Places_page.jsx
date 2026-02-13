@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Select, MenuItem, FormControl } from '@mui/material'
 import styles from './Places_page.module.css'
@@ -9,42 +9,74 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
-import { publicPlacesAPI, publicPagesAPI } from '@/lib/api'
-import { getImageUrl } from '@/lib/api'
+import { publicPlacesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 30
 
+function areFiltersEqual(a = {}, b = {}) {
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) return false
+
+  for (const k of aKeys) {
+    const av = a[k]
+    const bv = b[k]
+
+    const aArr = Array.isArray(av) ? av : []
+    const bArr = Array.isArray(bv) ? bv : []
+
+    if (aArr.length !== bArr.length) return false
+    for (let i = 0; i < aArr.length; i++) {
+      if (String(aArr[i]) !== String(bArr[i])) return false
+    }
+  }
+  return true
+}
 
 export default function Places_page() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+
   const [sortBy, setSortBy] = useState('popularity')
   const [places, setPlaces] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
   const [filters, setFilters] = useState({})
-  const [searchQuery, setSearchQuery] = useState(() => {
-    // Инициализируем из URL параметра search при первом рендере
-    return searchParams.get('search') || ''
-  })
+  const [filterOptions, setFilterOptions] = useState(null)
+
+  const [allPlacesForSearch, setAllPlacesForSearch] = useState([])
+  const [searchFallback, setSearchFallback] = useState(null)
+
+  // searchQuery — из URL
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '')
+
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
-  const [filterOptions, setFilterOptions] = useState(null)
-  const [allPlacesForSearch, setAllPlacesForSearch] = useState([])
-  const [searchFallback, setSearchFallback] = useState(null)
+
   const scrollPositionRef = useRef(0)
   const isClosingRef = useRef(false)
   const isOpeningRef = useRef(false)
-  const observerTarget = useRef(null)
+
   const searchDebounceRef = useRef(null)
   const isUpdatingFromUrlRef = useRef(false)
+
+  const lastFiltersQueryRef = useRef('')
+  const didInitCriteriaRef = useRef(false)
+  const lastCriteriaRef = useRef('')
+
+  // hero + overlay
+  const heroRef = useRef(null)
+  const [pageOverlayLoading, setPageOverlayLoading] = useState(false)
+  const navTokenRef = useRef(0)
+  const navStartedAtRef = useRef(0)
+  const pendingNavPageRef = useRef(null)
+
   const [pageContent, setPageContent] = useState({
     hero: {
       title: 'ИНТЕРЕСНЫЕ МЕСТА',
@@ -53,38 +85,404 @@ export default function Places_page() {
     },
   })
 
-  // Синхронизация searchQuery с URL параметром search при изменении URL
+  // Текущая страница — только из URL
+  const currentPage = useMemo(() => {
+    const p = parseInt(searchParams.get('page') || '1', 10)
+    return Number.isFinite(p) && p >= 1 ? p : 1
+  }, [searchParams])
+
+  // --- helpers scroll ---
+  const scrollToAfterHeroInstant = useCallback(() => {
+    const heroEl = heroRef.current
+    const root = document.documentElement
+    const prev = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+
+    if (!heroEl) {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      root.style.scrollBehavior = prev
+      return
+    }
+
+    const heroBottom = heroEl.getBoundingClientRect().bottom + window.scrollY
+    const headerOffset = 0 // если есть фикс хедер — поставь, например, 80
+    window.scrollTo({ top: Math.max(0, heroBottom - headerOffset), behavior: 'auto' })
+
+    root.style.scrollBehavior = prev
+  }, [])
+
+  const waitForScrollToSettle = useCallback(() => {
+    return new Promise((resolve) => {
+      let lastY = window.scrollY
+      let stableFrames = 0
+
+      const tick = () => {
+        const y = window.scrollY
+        if (Math.abs(y - lastY) < 2) {
+          stableFrames += 1
+        } else {
+          stableFrames = 0
+          lastY = y
+        }
+
+        if (stableFrames >= 2) {
+          resolve()
+          return
+        }
+        requestAnimationFrame(tick)
+      }
+
+      requestAnimationFrame(tick)
+    })
+  }, [])
+
+  // --- sort ---
+  const handleSortChange = (event) => {
+    setSortBy(event.target.value)
+  }
+
+  // --- Filter groups ---
+  const placeFilterGroups = useMemo(() => {
+    return [
+      ...(filterOptions?.directions?.length > 0
+        ? [{ key: 'directions', label: 'Направление', options: filterOptions.directions }]
+        : []),
+      ...(filterOptions?.seasons?.length > 0 ? [{ key: 'seasons', label: 'Сезон', options: filterOptions.seasons }] : []),
+      ...(filterOptions?.objectTypes?.length > 0
+        ? [{ key: 'objectTypes', label: 'Вид объекта', options: filterOptions.objectTypes }]
+        : []),
+      ...(filterOptions?.accessibility?.length > 0
+        ? [{ key: 'accessibility', label: 'Доступность', options: filterOptions.accessibility }]
+        : []),
+      ...(Array.isArray(filterOptions?.extraGroups)
+        ? filterOptions.extraGroups.map((g) => ({
+          key: g.key,
+          label: (g.label && g.label.trim()) || g.key,
+          options: Array.isArray(g.values) ? g.values : [],
+        }))
+        : []),
+    ]
+  }, [filterOptions])
+
+  // --- sync searchQuery <-> URL (без циклов) ---
   useEffect(() => {
     const searchFromUrl = searchParams.get('search') || ''
     if (searchFromUrl !== searchQuery) {
       isUpdatingFromUrlRef.current = true
       setSearchQuery(searchFromUrl)
     }
-  }, [searchParams, location.search]) // Добавляем location.search для надежности
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, location.search])
 
-  // Обновление URL при изменении searchQuery пользователем (но не создаем цикл)
   useEffect(() => {
     if (isUpdatingFromUrlRef.current) {
       isUpdatingFromUrlRef.current = false
       return
     }
-    
+
     const currentSearchInUrl = searchParams.get('search') || ''
     if (searchQuery !== currentSearchInUrl) {
-      if (searchQuery) {
-        setSearchParams({ search: searchQuery }, { replace: true })
-      } else {
-        const newParams = new URLSearchParams(searchParams)
-        newParams.delete('search')
-        setSearchParams(newParams, { replace: true })
-      }
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        if (searchQuery && searchQuery.trim()) next.set('search', searchQuery)
+        else next.delete('search')
+        // search поменялся → логично сбросить page=1 (но это сделает критерий-эффект ниже)
+        return next
+      }, { replace: true })
     }
-  }, [searchQuery])
+  }, [searchQuery, searchParams, setSearchParams])
 
-  const handleSortChange = (event) => {
-    setSortBy(event.target.value)
+  // важный фикс: не обновлять filters, если “те же”
+  const handleFiltersChange = useCallback((next) => {
+    setFilters((prev) => (areFiltersEqual(prev, next) ? prev : next))
+  }, [])
+
+  // --- загрузка опций фильтров ---
+  useEffect(() => {
+    let cancelled = false
+    publicPlacesAPI
+      .getFilters()
+      .then(({ data }) => {
+        if (!cancelled && data) {
+          setFilterOptions({
+            directions: Array.isArray(data.directions) ? data.directions : [],
+            seasons: Array.isArray(data.seasons) ? data.seasons : [],
+            objectTypes: Array.isArray(data.objectTypes) ? data.objectTypes : [],
+            accessibility: Array.isArray(data.accessibility) ? data.accessibility : [],
+            extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
+          })
+
+          // Инициализируем filters с пустыми массивами
+          setFilters((prev) => {
+            const next = { ...prev }
+            if (Array.isArray(data.directions) && data.directions.length > 0 && next.directions === undefined) next.directions = []
+            if (Array.isArray(data.seasons) && data.seasons.length > 0 && next.seasons === undefined) next.seasons = []
+            if (Array.isArray(data.objectTypes) && data.objectTypes.length > 0 && next.objectTypes === undefined) next.objectTypes = []
+            if (Array.isArray(data.accessibility) && data.accessibility.length > 0 && next.accessibility === undefined)
+              next.accessibility = []
+            if (Array.isArray(data.extraGroups)) {
+              for (const g of data.extraGroups) {
+                if (g.key && next[g.key] === undefined) next[g.key] = []
+              }
+            }
+            return next
+          })
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('Ошибка загрузки опций фильтров:', err)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // --- Загрузка всех мест для умного поиска ---
+  useEffect(() => {
+    let cancelled = false
+    publicPlacesAPI
+      .getAll({ limit: 1000 })
+      .then(({ data }) => {
+        if (!cancelled) setAllPlacesForSearch(data?.items || [])
+      })
+      .catch(() => {
+        if (!cancelled) setAllPlacesForSearch([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // --- Умный поиск с fallback ---
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+
+    if (!searchQuery || !searchQuery.trim()) {
+      setSearchFallback(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      const performSearch = async (query) => {
+        if (!query || !query.trim()) return []
+        const lowerQuery = query.toLowerCase().trim()
+
+        return allPlacesForSearch.filter((item) => {
+          if (searchInObject(item, lowerQuery)) return true
+          const loc = item.location || ''
+          if (loc && loc.toLowerCase().includes(lowerQuery)) return true
+          return false
+        })
+      }
+
+      const { fallback } = await searchWithFallback(searchQuery, performSearch)
+      setSearchFallback(fallback)
+    }, 300)
+
+    searchDebounceRef.current = timer
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchQuery, allPlacesForSearch])
+
+  // --- sync filters from URL (не реагируем на page) ---
+  useEffect(() => {
+    if (!filterOptions) return
+
+    const spNoPage = new URLSearchParams(searchParams)
+    spNoPage.delete('page')
+    const filtersQuery = spNoPage.toString()
+
+    if (filtersQuery === lastFiltersQueryRef.current) return
+    lastFiltersQueryRef.current = filtersQuery
+
+    const filtersFromUrl = {}
+
+      // fixed
+      ;['directions', 'seasons', 'objectTypes', 'accessibility'].forEach((key) => {
+        const values = searchParams.getAll(key).filter(Boolean)
+        if (values.length > 0) filtersFromUrl[key] = values
+      })
+
+    // extra
+    if (Array.isArray(filterOptions?.extraGroups)) {
+      filterOptions.extraGroups.forEach((g) => {
+        if (!g.key) return
+        const values = searchParams.getAll(g.key).filter(Boolean)
+        if (values.length > 0) filtersFromUrl[g.key] = values
+      })
+    }
+
+    if (Object.keys(filtersFromUrl).length === 0) return
+
+    setFilters((prev) => {
+      const merged = { ...prev, ...filtersFromUrl }
+      return areFiltersEqual(prev, merged) ? prev : merged
+    })
+  }, [searchParams, filterOptions])
+
+  // --- fetchPlaces ---
+  const fetchPlaces = useCallback(
+    async (page = 1) => {
+      const startTime = Date.now()
+      const MIN_LOADING_TIME = 500
+
+      try {
+        setLoading(true)
+
+        const effectiveSearchQuery = searchFallback || searchQuery.trim()
+
+        const params = {
+          page,
+          limit: ITEMS_PER_PAGE,
+          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
+          ...(sortBy && { sortBy }),
+          ...(filters.directions?.length > 0 && { directions: filters.directions }),
+          ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
+          ...(filters.objectTypes?.length > 0 && { objectTypes: filters.objectTypes }),
+          ...(filters.accessibility?.length > 0 && { accessibility: filters.accessibility }),
+        }
+
+        for (const g of filterOptions?.extraGroups || []) {
+          if (g.key && filters[g.key]?.length > 0) {
+            params[g.key] = filters[g.key]
+          }
+        }
+
+        const { data } = await publicPlacesAPI.getAll(params)
+
+        let newItems = data.items || []
+        let totalItems = data.pagination?.total ?? 0
+
+        // если API ничего не вернул — fallback поиск по location
+        if (effectiveSearchQuery && newItems.length === 0 && allPlacesForSearch.length > 0) {
+          const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
+
+          const placesWithMatchingLocation = allPlacesForSearch.filter((place) => {
+            const loc = place.location || ''
+            return loc.toLowerCase().includes(lowerQuery)
+          })
+
+          if (placesWithMatchingLocation.length > 0) {
+            const startIndex = (page - 1) * ITEMS_PER_PAGE
+            const endIndex = startIndex + ITEMS_PER_PAGE
+            newItems = placesWithMatchingLocation.slice(startIndex, endIndex)
+            totalItems = placesWithMatchingLocation.length
+          }
+        }
+
+        const pages = Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
+
+        setPlaces(newItems)
+        setTotal(totalItems)
+        setTotalPages(pages)
+
+        const elapsedTime = Date.now() - startTime
+        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+        await new Promise((resolve) => setTimeout(resolve, remainingTime))
+      } catch (err) {
+        console.error(err)
+        setPlaces([])
+        setTotal(0)
+        setTotalPages(1)
+
+        const elapsedTime = Date.now() - startTime
+        const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
+        await new Promise((resolve) => setTimeout(resolve, remainingTime))
+      } finally {
+        setLoading(false)
+      }
+    },
+    [filters, searchQuery, searchFallback, sortBy, filterOptions, allPlacesForSearch]
+  )
+
+  // --- reset page=1 when criteria changes (но не на первом запуске) ---
+  useEffect(() => {
+    if (!filterOptions) return
+
+    const criteria = JSON.stringify({
+      filters,
+      searchQuery,
+      searchFallback,
+      sortBy,
+    })
+
+    if (criteria === lastCriteriaRef.current) return
+    lastCriteriaRef.current = criteria
+
+    if (!didInitCriteriaRef.current) {
+      didInitCriteriaRef.current = true
+      return
+    }
+
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('page', '1')
+      return next
+    }, { replace: true })
+  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, setSearchParams])
+
+  // --- fetch when page changes ---
+  useEffect(() => {
+    fetchPlaces(currentPage)
+  }, [currentPage, fetchPlaces])
+
+  // --- overlay hide (min 500ms + после получения данных) ---
+  useEffect(() => {
+    if (!pageOverlayLoading) return
+    if (loading) return
+    if (pendingNavPageRef.current == null) return
+
+    const minTime = 500
+    const elapsed = Date.now() - navStartedAtRef.current
+    const remain = Math.max(0, minTime - elapsed)
+
+    const t = setTimeout(() => {
+      if (pendingNavPageRef.current == null) return
+      setPageOverlayLoading(false)
+      pendingNavPageRef.current = null
+    }, remain)
+
+    return () => clearTimeout(t)
+  }, [pageOverlayLoading, loading])
+
+  // --- pagination navigation ---
+  const goToPage = useCallback(
+    async (page) => {
+      const nextPage = Math.max(1, page)
+      if (nextPage === currentPage) return
+
+      const token = ++navTokenRef.current
+      pendingNavPageRef.current = nextPage
+      navStartedAtRef.current = Date.now()
+      setPageOverlayLoading(true)
+
+      scrollToAfterHeroInstant()
+      await waitForScrollToSettle()
+      if (token !== navTokenRef.current) return
+
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('page', String(nextPage))
+        return next
+      }, { replace: true })
+    },
+    [currentPage, setSearchParams, scrollToAfterHeroInstant, waitForScrollToSettle]
+  )
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) goToPage(currentPage - 1)
   }
 
+  const handleNextPage = () => {
+    if (currentPage < totalPages) goToPage(currentPage + 1)
+  }
+
+  const handlePageClick = (page) => {
+    goToPage(page)
+  }
+
+  // --- MODAL LOGIC (оставил твою) ---
   const handlePlaceClick = async (place) => {
     scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
     isClosingRef.current = false
@@ -97,7 +495,6 @@ export default function Places_page() {
       const { data } = await publicPlacesAPI.getByIdOrSlug(place.id)
       setSelectedPlace(data)
       navigate(`/places/${data.slug}`, { replace: false })
-      // Сбрасываем флаг открытия после небольшой задержки
       setTimeout(() => {
         isOpeningRef.current = false
       }, 100)
@@ -113,17 +510,12 @@ export default function Places_page() {
   const closeModal = () => {
     isClosingRef.current = true
     setIsModalOpen(false)
-
-    // Возвращаем URL обратно используя navigate
     navigate('/places', { replace: true })
-
-    // Очищаем selectedPlace после завершения анимации
     setTimeout(() => {
       setSelectedPlace(null)
-    }, 300) // Время анимации
+    }, 300)
   }
 
-  /** Закрыть модалку и открыть другое место (например, из блока «Места рядом») */
   const handleOpenPlaceById = (placeId) => {
     closeModal()
     setTimeout(() => {
@@ -131,7 +523,8 @@ export default function Places_page() {
       setModalLoading(true)
       setIsModalOpen(true)
       setSelectedPlace(null)
-      publicPlacesAPI.getByIdOrSlug(placeId)
+      publicPlacesAPI
+        .getByIdOrSlug(placeId)
         .then(({ data }) => {
           setSelectedPlace(data)
           navigate(`/places/${data.slug}`, { replace: false })
@@ -144,288 +537,27 @@ export default function Places_page() {
     }, 320)
   }
 
-  // Опции фильтров мест с API (группы для FilterBlock)
-  const placeFilterGroups = [
-    ...(filterOptions?.directions?.length > 0 ? [{ key: 'directions', label: 'Направление', options: filterOptions.directions }] : []),
-    ...(filterOptions?.seasons?.length > 0 ? [{ key: 'seasons', label: 'Сезон', options: filterOptions.seasons }] : []),
-    ...(filterOptions?.objectTypes?.length > 0 ? [{ key: 'objectTypes', label: 'Вид объекта', options: filterOptions.objectTypes }] : []),
-    ...(filterOptions?.accessibility?.length > 0 ? [{ key: 'accessibility', label: 'Доступность', options: filterOptions.accessibility }] : []),
-    ...(Array.isArray(filterOptions?.extraGroups) ? filterOptions.extraGroups.map((g) => ({
-      key: g.key,
-      label: (g.label && g.label.trim()) || g.key,
-      options: Array.isArray(g.values) ? g.values : [],
-    })) : []),
-  ]
-
-  // Загрузка опций фильтров мест с API
+  // Проверяем URL при изменении location (как у тебя)
   useEffect(() => {
-    let cancelled = false
-    publicPlacesAPI.getFilters()
-      .then(({ data }) => {
-        if (!cancelled && data) {
-          setFilterOptions({
-            directions: Array.isArray(data.directions) ? data.directions : [],
-            seasons: Array.isArray(data.seasons) ? data.seasons : [],
-            objectTypes: Array.isArray(data.objectTypes) ? data.objectTypes : [],
-            accessibility: Array.isArray(data.accessibility) ? data.accessibility : [],
-            extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
-          })
-          // Инициализируем filters с пустыми массивами для всех групп
-          setFilters((prev) => {
-            const next = { ...prev }
-            if (Array.isArray(data.directions) && data.directions.length > 0 && next.directions === undefined) next.directions = []
-            if (Array.isArray(data.seasons) && data.seasons.length > 0 && next.seasons === undefined) next.seasons = []
-            if (Array.isArray(data.objectTypes) && data.objectTypes.length > 0 && next.objectTypes === undefined) next.objectTypes = []
-            if (Array.isArray(data.accessibility) && data.accessibility.length > 0 && next.accessibility === undefined) next.accessibility = []
-            if (Array.isArray(data.extraGroups)) {
-              for (const g of data.extraGroups) {
-                if (g.key && next[g.key] === undefined) next[g.key] = []
-              }
-            }
-            return next
-          })
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) console.error('Ошибка загрузки опций фильтров:', err)
-      })
-    return () => { cancelled = true }
-  }, [])
-
-  // Загрузка всех мест для умного поиска (один раз при монтировании)
-  useEffect(() => {
-    let cancelled = false
-    publicPlacesAPI.getAll({ limit: 1000 })
-      .then(({ data }) => {
-        if (!cancelled) {
-          setAllPlacesForSearch(data?.items || [])
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setAllPlacesForSearch([])
-      })
-    return () => { cancelled = true }
-  }, [])
-
-  // Умный поиск с fallback логикой
-  useEffect(() => {
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current)
-    }
-
-    if (!searchQuery || !searchQuery.trim()) {
-      setSearchFallback(null)
-      return
-    }
-
-    const timer = setTimeout(async () => {
-      const performSearch = async (query) => {
-        if (!query || !query.trim()) return []
-        const lowerQuery = query.toLowerCase().trim()
-        
-        // Ищем в названии, описании и локации
-        return allPlacesForSearch.filter(item => {
-          // Стандартный поиск в объекте (название, описание)
-          if (searchInObject(item, lowerQuery)) {
-            return true
-          }
-          
-          // Дополнительно ищем в локации
-          const location = item.location || ''
-          if (location && location.toLowerCase().includes(lowerQuery)) {
-            return true
-          }
-          
-          return false
-        })
-      }
-
-      const { results, fallback } = await searchWithFallback(searchQuery, performSearch)
-      setSearchFallback(fallback)
-      
-      // Если есть fallback, используем его для поиска через API
-      if (fallback && fallback !== searchQuery.trim()) {
-        // Обновляем searchQuery на fallback значение для API запроса
-        // Но это может вызвать бесконечный цикл, поэтому лучше использовать отдельное состояние
-      }
-    }, 300)
-
-    searchDebounceRef.current = timer
-
-    return () => {
-      if (timer) clearTimeout(timer)
-    }
-  }, [searchQuery, allPlacesForSearch])
-
-  // Функция загрузки мест
-  const fetchPlaces = useCallback(async (page = 1, reset = false) => {
-    const startTime = Date.now()
-    const MIN_LOADING_TIME = 500 // минимум 500ms
-    
-    try {
-      if (reset) {
-        setLoading(true)
-      } else {
-        setLoadingMore(true)
-      }
-      
-      // Используем fallback запрос, если он есть, иначе оригинальный
-      const effectiveSearchQuery = searchFallback || searchQuery.trim()
-      
-      const params = {
-        page,
-        limit: ITEMS_PER_PAGE,
-        ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
-        ...(sortBy && { sortBy }),
-        ...(filters.directions?.length > 0 && { directions: filters.directions }),
-        ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
-        ...(filters.objectTypes?.length > 0 && { objectTypes: filters.objectTypes }),
-        ...(filters.accessibility?.length > 0 && { accessibility: filters.accessibility }),
-      }
-      // Добавляем extraGroups фильтры
-      for (const g of filterOptions?.extraGroups || []) {
-        if (g.key && filters[g.key]?.length > 0) {
-          params[g.key] = filters[g.key]
-        }
-      }
-      const { data } = await publicPlacesAPI.getAll(params)
-      let newItems = data.items || []
-      let totalItems = data.pagination?.total ?? 0
-      
-      // Если есть поисковый запрос и результатов нет или мало, ищем в локации
-      if (effectiveSearchQuery && newItems.length === 0 && allPlacesForSearch.length > 0) {
-        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
-        
-        // Ищем места, где в локации есть совпадение
-        const placesWithMatchingLocation = allPlacesForSearch.filter(place => {
-          const location = place.location || ''
-          return location.toLowerCase().includes(lowerQuery)
-        })
-        
-        if (placesWithMatchingLocation.length > 0) {
-          // Берем только нужное количество для текущей страницы
-          const startIndex = (page - 1) * ITEMS_PER_PAGE
-          const endIndex = startIndex + ITEMS_PER_PAGE
-          newItems = placesWithMatchingLocation.slice(startIndex, endIndex)
-          totalItems = placesWithMatchingLocation.length
-        }
-      } else if (effectiveSearchQuery && newItems.length > 0) {
-        // Если есть результаты от API, дополнительно проверяем локацию для полноты
-        const lowerQuery = effectiveSearchQuery.toLowerCase().trim()
-        
-        // Проверяем, может быть есть еще места с локацией, которые API не вернул
-        const placesWithMatchingLocation = allPlacesForSearch.filter(place => {
-          // Пропускаем уже найденные места
-          if (newItems.some(item => item.id === place.id || item._id === place._id)) {
-            return false
-          }
-          
-          const location = place.location || ''
-          return location.toLowerCase().includes(lowerQuery)
-        })
-        
-        // Добавляем найденные места с локацией к результатам
-        if (placesWithMatchingLocation.length > 0) {
-          newItems = [...newItems, ...placesWithMatchingLocation.slice(0, ITEMS_PER_PAGE - newItems.length)]
-          totalItems = Math.max(totalItems, newItems.length)
-        }
-      }
-      
-      if (reset) {
-        setPlaces(newItems)
-        setHasMore(newItems.length === ITEMS_PER_PAGE && newItems.length < totalItems)
-      } else {
-        setPlaces(prev => {
-          const updated = [...prev, ...newItems]
-          setHasMore(updated.length < totalItems)
-          return updated
-        })
-      }
-      
-      setTotal(totalItems)
-      
-      // Гарантируем минимальное время отображения лоадера
-      const elapsedTime = Date.now() - startTime
-      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    } catch (err) {
-      console.error(err)
-      if (reset) {
-        setPlaces([])
-        setTotal(0)
-        setHasMore(false)
-      }
-      // Гарантируем минимальное время отображения лоадера даже при ошибке
-      const elapsedTime = Date.now() - startTime
-      const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime)
-      await new Promise(resolve => setTimeout(resolve, remainingTime))
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-    }
-  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, allPlacesForSearch])
-
-  // Загрузка мест при изменении фильтров/поиска/сортировки
-  useEffect(() => {
-    setCurrentPage(1)
-    setHasMore(true)
-    fetchPlaces(1, true)
-  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, fetchPlaces])
-
-  // Intersection Observer для lazy load
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
-          const nextPage = currentPage + 1
-          setCurrentPage(nextPage)
-          fetchPlaces(nextPage, false)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.observe(currentTarget)
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget)
-      }
-    }
-  }, [hasMore, loading, loadingMore, currentPage, fetchPlaces])
-
-  // Проверяем URL при изменении location (для переходов со слайдера, из поиска или навигации)
-  useEffect(() => {
-    // Если модалка закрывается, сбрасываем флаг и выходим
     if (isClosingRef.current) {
       isClosingRef.current = false
       return
     }
+    if (isOpeningRef.current) return
 
-    // Если модалка открывается программно (через handlePlaceClick), не обрабатываем изменение URL
-    if (isOpeningRef.current) {
-      return
-    }
-
-    // Проверяем текущий путь из location
     const path = location.pathname
     const pathParts = path.split('/').filter(Boolean)
     const placeSlug = pathParts[pathParts.length - 1]
 
-    // Если это не просто /places, значит есть slug
     if (placeSlug && placeSlug !== 'places' && !isModalOpen) {
-      // Сначала пытаемся найти место в текущем списке
       const place = places.find((p) => p.slug === placeSlug || String(p.id) === placeSlug)
-      
+
       if (place) {
-        // Место найдено в списке, открываем модалку
         scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
         setModalLoading(true)
         setIsModalOpen(true)
-        publicPlacesAPI.getByIdOrSlug(place.id)
+        publicPlacesAPI
+          .getByIdOrSlug(place.id)
           .then(({ data }) => {
             setSelectedPlace(data)
             setModalLoading(false)
@@ -436,13 +568,12 @@ export default function Places_page() {
             setModalLoading(false)
           })
       } else {
-        // Место не найдено в списке (например, из-за фильтров или еще не загружено)
-        // Загружаем место напрямую по slug
         scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
         setModalLoading(true)
         setIsModalOpen(true)
         setSelectedPlace(null)
-        publicPlacesAPI.getByIdOrSlug(placeSlug)
+        publicPlacesAPI
+          .getByIdOrSlug(placeSlug)
           .then(({ data }) => {
             setSelectedPlace(data)
             setModalLoading(false)
@@ -451,83 +582,42 @@ export default function Places_page() {
             console.error(err)
             setIsModalOpen(false)
             setModalLoading(false)
-            // Если место не найдено, возвращаем на /places
             navigate('/places', { replace: true })
           })
       }
     } else if (path === '/places' && isModalOpen && !modalLoading && !isClosingRef.current && !isOpeningRef.current) {
-      // Если вернулись на /places, закрываем модалку (не закрываем во время загрузки нового места — URL ещё /places)
-      // Но только если это не было вызвано программно
       setIsModalOpen(false)
       setSelectedPlace(null)
     }
-  }, [location.pathname, isModalOpen, places, modalLoading])
+  }, [location.pathname, isModalOpen, places, modalLoading, navigate])
 
-  // Обработка навигации браузера (назад/вперед)
-  useEffect(() => {
-    const handlePopState = (event) => {
-      const currentPath = window.location.pathname
-      const pathParts = currentPath.split('/').filter(Boolean)
-      const placeSlug = pathParts[pathParts.length - 1]
-
-      if (placeSlug && placeSlug !== 'places') {
-        const place = places.find((p) => p.slug === placeSlug)
-        if (place) {
-          scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-          publicPlacesAPI.getByIdOrSlug(place.id)
-            .then(({ data }) => {
-              setSelectedPlace(data)
-              setIsModalOpen(true)
-              isClosingRef.current = false
-            })
-            .catch(console.error)
-        }
-      } else {
-        setIsModalOpen(false)
-        setSelectedPlace(null)
-        isClosingRef.current = false
-      }
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [places])
-
-  // Управление скроллом страницы при открытии/закрытии модалки
+  // Управление скроллом при открытии/закрытии модалки (как у тебя)
   useEffect(() => {
     if (isModalOpen) {
-      // Сохраняем текущую позицию скролла
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop
       scrollPositionRef.current = currentScroll
 
-      // Блокируем скролл, сохраняя позицию
       document.body.style.position = 'fixed'
       document.body.style.top = `-${currentScroll}px`
       document.body.style.width = '100%'
       document.body.style.overflow = 'hidden'
     } else {
-      // Восстанавливаем скролл
       const scrollY = scrollPositionRef.current
       document.body.style.position = ''
       document.body.style.top = ''
       document.body.style.width = ''
       document.body.style.overflow = ''
 
-      // Восстанавливаем позицию скролла точно такую же, как была до открытия
       if (scrollY !== undefined) {
-        // Используем setTimeout для корректного восстановления после изменения стилей
         setTimeout(() => {
           window.scrollTo({
             top: scrollY,
-            behavior: 'instant'
+            behavior: 'instant',
           })
         }, 0)
       }
     }
 
-    // Очистка при размонтировании
     return () => {
       if (!isModalOpen) {
         document.body.style.position = ''
@@ -538,26 +628,21 @@ export default function Places_page() {
     }
   }, [isModalOpen])
 
-  // Закрытие модалки по Escape
+  // Escape
   useEffect(() => {
     if (!isModalOpen) return
-
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        closeModal()
-      }
+      if (e.key === 'Escape') closeModal()
     }
-
     window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isModalOpen])
 
   // Загрузка данных страницы
   useEffect(() => {
     let cancelled = false
-    publicPagesAPI.get('places')
+    publicPagesAPI
+      .get('places')
       .then(({ data }) => {
         if (!cancelled && data?.content?.hero) {
           setPageContent({
@@ -580,23 +665,33 @@ export default function Places_page() {
           })
         }
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return (
     <main className={styles.main}>
-      <ImgFullWidthBlock
-        img={getImageUrl(pageContent.hero.image)}
-        title={pageContent.hero.title}
-        desc={pageContent.hero.description}
-      />
+      {pageOverlayLoading && (
+        <div className={styles.pageOverlayLoader} aria-live="polite" aria-busy="true">
+          <div className={styles.pageOverlayLoaderInner}>Загрузка...</div>
+        </div>
+      )}
+
+      <div ref={heroRef}>
+        <ImgFullWidthBlock
+          img={getImageUrl(pageContent.hero.image)}
+          title={pageContent.hero.title}
+          desc={pageContent.hero.description}
+        />
+      </div>
 
       <CenterBlock>
         <section className={styles.flexBlock}>
           <FilterBlock
             filterGroups={placeFilterGroups}
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Введите запрос"
@@ -604,14 +699,15 @@ export default function Places_page() {
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
           />
+
           <div className={styles.places}>
             <div className={styles.placesSort}>
               <div className={styles.placesSortFind}>
                 {loading
                   ? 'Загрузка...'
-                  : `Найдено ${total} ${total === 1 ? 'место' : total >= 2 && total <= 4 ? 'места' : 'мест'}`
-                }
+                  : `Найдено ${total} ${total === 1 ? 'место' : total >= 2 && total <= 4 ? 'места' : 'мест'}`}
               </div>
+
               <div className={styles.placesSortSort}>
                 <div className={styles.title}>Сортировать:</div>
                 <FormControl className={styles.selectWrapper}>
@@ -636,9 +732,7 @@ export default function Places_page() {
                           '& .MuiMenuItem-root.Mui-selected': {
                             backgroundColor: '#156A60',
                             color: '#fff',
-                            '&:hover': {
-                              backgroundColor: '#156A60',
-                            },
+                            '&:hover': { backgroundColor: '#156A60' },
                           },
                         },
                       },
@@ -648,17 +742,9 @@ export default function Places_page() {
                       borderRadius: '15px',
                       backgroundColor: '#fff',
                       fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: '1px solid #F1F3F8',
-                        borderRadius: '15px',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#156A60',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#156A60',
-                        borderWidth: '1px',
-                      },
+                      '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #F1F3F8', borderRadius: '15px' },
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#156A60' },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#156A60', borderWidth: '1px' },
                       '& .MuiSelect-select': {
                         padding: '10px 14px',
                         fontSize: '16px',
@@ -667,9 +753,7 @@ export default function Places_page() {
                         color: '#000',
                         fontFamily: 'var(--font-montserrat), Montserrat, sans-serif',
                       },
-                      '& .MuiSvgIcon-root': {
-                        color: '#000',
-                      },
+                      '& .MuiSvgIcon-root': { color: '#000' },
                     }}
                   >
                     <MenuItem
@@ -726,21 +810,73 @@ export default function Places_page() {
                       onClick={() => handlePlaceClick(place)}
                     />
                   ))}
-                  {hasMore && <div ref={observerTarget} style={{ height: '20px', marginTop: '20px' }} />}
-                  {loadingMore && (
-                    <div className={styles.loadingMore}>
-                      <div className={styles.spinner} />
-                      <p>Загрузка...</p>
-                    </div>
-                  )}
                 </>
               )}
             </div>
+
+            {(!loading && places.length !== 0) && (
+              <>
+                {totalPages > 1 && (
+                  <div className={styles.pagination}>
+                    <button
+                      type="button"
+                      className={styles.paginationBtn}
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1 || loading}
+                      aria-label="Предыдущая страница"
+                    >
+                      Назад
+                    </button>
+
+                    <div className={styles.paginationPages}>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              type="button"
+                              className={`${styles.paginationPage} ${currentPage === page ? styles.paginationPageActive : ''
+                                }`}
+                              onClick={() => handlePageClick(page)}
+                              disabled={loading}
+                              aria-label={`Страница ${page}`}
+                              aria-current={currentPage === page ? 'page' : undefined}
+                            >
+                              {page}
+                            </button>
+                          )
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <span key={page} className={styles.paginationDots}>
+                              ...
+                            </span>
+                          )
+                        }
+                        return null
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.paginationBtn}
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages || loading}
+                      aria-label="Следующая страница"
+                    >
+                      Вперед
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </section>
       </CenterBlock>
 
-      {/* Модалка с детальной информацией о месте */}
       <PlaceModal
         isOpen={isModalOpen}
         place={selectedPlace}
@@ -748,6 +884,6 @@ export default function Places_page() {
         onOpenPlace={handleOpenPlaceById}
         isLoading={modalLoading}
       />
-    </main >
+    </main>
   )
 }
