@@ -51,3 +51,42 @@
     text-transform: uppercase;
     z-index: 4;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .routeSeasoneBanner {
+        width: 100%;
+        padding-top: 25px;
+    }
+
+    .title {
+        font-size: 24px;
+        margin: 15px;
+    }
+
+    .patternBottom svg {
+        width: 140px;
+        height: 100%;
+        transform: scale(1.1);
+    }
+
+    .patternTop svg {
+        width: 140px;
+        height: 100%;
+        transform: scale(1.1);
+    }
+
+    .patternTop,
+    .patternBottom {
+        padding: 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .patternTop{
+        margin-top: 16px;
+    }
+
+    .logo {
+        display: none;
+    }
+}

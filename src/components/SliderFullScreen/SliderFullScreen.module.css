@@ -459,12 +459,110 @@
 }
 
 
-@media screen and (max-width: 678px) {
-  .carousel .list .item .content {
-    padding-right: 0;
+@media screen and (max-width: 678px) {}
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .carousel {
+    height: 100svh;
+  }
+
+  .carousel .list .item .content .place img {
+    width: 10px;
+  }
+
+  .carousel .list .item .content .place {
+    font-size: 12px;
+    gap: 10px;
   }
 
   .carousel .list .item .content .title {
-    font-size: 30px;
+    margin-top: 10px;
+    font-size: 24px;
+  }
+
+  .carousel .list .item .content .des {
+    width: 100%;
+    margin-top: 15px;
+    font-size: 14px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .carousel .list .item .content .buttons {
+    margin-top: 15px;
+  }
+
+  .carousel .list .item .content {
+    padding: 0 20px;
+    top: 70px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .carousel .list .item .content .ctaLink {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+
+  .thumbnail {
+    bottom: 120px;
+    left: 20px;
+  }
+
+  .thumbnail .item {
+    width: 260px;
+    height: 310px;
+  }
+
+  .carousel.next .list .item:nth-child(1) .image {
+    left: 20px;
+    bottom: 120px;
+    height: 310px;
+  }
+
+  .carousel.prev .list .item:nth-child(2) .image {
+    animation: outImageMobile 0.5s 0s linear 1 forwards;
+  }
+
+  .carousel.next .thumbnail .item:nth-last-child(1) {
+    animation: showThumbnailMobile 0.5s 0s linear 1 forwards;
+  }
+
+  @keyframes showThumbnailMobile {
+    to {
+      width: 260px;
+    }
+  }
+
+  @keyframes outImageMobile {
+    to {
+      width: 260px;
+      height: 310px;
+      border-radius: 20px;
+      left: 20px;
+      bottom: 120px;
+    }
+  }
+
+  .arrows {
+    left: 20px;
+    width: calc(100% - 40px);
+  }
+
+  .arrows .slidesNum {
+    font-size: 44px;
+    width: 80px;
+  }
+
+  .arrows button {
+    width: 50px;
+    height: 50px;
+    padding: 12px;
   }
 }

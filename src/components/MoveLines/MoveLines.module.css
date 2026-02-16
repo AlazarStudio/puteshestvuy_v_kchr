@@ -109,3 +109,13 @@
   height: 100%;
   object-fit: cover;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .tag{
+    padding: 5px 15px;
+    font-size: 12px;
+  }
+  .wrapper{
+    gap: 10px;
+  }
+}

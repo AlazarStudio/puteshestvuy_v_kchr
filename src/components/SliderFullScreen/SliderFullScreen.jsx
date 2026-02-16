@@ -49,9 +49,9 @@ function ThumbnailItem({ slide, placeHref, styles, maxOffset = 10, scale = 1.02 
   }
 
   return (
-    <Link 
+    <Link
       ref={cardRef}
-      to={placeHref(slide)} 
+      to={placeHref(slide)}
       className={styles.link}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
@@ -121,13 +121,13 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
   useEffect(() => {
     let cancelled = false
     setIsLoading(true)
-    
+
     // Сначала проверяем, есть ли выбранные места в настройках главной страницы
     publicHomeAPI.get()
       .then(({ data }) => {
         if (cancelled) return
         const sliderPlaces = data?.sliderPlaces || []
-        
+
         if (sliderPlaces.length > 0) {
           // Загружаем полные данные мест по их ID, чтобы получить актуальные images[0]
           const placeIds = sliderPlaces.map(p => p.placeId || p.id).filter(Boolean)
@@ -137,18 +137,18 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                 if (cancelled) return
                 const allPlaces = res.data?.items || res.data || []
                 const placesMap = new Map(allPlaces.map(p => [p.id, p]))
-                
+
                 // Используем выбранные места из настроек, но берем актуальные данные из API
                 const list = sliderPlaces
                   .map((savedPlace) => {
                     const placeId = savedPlace.placeId || savedPlace.id
                     const fullPlace = placesMap.get(placeId)
-                    
+
                     // Используем полные данные места, если они есть
                     if (fullPlace) {
                       return placeToSlide(fullPlace)
                     }
-                    
+
                     // Если место не найдено в API, используем сохраненные данные как fallback
                     const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
                     const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
@@ -165,7 +165,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                     }
                   })
                   .filter(Boolean)
-                
+
                 if (list.length > 0) {
                   setSlides(list)
                   initialSlidesRef.current = list
@@ -175,7 +175,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
               })
           }
         }
-        
+
         // Если выбранных мест нет, загружаем из API
         return publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
           .then((res) => {
@@ -400,9 +400,8 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
             <div className={styles.content}>
               <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
               <div className={styles.title}>{slide.title}</div>
-              <div className={styles.topic}>
-                {slide.rating != null ? (
-                  <>
+              {slide.rating != null && (
+                <div className={styles.topic}>
                     <div className={styles.stars}>
                       <img src="/star.png" alt="" />
                       <img src="/star.png" alt="" />
@@ -413,14 +412,8 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                     <div className={styles.rating}>
                       {slide.rating}
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className={styles.stars} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
-                    <div className={styles.rating} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
-                  </>
-                )}
-              </div>
+                </div>
+              )}
               <div className={styles.des}>
                 {slide.description ? (
                   <RichTextContent html={slide.description} />
@@ -446,9 +439,9 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
               <RouteConstructorButton placeId={slide.id} />
               <FavoriteButton entityType="place" entityId={slide.id} />
             </div>
-            <ThumbnailItem 
-              slide={slide} 
-              placeHref={placeHref} 
+            <ThumbnailItem
+              slide={slide}
+              placeHref={placeHref}
               styles={styles}
               maxOffset={thumbnailMaxOffset}
               scale={thumbnailScale}

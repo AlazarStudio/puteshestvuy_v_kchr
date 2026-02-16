@@ -84,8 +84,8 @@ a {
 
 .mySwiper .swiper-button-prev:hover,
 .mySwiper .swiper-button-next:hover {
-  box-shadow: 5px 5px 10px #0000001c;
-  transform: translateY(1px);
+  /* box-shadow: 5px 5px 10px #0000001c;
+  transform: translateY(1px); */
   opacity: 1;
 }
 
@@ -190,18 +190,33 @@ a {
 }
 
 @media (min-width: 320px) and (max-width: 1400px) {
-  .mySwiperRoute .swiper-button-next{
+  .mySwiperRoute .swiper-button-next {
     width: 40px;
     height: 40px;
     top: -30px !important;
     background-size: 50%;
   }
 
-  .mySwiperRoute .swiper-button-prev{
+  .mySwiperRoute .swiper-button-prev {
     width: 40px;
     height: 40px;
     top: -30px !important;
     right: 50px !important;
+    background-size: 50%;
+  }
+
+  .mySwiper .swiper-button-next {
+    width: 40px;
+    height: 40px;
+    top: -38px !important;
+    background-size: 50%;
+    left: 50px !important;
+  }
+
+  .mySwiper .swiper-button-prev {
+    width: 40px;
+    height: 40px;
+    top: -38px !important;
     background-size: 50%;
   }
 }

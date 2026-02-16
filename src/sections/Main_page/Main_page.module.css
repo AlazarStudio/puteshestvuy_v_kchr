@@ -4,27 +4,33 @@
   margin-top: 0;
 }
 
-.content{
+.content {
   display: flex;
   flex-direction: column;
   gap: 90px;
   margin: 90px 0 0;
 }
 
-.flexBlock{
+.flexBlock {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 19px;
 }
 
-.imgBG{
+.flexBlockPlaces {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 19px;
+}
+
+.imgBG {
   width: 100%;
   height: fit-content;
   margin-top: -150px;
   position: relative;
 }
 
-.imgBG::before{
+.imgBG::before {
   content: "";
   position: absolute;
   top: 0;
@@ -34,7 +40,7 @@
   background: linear-gradient(180deg, rgba(6, 16, 28, 0) 0%, #06101C 100%);
 }
 
-.imgBG img{
+.imgBG img {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -64,7 +70,7 @@
 }
 
 /* Планшет 769–1024px */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* @media (min-width: 769px) and (max-width: 1024px) {
   .content {
     gap: 64px;
     margin-top: 64px;
@@ -77,5 +83,38 @@
 
   .imgBG {
     margin-top: -120px;
+  }
+} */
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .main {
+    overflow: hidden;
+  }
+
+  .content {
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .flexBlock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+
+    padding: 0 10px;
+  }
+
+  .flexBlockPlaces {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 10px;
+
+    padding: 0 10px;
+  }
+
+  .mainBanner {
+    padding: 0 10px;
+  }
+
+  .imgBG{
+    margin-top: 0;
   }
 }

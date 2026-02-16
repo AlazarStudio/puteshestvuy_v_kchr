@@ -194,7 +194,8 @@ export default function Main_page() {
                 width: '100%',
                 gridAutoRows: 'auto',
                 alignItems: 'stretch',
-              }}>
+              }} 
+              className={styles.mainBanner}>
                 {activeBanners.map((banner, index) => {
                   const isExternal = banner.link && (banner.link.startsWith('http://') || banner.link.startsWith('https://'));
                   // Логика размещения:
@@ -297,7 +298,6 @@ export default function Main_page() {
           <ServiceTabBlock />
         </CenterBlock>
 
-        {/* Переделать */}
         <MoveLines />
 
         <CenterBlock>
@@ -305,7 +305,7 @@ export default function Main_page() {
         </CenterBlock>
 
         <CenterBlock>
-          <section className={styles.flexBlock}>
+          <section className={styles.flexBlockPlaces}>
             {placesLoading ? (
               <div className={`${styles.placesLoading} ${styles.placesLoadingFull}`}>Загрузка интересных мест...</div>
             ) : places.length === 0 ? null : (

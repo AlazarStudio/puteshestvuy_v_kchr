@@ -83,13 +83,13 @@ export default function SwiperSliderMain() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    
+
     // Сначала проверяем, есть ли выбранные статьи в настройках главной страницы
     publicHomeAPI.get()
       .then(({ data }) => {
         if (cancelled) return
         const firstTimeArticles = data?.firstTimeArticles || []
-        
+
         if (firstTimeArticles.length > 0) {
           // Загружаем полные данные статей по их ID, чтобы получить актуальные images[0]
           const articleIds = firstTimeArticles.map(a => a.articleId || a.id).filter(Boolean)
@@ -99,13 +99,13 @@ export default function SwiperSliderMain() {
                 if (cancelled) return
                 const allArticles = res.data?.items || res.data || []
                 const articlesMap = new Map(allArticles.map(a => [a.id, a]))
-                
+
                 // Используем выбранные статьи из настроек, но берем актуальные данные из API
                 const list = firstTimeArticles
                   .map((savedArticle) => {
                     const articleId = savedArticle.articleId || savedArticle.id
                     const fullArticle = articlesMap.get(articleId)
-                    
+
                     // Используем полные данные статьи, если они есть
                     if (fullArticle) {
                       return {
@@ -115,7 +115,7 @@ export default function SwiperSliderMain() {
                         title: fullArticle.title || '',
                       }
                     }
-                    
+
                     // Если статья не найдена в API, используем сохраненные данные как fallback
                     return {
                       id: articleId,
@@ -125,7 +125,7 @@ export default function SwiperSliderMain() {
                     }
                   })
                   .filter(Boolean)
-                
+
                 if (list.length > 0) {
                   setSlides(list)
                   setLoading(false)
@@ -134,7 +134,7 @@ export default function SwiperSliderMain() {
               })
           }
         }
-        
+
         // Если выбранных статей нет, загружаем из API
         return publicNewsAPI.getAll({ type: 'article', limit: 8 })
           .then(({ data }) => {
@@ -197,30 +197,38 @@ export default function SwiperSliderMain() {
       ) : slides.length === 0 ? (
         <div className={styles.empty}>Статьи пока не добавлены</div>
       ) : (
-      <Swiper
-        navigation={true}
-        modules={[Navigation]}
-        slidesPerView={2}
-        spaceBetween={60}
-        // loop={true}
-        className="mySwiper"
-      >
-        {slides.map((slide, index) => {
-          const isEven = index % 2 === 0
-          const patternColor = isEven ? '#73BFE7' : '#DB224A'
+        <Swiper
+          navigation={true}
+          modules={[Navigation]}
+          slidesPerView={2}
+          spaceBetween={60}
+          // loop={true}
+          className="mySwiper"
+          breakpoints={{
+            0: {
+              slidesPerView: 1, // мобильные
+            },
+            768: {
+              slidesPerView: 2, // планшет
+            }
+          }}
+        >
+          {slides.map((slide, index) => {
+            const isEven = index % 2 === 0
+            const patternColor = isEven ? '#73BFE7' : '#DB224A'
 
-          return (
-            <SwiperSlide key={slide.id}>
-              <ParallaxSlide
-                slide={slide}
-                isEven={isEven}
-                patternColor={patternColor}
-                renderPattern={renderPattern}
-              />
-            </SwiperSlide>
-          )
-        })}
-      </Swiper>
+            return (
+              <SwiperSlide key={slide.id}>
+                <ParallaxSlide
+                  slide={slide}
+                  isEven={isEven}
+                  patternColor={patternColor}
+                  renderPattern={renderPattern}
+                />
+              </SwiperSlide>
+            )
+          })}
+        </Swiper>
       )}
     </section>
   )

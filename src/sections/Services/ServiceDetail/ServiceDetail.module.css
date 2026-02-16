@@ -1405,3 +1405,187 @@
   font-size: 14px;
   min-height: 40px;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .main{
+    padding-top: 60px !important;
+  }
+  .servicePage {
+    padding: 10px !important;
+  }
+
+  .serviceBlock_anchors {
+    display: none;
+  }
+
+  .serviceBlock {
+    margin-top: 20px;
+  }
+
+  .title {
+    margin: 0 !important;
+    font-size: 18px !important;
+  }
+
+  .serviceBlock_content {
+    gap: 20px !important;
+  }
+
+  .serviceHeader {
+    gap: 20px;
+  }
+
+  .serviceName {
+    font-size: 18px !important;
+  }
+
+  .serviceFavorite {
+    display: none;
+  }
+
+  .aboutText {
+    padding: 20px !important;
+  }
+
+  .aboutText p {
+    font-size: 14px;
+  }
+
+  .aboutTextHtml {
+    line-height: 120%;
+  }
+
+  .contacts {
+    padding: 20px !important;
+  }
+
+  .contactsTitle {
+    font-size: 18px;
+  }
+
+  .contactLabel {
+    font-size: 14px;
+  }
+
+  .contactItem span {
+    font-size: 14px !important;
+  }
+
+  .contactItem a {
+    font-size: 14px !important;
+  }
+
+  .contactIcon img,
+  .contactIcon svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .contactIcon {
+    width: 18px;
+    height: 18px;
+  }
+
+
+  .feedbackForm {
+    padding: 20px !important;
+  }
+
+  .feedbackFormInput,
+  .feedbackFormTextarea,
+  .feedbackSubmitButton {
+    font-size: 12px;
+  }
+
+  .feedbackItem {
+    padding: 20px !important;
+  }
+
+  .feedbackItemText {
+    font-size: 14px !important;
+  }
+
+  .gallery {
+    height: 150px;
+    gap: 5px;
+  }
+
+  .galleryGridRow {
+    gap: 5px;
+  }
+
+  .galleryGrid {
+    gap: 5px;
+  }
+
+  .galleryMain {
+    border-radius: 10px;
+  }
+
+  .galleryItem {
+    border-radius: 10px;
+  }
+
+  .galleryItem,
+  .galleryMain,
+  .galleryCount3 .galleryThirdRightItem,
+  .galleryCount3 .galleryThirdLeft,
+  .galleryCount2 .galleryHalf,
+  .galleryItem,
+  .galleryMain {
+    border-radius: 10px;
+  }
+
+
+  .moreButton {
+    font-size: 8px;
+    bottom: 5px;
+    right: 5px;
+    padding: 6px;
+    border-radius: 5px;
+  }
+
+  .moreButton img {
+    width: 10px;
+  }
+
+
+  .modalThumbnails {
+    display: none;
+  }
+
+  .modalSwiper :global(.swiper-button-next),
+  .modalSwiper :global(.swiper-button-prev) {
+    top: 53%;
+  }
+
+  .modalSwiper :global(.swiper-button-next svg),
+  .modalSwiper :global(.swiper-button-prev svg) {
+    width: 60%;
+    height: 60%;
+  }
+
+  .bread_crumbs {
+    font-size: 10px;
+    margin-bottom: 20px;
+    gap: 1px
+  }
+
+  .bread_crumbs svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .bread_crumbs span {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+
+}

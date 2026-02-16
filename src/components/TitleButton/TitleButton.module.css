@@ -42,3 +42,29 @@
     width: 55%;
     margin-top: 15px;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .titleButton {
+        /* flex-direction: column; */
+        gap: 10px;
+        width: 100%;
+        padding: 0 10px;
+    }
+
+    .titleButton .title{
+        font-size: 22px;
+    }
+
+    .titleButton .button{
+        padding: 10px 15px;
+        font-size: 12px;
+    }
+
+    .titleButton .desc{
+        display: none;
+    }
+
+    .titleButton .noTitle{
+        width: 90px;
+    }
+}

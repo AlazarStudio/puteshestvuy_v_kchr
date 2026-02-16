@@ -9,6 +9,40 @@
   transition: backdrop-filter 0.3s ease, background-color 0.3s ease;
 }
 
+/* Header при открытом dropdown меню */
+.headerDropdownActive {
+  background-color: #FFFFFF !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.headerDropdownActive .navLink {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .navLink:hover {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDropdownActive .navLink_active {
+  border-bottom: 5px solid #000 !important;
+}
+
+.headerDropdownActive .dropdownIcon {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .iconButton {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .iconButton img {
+  filter: brightness(0) !important;
+}
+
+.headerDropdownActive .containerBotLine {
+  background-color: transparent !important;
+}
 /* Blur появляется сразу при любом скролле */
 .headerBlurred {
   backdrop-filter: blur(20px);
@@ -261,7 +295,7 @@
   right: 0;
   width: 100%;
   max-width: 320px;
-  height: 100vh;
+  height: 100dvh;
   background: #fff;
   z-index: 10002;
   flex-direction: column;
@@ -566,5 +600,197 @@
   .burgerMenu {
     max-width: 100%;
     padding: 20px 20px 24px;
+  }
+}
+
+/* ===== Dropdown "На помощь туристу" ===== */
+
+.navDropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdownIcon {
+  width: 12px;
+  height: 12px;
+  color: inherit;
+  transition: transform 0.3s ease;
+  margin-top: 1px;
+  color: #fff;
+}
+
+.dropdownIconDark{
+  transition: all 0.3s ease;
+  color: #000;
+}
+
+.dropdownIconRotated {
+  transform: rotate(180deg);
+}
+
+/* Выпадающее меню - полноэкранное */
+.dropdownMenu {
+  position: fixed;
+  top: 82px; /* высота header */
+  left: 0;
+  right: 0;
+  width: 100vw;
+  background: #ffffff;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 999;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dropdownMenuOpen {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdownContent {
+  display: flex;
+  gap: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.dropdownImageWrapper {
+  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+}
+
+.dropdownImage {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.dropdownSection {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+/* Секция с разделителем справа */
+.dropdownSectionBorder {
+  border-right: 1px solid #e5e7eb;
+  padding-right: 40px;
+}
+
+/* Секция Статьи */
+.dropdownSectionArticles {
+  min-width: 300px;
+}
+
+/* Секция Сервис */
+.dropdownSectionServices {
+  min-width: auto;
+}
+
+.dropdownSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.dropdownList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dropdownColumns {
+  display: flex;
+  gap: 32px;
+}
+
+.dropdownLink {
+  font-size: 0.9375rem;
+  color: #4b5563;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  line-height: 1.4;
+}
+
+.dropdownLink:hover {
+  color: #009688;
+}
+
+.dropdownLinkActive {
+  color: #009688;
+}
+
+.dropdownViewAll {
+  font-size: 0.9375rem;
+  color: #009688;
+  text-decoration: none;
+  margin-top: 20px;
+  transition: color 0.2s ease;
+}
+
+.dropdownViewAll:hover {
+  color: #00796b;
+}
+
+/* Адаптив dropdown */
+@media (max-width: 1200px) {
+  .dropdownContent {
+    padding: 32px 20px;
+    gap: 24px;
+  }
+
+  .dropdownSectionArticles {
+    min-width: 240px;
+  }
+
+  .dropdownSectionBorder {
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dropdownImageWrapper {
+    display: none;
+  }
+
+  .dropdownContent {
+    padding: 24px 20px;
+    gap: 20px;
+  }
+
+  .dropdownSection {
+    min-width: 150px;
+  }
+
+  .dropdownSectionArticles {
+    min-width: 200px;
+  }
+
+  .dropdownSectionBorder {
+    padding-right: 20px;
+  }
+
+  .dropdownSectionTitle {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .dropdownLink {
+    font-size: 0.875rem;
+  }
+
+  .dropdownColumns {
+    gap: 20px;
   }
 }

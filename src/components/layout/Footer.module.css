@@ -226,7 +226,6 @@
 /* Мобилка и планшет до 1023px */
 @media (max-width: 1023px) {
   .footer {
-    background-color: #0B131E;
     padding: 32px 20px 24px;
   }
 
@@ -318,15 +317,16 @@
 
   .links {
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     align-items: flex-start;
   }
 
   .linkText {
-    font-size: 14px;
+    font-size: 12px;
     line-height: 150%;
     color: #fff;
     -webkit-line-clamp: unset;
+    opacity: 0.6;
   }
 
   /* Партнеры - горизонтально внизу */
@@ -341,7 +341,7 @@
 
   .partners a {
     width: auto;
-    max-width: 120px;
+    max-width: 30%;
     height: 40px;
     opacity: 0.8;
   }
@@ -386,11 +386,11 @@
   }
 
   .partners {
-    gap: 16px;
+    gap: 20px;
   }
 
   .partners a {
-    max-width: 100px;
+    max-width: 30%;
     height: 36px;
   }
 }
@@ -430,11 +430,11 @@
   }
 
   .partners {
-    gap: 12px;
+    gap: 15px;
   }
 
   .partners a {
-    max-width: 80px;
+    max-width: 30%;
     height: 32px;
   }
 }

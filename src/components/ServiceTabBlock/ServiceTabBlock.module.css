@@ -162,3 +162,33 @@
 .tabs ul li:hover {
     border-bottom: 5px solid #000;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .service {
+        padding: 0 10px;
+        gap: 20px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .serviceCard{
+        height: 300px;
+    }
+
+    .tabs ul{
+        gap: 10px;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tabs ul li{
+        font-size: 14px;
+        padding-bottom: 10px;
+    }
+
+    .serviceCardName{
+        font-size: 18px;
+    }
+}

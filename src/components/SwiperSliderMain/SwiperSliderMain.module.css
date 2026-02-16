@@ -95,3 +95,29 @@
     color: #666;
     font-size: 16px;
 }
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .slider {
+        gap: 20px;
+        padding: 0 10px;
+    }
+
+    .infoBlock {
+        padding: 20px;
+    }
+
+    .title {
+        font-size: 18px;
+        line-height: 120%;
+    }
+
+    .pattern svg {
+        width: 130px;
+        height: 130px;
+        object-fit: contain;
+    }
+
+    .slide {
+        height: 250px;
+    }
+}
