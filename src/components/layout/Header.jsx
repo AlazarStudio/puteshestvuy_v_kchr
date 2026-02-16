@@ -481,14 +481,13 @@ export default function Header() {
         <div className={styles.burgerIcons}>
           <Link to="/profile?tab=routes-constructor" className={styles.burgerIconItem} onClick={closeBurger}>
             <img src="/konst_tours.png" alt="" width={20} height={21} />
-            <span>Конструктор маршрутов</span>
-            {placeIds.length > 0 && <span className={styles.burgerIconBadge}>{placeIds.length}</span>}
+            <span>Конструктор маршрутов {placeIds.length > 0 && <>({placeIds.length})</>}</span>
           </Link>
 
-          <button type="button" className={styles.burgerIconItem} onClick={() => { setIsSearchOpen(true); closeBurger() }}>
+          {/* <button type="button" className={styles.burgerIconItem} onClick={() => { setIsSearchOpen(true); closeBurger() }}>
             <img src="/search.png" alt="" width={17} height={17} />
             <span>Поиск</span>
-          </button>
+          </button> */}
 
           <Link to="/profile" className={styles.burgerIconItem} onClick={closeBurger}>
             <img src="/profile.png" alt="" width={16} height={18} />

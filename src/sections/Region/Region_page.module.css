@@ -576,21 +576,12 @@
 
 /* Небольшие ноутбуки 1025–1600px */
 @media (min-width: 1025px) and (max-width: 1600px) {
-  .pageContent {
-    padding: 50px 32px;
-    gap: 32px;
-  }
-
   .section {
     margin-bottom: 64px;
   }
 
   .sectionTitle {
     font-size: 36px;
-  }
-
-  .sidebarSticky {
-    padding: 22px;
   }
 
   .introImage {
@@ -618,14 +609,6 @@
 
   .pageContent {
     flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-  }
-
-  .sidebarSticky {
-    position: static;
   }
 
   .anchorsList {
@@ -733,11 +716,6 @@
   .ctaButtons {
     flex-direction: column;
     align-items: center;
-  }
-
-  .pageContent {
-    padding-left: 16px;
-    padding-right: 16px;
   }
 
   .section {
@@ -948,14 +926,6 @@
   }
 }
 
-/* Планшеты и крупные телефоны 481–768px */
-@media (min-width: 481px) and (max-width: 768px) {
-  .pageContent {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-}
-
 /* Планшеты 769–1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .heroTitle {
@@ -969,13 +939,6 @@
 
   .hero {
     min-height: 70vh;
-  }
-
-  .pageContent {
-    padding-left: 28px;
-    padding-right: 28px;
-    padding-top: 48px;
-    padding-bottom: 48px;
   }
 
   .section {
@@ -994,10 +957,6 @@
   .introText p,
   .introRichText p {
     font-size: 17px;
-  }
-
-  .sidebarSticky {
-    padding: 20px 24px;
   }
 
   .anchorsList {
@@ -1049,5 +1008,20 @@
   .culturesGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 1400px) {
+  .main {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .pageContent {
+    flex-direction: column;
+    padding: 20px;
   }
 }
