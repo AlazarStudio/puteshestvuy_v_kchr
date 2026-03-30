@@ -482,6 +482,9 @@ export default function Header() {
           <Link to="/news" className={`${styles.burgerLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Новости
           </Link>
+          <Link to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273" className={`${styles.burgerLink} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+            Экспедиция "Аманауз"
+          </Link>
           <Link to="/services" className={`${styles.burgerLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             На помощь туристу
           </Link>
