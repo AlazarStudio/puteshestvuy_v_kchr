@@ -1,12 +1,12 @@
-// Функция для поиска текста в объекте (рекурсивно по всем полям)
+const normalizeText = (text) => text.replace(/[\s\u00a0\u2000-\u200a\u202f\u205f\u3000]+/g, ' ')
+
 export const searchInObject = (obj, query, path = '') => {
   if (!obj || !query) return false
   
-  const lowerQuery = query.toLowerCase()
+  const lowerQuery = normalizeText(query.toLowerCase())
   
-  // Если это строка, проверяем совпадение
   if (typeof obj === 'string') {
-    return obj.toLowerCase().includes(lowerQuery)
+    return normalizeText(obj.toLowerCase()).includes(lowerQuery)
   }
   
   // Если это массив, проверяем каждый элемент
@@ -46,49 +46,74 @@ export const searchInObject = (obj, query, path = '') => {
   return false
 }
 
-// Функция для вычисления похожести строк (улучшенный алгоритм)
+function levenshteinDistance(a, b) {
+  const m = a.length, n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+
+  let prev = Array.from({ length: n + 1 }, (_, i) => i)
+  let curr = new Array(n + 1)
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i
+    for (let j = 1; j <= n; j++) {
+      curr[j] = a[i - 1] === b[j - 1]
+        ? prev[j - 1]
+        : 1 + Math.min(prev[j], curr[j - 1], prev[j - 1])
+    }
+    ;[prev, curr] = [curr, prev]
+  }
+
+  return prev[n]
+}
+
+function levenshteinSimilarity(a, b) {
+  const maxLen = Math.max(a.length, b.length)
+  if (maxLen === 0) return 1.0
+  return 1 - levenshteinDistance(a, b) / maxLen
+}
+
 export const calculateSimilarity = (str1, str2) => {
-  const s1 = str1.toLowerCase().trim()
-  const s2 = str2.toLowerCase().trim()
-  
-  // Точное совпадение
+  const s1 = normalizeText(str1.toLowerCase().trim())
+  const s2 = normalizeText(str2.toLowerCase().trim())
+
   if (s1 === s2) return 1.0
-  
-  // Если одна строка содержит другую
+  if (!s1 || !s2) return 0.0
+
   if (s1.includes(s2) || s2.includes(s1)) {
     const ratio = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length)
-    return 0.6 + (ratio * 0.4) // От 0.6 до 1.0
+    return 0.7 + ratio * 0.3
   }
-  
-  // Подсчитываем общие символы в начале (префикс)
-  let commonStart = 0
-  const minLen = Math.min(s1.length, s2.length)
-  for (let i = 0; i < minLen; i++) {
-    if (s1[i] === s2[i]) {
-      commonStart++
-    } else {
-      break
+
+  const fullSim = levenshteinSimilarity(s1, s2)
+
+  const words1 = s1.split(/\s+/).filter(Boolean)
+  const words2 = s2.split(/\s+/).filter(Boolean)
+
+  let wordScore = 0
+  if (words1.length > 0 && words2.length > 0) {
+    let totalSim = 0
+    let matched = 0
+
+    for (const w1 of words1) {
+      let best = 0
+      for (const w2 of words2) {
+        const sim = levenshteinSimilarity(w1, w2)
+        const containSim = (w2.includes(w1) || w1.includes(w2))
+          ? 0.7 + Math.min(w1.length, w2.length) / Math.max(w1.length, w2.length) * 0.3
+          : 0
+        best = Math.max(best, sim, containSim)
+      }
+      totalSim += best
+      if (best > 0.6) matched++
     }
+
+    const avgSim = totalSim / words1.length
+    const matchRatio = matched / words1.length
+    wordScore = avgSim * 0.7 + matchRatio * 0.3
   }
-  
-  // Подсчитываем общие символы (без учета порядка)
-  const s1Chars = s1.split('')
-  const s2Chars = s2.split('')
-  let commonChars = 0
-  const s2Set = new Set(s2Chars)
-  s1Chars.forEach(char => {
-    if (s2Set.has(char)) {
-      commonChars++
-      s2Set.delete(char) // Чтобы не считать один символ дважды
-    }
-  })
-  
-  // Вычисляем похожесть с учетом префикса и общих символов
-  const maxLen = Math.max(s1.length, s2.length)
-  const prefixWeight = commonStart / maxLen * 0.4
-  const charsWeight = commonChars / maxLen * 0.6
-  
-  return prefixWeight + charsWeight
+
+  return Math.max(fullSim, wordScore)
 }
 
 // Функция поиска с fallback (удаление символов с конца)

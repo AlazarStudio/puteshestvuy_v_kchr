@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { X, Search, MapPin, Map, Newspaper, Building2, Loader2 } from 'lucide-react'
 import { publicPlacesAPI, publicRoutesAPI, publicNewsAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
+import { searchInObject, calculateSimilarity } from '@/lib/searchUtils'
 import styles from './GlobalSearch.module.css'
 
 const ENTITY_TYPES = {
@@ -13,405 +14,280 @@ const ENTITY_TYPES = {
   service: { label: 'Услуга', icon: Building2, color: '#8b5cf6', path: (slug) => `/services/${slug}` },
 }
 
-// Функция для поиска текста в объекте (рекурсивно по всем полям)
-const searchInObject = (obj, query, path = '') => {
-  if (!obj || !query) return false
-  
-  const lowerQuery = query.toLowerCase()
-  
-  // Если это строка, проверяем совпадение
-  if (typeof obj === 'string') {
-    return obj.toLowerCase().includes(lowerQuery)
-  }
-  
-  // Если это массив, проверяем каждый элемент
-  if (Array.isArray(obj)) {
-    return obj.some(item => searchInObject(item, query, path))
-  }
-  
-  // Если это объект, проверяем все его свойства
-  if (typeof obj === 'object') {
-    return Object.entries(obj).some(([key, value]) => {
-      // Пропускаем служебные поля
-      if (key === 'id' || key === '_id' || key === '__v') return false
-      // Пропускаем изображения и файлы (но не их URL/пути)
-      if (key === 'image' || key === 'images' || key === 'file' || key === 'files') {
-        // Но если это строка (URL), проверяем её
-        if (typeof value === 'string') {
-          return value.toLowerCase().includes(lowerQuery)
-        }
-        return false
-      }
-      
-      // Для блоков контента (blocks) проверяем содержимое
-      if (key === 'blocks' && Array.isArray(value)) {
-        return value.some(block => {
-          // Проверяем все поля блока, включая data
-          if (block.data) {
-            return searchInObject(block.data, query, `${path}.${key}.data`)
-          }
-          return searchInObject(block, query, `${path}.${key}`)
-        })
-      }
-      
-      return searchInObject(value, query, `${path}.${key}`)
-    })
-  }
-  
-  return false
-}
-
-// Функция для вычисления похожести строк (улучшенный алгоритм)
-const calculateSimilarity = (str1, str2) => {
-  const s1 = str1.toLowerCase().trim()
-  const s2 = str2.toLowerCase().trim()
-  
-  // Точное совпадение
-  if (s1 === s2) return 1.0
-  
-  // Если одна строка содержит другую
-  if (s1.includes(s2) || s2.includes(s1)) {
-    const ratio = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length)
-    return 0.6 + (ratio * 0.4) // От 0.6 до 1.0
-  }
-  
-  // Подсчитываем общие символы в начале (префикс)
-  let commonStart = 0
-  const minLen = Math.min(s1.length, s2.length)
-  for (let i = 0; i < minLen; i++) {
-    if (s1[i] === s2[i]) {
-      commonStart++
-    } else {
-      break
-    }
-  }
-  
-  // Подсчитываем общие символы (без учета порядка)
-  const s1Chars = s1.split('')
-  const s2Chars = s2.split('')
-  let commonChars = 0
-  const s2Set = new Set(s2Chars)
-  s1Chars.forEach(char => {
-    if (s2Set.has(char)) {
-      commonChars++
-      s2Set.delete(char) // Чтобы не считать один символ дважды
-    }
-  })
-  
-  // Вычисляем похожесть с учетом префикса и общих символов
-  const maxLen = Math.max(s1.length, s2.length)
-  const prefixWeight = commonStart / maxLen * 0.4
-  const charsWeight = commonChars / maxLen * 0.6
-  
-  return prefixWeight + charsWeight
-}
-
-// Функция для поиска похожих названий
-const findSimilarTitles = async (query, existingResults = [], maxResults = 5) => {
-  if (!query || query.trim().length < 2) return []
-  
-  const lowerQuery = query.toLowerCase().trim()
-  
-  // Создаем Set существующих названий из результатов, чтобы исключить их
-  const existingTitles = new Set(existingResults.map(r => r.title.toLowerCase()))
-  
-  try {
-    // Получаем все сущности
-    const [placesRes, routesRes, newsRes, servicesRes] = await Promise.all([
-      publicPlacesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicRoutesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicNewsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicServicesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-    ])
-    
-    const allTitles = []
-    
-    // Собираем все названия, исключая уже найденные
-    ;(placesRes.data?.items || []).forEach(item => {
-      const title = item.title || item.name
-      if (title && !existingTitles.has(title.toLowerCase())) {
-        allTitles.push({ title, type: 'place', slug: item.slug, id: item.id || item._id })
-      }
-    })
-    
-    ;(routesRes.data?.items || []).forEach(item => {
-      const title = item.title || item.name
-      if (title && !existingTitles.has(title.toLowerCase())) {
-        allTitles.push({ title, type: 'route', slug: item.slug, id: item.id || item._id })
-      }
-    })
-    
-    ;(newsRes.data?.items || []).forEach(item => {
-      if (item.title && !existingTitles.has(item.title.toLowerCase())) {
-        allTitles.push({ title: item.title, type: 'news', slug: item.slug, id: item.id || item._id })
-      }
-    })
-    
-    ;(servicesRes.data?.items || []).forEach(item => {
-      const title = item.title || item.name
-      if (title && !existingTitles.has(title.toLowerCase())) {
-        allTitles.push({ title, type: 'service', slug: item.slug, id: item.id || item._id })
-      }
-    })
-    
-    // Вычисляем похожесть для каждого названия
-    const similarities = allTitles.map(item => ({
-      ...item,
-      similarity: calculateSimilarity(lowerQuery, item.title.toLowerCase())
-    }))
-    
-    // Фильтруем и сортируем по похожести
-    const similar = similarities
-      .filter(item => item.similarity > 0.15) // Минимальный порог похожести (понижен для лучшего поиска)
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, maxResults)
-    
-    return similar.map(item => ({
-      title: item.title,
-      type: item.type,
-      slug: item.slug,
-      id: item.id
-    }))
-  } catch (error) {
-    return []
-  }
-}
-
-// Функция поиска с fallback (удаление символов с конца)
-const searchWithFallback = async (query) => {
-  if (!query || query.trim().length === 0) {
-    return { results: [], fallback: null, similarTitles: [], bestMatch: null }
-  }
-  
-  const normalizedQuery = query.trim()
-  let currentQuery = normalizedQuery
-  let results = []
-  let fallbackQuery = null
-  
-  // Пытаемся найти результаты с текущим запросом
-  while (currentQuery.length > 0) {
-    const searchResults = await performSearch(currentQuery)
-    
-    if (searchResults.length > 0) {
-      results = searchResults
-      // Если это не оригинальный запрос, сохраняем fallback
-      if (currentQuery !== normalizedQuery) {
-        fallbackQuery = currentQuery
-      }
-      break
-    }
-    
-    // Удаляем последний символ и пробуем снова
-    currentQuery = currentQuery.slice(0, -1)
-  }
-  
-  // Сортируем результаты по похожести названия к оригинальному запросу
-  if (results.length > 0) {
-    const lowerOriginalQuery = normalizedQuery.toLowerCase()
-    const resultsWithSimilarity = results.map(result => ({
-      ...result,
-      titleSimilarity: calculateSimilarity(lowerOriginalQuery, result.title.toLowerCase())
-    }))
-    
-    // Сортируем: сначала по похожести названия (от большей к меньшей), затем по типу
-    resultsWithSimilarity.sort((a, b) => {
-      // Сначала по похожести названия
-      if (b.titleSimilarity !== a.titleSimilarity) {
-        return b.titleSimilarity - a.titleSimilarity
-      }
-      // Если похожесть одинаковая, сортируем по типу (места, маршруты, новости, услуги)
-      const typeOrder = { place: 0, route: 1, news: 2, service: 3 }
-      return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99)
-    })
-    
-    // Убираем поле similarity из результатов перед возвратом
-    results = resultsWithSimilarity.map(({ titleSimilarity, ...rest }) => rest)
-  }
-  
-  // Ищем похожие названия относительно запроса, по которому нашли результаты
-  let similarTitles = []
-  let bestMatch = null
-  
-  // Если есть результаты по усеченному запросу - ищем bestMatch среди них относительно оригинального запроса
-  if (fallbackQuery && results.length > 0) {
-    // Вычисляем похожесть каждого найденного результата к оригинальному запросу
-    const resultsWithSimilarity = results.map(result => ({
-      ...result,
-      similarity: calculateSimilarity(normalizedQuery.toLowerCase(), result.title.toLowerCase())
-    }))
-    
-    // Сортируем по похожести и берем самое похожее
-    resultsWithSimilarity.sort((a, b) => b.similarity - a.similarity)
-    
-    if (resultsWithSimilarity.length > 0 && resultsWithSimilarity[0].similarity > 0.15) {
-      bestMatch = {
-        title: resultsWithSimilarity[0].title,
-        type: resultsWithSimilarity[0].type,
-        slug: resultsWithSimilarity[0].slug,
-        id: resultsWithSimilarity[0].id
-      }
-    }
-    
-    // Также ищем дополнительные похожие названия среди всех сущностей
-    similarTitles = await findSimilarTitles(normalizedQuery, results, 5)
-  } else if (results.length === 0) {
-    // Если нет результатов - ищем похожие названия относительно оригинального запроса
-    const queryForSimilarity = normalizedQuery
-    if (queryForSimilarity && queryForSimilarity.length >= 2) {
-      similarTitles = await findSimilarTitles(queryForSimilarity, results, 5)
-      if (similarTitles.length > 0) {
-        bestMatch = similarTitles[0]
-      }
-    }
-  }
-  
-  return { results, fallback: fallbackQuery, similarTitles, bestMatch }
-}
-
-// Выполнение поиска по всем сущностям
-const performSearch = async (query) => {
+async function performApiSearch(query) {
   if (!query || query.trim().length === 0) return []
-  
-  const lowerQuery = query.toLowerCase().trim()
-  
-  try {
-    // Параллельный поиск по всем сущностям
-    const [placesRes, routesRes, newsRes, servicesRes] = await Promise.all([
-      publicPlacesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicRoutesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicNewsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicServicesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-    ])
-    
-    const allResults = []
-    
-    // Фильтруем места
-    const places = (placesRes.data?.items || []).filter(item => searchInObject(item, lowerQuery))
-    places.forEach(item => {
-      allResults.push({
-        type: 'place',
-        id: item.id || item._id,
-        slug: item.slug,
-        title: item.title || item.name,
-        description: item.description || item.shortDescription || '',
-        image: item.image,
-      })
+
+  const search = query.trim()
+
+  const [placesRes, routesRes, newsRes, servicesRes] = await Promise.all([
+    publicPlacesAPI.getAll({ search, limit: 50 }).catch(() => ({ data: { items: [] } })),
+    publicRoutesAPI.getAll({ search, limit: 50 }).catch(() => ({ data: { items: [] } })),
+    publicNewsAPI.getAll({ search, limit: 50 }).catch(() => ({ data: { items: [] } })),
+    publicServicesAPI.getAll({ search, limit: 50 }).catch(() => ({ data: { items: [] } })),
+  ])
+
+  const allResults = []
+
+  ;(placesRes.data?.items || []).forEach(item => {
+    allResults.push({
+      type: 'place',
+      id: item.id || item._id,
+      slug: item.slug,
+      title: item.title || item.name,
+      description: item.description || item.shortDescription || '',
+      image: item.image,
     })
-    
-    // Фильтруем маршруты
-    const routes = (routesRes.data?.items || []).filter(item => searchInObject(item, lowerQuery))
-    routes.forEach(item => {
-      // Берем первую картинку из галереи, если есть, иначе основную картинку
-      const routeImage = (item.images && item.images.length > 0) ? item.images[0] : item.image
-      allResults.push({
-        type: 'route',
-        id: item.id || item._id,
-        slug: item.slug,
-        title: item.title || item.name,
-        description: item.description || item.shortDescription || '',
-        image: routeImage,
-      })
+  })
+
+  ;(routesRes.data?.items || []).forEach(item => {
+    const routeImage = (item.images && item.images.length > 0) ? item.images[0] : item.image
+    allResults.push({
+      type: 'route',
+      id: item.id || item._id,
+      slug: item.slug,
+      title: item.title || item.name,
+      description: item.description || item.shortDescription || '',
+      image: routeImage,
     })
-    
-    // Фильтруем новости
-    const news = (newsRes.data?.items || []).filter(item => searchInObject(item, lowerQuery))
-    news.forEach(item => {
-      allResults.push({
-        type: 'news',
-        id: item.id || item._id,
-        slug: item.slug,
-        title: item.title,
-        description: item.description || item.shortDescription || '',
-        image: item.image,
-      })
+  })
+
+  ;(newsRes.data?.items || []).forEach(item => {
+    allResults.push({
+      type: 'news',
+      id: item.id || item._id,
+      slug: item.slug,
+      title: item.title,
+      description: item.description || item.shortDescription || '',
+      image: item.image,
     })
-    
-    // Фильтруем услуги
-    const services = (servicesRes.data?.items || []).filter(item => searchInObject(item, lowerQuery))
-    services.forEach(item => {
-      allResults.push({
-        type: 'service',
-        id: item.id || item._id,
-        slug: item.slug,
-        title: item.title || item.name,
-        description: item.description || item.shortDescription || '',
-        image: item.image,
-      })
+  })
+
+  ;(servicesRes.data?.items || []).forEach(item => {
+    allResults.push({
+      type: 'service',
+      id: item.id || item._id,
+      slug: item.slug,
+      title: item.title || item.name,
+      description: item.description || item.shortDescription || '',
+      image: item.image,
     })
-    
-    return allResults
-  } catch (error) {
-    return []
+  })
+
+  return allResults
+}
+
+function collectAllTitles(allData) {
+  if (!allData) return []
+
+  const titles = []
+  const typeMap = { places: 'place', routes: 'route', news: 'news', services: 'service' }
+
+  for (const [key, type] of Object.entries(typeMap)) {
+    ;(allData[key] || []).forEach(item => {
+      const title = item.title || item.name
+      if (title) {
+        titles.push({ title, type, slug: item.slug, id: item.id || item._id })
+      }
+    })
   }
+
+  return titles
+}
+
+function findBestMatch(allData, query) {
+  if (!allData || !query || query.trim().length < 2) return null
+
+  const lowerQuery = query.toLowerCase().trim()
+  const allTitles = collectAllTitles(allData)
+
+  let best = null
+  let bestScore = 0
+
+  for (const t of allTitles) {
+    const score = calculateSimilarity(lowerQuery, t.title.toLowerCase())
+    if (score > bestScore) {
+      bestScore = score
+      best = t
+    }
+  }
+
+  return bestScore > 0.35 ? best : null
+}
+
+function sortResultsBySimilarity(results, query) {
+  if (results.length === 0) return results
+
+  const lowerQuery = query.toLowerCase()
+  const scored = results.map(result => ({
+    ...result,
+    _score: calculateSimilarity(lowerQuery, (result.title || '').toLowerCase())
+  }))
+
+  scored.sort((a, b) => {
+    if (b._score !== a._score) return b._score - a._score
+    const typeOrder = { place: 0, route: 1, news: 2, service: 3 }
+    return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99)
+  })
+
+  return scored.map(({ _score, ...rest }) => rest)
+}
+
+function mergeResults(primary, secondary) {
+  if (secondary.length === 0) return primary
+  if (primary.length === 0) return secondary
+
+  const ids = new Set(primary.map(r => `${r.type}-${r.id}`))
+  const extras = secondary.filter(r => !ids.has(`${r.type}-${r.id}`))
+  return [...primary, ...extras]
+}
+
+function mapItemsToResults(items, type) {
+  return items.map(item => ({
+    type,
+    id: item.id || item._id,
+    slug: item.slug,
+    title: item.title || item.name,
+    description: item.description || item.shortDescription || '',
+    image: type === 'route' && item.images?.length > 0 ? item.images[0] : item.image,
+  }))
+}
+
+function searchInAllData(allData, query) {
+  if (!allData || !query || query.trim().length === 0) return []
+
+  const lowerQuery = query.toLowerCase().trim()
+
+  return [
+    ...mapItemsToResults((allData.places || []).filter(i => searchInObject(i, lowerQuery)), 'place'),
+    ...mapItemsToResults((allData.routes || []).filter(i => searchInObject(i, lowerQuery)), 'route'),
+    ...mapItemsToResults((allData.news || []).filter(i => searchInObject(i, lowerQuery)), 'news'),
+    ...mapItemsToResults((allData.services || []).filter(i => searchInObject(i, lowerQuery)), 'service'),
+  ]
+}
+
+async function performSearch(allData, query) {
+  if (!query || query.trim().length === 0) {
+    return { results: [], bestMatch: null }
+  }
+
+  const normalizedQuery = query.trim()
+
+  // 1) API-поиск (бэкенд — надёжный полнотекстовый поиск)
+  const apiResults = await performApiSearch(normalizedQuery)
+
+  // 2) Проверяем, совпадает ли запрос с чем-то на клиенте (точное вхождение)
+  const exactClientResults = searchInAllData(allData, normalizedQuery)
+  const hasExactClientMatch = exactClientResults.length > 0
+
+  // 3) Если точного совпадения нет — ищем ближайшее название (обработка опечаток)
+  let bestMatch = null
+  let suggestionResults = []
+
+  if (!hasExactClientMatch && allData) {
+    bestMatch = findBestMatch(allData, normalizedQuery)
+
+    if (bestMatch && apiResults.length === 0) {
+      suggestionResults = searchInAllData(allData, bestMatch.title)
+    }
+  }
+
+  // 4) Объединяем результаты
+  let results = mergeResults(apiResults, suggestionResults)
+
+  // 5) Если ни API, ни suggestions не дали результатов — fallback с клиентскими данными
+  if (results.length === 0 && exactClientResults.length > 0) {
+    results = exactClientResults
+  }
+
+  results = sortResultsBySimilarity(results, normalizedQuery)
+
+  return { results, bestMatch: hasExactClientMatch ? null : bestMatch }
 }
 
 export default function GlobalSearch({ isOpen, onClose }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
-  const [fallback, setFallback] = useState(null)
-  const [similarTitles, setSimilarTitles] = useState([])
   const [bestMatch, setBestMatch] = useState(null)
   const [filterType, setFilterType] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [debounceTimer, setDebounceTimer] = useState(null)
+  const [allData, setAllData] = useState(null)
+  const [dataLoading, setDataLoading] = useState(false)
   const inputRef = useRef(null)
+  const debounceRef = useRef(null)
+  const searchIdRef = useRef(0)
   const navigate = useNavigate()
-  
+
   const filteredResults = filterType
     ? results.filter(r => r.type === filterType)
     : results
-  
+
   const availableTypes = [...new Set(results.map(r => r.type))]
-  
-  // Фокус на инпут при открытии
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current?.focus()
-      }, 100)
+
+  const loadAllData = useCallback(async () => {
+    setDataLoading(true)
+    try {
+      const [placesRes, routesRes, newsRes, servicesRes] = await Promise.all([
+        publicPlacesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
+        publicRoutesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
+        publicNewsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
+        publicServicesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
+      ])
+      setAllData({
+        places: placesRes.data?.items || [],
+        routes: routesRes.data?.items || [],
+        news: newsRes.data?.items || [],
+        services: servicesRes.data?.items || [],
+      })
+    } catch {
+      setAllData({ places: [], routes: [], news: [], services: [] })
+    } finally {
+      setDataLoading(false)
     }
-  }, [isOpen])
-  
-  // Поиск с debounce
+  }, [])
+
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      loadAllData()
+      setTimeout(() => inputRef.current?.focus(), 100)
+    } else {
       setQuery('')
       setResults([])
-      setFallback(null)
-      setSimilarTitles([])
       setBestMatch(null)
       setFilterType(null)
-      return
+      setAllData(null)
     }
-    
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-    }
-    
+  }, [isOpen, loadAllData])
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    if (!isOpen) return
+
     if (!query.trim()) {
       setResults([])
-      setFallback(null)
-      setSimilarTitles([])
       setBestMatch(null)
       return
     }
-    
+
     setIsLoading(true)
-    const timer = setTimeout(async () => {
-      const { results: searchResults, fallback: fallbackQuery, similarTitles: similar, bestMatch: match } = await searchWithFallback(query)
+    const currentId = ++searchIdRef.current
+
+    debounceRef.current = setTimeout(async () => {
+      if (currentId !== searchIdRef.current) return
+
+      const { results: searchResults, bestMatch: match } = await performSearch(allData, query)
+
+      if (currentId !== searchIdRef.current) return
+
       setResults(searchResults)
-      setFallback(fallbackQuery)
-      setSimilarTitles(similar || [])
       setBestMatch(match)
       setIsLoading(false)
     }, 300)
-    
-    setDebounceTimer(timer)
-    
+
     return () => {
-      if (timer) clearTimeout(timer)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [query, isOpen])
+  }, [query, isOpen, allData])
   
   // Закрытие по Escape
   useEffect(() => {
@@ -455,7 +331,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            {isLoading && <Loader2 className={styles.loaderIcon} size={20} />}
+            {(isLoading || dataLoading) && <Loader2 className={styles.loaderIcon} size={20} />}
           </div>
           <button className={styles.closeButton} onClick={onClose} aria-label="Закрыть">
             <X size={24} />
@@ -465,7 +341,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
         <div className={styles.content}>
           {query.trim() && (
             <>
-              {isLoading ? (
+              {(isLoading || dataLoading) ? (
                 <div className={styles.loading}>
                   <Loader2 className={styles.loaderIcon} size={32} />
                   <p>Поиск...</p>
@@ -486,28 +362,6 @@ export default function GlobalSearch({ isOpen, onClose }) {
                           <strong>{bestMatch.title}</strong>
                         </button>
                       </div>
-                      {similarTitles.length > 1 && (
-                        <div className={styles.similarTitles}>
-                          <p className={styles.similarTitlesLabel}>Похожие названия:</p>
-                          <div className={styles.similarTitlesList}>
-                            {similarTitles.slice(1).map((item, index) => {
-                              const entityConfig = ENTITY_TYPES[item.type]
-                              const Icon = entityConfig?.icon
-                              return (
-                                <button
-                                  key={`${item.type}-${item.id}-${index}`}
-                                  type="button"
-                                  className={styles.similarTitleItem}
-                                  onClick={() => setQuery(item.title)}
-                                >
-                                  {Icon && <Icon size={14} style={{ color: entityConfig.color }} />}
-                                  <span>{item.title}</span>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                   {availableTypes.length > 1 && (
@@ -610,28 +464,6 @@ export default function GlobalSearch({ isOpen, onClose }) {
                       >
                         <strong>{bestMatch.title}</strong>
                       </button>
-                    </div>
-                  )}
-                  {similarTitles.length > 1 && (
-                    <div className={styles.similarTitles}>
-                      <p className={styles.similarTitlesLabel}>Похожие названия:</p>
-                      <div className={styles.similarTitlesList}>
-                        {similarTitles.slice(1).map((item, index) => {
-                          const entityConfig = ENTITY_TYPES[item.type]
-                          const Icon = entityConfig?.icon
-                          return (
-                            <button
-                              key={`${item.type}-${item.id}-${index}`}
-                              type="button"
-                              className={styles.similarTitleItem}
-                              onClick={() => setQuery(item.title)}
-                            >
-                              {Icon && <Icon size={14} style={{ color: entityConfig.color }} />}
-                              <span>{item.title}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
                     </div>
                   )}
                 </div>

@@ -292,6 +292,14 @@ export default function Header() {
             Новости
           </Link>
 
+          <Link
+            to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
+            className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
+            title="Экспедиция Аманауз"
+          >
+            Экспедиция "Аманауз"
+          </Link>
+
           {/* DROPDOWN: На помощь туристу */}
           <div
             className={styles.navDropdown}
@@ -394,6 +402,7 @@ export default function Header() {
               </div>
             </div>
           </div>
+
         </nav>
 
         {/* Кнопка бургер-меню (мобильные) */}
