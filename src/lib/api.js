@@ -189,6 +189,12 @@ export const publicServicesAPI = {
   createReview: (serviceId, data) => api.post(`/services/${serviceId}/reviews`, data),
 };
 
+// Bookings API (public — заявки на бронирование)
+export const bookingsAPI = {
+  create: (data) => api.post('/bookings', data),
+  getBusyDates: (params) => api.get('/bookings/busy-dates', { params }),
+}
+
 // Reviews API
 export const reviewsAPI = {
   getAll: (params) => api.get('/admin/reviews', { params }),
@@ -270,6 +276,13 @@ export const adminUsersAPI = {
   ban: (id) => api.put(`/admin/users/${id}/ban`),
   unban: (id) => api.put(`/admin/users/${id}/unban`),
 };
+
+// Bookings API (admin — заявки на бронирование)
+export const adminBookingsAPI = {
+  getAll: (params) => api.get('/admin/bookings', { params }),
+  updateStatus: (id, status) => api.patch(`/admin/bookings/${id}`, { status }),
+  setVisibility: (id, isVisible) => api.patch(`/admin/bookings/${id}/visibility`, { isVisible }),
+}
 
 // Pages API (public — для страниц сайта)
 export const publicPagesAPI = {

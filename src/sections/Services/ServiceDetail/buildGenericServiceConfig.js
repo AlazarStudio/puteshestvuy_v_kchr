@@ -49,6 +49,13 @@ export function buildGenericServiceConfig(service) {
     : buildContactsFromService(service)
 
   const normalizeList = (arr) => (Array.isArray(arr) ? arr.map((s) => (typeof s === 'string' ? s : (s?.title ?? s?.name ?? String(s)))).filter((s) => String(s).trim()) : [])
+  const normalizeTags = (arr) =>
+    Array.isArray(arr)
+      ? arr
+          .map((t) => (typeof t === 'string' ? t : (t?.title ?? t?.name ?? t?.text ?? '')))
+          .map((t) => String(t).trim())
+          .filter(Boolean)
+      : []
   let sections = Array.isArray(d.sections)
     ? d.sections.map((s) => ({
         id: s.id || `section-${Math.random().toString(36).slice(2)}`,
@@ -132,8 +139,8 @@ export function buildGenericServiceConfig(service) {
     categoryLabel,
     serviceName,
     tags: Array.isArray(d.criteriaList) && d.criteriaList.length > 0
-      ? d.criteriaList.filter((s) => String(s).trim())
-      : (Array.isArray(d.tags) ? d.tags : (typeof d.tags === 'string' && d.tags ? d.tags.split(',').map((s) => s.trim()).filter(Boolean) : [])),
+      ? normalizeTags(d.criteriaList)
+      : (Array.isArray(d.tags) ? normalizeTags(d.tags) : (typeof d.tags === 'string' && d.tags ? d.tags.split(',').map((s) => s.trim()).filter(Boolean) : [])),
     aboutTitle: aboutContent ? 'О сервисе' : '',
     aboutContent,
     sections,

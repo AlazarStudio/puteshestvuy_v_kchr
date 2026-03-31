@@ -8,13 +8,14 @@ import {
   Newspaper, 
   Building2, 
   Star,
+  ClipboardList,
   LogOut,
   ChevronLeft,
   ChevronRight,
   FileText,
   Users
 } from 'lucide-react';
-import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI } from '@/lib/api';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI } from '@/lib/api';
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
@@ -28,6 +29,7 @@ const menuItems = [
   { href: '/admin/routes', label: 'Маршруты', icon: Map, key: 'routes' },
   { href: '/admin/news', label: 'Новости и статьи', icon: Newspaper, key: 'news' },
   { href: '/admin/services', label: 'Услуги', icon: Building2, key: 'services' },
+  { href: '/admin/bookings', label: 'Бронирования', icon: ClipboardList, key: 'bookings' },
   { href: '/admin/reviews', label: 'Отзывы', icon: Star, key: 'reviews' },
   { href: '/admin/users', label: 'Пользователи', icon: Users, key: 'users' },
 ];
@@ -46,6 +48,7 @@ export default function AdminLayout() {
     routes: null,
     news: null,
     services: null,
+    bookings: null,
     reviews: null,
     users: null,
   });
@@ -84,11 +87,12 @@ export default function AdminLayout() {
 
     const fetchCounts = async () => {
       try {
-        const [placesRes, routesRes, newsRes, servicesRes, reviewsRes, usersRes] = await Promise.all([
+        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes] = await Promise.all([
           placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           servicesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          adminBookingsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminUsersAPI.getAll({ page: 1, limit: 1, includeSuperadmin: 'true' }).catch(() => ({ data: { pagination: { total: 0 } } })),
         ]);
@@ -98,6 +102,7 @@ export default function AdminLayout() {
           routes: routesRes.data?.pagination?.total ?? 0,
           news: newsRes.data?.pagination?.total ?? 0,
           services: servicesRes.data?.pagination?.total ?? 0,
+          bookings: bookingsRes.data?.pagination?.total ?? 0,
           reviews: reviewsRes.data?.pagination?.total ?? 0,
           users: usersRes.data?.pagination?.total ?? 0,
         });
@@ -188,6 +193,7 @@ export default function AdminLayout() {
                   part === 'places' ? 'Места' :
                   part === 'news' ? 'Новости и статьи' :
                   part === 'services' ? 'Услуги' :
+                  part === 'bookings' ? 'Бронирования' :
                   part === 'reviews' ? 'Отзывы' :
                   part === 'users' ? 'Пользователи' :
                   part === 'pages' ? 'Страницы сайта' :

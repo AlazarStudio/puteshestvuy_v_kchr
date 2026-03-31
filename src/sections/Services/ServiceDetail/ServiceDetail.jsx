@@ -16,6 +16,7 @@ import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import BookingModal from '@/components/BookingModal/BookingModal'
 
 function buildContactsFromService(service) {
   const items = []
@@ -111,6 +112,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [activeAnchor, setActiveAnchor] = useState('main')
   const [reviewSubmitStatus, setReviewSubmitStatus] = useState(null)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const swiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
 
@@ -638,20 +640,35 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                   </button>
                 ))}
               </div>
-              {/* Кнопки снизу — функционал будет позже
-              <div className={styles.anchorsButtons}>
-                <button className={`${styles.anchorButton} ${g.anchorButton}`}>
-                  Связаться
-                </button>
-                <button className={`${styles.anchorButtonPrimary} ${g.anchorButtonPrimary}`}>
-                  Забронировать
-                </button>
-              </div>
-              */}
+              {isGuide && (
+                <div className={styles.anchorsButtons}>
+                  <button
+                    type="button"
+                    className={`${styles.anchorButtonPrimary} ${g.anchorButtonPrimary}`}
+                    onClick={() => setIsBookingOpen(true)}
+                  >
+                    Забронировать
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </CenterBlock>
+
+      {isGuide && (
+        <BookingModal
+          isOpen={isBookingOpen}
+          onClose={() => setIsBookingOpen(false)}
+          context={{
+            type: 'guide',
+            id: serviceData?.id ?? null,
+            slug: serviceSlug ?? null,
+            title: displayName || null,
+            category: categoryLabel || null,
+          }}
+        />
+      )}
 
       {/* Модалка со слайдером */}
       <AnimatePresence>

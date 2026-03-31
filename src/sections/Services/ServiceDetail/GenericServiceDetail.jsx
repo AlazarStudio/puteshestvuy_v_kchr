@@ -26,6 +26,26 @@ const StarIcon = ({ filled, size = 24 }) => (
   </svg>
 )
 
+function renderMaybeObjectText(value) {
+  if (value == null) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (typeof value === 'object') {
+    if (typeof value.title === 'string' && value.title.trim() && typeof value.text === 'string' && value.text.trim()) {
+      return `${value.title}: ${value.text}`
+    }
+    if (typeof value.title === 'string' && value.title.trim()) return value.title
+    if (typeof value.name === 'string' && value.name.trim()) return value.name
+    if (typeof value.text === 'string' && value.text.trim()) return value.text
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
+}
+
 /**
  * Общий layout страницы услуги: галерея, шапка, якорные блоки, контакты, отзывы, сайдбар.
  * config: { breadcrumbTitle, categoryLabel, serviceName, tags[], aboutTitle, aboutContent, sections: [{ id, title, content }], contacts: [{ label, value, href? }], primaryButtonText, reviewPlaceholder, showReviews?, avatarImg?, photos, reviews?, rating?, reviewsCount? }
@@ -270,7 +290,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                   {tags.length > 0 && (
                     <div className={`${styles.serviceTags} ${common.serviceTags}`}>
                       {tags.map((tag, i) => (
-                        <span key={i} className={`${styles.serviceTag} ${common.serviceTag}`}>{tag}</span>
+                        <span key={i} className={`${styles.serviceTag} ${common.serviceTag}`}>{renderMaybeObjectText(tag)}</span>
                       ))}
                     </div>
                   )}
@@ -338,7 +358,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                       ? (
                           <ul className={common.bulletList || ''}>
                             {sec.content.map((item, i) => (
-                              <li key={i}>{item}</li>
+                              <li key={i}>{renderMaybeObjectText(item)}</li>
                             ))}
                           </ul>
                         )
