@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styles from './BookingModal.module.css'
 import { bookingsAPI } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 const DIRECTIONS = [
   'Теберда',
@@ -62,6 +63,7 @@ function buildCalendarWeeks(visibleMonthDate) {
 }
 
 export default function BookingModal({ isOpen, onClose, context }) {
+  const { user } = useAuth()
   const todayDate = useMemo(() => startOfDay(new Date()), [])
   const todayIso = useMemo(() => toIsoDate(startOfDay(new Date())), [])
 
@@ -74,6 +76,7 @@ export default function BookingModal({ isOpen, onClose, context }) {
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()))
   const [submitStatus, setSubmitStatus] = useState('idle') // idle | sending | success | error
   const [busyDates, setBusyDates] = useState(() => new Set())
+  const [successInfo, setSuccessInfo] = useState(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -86,7 +89,19 @@ export default function BookingModal({ isOpen, onClose, context }) {
     setCalendarMonth(startOfMonth(new Date()))
     setSubmitStatus('idle')
     setBusyDates(new Set())
-  }, [isOpen])
+    setSuccessInfo(null)
+
+    // Автозаполнение контактов из профиля, если пользователь авторизован
+    const profileName =
+      [user?.userInformation?.firstName, user?.userInformation?.lastName].filter(Boolean).join(' ').trim() ||
+      (user?.name || '').trim()
+    const profileEmail = (user?.email || '').trim()
+    const profilePhone = (user?.phone || user?.userInformation?.phone || '').trim()
+
+    if (profileName) setName(profileName)
+    if (profileEmail) setEmail(profileEmail)
+    if (profilePhone) setPhone(profilePhone)
+  }, [isOpen, user?.email, user?.name, user?.userInformation?.firstName, user?.userInformation?.lastName, user?.userInformation?.phone, user?.phone])
 
   useEffect(() => {
     if (!isOpen) return
@@ -125,7 +140,9 @@ export default function BookingModal({ isOpen, onClose, context }) {
       .create(payload)
       .then(() => {
         setSubmitStatus('success')
-        onClose?.()
+        setSuccessInfo({
+          email: payload.contactEmail,
+        })
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
@@ -207,145 +224,161 @@ export default function BookingModal({ isOpen, onClose, context }) {
               </svg>
             </button>
 
-            <div className={styles.header}>
-              <div className={styles.title}>Бронирование</div>
-              {context?.title ? <div className={styles.subtitle}>{context.title}</div> : null}
-            </div>
+            {submitStatus !== 'success' ? (
+              <div className={styles.header}>
+                <div className={styles.title}>Бронирование</div>
+                {context?.title ? <div className={styles.subtitle}>{context.title}</div> : null}
+              </div>
+            ) : null}
 
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <div className={styles.grid}>
-                <div className={styles.left}>
-                  <div className={styles.blockTitle}>Дата</div>
-                  <div className={styles.calendar}>
-                    <div className={styles.calendarHeader}>
-                      <button
-                        type="button"
-                        className={styles.calendarNavBtn}
-                        onClick={() => setCalendarMonth((m) => addMonths(m, -1))}
-                        aria-label="Предыдущий месяц"
-                      >
-                        ‹
-                      </button>
-                      <div className={styles.calendarMonthLabel}>{monthLabel}</div>
-                      <button
-                        type="button"
-                        className={styles.calendarNavBtn}
-                        onClick={() => setCalendarMonth((m) => addMonths(m, 1))}
-                        aria-label="Следующий месяц"
-                      >
-                        ›
-                      </button>
+            {submitStatus === 'success' ? (
+              <div className={styles.successWrap}>
+                <div className={styles.successTitle}>Заявка отправлена</div>
+                <div className={styles.successText}>
+                  Бронирование успешно оформлено. Мы отправили подтверждение на почту{' '}
+                  <strong>{successInfo?.email || email}</strong>.
+                </div>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.primaryBtn} onClick={() => onClose?.()}>
+                    Закрыть
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form className={styles.form} onSubmit={handleSubmit}>
+                <div className={styles.grid}>
+                  <div className={styles.left}>
+                    <div className={styles.blockTitle}>Дата</div>
+                    <div className={styles.calendar}>
+                      <div className={styles.calendarHeader}>
+                        <button
+                          type="button"
+                          className={styles.calendarNavBtn}
+                          onClick={() => setCalendarMonth((m) => addMonths(m, -1))}
+                          aria-label="Предыдущий месяц"
+                        >
+                          ‹
+                        </button>
+                        <div className={styles.calendarMonthLabel}>{monthLabel}</div>
+                        <button
+                          type="button"
+                          className={styles.calendarNavBtn}
+                          onClick={() => setCalendarMonth((m) => addMonths(m, 1))}
+                          aria-label="Следующий месяц"
+                        >
+                          ›
+                        </button>
+                      </div>
+
+                      <div className={styles.calendarWeekdays} aria-hidden="true">
+                        {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((w) => (
+                          <div key={w} className={styles.calendarWeekday}>
+                            {w}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className={styles.calendarGrid}>
+                        {calendarWeeks.flat().map((d) => {
+                          const iso = toIsoDate(d)
+                          const isOtherMonth = d.getMonth() !== calendarMonth.getMonth()
+                          const isPast = startOfDay(d) < todayDate
+                          const isBusy = busyDates.has(iso)
+                          const isSelected = selectedIso === iso
+                          const className = [
+                            styles.calendarDay,
+                            isOtherMonth ? styles.calendarDayOtherMonth : '',
+                            isPast ? styles.calendarDayDisabled : '',
+                            isBusy ? styles.calendarDayBusy : '',
+                            isSelected ? styles.calendarDaySelected : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')
+
+                          return (
+                            <button
+                              key={iso}
+                              type="button"
+                              className={className}
+                              onClick={() => {
+                                if (isPast || isBusy) return
+                                setDate(iso)
+                              }}
+                              disabled={isPast}
+                              aria-label={formatDateLabel(iso)}
+                              aria-pressed={isSelected}
+                              aria-disabled={isBusy ? 'true' : undefined}
+                              title={isBusy ? 'В этот день уже забронировано' : undefined}
+                            >
+                              {d.getDate()}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
 
-                    <div className={styles.calendarWeekdays} aria-hidden="true">
-                      {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((w) => (
-                        <div key={w} className={styles.calendarWeekday}>
-                          {w}
-                        </div>
+                    <input type="hidden" value={date} required readOnly />
+                  </div>
+
+                  <div className={styles.right}>
+                    <div className={styles.blockTitle}>Направление</div>
+                    <select className={styles.input} value={direction} onChange={(e) => setDirection(e.target.value)}>
+                      {DIRECTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
                       ))}
+                    </select>
+
+                    <div className={styles.blockTitle} style={{ marginTop: 16 }}>
+                      Контактные данные
                     </div>
-
-                    <div className={styles.calendarGrid}>
-                      {calendarWeeks.flat().map((d) => {
-                        const iso = toIsoDate(d)
-                        const isOtherMonth = d.getMonth() !== calendarMonth.getMonth()
-                        const isPast = startOfDay(d) < todayDate
-                        const isBusy = busyDates.has(iso)
-                        const isDisabledVisual = isPast || isBusy
-                        const isSelected = selectedIso === iso
-                        const className = [
-                          styles.calendarDay,
-                          isOtherMonth ? styles.calendarDayOtherMonth : '',
-                          isPast ? styles.calendarDayDisabled : '',
-                          isBusy ? styles.calendarDayBusy : '',
-                          isSelected ? styles.calendarDaySelected : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')
-
-                        return (
-                          <button
-                            key={iso}
-                            type="button"
-                            className={className}
-                            onClick={() => {
-                              if (isPast || isBusy) return
-                              setDate(iso)
-                            }}
-                            disabled={isPast}
-                            aria-label={formatDateLabel(iso)}
-                            aria-pressed={isSelected}
-                            aria-disabled={isBusy ? 'true' : undefined}
-                            title={isBusy ? 'В этот день уже забронировано' : undefined}
-                          >
-                            {d.getDate()}
-                          </button>
-                        )
-                      })}
+                    <div className={styles.contacts}>
+                      <input
+                        className={styles.input}
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Имя"
+                        required
+                      />
+                      <input
+                        className={styles.input}
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Телефон"
+                        required
+                      />
+                      <input
+                        className={styles.input}
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email"
+                        required
+                      />
+                      <textarea
+                        className={styles.textarea}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Комментарий (необязательно)"
+                        rows={3}
+                      />
                     </div>
                   </div>
-
-                  <input type="hidden" value={date} required readOnly />
                 </div>
 
-                <div className={styles.right}>
-                  <div className={styles.blockTitle}>Направление</div>
-                  <select className={styles.input} value={direction} onChange={(e) => setDirection(e.target.value)}>
-                    {DIRECTIONS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className={styles.blockTitle} style={{ marginTop: 16 }}>
-                    Контактные данные
-                  </div>
-                  <div className={styles.contacts}>
-                    <input
-                      className={styles.input}
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Имя"
-                      required
-                    />
-                    <input
-                      className={styles.input}
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Телефон"
-                      required
-                    />
-                    <input
-                      className={styles.input}
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Email"
-                      required
-                    />
-                    <textarea
-                      className={styles.textarea}
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Комментарий (необязательно)"
-                      rows={3}
-                    />
-                  </div>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.secondaryBtn} onClick={() => onClose?.()}>
+                    Отмена
+                  </button>
+                  <button type="submit" className={styles.primaryBtn}>
+                    {submitStatus === 'sending' ? 'Отправка...' : 'Бронировать'}
+                  </button>
                 </div>
-              </div>
-
-              <div className={styles.actions}>
-                <button type="button" className={styles.secondaryBtn} onClick={() => onClose?.()}>
-                  Отмена
-                </button>
-                <button type="submit" className={styles.primaryBtn}>
-                  {submitStatus === 'sending' ? 'Отправка...' : 'Бронировать'}
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </motion.div>
         </motion.div>
       )}

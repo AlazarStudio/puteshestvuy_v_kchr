@@ -127,7 +127,7 @@ export default function BookingDetailModal({ open, booking, onClose, onConfirm, 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px' }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 4 }}>Имя</div>
-                    <div>{formatSurnameInitials(booking.contactName)}</div>
+                    <div>{(booking.contactName || '').trim() || '—'}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>

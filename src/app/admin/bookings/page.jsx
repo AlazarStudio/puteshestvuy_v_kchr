@@ -486,7 +486,7 @@ export default function AdminBookingsPage() {
                     </td>
                     <td style={{ width: '26%' }}>
                       <div className={styles.cellInner} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                        <div>{b.entityTitle || '—'}</div>
+                        <div>{formatSurnameInitials(b.entityTitle)}</div>
                       </div>
                     </td>
                     <td>

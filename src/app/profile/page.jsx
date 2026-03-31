@@ -120,6 +120,7 @@ export default function ProfilePage() {
   const [editTab, setEditTab] = useState('profile')
   const [formData, setFormData] = useState({
     email: '',
+    phone: '',
     firstName: '',
     lastName: '',
   })
@@ -164,6 +165,7 @@ export default function ProfilePage() {
     if (!user) return
     setFormData({
       email: user.email || '',
+      phone: user.phone || '',
       firstName: user.userInformation?.firstName ?? '',
       lastName: user.userInformation?.lastName ?? '',
     })
@@ -267,6 +269,7 @@ export default function ProfilePage() {
       const payload = {
         name: fullNameFromParts || user.name,
         email: formData.email,
+        phone: formData.phone,
         userInformation: {
           firstName: formData.firstName || null,
           lastName: formData.lastName || null,
@@ -1170,6 +1173,17 @@ export default function ProfilePage() {
                     <div className={styles.formRow}>
                       <label className={styles.label}>Email</label>
                       <input type="email" name="email" value={formData.email} onChange={handleChange} className={styles.input} placeholder="Email" required />
+                    </div>
+                    <div className={styles.formRow}>
+                      <label className={styles.label}>Телефон</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className={styles.input}
+                        placeholder="+7 (___) ___-__-__"
+                      />
                     </div>
                   </>
                 )}
