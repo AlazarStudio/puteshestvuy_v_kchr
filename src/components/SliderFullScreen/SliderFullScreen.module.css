@@ -157,6 +157,32 @@
   border: 1px solid #eee;
 }
 
+.carousel .list .item .content .ctaLinkIntro {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  color: #111;
+  border: 2px solid #fff;
+  border-radius: 30px;
+  padding: 18px 64px;
+  transition: all 0.3s ease-in-out;
+  font: inherit;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+}
+
+.carousel .list .item .content .ctaLinkIntro:hover {
+  background: rgba(255, 255, 255, 0.88);
+  color: #111;
+  border-color: transparent;
+  box-shadow: 5px 5px 15px #00000030;
+  transform: translateY(1px);
+}
+
 .thumbnail {
   position: absolute;
   bottom: 150px;
@@ -508,6 +534,11 @@
   .carousel .list .item .content .ctaLink {
     padding: 10px 20px;
     font-size: 12px;
+  }
+
+  .carousel .list .item .content .ctaLinkIntro {
+    padding: 10px 24px;
+    font-size: 13px;
   }
 
   .thumbnail {

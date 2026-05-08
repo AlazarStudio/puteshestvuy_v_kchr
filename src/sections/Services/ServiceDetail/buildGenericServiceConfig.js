@@ -155,6 +155,7 @@ export function buildGenericServiceConfig(service) {
     rating: service.rating ?? null,
     reviewsCount: service.reviewsCount ?? 0,
     rooms,
+    ...(service.category === 'Гостиница' && { cardPayment: service.cardPayment === true }),
   }
 }
 

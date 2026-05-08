@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-Service -Name \"MongoDB\" -ErrorAction SilentlyContinue)",
+      "Bash(npx prisma *)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process -Id 5792, 23456 -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 30)",
+      "PowerShell(& \"C:\\\\Program Files\\\\MongoDB\\\\Server\\\\8.3\\\\bin\\\\mongo.exe\" --eval \"rs.initiate\\(\\)\" 2>&1)",
+      "PowerShell(if \\(-not $?\\) { \"mongo.exe not found\" })",
+      "PowerShell(Get-Service MongoDB)",
+      "PowerShell(Get-Service -Name MongoDB -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 27160 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq 27160 } | Select-Object Name, ExecutablePath, CommandLine)",
+      "PowerShell($pid = \\(netstat -ano | findstr \":27017\" | Where-Object { $_ -match \"LISTENING\" } | ForEach-Object { \\($_ -split \"\\\\s+\"\\)[-1] } | Select-Object -First 1\\); if \\($pid\\) { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue; \"Killed PID $pid\" } else { \"No LISTENING process found on 27017\" })",
+      "PowerShell($procId = \\(netstat -ano | findstr \":27017\" | Where-Object { $_ -match \"LISTENING\" } | ForEach-Object { \\($_ -split \"\\\\s+\"\\)[-1] } | Select-Object -First 1\\); if \\($procId\\) { Stop-Process -Id \\([int]$procId\\) -Force; \"Killed $procId\" } else { \"No listener\" })",
+      "Bash(New-Item -ItemType Directory -Force -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\app\\\\suggest-place\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\app\\\\suggest-place\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\app\\\\admin\\\\suggestions\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 22440 -Force -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\app\\\\admin\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\app\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "WebFetch(domain:murmansk.travel)",
+      "Bash(xargs grep -l \"Transport\\\\|Plane\\\\|Flight\")",
+      "Bash(xargs grep -l \"tab\\\\|Tab\")"
+    ]
+  }
+}

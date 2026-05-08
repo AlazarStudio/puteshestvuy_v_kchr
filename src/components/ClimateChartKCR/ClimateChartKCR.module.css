@@ -1,0 +1,33 @@
+.wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.svg {
+  width: 100%;
+  max-width: 660px;
+  min-width: 280px;
+  display: block;
+  margin: 0 auto;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  max-width: 660px;
+  margin: 0 auto 4px;
+  padding: 0 40px 0 40px;
+}
+
+.labelWinter {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.labelSummer {
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+}

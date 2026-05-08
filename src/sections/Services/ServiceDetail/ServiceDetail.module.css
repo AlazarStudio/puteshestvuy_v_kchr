@@ -752,6 +752,8 @@
 .aboutTextHtml ol {
   /* margin: 0 0 0.75em; */
   padding-left: 1.5em;
+  /* list-style: disc; */
+  list-style: revert-layer !important;
 }
 
 /*.aboutTextHtml li {
@@ -827,7 +829,7 @@
 }
 
 .bulletList {
-  list-style: none;
+  list-style: revert-layer !important;
   padding: 0;
   margin: 0;
   display: flex;

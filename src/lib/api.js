@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')?.replace('/api', '') || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api')?.replace('/api', '') || 'http://localhost:4000';
 
 // Хелпер для получения полного URL изображения
 export const getImageUrl = (path) => {
@@ -287,6 +287,23 @@ export const adminBookingsAPI = {
 // Pages API (public — для страниц сайта)
 export const publicPagesAPI = {
   get: (pageName) => api.get(`/pages/${pageName}`),
+};
+
+// Suggestions API (user — предложить место)
+export const suggestionsAPI = {
+  create: (data) => api.post('/suggestions/places', data),
+  getMy: () => api.get('/suggestions/places/my'),
+};
+
+// Suggestions API (admin — управление предложениями)
+export const adminSuggestionsAPI = {
+  getAll: (params) => api.get('/admin/suggestions', { params }),
+  getPendingCount: () => api.get('/admin/suggestions/pending-count'),
+  getById: (id) => api.get(`/admin/suggestions/${id}`),
+  update: (id, data) => api.put(`/admin/suggestions/${id}`, data),
+  approve: (id) => api.post(`/admin/suggestions/${id}/approve`),
+  confirmApprove: (id) => api.post(`/admin/suggestions/${id}/confirm-approve`),
+  delete: (id) => api.delete(`/admin/suggestions/${id}`),
 };
 
 export default api;

@@ -89,6 +89,7 @@ function getFormSnapshot(data) {
     longitude: data.longitude != null ? Number(data.longitude) : null,
     isActive: !!data.isActive,
     isVerified: !!data.isVerified,
+    cardPayment: !!data.cardPayment,
     data: JSON.stringify(dataForSnapshot),
     images: imageKeys.join(','),
   };
@@ -110,6 +111,7 @@ export default function ServiceEditPage() {
     images: [],
     isActive: true,
     isVerified: false,
+    cardPayment: false,
     data: {},
   });
   const [mapVisible, setMapVisible] = useState(false);
@@ -262,6 +264,7 @@ export default function ServiceEditPage() {
         images: isGuide ? [] : mainImages.map((url) => ({ type: 'url', value: url })),
         isActive: data.isActive !== false,
         isVerified: data.isVerified === true,
+        cardPayment: data.cardPayment === true,
         data: {
           ...rawData,
           certificatesInData,
@@ -578,6 +581,7 @@ export default function ServiceEditPage() {
         images: imageUrls,
         isActive: formData.isActive,
         isVerified: formData.category === 'Гид' ? formData.isVerified : false,
+        cardPayment: formData.category === 'Гостиница' ? formData.cardPayment : false,
         data: dataToSave,
       };
 
@@ -1459,6 +1463,17 @@ export default function ServiceEditPage() {
               />
               <span className={styles.visibilitySwitch} />
               <span className={styles.visibilityLabel}>Верифицирован</span>
+            </label>
+          )}
+          {formData.category === 'Гостиница' && (
+            <label className={styles.visibilityToggle} style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <input
+                type="checkbox"
+                checked={!!formData.cardPayment}
+                onChange={() => setFormData((prev) => ({ ...prev, cardPayment: !prev.cardPayment }))}
+              />
+              <span className={styles.visibilitySwitch} />
+              <span className={styles.visibilityLabel}>Принимается оплата картой</span>
             </label>
           )}
         </div>

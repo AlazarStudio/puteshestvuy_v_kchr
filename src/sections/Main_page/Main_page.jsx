@@ -1,19 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import styles from './Main_page.module.css'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 import TitleButton from '@/components/TitleButton/TitleButton'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import RouteSeasoneBanner from '@/components/RouteSeasoneBanner/RouteSeasoneBanner'
 import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
+import FirstTimeTabs from '@/components/FirstTimeTabs/FirstTimeTabs'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import ParallaxImage from '@/components/ParallaxImage'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
+
+function getBtnPosition(pos) {
+  switch (pos) {
+    case 'top-left':      return { top: 24, left: 24 }
+    case 'top-center':    return { top: 24, left: '50%', transform: 'translateX(-50%)' }
+    case 'top-right':     return { top: 24, right: 24 }
+    case 'middle-left':   return { top: '50%', left: 24, transform: 'translateY(-50%)' }
+    case 'middle-center': return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+    case 'middle-right':  return { top: '50%', right: 24, transform: 'translateY(-50%)' }
+    case 'bottom-center': return { bottom: 24, left: '50%', transform: 'translateX(-50%)' }
+    case 'bottom-right':  return { bottom: 24, right: 24 }
+    default:              return { bottom: 24, left: 24 }
+  }
+}
 
 function stripHtml(html) {
   if (!html || typeof html !== 'string') return ''
@@ -59,8 +74,9 @@ const DEFAULT_HOME_CONTENT = {
       routeLink: '/routes?seasons=Осень',
     },
   ],
-  firstTimeTitle: 'ВПЕРВЫЕ В КЧР?',
-  firstTimeDesc: 'Специально для вас мы создали раздел, в котором собрали всю полезную информацию, чтобы помочь сделать ваше путешествие по нашей удивительной республике комфортным, интересным и незабываемым!',
+  firstTimeTitle: 'Впервые в КЧР?',
+  firstTimeDesc: 'Специально для вас нами собрана вся необходимая информация, чтобы знакомство с нашей удивительной республикой было легким, насыщенным и вдохновляющим, а путешествие по ней — комфортным, интересным и незабываемым.',
+  firstTimeTabs: [],
   servicesTitle: 'СЕРВИС И УСЛУГИ',
   servicesButtonLink: '/services',
   servicesCardsLimit: 8,
@@ -72,9 +88,20 @@ const DEFAULT_HOME_CONTENT = {
 
 export default function Main_page() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [places, setPlaces] = useState([])
   const [placesLoading, setPlacesLoading] = useState(true)
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT)
+  const [emergencyTabKey, setEmergencyTabKey] = useState(null)
+  const [emergencyScrollId, setEmergencyScrollId] = useState(null)
+
+  useEffect(() => {
+    const section = location.state?.emergencySection
+    if (section) {
+      setEmergencyTabKey('emergency')
+      setEmergencyScrollId(`emergency-${section}`)
+    }
+  }, [location.state])
 
   useEffect(() => {
     let cancelled = false
@@ -161,6 +188,22 @@ export default function Main_page() {
       <SliderFullScreen />
 
       <div className={styles.content}>
+        <div className={styles.firstTime} id="firstTime">
+          <CenterBlock>
+            <TitleButton
+              title={homeContent.firstTimeTitle}
+              desc={homeContent.firstTimeDesc}
+            />
+          </CenterBlock>
+          <CenterBlock>
+            <FirstTimeTabs
+              tabs={(homeContent.firstTimeTabs || []).filter(t => t.type !== 'climate')}
+              activeTabKey={emergencyTabKey}
+              scrollToId={emergencyScrollId}
+            />
+          </CenterBlock>
+        </div>
+
         <CenterBlock>
           <TitleButton title={homeContent.routesTitle} buttonLink={homeContent.routesButtonLink} />
         </CenterBlock>
@@ -238,22 +281,32 @@ export default function Main_page() {
                     height: isFullWidth ? 'fit-content' : '300px', // Фиксированная высота для ParallaxImage
                   };
 
-                  const BannerComponent = isExternal ? 'a' : Link;
-                  const bannerProps = isExternal
+                  const hasButton = !!banner.buttonText;
+                  const BannerComponent = hasButton ? 'div' : (isExternal ? 'a' : Link);
+                  const bannerProps = hasButton
+                    ? {}
+                    : isExternal
+                      ? { href: banner.link, target: '_blank', rel: 'noopener noreferrer' }
+                      : { to: banner.link || '#' };
+
+                  const BtnComponent = isExternal ? 'a' : Link;
+                  const btnProps = isExternal
                     ? { href: banner.link, target: '_blank', rel: 'noopener noreferrer' }
                     : { to: banner.link || '#' };
+
+                  const hasBtn2 = !!banner.button2Text;
+                  const isBtn2External = banner.button2Link && (banner.button2Link.startsWith('http://') || banner.button2Link.startsWith('https://'));
+                  const Btn2Component = isBtn2External ? 'a' : Link;
+                  const btn2Props = isBtn2External
+                    ? { href: banner.button2Link, target: '_blank', rel: 'noopener noreferrer' }
+                    : { to: banner.button2Link || '#' };
 
                   return (
                     <BannerComponent
                       key={banner.id || index}
                       {...bannerProps}
                       style={bannerStyle}
-                    // onMouseEnter={(e) => {
-                    //   e.currentTarget.style.transform = 'translateY(-4px)';
-                    // }}
-                    // onMouseLeave={(e) => {
-                    //   e.currentTarget.style.transform = 'translateY(0)';
-                    // }}
+                      className={hasButton ? styles.bannerWrap : undefined}
                     >
                       <ParallaxImage
                         src={getImageUrl(banner.image) || '/placeholder.png'}
@@ -269,6 +322,40 @@ export default function Main_page() {
                           objectFit: 'cover',
                         }}
                       />
+                      {hasButton && (
+                        <div className={styles.bannerBtns} style={getBtnPosition(banner.buttonPosition)}>
+                          <BtnComponent
+                            {...btnProps}
+                            className={styles.bannerBtn}
+                            style={{
+                              background: banner.buttonBgColor || undefined,
+                              color: banner.buttonTextColor || undefined,
+                              borderRadius: banner.buttonBorderRadius != null ? `${banner.buttonBorderRadius}px` : undefined,
+                            }}
+                          >
+                            {banner.buttonIcon && (
+                              <img src={getImageUrl(banner.buttonIcon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
+                            )}
+                            {banner.buttonText}
+                          </BtnComponent>
+                          {hasBtn2 && (
+                            <Btn2Component
+                              {...btn2Props}
+                              className={styles.bannerBtn}
+                              style={{
+                                background: banner.button2BgColor || undefined,
+                                color: banner.button2TextColor || undefined,
+                                borderRadius: banner.button2BorderRadius != null ? `${banner.button2BorderRadius}px` : undefined,
+                              }}
+                            >
+                              {banner.button2Icon && (
+                                <img src={getImageUrl(banner.button2Icon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
+                              )}
+                              {banner.button2Text}
+                            </Btn2Component>
+                          )}
+                        </div>
+                      )}
                     </BannerComponent>
                   );
                 })}
@@ -276,17 +363,6 @@ export default function Main_page() {
             </CenterBlock>
           );
         })()}
-
-        <CenterBlock>
-          <TitleButton
-            title={homeContent.firstTimeTitle}
-            desc={homeContent.firstTimeDesc}
-          />
-        </CenterBlock>
-
-        <CenterBlock>
-          <SwiperSliderMain />
-        </CenterBlock>
 
         <NewsFullBlock />
 
@@ -325,6 +401,10 @@ export default function Main_page() {
               ))
             )}
           </section>
+        </CenterBlock>
+
+        <CenterBlock>
+          <SwiperSliderMain />
         </CenterBlock>
 
         <div className={styles.imgBG}>

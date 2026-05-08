@@ -5,6 +5,7 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import Footer from './Footer'
+import CookieBanner from '@/components/CookieBanner/CookieBanner'
 import styles from './LayoutWrapper.module.css'
 
 export default function LayoutWrapper({ children }) {
@@ -170,6 +171,7 @@ export default function LayoutWrapper({ children }) {
         <Header />
         {children}
         <Footer />
+        <CookieBanner />
       </div>
     </>
   )

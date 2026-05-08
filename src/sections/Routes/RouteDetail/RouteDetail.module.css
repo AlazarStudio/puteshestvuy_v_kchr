@@ -427,40 +427,48 @@
   margin-top: 50px;
 }
 
-.routeBlock_anchors {
-  width: 480px;
-  background-color: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  position: sticky;
-  top: 100px;
-  align-self: flex-start;
+.routeBlock_right {
+  width: 380px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 16px;
+  align-self: flex-start;
+  position: sticky;
+  top: 100px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-  z-index: 10; /* Добавили z-index для правильного отображения поверх других элементов */
+  z-index: 10;
 }
 
-.routeBlock_anchors::-webkit-scrollbar {
+.routeBlock_right::-webkit-scrollbar {
   width: 6px;
 }
 
-.routeBlock_anchors::-webkit-scrollbar-track {
+.routeBlock_right::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.routeBlock_anchors::-webkit-scrollbar-thumb {
+.routeBlock_right::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
 
-.routeBlock_anchors::-webkit-scrollbar-thumb:hover {
+.routeBlock_right::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+.routeBlock_anchors {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
 
 .anchorsList {
   display: flex;
@@ -1192,15 +1200,127 @@
   gap: 20px;
 }
 
-.guides {
+.guidesSlider {
+  width: 100%;
+}
+
+.guidesBlock {
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.guidesSliderTitle {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: #222;
+}
+
+.guideCard {
+  width: 100%;
+  height: 280px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.guideCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.6) 100%);
+  z-index: 2;
+}
+
+.guideCard_img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.guideCard_img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.guideCard_info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   display: flex;
-  justify-content: space-between;
-  gap: 30px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  color: #fff;
+  z-index: 3;
+}
+
+.guideCard_category {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 12px;
+  background-color: #156A60;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 150%;
+}
+
+.guideCard_rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guideCard_stars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #fff;
+  color: #000;
+  border-radius: 35px;
+  padding: 5px 10px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 5%;
+}
+
+.guideCard_stars img {
+  width: 14px;
+  height: 12px;
+}
+
+.guideCard_reviews {
+  border-radius: 35px;
+  padding: 5px 10px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 5%;
+  border: 2px solid #fff;
+}
+
+.guideCard_name {
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 150%;
+  letter-spacing: 0%;
 }
 
 .guide_man {
-  width: 48%;
+  width: 100%;
   display: flex;
   gap: 30px;
 }
@@ -1339,13 +1459,32 @@
     display: none;
   }
 
+  .routeBlock_right {
+    width: 100%;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
   .routeBlock {
     margin-top: 10px;
+    flex-direction: column;
   }
 
   .routeBlock_content {
     width: 100%;
     gap: 10px;
+  }
+
+  .guidesBlock {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+  }
+
+  .guidesSliderTitle {
+    font-size: 16px;
+    margin-bottom: 14px;
   }
 
   .title {

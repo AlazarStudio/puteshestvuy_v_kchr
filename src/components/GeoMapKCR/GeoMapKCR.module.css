@@ -1,0 +1,13 @@
+.wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.svg {
+  width: 100%;
+  max-width: 720px;
+  min-width: 280px;
+  display: block;
+  margin: 0 auto;
+}

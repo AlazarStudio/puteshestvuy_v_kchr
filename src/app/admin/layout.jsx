@@ -1,21 +1,22 @@
 import { useState, useEffect, createContext } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  Map, 
-  MapPin, 
-  Newspaper, 
-  Building2, 
+import {
+  LayoutDashboard,
+  Map,
+  MapPin,
+  Newspaper,
+  Building2,
   Star,
   ClipboardList,
   LogOut,
   ChevronLeft,
   ChevronRight,
   FileText,
-  Users
+  Users,
+  Lightbulb,
 } from 'lucide-react';
-import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI } from '@/lib/api';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI } from '@/lib/api';
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
@@ -32,6 +33,7 @@ const menuItems = [
   { href: '/admin/bookings', label: 'Бронирования', icon: ClipboardList, key: 'bookings' },
   { href: '/admin/reviews', label: 'Отзывы', icon: Star, key: 'reviews' },
   { href: '/admin/users', label: 'Пользователи', icon: Users, key: 'users' },
+  { href: '/admin/suggestions', label: 'Предложения', icon: Lightbulb, key: 'suggestions' },
 ];
 
 export default function AdminLayout() {
@@ -51,6 +53,7 @@ export default function AdminLayout() {
     bookings: null,
     reviews: null,
     users: null,
+    suggestions: null,
   });
 
   useEffect(() => {
@@ -87,7 +90,7 @@ export default function AdminLayout() {
 
     const fetchCounts = async () => {
       try {
-        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes] = await Promise.all([
+        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes, suggestionsRes] = await Promise.all([
           placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
@@ -95,6 +98,7 @@ export default function AdminLayout() {
           adminBookingsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminUsersAPI.getAll({ page: 1, limit: 1, includeSuperadmin: 'true' }).catch(() => ({ data: { pagination: { total: 0 } } })),
+          adminSuggestionsAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
         ]);
 
         setCounts({
@@ -105,6 +109,7 @@ export default function AdminLayout() {
           bookings: bookingsRes.data?.pagination?.total ?? 0,
           reviews: reviewsRes.data?.pagination?.total ?? 0,
           users: usersRes.data?.pagination?.total ?? 0,
+          suggestions: suggestionsRes.data?.count ?? 0,
         });
       } catch (error) {
         console.error('Ошибка загрузки счетчиков:', error);
@@ -198,7 +203,8 @@ export default function AdminLayout() {
                   part === 'users' ? 'Пользователи' :
                   part === 'pages' ? 'Страницы сайта' :
                   part === 'region' ? 'О регионе' :
-                  part === 'footer' ? 'Подвал сайта' : part;
+                  part === 'footer' ? 'Подвал сайта' :
+                  part === 'suggestions' ? 'Предложения' : part;
               const href = '/' + arr.slice(0, index + 1).join('/');
               return (
                 <span key={index}>

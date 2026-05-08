@@ -10,6 +10,7 @@ import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
+import SuggestPlaceModal from '@/components/SuggestPlaceModal/SuggestPlaceModal'
 import { publicPlacesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -52,6 +53,7 @@ export default function Places_page() {
   // searchQuery — из URL
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '')
 
+  const [suggestModalOpen, setSuggestModalOpen] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
@@ -797,6 +799,20 @@ export default function Places_page() {
           </div>
         </section>
       </CenterBlock>
+
+      <CenterBlock>
+        <div className={styles.suggestBanner}>
+          <div className={styles.suggestBannerText}>
+            <strong>Знаете интересное место, которого здесь нет?</strong>
+            <span>Предложите его — мы рассмотрим и опубликуем на платформе.</span>
+          </div>
+          <button className={styles.suggestBannerBtn} onClick={() => setSuggestModalOpen(true)}>
+            Предложить место
+          </button>
+        </div>
+      </CenterBlock>
+
+      <SuggestPlaceModal isOpen={suggestModalOpen} onClose={() => setSuggestModalOpen(false)} />
 
       <PlaceModal
         isOpen={isModalOpen}

@@ -11,6 +11,12 @@
   margin: 90px 0 0;
 }
 
+.firstTime {
+  display: flex;
+  flex-direction: column;
+  gap: 90px;
+}
+
 .flexBlock {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -63,6 +69,10 @@
     margin-top: 72px;
   }
 
+  .firstTime {
+    gap: 72px;
+  }
+
   .flexBlock {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px;
@@ -96,6 +106,10 @@
     margin-top: 20px;
   }
 
+  .firstTime {
+    gap: 20px;
+  }
+
   .flexBlock {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -117,4 +131,42 @@
   .imgBG{
     margin-top: 0;
   }
+}
+
+.bannerWrap {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bannerBtns {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bannerBtn {
+  background: #0d9488;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 26px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bannerBtn:hover {
+  transform: translateY(-2px);
 }

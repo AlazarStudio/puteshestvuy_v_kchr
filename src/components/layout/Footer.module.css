@@ -197,6 +197,22 @@
   max-width: 100%;
 }
 
+.emergencyBtn {
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: all 0.3s ease-in-out;
+}
+
+.emergencyBtn:hover {
+  border-bottom: 1px solid #fff;
+}
+
 /* Ноутбуки 1024–1399px */
 @media (min-width: 1024px) and (max-width: 1399px) {
   .footer {

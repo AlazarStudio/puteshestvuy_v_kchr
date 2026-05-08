@@ -79,6 +79,20 @@ function ThumbnailItem({ slide, placeHref, styles, maxOffset = 10, scale = 1.02 
   )
 }
 
+function makeIntroSlide(bgImage = '/mountainBG.png') {
+  return {
+    id: 'intro',
+    isIntro: true,
+    image: bgImage,
+    video: null,
+    place: 'Путешествие по Карачаево-Черкесии начинается здесь',
+    title: 'Карачаево-Черкесская Республика',
+    description: 'Удивительные места, захватывающие маршруты и яркие точки притяжения региона.',
+    rating: null,
+    reviewsCount: 0,
+  }
+}
+
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
   const mainImage = place.images?.[0] ?? place.image
@@ -122,14 +136,16 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
     let cancelled = false
     setIsLoading(true)
 
-    // Сначала проверяем, есть ли выбранные места в настройках главной страницы
+    let introSlide = makeIntroSlide()
+
     publicHomeAPI.get()
       .then(({ data }) => {
         if (cancelled) return
+        const bgImage = data?.backgroundImage ? getImageUrl(data.backgroundImage) : '/mountainBG.png'
+        introSlide = makeIntroSlide(bgImage)
         const sliderPlaces = data?.sliderPlaces || []
 
         if (sliderPlaces.length > 0) {
-          // Загружаем полные данные мест по их ID, чтобы получить актуальные images[0]
           const placeIds = sliderPlaces.map(p => p.placeId || p.id).filter(Boolean)
           if (placeIds.length > 0) {
             return publicPlacesAPI.getAll({ limit: 500 })
@@ -138,18 +154,15 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                 const allPlaces = res.data?.items || res.data || []
                 const placesMap = new Map(allPlaces.map(p => [p.id, p]))
 
-                // Используем выбранные места из настроек, но берем актуальные данные из API
                 const list = sliderPlaces
                   .map((savedPlace) => {
                     const placeId = savedPlace.placeId || savedPlace.id
                     const fullPlace = placesMap.get(placeId)
 
-                    // Используем полные данные места, если они есть
                     if (fullPlace) {
                       return placeToSlide(fullPlace)
                     }
 
-                    // Если место не найдено в API, используем сохраненные данные как fallback
                     const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
                     const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
                     return {
@@ -167,8 +180,8 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                   .filter(Boolean)
 
                 if (list.length > 0) {
-                  setSlides(list)
-                  initialSlidesRef.current = list
+                  setSlides([introSlide, ...list])
+                  initialSlidesRef.current = [introSlide, ...list]
                   setIsLoading(false)
                   return Promise.resolve()
                 }
@@ -176,33 +189,31 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
           }
         }
 
-        // Если выбранных мест нет, загружаем из API
         return publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
           .then((res) => {
             if (cancelled) return
             const items = res.data?.items || res.data || []
             const list = items.map(placeToSlide)
             if (list.length > 0) {
-              setSlides(list)
-              initialSlidesRef.current = list
+              setSlides([introSlide, ...list])
+              initialSlidesRef.current = [introSlide, ...list]
             }
           })
       })
       .catch(() => {
         if (!cancelled) {
-          // В случае ошибки загрузки настроек, пробуем загрузить места напрямую
           publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
             .then((res) => {
               if (cancelled) return
               const items = res.data?.items || res.data || []
               const list = items.map(placeToSlide)
               if (list.length > 0) {
-                setSlides(list)
-                initialSlidesRef.current = list
+                setSlides([introSlide, ...list])
+                initialSlidesRef.current = [introSlide, ...list]
               }
             })
             .catch(() => {
-              if (!cancelled) setSlides([])
+              if (!cancelled) setSlides([introSlide])
             })
             .finally(() => {
               if (!cancelled) setIsLoading(false)
@@ -307,7 +318,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
   const currentSlideNumber = currentSlideIndex >= 0 ? currentSlideIndex + 1 : 1
   const formattedSlideNumber = String(currentSlideNumber).padStart(2, '0')
 
-  const placeHref = (slide) => `/places/${slide.slug || slide.id}`
+  const placeHref = (slide) => slide.isIntro ? '/' : `/places/${slide.slug || slide.id}`
 
   if (isLoading) {
     return (
@@ -398,9 +409,12 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
               )}
             </div>
             <div className={styles.content}>
-              <div className={styles.place}><img src="/place.png" alt="" />{slide.place}</div>
+              <div className={styles.place}>
+                {!slide.isIntro && <img src="/place.png" alt="" />}
+                {slide.place}
+              </div>
               <div className={styles.title}>{slide.title}</div>
-              {slide.rating != null && (
+              {!slide.isIntro && slide.rating != null && (
                 <div className={styles.topic}>
                     <div className={styles.stars}>
                       <img src="/star.png" alt="" />
@@ -415,16 +429,27 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
                 </div>
               )}
               <div className={styles.des}>
-                {slide.description ? (
+                {slide.isIntro ? (
+                  slide.description
+                ) : slide.description ? (
                   <RichTextContent html={slide.description} />
                 ) : (
                   'Интересное место в Карачаево-Черкесии.'
                 )}
               </div>
               <div className={styles.buttons}>
-                <Link to={placeHref(slide)} className={styles.ctaLink}>
-                  Начать путешествие
-                </Link>
+                {slide.isIntro ? (
+                  <button
+                    onClick={() => document.getElementById('firstTime')?.scrollIntoView({ behavior: 'smooth' })}
+                    className={styles.ctaLinkIntro}
+                  >
+                    Начать путешествие
+                  </button>
+                ) : (
+                  <Link to={placeHref(slide)} className={styles.ctaLink}>
+                    Начать путешествие
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -435,10 +460,12 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
       <div className={styles.thumbnail}>
         {thumbnailSlides.map((slide) => (
           <div key={slide.id} className={styles.item}>
-            <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
-              <RouteConstructorButton placeId={slide.id} />
-              <FavoriteButton entityType="place" entityId={slide.id} />
-            </div>
+            {!slide.isIntro && (
+              <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
+                <RouteConstructorButton placeId={slide.id} />
+                <FavoriteButton entityType="place" entityId={slide.id} />
+              </div>
+            )}
             <ThumbnailItem
               slide={slide}
               placeHref={placeHref}

@@ -68,6 +68,7 @@ const LABEL_TO_URL_FILTER = {
   МВД: 'police',
   'Пожарная охрана': 'fire-department',
   Музеи: 'museums',
+  'Оплата картой': 'card-payment',
 }
 
 const URL_FILTER_TO_LABEL = {
@@ -87,6 +88,7 @@ const URL_FILTER_TO_LABEL = {
   police: 'МВД',
   'fire-department': 'Пожарная охрана',
   museums: 'Музеи',
+  'card-payment': 'Оплата картой',
 }
 
 const filterGroups = [
@@ -94,6 +96,8 @@ const filterGroups = [
   { key: 'service', label: 'Сервис', options: SERVICE_FILTER_OPTIONS },
   { key: 'emergency', label: 'Экстренные службы', options: EMERGENCY_FILTER_OPTIONS },
 ]
+
+const HOTEL_FILTER_GROUP = { key: 'hotelFilters', label: 'Параметры гостиниц', options: ['Оплата картой'] }
 
 function areFiltersEqual(a = {}, b = {}) {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)])
@@ -119,13 +123,15 @@ export default function Services_page() {
 
   const [filters, setFilters] = useState(() => {
     const filterValues = searchParams.getAll('filter')
-    const result = { articles: [], service: [], emergency: [] }
+    const result = { articles: [], service: [], emergency: [], hotelFilters: [] }
 
     filterValues.forEach((fv) => {
       const label = URL_FILTER_TO_LABEL[fv]
       if (!label) return
       if (label === 'Статьи') {
         result.articles = ['Статьи']
+      } else if (label === 'Оплата картой') {
+        result.hotelFilters = ['Оплата картой']
       } else if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
         if (!result.emergency.includes(label)) result.emergency.push(label)
       } else {
@@ -137,6 +143,7 @@ export default function Services_page() {
       articles: result.articles,
       service: result.service,
       emergency: result.emergency,
+      hotelFilters: result.hotelFilters,
     }
   })
 
@@ -174,13 +181,15 @@ export default function Services_page() {
 
   const getFiltersFromUrl = useCallback(() => {
     const filterValues = searchParams.getAll('filter')
-    const result = { articles: [], service: [], emergency: [] }
+    const result = { articles: [], service: [], emergency: [], hotelFilters: [] }
 
     filterValues.forEach((fv) => {
       const label = URL_FILTER_TO_LABEL[fv]
       if (!label) return
       if (label === 'Статьи') {
         result.articles = ['Статьи']
+      } else if (label === 'Оплата картой') {
+        result.hotelFilters = ['Оплата картой']
       } else if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
         if (!result.emergency.includes(label)) result.emergency.push(label)
       } else {
@@ -192,6 +201,7 @@ export default function Services_page() {
       articles: result.articles,
       service: result.service,
       emergency: result.emergency,
+      hotelFilters: result.hotelFilters,
     }
   }, [searchParams])
 
@@ -260,6 +270,7 @@ export default function Services_page() {
     const articles = newFilters.articles || []
     const service = newFilters.service || []
     const emergency = newFilters.emergency || []
+    const hotelFilters = newFilters.hotelFilters || []
 
     const filterValues = []
     if (articles.includes('Статьи')) filterValues.push('articles')
@@ -269,6 +280,10 @@ export default function Services_page() {
     })
     emergency.forEach((e) => {
       const v = LABEL_TO_URL_FILTER[e]
+      if (v) filterValues.push(v)
+    })
+    hotelFilters.forEach((h) => {
+      const v = LABEL_TO_URL_FILTER[h]
       if (v) filterValues.push(v)
     })
 
@@ -284,11 +299,20 @@ export default function Services_page() {
   // Важно: не обновлять filters, если они те же (как в Routes/Places)
   const handleFiltersChange = useCallback((next) => {
     setFilters((prev) => {
+      const hotelsStillActive = (next.service || []).includes('Гостиницы')
+      if (!hotelsStillActive && (next.hotelFilters || []).length > 0) {
+        next = { ...next, hotelFilters: [] }
+      }
       const same = areFiltersEqual(prev, next)
       if (!same) applyFiltersToUrl(next)
       return same ? prev : next
     })
   }, [applyFiltersToUrl])
+
+  const computedFilterGroups = useMemo(() => {
+    const hotelsActive = (filters.service || []).includes('Гостиницы')
+    return hotelsActive ? [...filterGroups, HOTEL_FILTER_GROUP] : filterGroups
+  }, [filters.service])
 
   const buildCategoryParams = useCallback(() => {
     const serviceSelected = (filters.service || []).map((v) => FILTER_TO_CATEGORY[v] || v)
@@ -316,12 +340,15 @@ export default function Services_page() {
           ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
         })
 
+      const cardPaymentFilter = (filters.hotelFilters || []).includes('Оплата картой')
+
       const fetchServices = (cats) =>
         publicServicesAPI.getAll({
           page,
           limit: ITEMS_PER_PAGE,
           ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
           ...(cats?.length > 0 && { category: cats }),
+          ...(cardPaymentFilter && { cardPayment: true }),
           ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
         })
 
@@ -629,7 +656,7 @@ export default function Services_page() {
         <section className={styles.flexBlock}>
           {/* Desktop filter */}
           <FilterBlock
-            filterGroups={filterGroups}
+            filterGroups={computedFilterGroups}
             filters={filters}
             onFiltersChange={handleFiltersChange}
             searchQuery={searchQuery}
@@ -642,7 +669,7 @@ export default function Services_page() {
 
           {/* Mobile filter */}
           <FilterBlockMobile
-            filterGroups={filterGroups}
+            filterGroups={computedFilterGroups}
             filters={filters}
             onFiltersChange={handleFiltersChange}
             searchQuery={searchQuery}

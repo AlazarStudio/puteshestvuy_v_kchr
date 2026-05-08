@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { Upload, Plus, X, Pencil, GripVertical, Image, Route, Calendar, HelpCircle, Briefcase, MapPin, Layers, Megaphone, ExternalLink } from 'lucide-react';
+import { Upload, Plus, X, Pencil, GripVertical, Image, Route, Calendar, HelpCircle, Briefcase, MapPin, Layers, Megaphone } from 'lucide-react';
 import { homeAPI, mediaAPI, placesAPI, newsAPI, getImageUrl } from '@/lib/api';
 import { stripHtml } from '@/lib/utils';
 import { AdminHeaderRightContext } from '../layout';
@@ -57,6 +57,38 @@ const DEFAULT_CONTENT = {
   firstTimeTitle: 'ВПЕРВЫЕ В КЧР?',
   firstTimeDesc: 'Специально для вас мы создали раздел, в котором собрали всю полезную информацию, чтобы помочь сделать ваше путешествие по нашей удивительной республике комфортным, интересным и незабываемым!',
   firstTimeArticles: [], // Массив выбранных статей для секции "ВПЕРВЫЕ В КЧР?"
+  firstTimeTabs: [
+    {
+      key: 'geography', label: 'География', type: 'geography',
+      geographySections: [
+        { key: 'geo_desc', label: 'География', content: '' },
+        { key: 'climate_info', label: 'Климат', content: '' },
+        { key: 'time', label: 'Время', content: '' },
+        { key: 'flight_time', label: 'Время перелёта', content: '' },
+        { key: 'culture', label: 'Национально-культурные особенности региона', content: '' },
+        { key: 'tourism', label: 'Виды туризма', content: '' },
+        { key: 'cities', label: 'Крупнейшие города республики', content: '' },
+      ],
+    },
+    {
+      key: 'transport', label: 'Транспорт', type: 'transport', content: '',
+      transportTabs: [
+        { key: 'plane', label: 'Самолёт', content: '' },
+        { key: 'train', label: 'Поезд', content: '' },
+        { key: 'car', label: 'Автомобиль', content: '' },
+        { key: 'water', label: 'Водный транспорт', content: '' },
+      ],
+    },
+    {
+      key: 'emergency', label: 'Экстренные службы', type: 'emergency',
+      emergencySections: [
+        { key: 'medhelp', label: 'Пункты медпомощи', content: '' },
+        { key: 'mvd', label: 'МВД', content: '' },
+        { key: 'fire', label: 'Пожарная охрана', content: '' },
+      ],
+    },
+    { key: 'oopt', label: 'Посещение особо охраняемых природных территорий', type: 'oopt', content: '' },
+  ],
   servicesTitle: 'СЕРВИС И УСЛУГИ',
   servicesButtonLink: '/services',
   servicesCardsLimit: 8, // Максимальное количество карточек услуг в каждом табе
@@ -67,6 +99,42 @@ const DEFAULT_CONTENT = {
   sliderPlaces: [], // Массив выбранных мест для главного слайдера
   banners: [], // Массив баннеров: [{ id, image, link, isActive, isPermanent }]
 };
+
+function ensureFirstTimeTabs(saved) {
+  return DEFAULT_CONTENT.firstTimeTabs.map(def => {
+    const found = (saved || []).find(t => t.key === def.key)
+    if (!found) return def
+    if (def.type === 'geography') {
+      return {
+        ...def,
+        geographySections: def.geographySections.map(defSec => {
+          const foundSec = (found.geographySections || []).find(s => s.key === defSec.key)
+          return foundSec ? { ...defSec, content: foundSec.content || '' } : defSec
+        }),
+      }
+    }
+    if (def.type === 'transport') {
+      return {
+        ...def,
+        content: found.content || '',
+        transportTabs: def.transportTabs.map(defSub => {
+          const foundSub = (found.transportTabs || []).find(s => s.key === defSub.key)
+          return foundSub ? { ...defSub, content: foundSub.content || '' } : defSub
+        }),
+      }
+    }
+    if (def.type === 'emergency') {
+      return {
+        ...def,
+        emergencySections: def.emergencySections.map(defSec => {
+          const foundSec = (found.emergencySections || []).find(s => s.key === defSec.key)
+          return foundSec ? { ...defSec, content: foundSec.content || '' } : defSec
+        }),
+      }
+    }
+    return { ...def, content: found.content || '' }
+  })
+}
 
 function ensureContent(c) {
   return {
@@ -84,6 +152,7 @@ function ensureContent(c) {
     firstTimeTitle: c?.firstTimeTitle ?? DEFAULT_CONTENT.firstTimeTitle,
     firstTimeDesc: c?.firstTimeDesc ?? DEFAULT_CONTENT.firstTimeDesc,
     firstTimeArticles: Array.isArray(c?.firstTimeArticles) ? c.firstTimeArticles : [],
+    firstTimeTabs: ensureFirstTimeTabs(c?.firstTimeTabs),
     servicesTitle: c?.servicesTitle ?? DEFAULT_CONTENT.servicesTitle,
     servicesButtonLink: c?.servicesButtonLink ?? DEFAULT_CONTENT.servicesButtonLink,
     servicesCardsLimit: typeof c?.servicesCardsLimit === 'number' && c.servicesCardsLimit > 0 ? c.servicesCardsLimit : DEFAULT_CONTENT.servicesCardsLimit,
@@ -255,7 +324,7 @@ export default function AdminHomePage() {
       let contentToSave = JSON.parse(JSON.stringify(content));
       const paths = Object.keys(pendingImages);
       for (const path of paths) {
-        const { file, preview } = pendingImages[path];
+        const { file } = pendingImages[path];
         try {
           const fd = new FormData();
           fd.append('file', file);
@@ -347,6 +416,40 @@ export default function AdminHomePage() {
       return next;
     });
   };
+
+  const updateGeographySection = (tabIndex, sectionKey, value) => {
+    setContent(prev => {
+      const next = JSON.parse(JSON.stringify(prev))
+      const tab = next.firstTimeTabs[tabIndex]
+      if (tab?.geographySections) {
+        const idx = tab.geographySections.findIndex(s => s.key === sectionKey)
+        if (idx >= 0) tab.geographySections[idx].content = value
+      }
+      return next
+    })
+  }
+
+  const updateEmergencySection = (tabIndex, sectionKey, value) => {
+    setContent(prev => {
+      const next = JSON.parse(JSON.stringify(prev))
+      const tab = next.firstTimeTabs[tabIndex]
+      if (tab?.emergencySections) {
+        const idx = tab.emergencySections.findIndex(s => s.key === sectionKey)
+        if (idx >= 0) tab.emergencySections[idx].content = value
+      }
+      return next
+    })
+  }
+
+  const updateTransportTabContent = (tabIndex, subTabIndex, value) => {
+    setContent(prev => {
+      const next = JSON.parse(JSON.stringify(prev))
+      if (next.firstTimeTabs[tabIndex]?.transportTabs?.[subTabIndex] !== undefined) {
+        next.firstTimeTabs[tabIndex].transportTabs[subTabIndex].content = value
+      }
+      return next
+    })
+  }
 
   const removeArrayItem = (path, index) => {
     setContent((prev) => {
@@ -553,6 +656,18 @@ export default function AdminHomePage() {
       link: '',
       linkType: undefined,
       linkValue: undefined,
+      buttonText: '',
+      buttonIcon: '',
+      buttonBgColor: '#0d9488',
+      buttonTextColor: '#ffffff',
+      buttonBorderRadius: 10,
+      buttonPosition: 'bottom-left',
+      button2Text: '',
+      button2Icon: '',
+      button2BgColor: '#ffffff',
+      button2TextColor: '#0d9488',
+      button2BorderRadius: 10,
+      button2Link: '',
       isActive: true,
     };
     setContent((prev) => ({
@@ -1249,6 +1364,63 @@ export default function AdminHomePage() {
           )}
           </section>
 
+          {/* First Time Tabs Section */}
+          <section className={styles.formSection} style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <HelpCircle size={18} color="#10b981" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#374151', margin: 0 }}>Вкладки «Впервые в КЧР?»</h3>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: 16 }}>
+              Вкладки фиксированы. Редактируйте только содержимое каждой вкладки.
+            </p>
+            {(content.firstTimeTabs || []).map((tab, i) => (
+              <div key={tab.key} className={styles.formGroup} style={{ border: '1px solid #e5e7eb', padding: 16, borderRadius: 10, marginBottom: 12 }}>
+                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', margin: '0 0 14px' }}>{tab.label}</p>
+
+                {tab.type === 'geography' ? (
+                  (tab.geographySections || []).map((section) => (
+                    <div key={section.key} style={{ marginBottom: 16 }}>
+                      <label className={styles.formLabel}>{section.label}</label>
+                      <RichTextEditor
+                        value={section.content || ''}
+                        onChange={(v) => updateGeographySection(i, section.key, v)}
+                        minHeight={120}
+                      />
+                    </div>
+                  ))
+                ) : tab.type === 'transport' ? (
+                  (tab.transportTabs || []).map((subTab, j) => (
+                    <div key={subTab.key} style={{ marginBottom: 16 }}>
+                      <label className={styles.formLabel}>{subTab.label}</label>
+                      <RichTextEditor
+                        value={subTab.content || ''}
+                        onChange={(v) => updateTransportTabContent(i, j, v)}
+                        minHeight={120}
+                      />
+                    </div>
+                  ))
+                ) : tab.type === 'emergency' ? (
+                  (tab.emergencySections || []).map((section) => (
+                    <div key={section.key} style={{ marginBottom: 16 }}>
+                      <label className={styles.formLabel}>{section.label}</label>
+                      <RichTextEditor
+                        value={section.content || ''}
+                        onChange={(v) => updateEmergencySection(i, section.key, v)}
+                        minHeight={120}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <RichTextEditor
+                    value={tab.content || ''}
+                    onChange={(v) => updateArray('firstTimeTabs', i, 'content', v)}
+                    minHeight={150}
+                  />
+                )}
+              </div>
+            ))}
+          </section>
+
           {/* Services Section */}
           <section className={styles.formSection} style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #f1f5f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -1607,13 +1779,187 @@ export default function AdminHomePage() {
                 )}
               </div>
 
-              <div className={styles.formGroup} style={{ marginBottom: 0 }}>
+              <div className={styles.formGroup} style={{ marginBottom: 12 }}>
                 <label className={styles.formLabel}>Ссылка</label>
                 <FooterLinkSelector
                   value={getBannerLinkValue(banner)}
                   onChange={(linkData) => handleBannerLinkChange(i, linkData)}
                 />
               </div>
+
+              <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                <label className={styles.formLabel}>Текст кнопки</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={banner.buttonText || ''}
+                  onChange={(e) => updateBanner(i, 'buttonText', e.target.value)}
+                  placeholder="Например: Подробнее (оставьте пустым, чтобы не показывать кнопку)"
+                />
+              </div>
+
+              {!!banner.buttonText && (
+                <>
+                  <div className={styles.formGroup} style={{ marginBottom: 16 }}>
+                    <label className={styles.formLabel}>Позиция кнопки на баннере</label>
+                    <div style={{ display: 'inline-grid', gridTemplateColumns: 'repeat(3, 36px)', gap: 4, marginTop: 8 }}>
+                      {[
+                        ['top-left','top-center','top-right'],
+                        ['middle-left','middle-center','middle-right'],
+                        ['bottom-left','bottom-center','bottom-right'],
+                      ].map((row) => row.map((pos) => {
+                        const active = (banner.buttonPosition || 'bottom-left') === pos;
+                        return (
+                          <button
+                            key={pos}
+                            type="button"
+                            onClick={() => updateBanner(i, 'buttonPosition', pos)}
+                            title={pos}
+                            style={{
+                              width: 36, height: 36,
+                              border: `2px solid ${active ? '#0d9488' : '#e5e7eb'}`,
+                              borderRadius: 6,
+                              background: active ? '#f0fdf4' : '#fff',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: 0,
+                            }}
+                          >
+                            <div style={{
+                              width: 10, height: 10,
+                              borderRadius: '50%',
+                              background: active ? '#0d9488' : '#d1d5db',
+                            }} />
+                          </button>
+                        );
+                      }))}
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                    <label className={styles.formLabel}>Иконка кнопки (слева от текста)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id={`bannerBtnIconUpload-${i}`}
+                      onChange={(e) => handleFileSelect(`banners.${i}.buttonIcon`, e)}
+                    />
+                    {hasImage(`banners.${i}.buttonIcon`) ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                        <img src={getImageSrc(`banners.${i}.buttonIcon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
+                        <button type="button" onClick={() => document.getElementById(`bannerBtnIconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                        <button type="button" onClick={() => clearImage(`banners.${i}.buttonIcon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <label htmlFor={`bannerBtnIconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+                        <Upload size={18} /> Загрузить иконку
+                      </label>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label className={styles.formLabel}>Цвет фона кнопки</label>
+                      <input
+                        type="color"
+                        value={banner.buttonBgColor || '#0d9488'}
+                        onChange={(e) => updateBanner(i, 'buttonBgColor', e.target.value)}
+                        className={styles.formInput}
+                        style={{ height: 40 }}
+                      />
+                    </div>
+                    <div>
+                      <label className={styles.formLabel}>Цвет текста</label>
+                      <input
+                        type="color"
+                        value={banner.buttonTextColor || '#ffffff'}
+                        onChange={(e) => updateBanner(i, 'buttonTextColor', e.target.value)}
+                        className={styles.formInput}
+                        style={{ height: 40 }}
+                      />
+                    </div>
+                    <div>
+                      <label className={styles.formLabel}>Скругление (px)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={banner.buttonBorderRadius ?? 10}
+                        onChange={(e) => updateBanner(i, 'buttonBorderRadius', parseInt(e.target.value, 10) || 0)}
+                        className={styles.formInput}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '1px dashed #e5e7eb', paddingTop: 16 }}>
+                    <label className={styles.formLabel} style={{ marginBottom: 8, display: 'block' }}>Вторая кнопка (рядом с первой)</label>
+                    <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                      <input
+                        type="text"
+                        className={styles.formInput}
+                        value={banner.button2Text || ''}
+                        onChange={(e) => updateBanner(i, 'button2Text', e.target.value)}
+                        placeholder="Текст второй кнопки (оставьте пустым, чтобы не показывать)"
+                      />
+                    </div>
+
+                    {!!banner.button2Text && (
+                      <>
+                        <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                          <label className={styles.formLabel}>Ссылка второй кнопки</label>
+                          <input
+                            type="text"
+                            className={styles.formInput}
+                            value={banner.button2Link || ''}
+                            onChange={(e) => updateBanner(i, 'button2Link', e.target.value)}
+                            placeholder="/places или https://example.com"
+                          />
+                        </div>
+
+                        <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                          <label className={styles.formLabel}>Иконка второй кнопки</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id={`bannerBtn2IconUpload-${i}`}
+                            onChange={(e) => handleFileSelect(`banners.${i}.button2Icon`, e)}
+                          />
+                          {hasImage(`banners.${i}.button2Icon`) ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                              <img src={getImageSrc(`banners.${i}.button2Icon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
+                              <button type="button" onClick={() => document.getElementById(`bannerBtn2IconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                              <button type="button" onClick={() => clearImage(`banners.${i}.button2Icon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
+                            </div>
+                          ) : (
+                            <label htmlFor={`bannerBtn2IconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+                              <Upload size={18} /> Загрузить иконку
+                            </label>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                          <div>
+                            <label className={styles.formLabel}>Цвет фона</label>
+                            <input type="color" value={banner.button2BgColor || '#ffffff'} onChange={(e) => updateBanner(i, 'button2BgColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
+                          </div>
+                          <div>
+                            <label className={styles.formLabel}>Цвет текста</label>
+                            <input type="color" value={banner.button2TextColor || '#0d9488'} onChange={(e) => updateBanner(i, 'button2TextColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
+                          </div>
+                          <div>
+                            <label className={styles.formLabel}>Скругление (px)</label>
+                            <input type="number" min="0" max="50" value={banner.button2BorderRadius ?? 10} onChange={(e) => updateBanner(i, 'button2BorderRadius', parseInt(e.target.value, 10) || 0)} className={styles.formInput} />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ))}
 

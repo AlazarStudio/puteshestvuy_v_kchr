@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
@@ -15,6 +15,7 @@ const EMPTY_CONTENT = {
 }
 
 export default function Footer() {
+  const navigate = useNavigate()
   const [content, setContent] = useState(EMPTY_CONTENT)
 
   const fetchFooter = useCallback(() => {
@@ -113,6 +114,9 @@ export default function Footer() {
                 <Link key={i} to={url || '#'} className={`${styles.text} ${styles.linkText}`}>{text}</Link>
               )
             })}
+            <button onClick={() => navigate('/', { state: { emergencySection: 'medhelp' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>Пункты медпомощи</button>
+            <button onClick={() => navigate('/', { state: { emergencySection: 'mvd' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>МВД</button>
+            <button onClick={() => navigate('/', { state: { emergencySection: 'fire' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>Пожарная охрана</button>
           </div>
 
           <div className={styles.column}>

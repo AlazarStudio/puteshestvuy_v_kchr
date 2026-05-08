@@ -32,6 +32,7 @@ import AdminPagesPage from '@/app/admin/pages/page'
 import LoginPage from '@/app/login/page'
 import RegisterPage from '@/app/register/page'
 import ProfilePage from '@/app/profile/page'
+import AdminSuggestionsPage from '@/app/admin/suggestions/page'
 
 function PublicLayout() {
   return (
@@ -107,6 +108,7 @@ export default function App() {
         <Route path="pages" element={<AdminPagesPage />} />
         <Route path="region" element={<AdminRegionPage />} />
         <Route path="footer" element={<AdminFooterPage />} />
+        <Route path="suggestions" element={<AdminSuggestionsPage />} />
       </Route>
 
       {/* 404 */}

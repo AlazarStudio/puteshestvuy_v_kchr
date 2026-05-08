@@ -13,7 +13,7 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import ParallaxImage from '@/components/ParallaxImage'
-import { publicRoutesAPI, getImageUrl } from '@/lib/api'
+import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
 function parseWhatToBring(str) {
@@ -36,6 +36,7 @@ export default function RouteDetail({ routeSlug }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [similarRoutes, setSimilarRoutes] = useState([])
+  const [guides, setGuides] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeDay, setActiveDay] = useState(1)
@@ -52,6 +53,12 @@ export default function RouteDetail({ routeSlug }) {
   const routeSwiperRef = useRef(null)
   const scrollPositionRef = useRef(0)
   const anchorsRef = useRef([])
+
+  useEffect(() => {
+    publicServicesAPI.getAll({ category: 'Гид', limit: 100 })
+      .then(({ data }) => { if (data?.items) setGuides(data.items) })
+      .catch(() => { })
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -93,7 +100,7 @@ export default function RouteDetail({ routeSlug }) {
 
   const renderInfoBlockIcon = (groupKey) => {
     const { icon, iconType } = getGroupIcon(groupKey)
-    const fallbackSrc = FALLBACK_ICONS[groupKey]
+    const fallbackSrc = FALLBACK_ICONS[groupKey] || '/routeInfoContentIcon1.png'
     const isUploadIcon = iconType === 'upload' || (icon && (icon.startsWith('http') || icon.startsWith('/')))
     if (icon && isUploadIcon) {
       return <img src={getImageUrl(icon)} alt="" className={styles.routeInfoBlockIcon} />
@@ -328,7 +335,6 @@ export default function RouteDetail({ routeSlug }) {
     { id: 'what-to-take', label: 'Что взять с собой' },
     { id: 'description', label: 'Описание маршрута' },
     { id: 'important', label: 'Важно знать' },
-    ...(route?.guides?.length > 0 ? [{ id: 'guides', label: 'Гиды' }] : []),
     { id: 'reviews', label: 'Отзывы' },
     ...(route?.nearbyPlaces?.length > 0 ? [{ id: 'places', label: 'Места рядом с этим маршрутом' }] : []),
     ...(similarRoutes.length > 0 ? [{ id: 'similar', label: 'Похожие маршруты' }] : []),
@@ -716,6 +722,25 @@ export default function RouteDetail({ routeSlug }) {
                     </div>
                   </Link>
                 )}
+                {routeFilterMeta.extraGroups.map((group) => {
+                  const cfValues = route.customFilters?.[group.key]
+                  if (!Array.isArray(cfValues) || cfValues.length === 0) return null
+                  const display = cfValues.join(', ')
+                  return (
+                    <Link
+                      key={group.key}
+                      to={buildFilterUrl(group.key, cfValues)}
+                      className={styles.item}
+                      style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                    >
+                      {renderInfoBlockIcon(group.key)}
+                      <div className={styles.text}>
+                        <div className={styles.textTitle}>{group.label}</div>
+                        {display !== 'Да' && <div className={styles.textDesc}>{display}</div>}
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
 
               <div id="route" className={styles.title}>Маршрут</div>
@@ -839,35 +864,6 @@ export default function RouteDetail({ routeSlug }) {
                 )}
               </div>
 
-              {route.guides?.length > 0 && (
-                <>
-                  <div id="guides" className={styles.title}>Помогут покорить маршрут</div>
-                  <div className={styles.guides}>
-                    {route.guides.map((guide) => {
-                      const guideHref = `/services/template/guide`
-                      const avatarSrc = guide.images?.[0] ? getImageUrl(guide.images[0]) : '/no-avatar.png'
-                      const ratingStr = guide.rating != null && guide.rating !== '' ? String(guide.rating) : '—'
-                      const n = guide.reviewsCount
-                      const reviewsStr = n != null ? (n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`) : ''
-                      return (
-                        <Link key={guide.id} to={guideHref} className={styles.guide_man}>
-                          <div className={styles.guide_man_img}>
-                            <img src={avatarSrc} alt="" className={styles.guide_man_img_avatar} />
-                            {guide.isVerified && <img src="/verification.png" alt="" className={styles.guide_man_img_verification} />}
-                          </div>
-                          <div className={styles.guide_man_desc}>
-                            <div className={styles.guide_man_title}>{guide.title || 'Гид'}</div>
-                            <div className={styles.guide_man_rating_feedback}>
-                              <div className={styles.guide_man_rating_feedback_item}><img src="/star.png" alt="" /> {ratingStr}</div>
-                              {reviewsStr && <div className={styles.guide_man_rating_feedback_item}>{reviewsStr}</div>}
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
 
               <div id="reviews" className={styles.title}>Отзывы</div>
               <div className={styles.feedback}>
@@ -1042,26 +1038,58 @@ export default function RouteDetail({ routeSlug }) {
               )}
             </div>
 
-            <div className={styles.routeBlock_anchors}>
-              <div className={styles.anchorsList}>
-                {anchors.map((anchor) => (
-                  <button
-                    key={anchor.id}
-                    className={`${styles.anchorItem} ${activeAnchor === anchor.id ? styles.anchorItemActive : ''}`}
-                    onClick={() => scrollToAnchor(anchor.id)}
-                  >
-                    {anchor.label}
-                  </button>
-                ))}
+            <div className={styles.routeBlock_right}>
+              <div className={styles.routeBlock_anchors}>
+                <div className={styles.anchorsList}>
+                  {anchors.map((anchor) => (
+                    <button
+                      key={anchor.id}
+                      className={`${styles.anchorItem} ${activeAnchor === anchor.id ? styles.anchorItemActive : ''}`}
+                      onClick={() => scrollToAnchor(anchor.id)}
+                    >
+                      {anchor.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {/* <div className={styles.anchorsButtons}>
-                <button className={styles.anchorButton}>
-                  Скачать маршрут в PDF
-                </button>
-                <button className={styles.anchorButton}>
-                  Забронировать
-                </button>
-              </div> */}
+              {guides.length > 0 && (
+                <div className={styles.guidesBlock}>
+                  <div className={styles.guidesSliderTitle}>Гиды, которые помогут покорить маршрут</div>
+                  <Swiper
+                    navigation={true}
+                    modules={[Navigation]}
+                    slidesPerView={1}
+                    spaceBetween={10}
+                    className="mySwiperGuides"
+                  >
+                    {guides.map((guide) => {
+                      const guideHref = `/services/${guide.slug || guide.id}`
+                      const imgSrc = guide.images?.[0] ? getImageUrl(guide.images[0]) : '/no-avatar.png'
+                      const n = guide.reviewsCount ?? 0
+                      const hasReviews = n > 0
+                      const ratingStr = hasReviews && guide.rating != null ? String(guide.rating) : null
+                      const reviewsStr = n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`
+                      return (
+                        <SwiperSlide key={guide.id}>
+                          <Link to={guideHref} className={styles.guideCard}>
+                            <div className={styles.guideCard_img}><img src={imgSrc} alt="" /></div>
+                            <div className={styles.guideCard_info}>
+                              <div className={styles.guideCard_category}>Гид</div>
+                              {hasReviews && (
+                                <div className={styles.guideCard_rating}>
+                                  <div className={styles.guideCard_stars}><img src="/star.png" alt="" />{ratingStr}</div>
+                                  <div className={styles.guideCard_reviews}>{reviewsStr}</div>
+                                </div>
+                              )}
+                              <div className={styles.guideCard_name}>{guide.title || 'Гид'}</div>
+                            </div>
+                          </Link>
+                        </SwiperSlide>
+                      )
+                    })}
+                  </Swiper>
+                </div>
+              )}
             </div>
           </div>
         </div>

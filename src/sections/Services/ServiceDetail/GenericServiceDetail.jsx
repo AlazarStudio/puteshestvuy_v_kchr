@@ -56,6 +56,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
     categoryLabel,
     serviceName,
     tags = [],
+    cardPayment = undefined,
     aboutTitle,
     aboutContent,
     sections = [],
@@ -287,11 +288,22 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                       {configReviewsCount != null ? `${configReviewsCount} отзывов` : `${mappedReviews.length} отзывов`}
                     </div>
                   </div>
-                  {tags.length > 0 && (
+                  {(tags.length > 0 || cardPayment !== undefined) && (
                     <div className={`${styles.serviceTags} ${common.serviceTags}`}>
                       {tags.map((tag, i) => (
                         <span key={i} className={`${styles.serviceTag} ${common.serviceTag}`}>{renderMaybeObjectText(tag)}</span>
                       ))}
+                      {cardPayment !== undefined && (
+                        <span
+                          className={`${styles.serviceTag} ${common.serviceTag}`}
+                          style={cardPayment
+                            ? { background: '#d1fae5', color: '#065f46' }
+                            : { background: '#f3f4f6', color: '#6b7280' }
+                          }
+                        >
+                          {cardPayment ? '💳 Оплата картой' : '💵 Только наличные'}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

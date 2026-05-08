@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
-import { placesAPI, mediaAPI, placeFiltersAPI, getImageUrl } from '@/lib/api';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical, CheckCircle, XCircle } from 'lucide-react';
+import { placesAPI, mediaAPI, placeFiltersAPI, adminSuggestionsAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -50,7 +50,9 @@ function formSnapshotsEqual(a, b) {
 export default function PlaceEditPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const isNew = params.id === 'new';
+  const suggestionId = searchParams.get('suggestionId');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -103,6 +105,10 @@ export default function PlaceEditPage() {
   const [pendingSliderVideo, setPendingSliderVideo] = useState(null);
   const [pendingGallery, setPendingGallery] = useState([]);
   const [savedVersion, setSavedVersion] = useState(0);
+  const [suggestion, setSuggestion] = useState(null);
+  const [suggestionActionLoading, setSuggestionActionLoading] = useState(false);
+  const [suggestionRejectOpen, setSuggestionRejectOpen] = useState(false);
+  const [suggestionRejectComment, setSuggestionRejectComment] = useState('');
   const previewUploadRef = useRef(null);
   const savedFormDataRef = useRef(null);
   const pendingImagesRef = useRef(pendingImages);
@@ -160,6 +166,39 @@ export default function PlaceEditPage() {
       fetchPlace();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (!suggestionId) return;
+    adminSuggestionsAPI.getById(suggestionId)
+      .then(({ data }) => setSuggestion(data))
+      .catch(() => {});
+  }, [suggestionId]);
+
+  const handleSuggestionApprove = async () => {
+    setSuggestionActionLoading(true);
+    try {
+      await adminSuggestionsAPI.confirmApprove(suggestionId);
+      setSuggestion((prev) => ({ ...prev, status: 'approved' }));
+    } catch {
+      // ignore
+    } finally {
+      setSuggestionActionLoading(false);
+    }
+  };
+
+  const handleSuggestionReject = async () => {
+    setSuggestionActionLoading(true);
+    try {
+      await adminSuggestionsAPI.update(suggestionId, { status: 'rejected', adminComment: suggestionRejectComment });
+      setSuggestion((prev) => ({ ...prev, status: 'rejected' }));
+      setSuggestionRejectOpen(false);
+      setSuggestionRejectComment('');
+    } catch {
+      // ignore
+    } finally {
+      setSuggestionActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!setBreadcrumbLabel) return;
@@ -700,6 +739,66 @@ export default function PlaceEditPage() {
           {isNew ? 'Новое место' : 'Редактирование места'}
         </h1>
       </div>
+
+      {suggestion && (
+        <div style={{
+          marginBottom: 20,
+          padding: '16px 20px',
+          borderRadius: 12,
+          background: suggestion.status === 'approved' ? '#f0fdf4' : suggestion.status === 'rejected' ? '#fef2f2' : '#eff6ff',
+          border: `1px solid ${suggestion.status === 'approved' ? '#bbf7d0' : suggestion.status === 'rejected' ? '#fecaca' : '#bfdbfe'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: 2 }}>
+              Место создано из предложения пользователя
+              {suggestion.submitterName && ` — ${suggestion.submitterName}`}
+              {suggestion.submitterEmail && ` (${suggestion.submitterEmail})`}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+              {suggestion.status === 'in_review' && 'Примите решение: одобрить или отклонить заявку'}
+              {suggestion.status === 'approved' && '✓ Заявка одобрена'}
+              {suggestion.status === 'rejected' && '✗ Заявка отклонена'}
+            </div>
+          </div>
+          {suggestion.status === 'in_review' && (
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button
+                type="button"
+                disabled={suggestionActionLoading}
+                onClick={handleSuggestionApprove}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', background: '#0d9488', color: '#fff',
+                  border: 'none', borderRadius: 8, fontFamily: 'inherit',
+                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                  opacity: suggestionActionLoading ? 0.6 : 1,
+                }}
+              >
+                <CheckCircle size={15} /> Одобрить
+              </button>
+              <button
+                type="button"
+                disabled={suggestionActionLoading}
+                onClick={() => setSuggestionRejectOpen(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', background: '#fef2f2', color: '#dc2626',
+                  border: '1px solid #fecaca', borderRadius: 8, fontFamily: 'inherit',
+                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                  opacity: suggestionActionLoading ? 0.6 : 1,
+                }}
+              >
+                <XCircle size={15} /> Отклонить
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <form id="place-form" onSubmit={handleSubmit} className={styles.formContainer}>
         {error && <div className={styles.error}>{error}</div>}
@@ -1498,6 +1597,64 @@ export default function PlaceEditPage() {
       {showToast && (
         <div className={styles.toast} role="status">
           Изменения успешно сохранены
+        </div>
+      )}
+
+      {/* Модалка: отклонение заявки */}
+      {suggestionRejectOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          z: 10020, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 10020, padding: 20,
+        }} onClick={() => setSuggestionRejectOpen(false)}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: 28, width: 440, maxWidth: '100%',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>
+              Отклонить заявку
+            </h3>
+            <p style={{ margin: '0 0 14px', fontSize: '0.875rem', color: '#64748b' }}>
+              Укажите причину отклонения (необязательно):
+            </p>
+            <textarea
+              value={suggestionRejectComment}
+              onChange={(e) => setSuggestionRejectComment(e.target.value)}
+              placeholder="Причина отклонения..."
+              rows={4}
+              style={{
+                width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
+                borderRadius: 10, fontSize: '0.875rem', resize: 'vertical',
+                background: '#f8fafc', boxSizing: 'border-box', marginBottom: 16,
+                fontFamily: 'inherit',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setSuggestionRejectOpen(false)}
+                style={{
+                  padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: 10,
+                  background: '#f8fafc', fontSize: '0.875rem', cursor: 'pointer',
+                  color: '#64748b', fontFamily: 'inherit',
+                }}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                disabled={suggestionActionLoading}
+                onClick={handleSuggestionReject}
+                style={{
+                  padding: '10px 20px', background: '#fef2f2', color: '#dc2626',
+                  border: '1px solid #fecaca', borderRadius: 10, fontSize: '0.875rem',
+                  fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  opacity: suggestionActionLoading ? 0.6 : 1,
+                }}
+              >
+                Отклонить
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

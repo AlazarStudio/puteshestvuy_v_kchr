@@ -13,6 +13,7 @@ export default function ServicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
   const [togglingId, setTogglingId] = useState(null);
@@ -74,6 +75,7 @@ export default function ServicesPage() {
     setIsLoading(true);
     try {
       const params = { page, limit, search: searchQuery };
+      if (categoryFilter) params.category = categoryFilter;
       if (sortBy) {
         params.sortBy = sortBy;
         params.sortOrder = sortOrder;
@@ -191,7 +193,7 @@ export default function ServicesPage() {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, limit]);
+  }, [searchQuery, categoryFilter, limit]);
 
   const handleDeleteClick = (id) => {
     setConfirmModal({
@@ -274,6 +276,31 @@ export default function ServicesPage() {
             <input type="text" placeholder="Поиск услуг..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={styles.searchInput} aria-label="Поиск услуг" />
             <Search size={18} className={styles.searchIcon} aria-hidden />
           </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className={styles.limitSelect}
+            style={{ minWidth: 180 }}
+            aria-label="Фильтр по категории"
+          >
+            <option value="">Все категории</option>
+            <option value="Гид">Гид</option>
+            <option value="Активности">Активности</option>
+            <option value="Прокат оборудования">Прокат оборудования</option>
+            <option value="Гостиница">Гостиница</option>
+            <option value="Кафе и ресторан">Кафе и ресторан</option>
+            <option value="Музей">Музей</option>
+            <option value="Сувениры">Сувениры</option>
+            <option value="Торговая точка">Торговая точка</option>
+            <option value="Придорожный пункт">Придорожный пункт</option>
+            <option value="Трансфер">Трансфер</option>
+            <option value="АЗС">АЗС</option>
+            <option value="Санитарные узлы">Санитарные узлы</option>
+            <option value="Пункт медпомощи">Пункт медпомощи</option>
+            <option value="МВД">МВД</option>
+            <option value="Пожарная охрана">Пожарная охрана</option>
+            <option value="Туроператор">Туроператор</option>
+          </select>
           <Link to="/admin/services/new" className={styles.addBtn}><Plus size={18} /> Добавить услугу</Link>
         </div>
       </div>
