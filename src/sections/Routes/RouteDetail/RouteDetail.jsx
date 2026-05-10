@@ -15,6 +15,7 @@ import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import ParallaxImage from '@/components/ParallaxImage'
 import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
+import { exportRoutePDF } from '@/utils/exportRoutePDF'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
@@ -604,6 +605,9 @@ export default function RouteDetail({ routeSlug }) {
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
               <div id="main" className={styles.title}>{route.title}</div>
+              <button className={styles.pdfButton} onClick={() => exportRoutePDF(route)}>
+                Выгрузить в PDF
+              </button>
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
                   <Link

@@ -1187,6 +1187,24 @@
   color: #fff;
 }
 
+.pdfButton {
+  padding: 10px 24px;
+  border: 1px solid #156A60;
+  border-radius: 30px;
+  background: transparent;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.3s ease-in-out;
+}
+
+.pdfButton:hover {
+  background-color: #156A60;
+  color: #fff;
+}
+
 .places {
   width: 100%;
   display: flex;

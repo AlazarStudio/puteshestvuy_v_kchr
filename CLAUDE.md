@@ -15,29 +15,33 @@ npm run preview   # Preview production build
 npm run lint      # ESLint on .js/.jsx files
 ```
 
+There are no tests in this project.
+
 ## Environment Variables
 
 ```
-VITE_API_URL             # Backend API base URL (default: http://localhost:5000/api)
+VITE_API_URL             # Backend API base URL (default: http://localhost:4000/api)
 VITE_YANDEX_MAPS_API_KEY # Yandex Maps API key
 ```
+
+The dev server proxies `/uploads` → `http://localhost:5000` (static file server separate from the API).
 
 ## Architecture
 
 ### Tech Stack
-- **React 18** + **React Router v6** (SPA routing in `src/App.jsx`)
+- **React 18** + **React Router v6** (SPA routing in [src/App.jsx](src/App.jsx))
 - **Vite** (bundler), **Tailwind CSS** + **CSS Modules** (styling), **MUI** + **Emotion** (UI components)
 - **Axios** (HTTP), **Framer Motion** (animations), **Swiper** (carousels), **React Quill** (rich text editor)
 - **Yandex Maps** for location picking and route display
 
 ### Routing
-Routes are defined in [src/App.jsx](src/App.jsx). Public pages use `PublicLayout` (Header + Footer); admin pages under `/admin` use `AdminLayout` with a sidebar. Dynamic segments follow the pattern `/routes/:slug`, `/places/:slug`, etc.
+All routes are in [src/App.jsx](src/App.jsx). Public pages use `PublicLayout` (Header + Footer); `/admin/*` uses `AdminLayout` with a sidebar; `/admin/login` has no layout. Dynamic segments: `/routes/:slug`, `/places/:slug`, `/news/:slug`, `/services/:slug`, `/admin/places/:id`, etc.
 
 ### Directory Layout
 
 | Path | Purpose |
 |---|---|
-| `src/app/` | Legacy folder structure — page-level components (Home, Region, Routes, Places, News, Services, Profile, Admin panel pages) |
+| `src/app/` | Page-level components. Uses bracket naming (`[id]`, `[slug]`) as a convention — **not** Next.js filesystem routing |
 | `src/sections/` | Page section containers that compose multiple components into a full view |
 | `src/components/` | Reusable UI components (cards, modals, map pickers, sliders, filters, rich text) |
 | `src/contexts/` | React Context providers |
@@ -45,41 +49,68 @@ Routes are defined in [src/App.jsx](src/App.jsx). Public pages use `PublicLayout
 | `src/utils/` | Generic utilities (transliteration) |
 
 ### API Layer (`src/lib/api.js`)
-Single Axios instance with interceptors that auto-inject Bearer tokens and handle 401s (clears localStorage, redirects to login). All endpoints are grouped by feature:
+Single Axios instance. Request interceptor injects `Bearer` token from `localStorage` (`token` or `adminToken`). Response interceptor on 401 clears all tokens, fires `user-unauthorized` custom event, and redirects admin paths to `/login?returnUrl=…`.
 
-- **Auth:** `authAPI` (login, register)
-- **Public data:** `publicPlacesAPI`, `publicRoutesAPI`, `publicNewsAPI`, `publicServicesAPI`
-- **Admin CRUD:** `placesAPI`, `routesAPI`, `newsAPI`, `servicesAPI`, `adminUsersAPI`
-- **User:** `userAPI` (profile, favorites, constructor points)
-- **Bookings:** `bookingsAPI` (user), `adminBookingsAPI` (admin)
-- **Content:** `regionAPI`, `homeAPI`, `footerAPI`, `pagesAPI`
-- **Media:** `mediaAPI` (file/image upload)
+All endpoints are grouped by feature:
 
-Image URLs from the backend are resolved through `getImageUrl(path)`.
+| Export | Prefix | Purpose |
+|---|---|---|
+| `authAPI` | `/auth` | login, register |
+| `userAPI` | `/users` | profile, avatar, favorites, constructor points |
+| `userRoutesAPI` | `/users/routes` | user-saved custom routes |
+| `publicPlacesAPI` | `/places` | public places list + filters + reviews |
+| `publicRoutesAPI` | `/routes` | public routes list + filters + reviews |
+| `publicNewsAPI` | `/news` | public news list |
+| `publicServicesAPI` | `/services` | public services list + reviews |
+| `publicRegionAPI` | `/region` | region page content |
+| `publicHomeAPI` | `/home` | home page content |
+| `publicFooterAPI` | `/footer` | footer content |
+| `publicPagesAPI` | `/pages/:name` | static pages content |
+| `placesAPI` | `/admin/places` | admin CRUD for places |
+| `routesAPI` | `/admin/routes` | admin CRUD for routes |
+| `newsAPI` | `/admin/news` | admin CRUD for news |
+| `servicesAPI` | `/admin/services` | admin CRUD for services |
+| `placeFiltersAPI` | `/admin/place-filters` | manage place filter groups/values |
+| `routeFiltersAPI` | `/admin/route-filters` | manage route filter groups/values |
+| `reviewsAPI` | `/admin/reviews` | admin review moderation |
+| `adminUsersAPI` | `/admin/users` | admin user management (role, ban) |
+| `adminBookingsAPI` | `/admin/bookings` | admin bookings |
+| `adminSuggestionsAPI` | `/admin/suggestions` | admin: review user-submitted place suggestions |
+| `bookingsAPI` | `/bookings` | user booking creation + busy dates |
+| `suggestionsAPI` | `/suggestions/places` | user: submit a place suggestion |
+| `regionAPI` | `/admin/region` | admin: edit region page |
+| `homeAPI` | `/admin/home` | admin: edit home page |
+| `footerAPI` | `/admin/footer` | admin: edit footer |
+| `pagesAPI` | `/admin/pages/:name` | admin: edit static pages |
+| `mediaAPI` | `/admin/media` | file / image / video / document upload |
+| `statsAPI` | `/admin/stats` | dashboard statistics |
+| `feedbackAPI` | `/footer/feedback` | contact form in footer |
+
+`getImageUrl(path)` resolves relative backend paths to full URLs using `BASE_URL` (derived from `VITE_API_URL`).
 
 ### Context Providers
-- **`AuthContext`** — auth state, login/logout, favorites toggle; tokens stored in `localStorage` (`token`, `adminToken`, `adminUser`)
-- **`AuthModalContext`** — open/close state for the auth modal
-- **`RouteConstructorContext`** — route builder feature: selected places, start/end points, debounced backend sync, Haversine distance calculation
-- **`ToastContext`** — toast notifications (auto-dismiss after 2.5 s)
+- **`AuthContext`** — auth state, login/logout, favorites toggle; tokens in `localStorage` (`token`, `adminToken`, `adminUser`)
+- **`AuthModalContext`** — open/close state for the login/register modal
+- **`RouteConstructorContext`** — route builder: selected places list, start/end points, Haversine distance, debounced sync to `userRoutesAPI`
+- **`ToastContext`** — toast notifications (auto-dismiss 2.5 s)
+
+### Service Detail Templates
+`src/sections/Services/ServiceDetail/templates/` contains a template per service type, rendered polymorphically via `ServiceTemplateByType`. Current templates: `Hotel`, `Activities`, `Cafe`, `EquipmentRental`, `Fire`, `GasStation`, `Guide`, `Medical`, `Museum`, `Police`, `RoadsidePoint`, `RoadsideService`, `Shop`, `Souvenirs`, `TourOperator`, `Transfer`, `Toilets`. Add new templates here and register them in `index.jsx`.
 
 ### Styling Conventions
-- Tailwind for layout and utilities; custom design tokens defined in `tailwind.config.js` (`primary-50` to `primary-900`)
+- Tailwind for layout and utilities; custom design tokens in `tailwind.config.js` (`primary-50` → `primary-900`)
 - CSS Modules (`.module.css`) for component-scoped styles
-- Path alias `@/` → `src/` (configured in `vite.config.js` and `jsconfig.json`)
-- Global base styles and `@layer` utilities in `src/index.css`
+- Path alias `@/` → `src/` (configured in both `vite.config.js` and `jsconfig.json`)
+- Global base styles in `src/index.css`
 
 ### Rich Text / Media
-- Admin creates content with **React Quill**; output is rendered with **DOMPurify** sanitization via `RichTextContent`
-- Image cropping handled by **React Easy Crop** before upload
-- `/uploads` requests are proxied to the backend during development
+- Admin creates content with **React Quill**; rendered via `RichTextContent` component (DOMPurify sanitization)
+- Image cropping via **React Easy Crop** before upload
 
 ## Code Guidelines
 
-- Clean, readable, efficient, maintainable code — no over-engineering or unnecessary abstractions
 - Functional components only (React)
 - Small components with a single responsibility; logic in hooks/utils, UI separate
-- Clear, consistent naming
 - Before creating a new component, check if a similar one already exists
 - No logic duplication — reuse existing code
 - No new dependencies without clear necessity

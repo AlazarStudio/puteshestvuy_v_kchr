@@ -40,6 +40,14 @@
   filter: brightness(0) !important;
 }
 
+.headerDropdownActive .langBtn {
+  color: #000000 !important;
+}
+
+.headerDropdownActive .langDivider {
+  color: #000000 !important;
+}
+
 .headerDropdownActive .containerBotLine {
   background-color: transparent !important;
 }
@@ -79,6 +87,14 @@
   filter: brightness(0) !important;
 }
 
+.headerDarkNoBg .langBtn {
+  color: #000000 !important;
+}
+
+.headerDarkNoBg .langDivider {
+  color: #000000 !important;
+}
+
 .headerDarkNoBg .containerBotLine {
   background-color: #000000C2 !important;
 }
@@ -102,7 +118,14 @@
 
 .headerDark .iconButton img {
   filter: brightness(0) !important;
-  /* Делаем иконки черными */
+}
+
+.headerDark .langBtn {
+  color: #000000 !important;
+}
+
+.headerDark .langDivider {
+  color: #000000 !important;
 }
 
 .headerDark .containerBotLine {
@@ -793,4 +816,60 @@
   .dropdownColumns {
     gap: 20px;
   }
+}
+
+/* ===== Переключатель языка ===== */
+
+.langSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.langBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  opacity: 0.6;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.langBtn:hover {
+  opacity: 1;
+}
+
+.langBtnActive {
+  opacity: 1;
+  font-weight: 700;
+}
+
+.langDivider {
+  opacity: 0.4;
+  font-size: 12px;
+  color: inherit;
+  pointer-events: none;
+}
+
+.burgerLangSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f8;
+}
+
+.burgerLangSwitcher .langBtn {
+  font-size: 15px;
+  color: #374151;
+}
+
+.burgerLangSwitcher .langBtnActive {
+  color: #156A60;
 }

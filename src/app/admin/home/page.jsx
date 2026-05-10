@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { Upload, Plus, X, Pencil, GripVertical, Image, Route, Calendar, HelpCircle, Briefcase, MapPin, Layers, Megaphone } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Upload, Plus, X, Pencil, GripVertical, Image, Route, Calendar, HelpCircle, Briefcase, MapPin, Layers, Megaphone, Search } from 'lucide-react';
 import { homeAPI, mediaAPI, placesAPI, newsAPI, getImageUrl } from '@/lib/api';
 import { stripHtml } from '@/lib/utils';
 import { AdminHeaderRightContext } from '../layout';
 import ImageCropModal from '../components/ImageCropModal';
 import FooterLinkSelector from '../footer/FooterLinkSelector';
 import RichTextEditor from '@/components/RichTextEditor';
+import { MUI_ICONS, MUI_ICON_NAMES, getMuiIconComponent, getIconGroups } from '../components/WhatToBringIcons';
 import styles from '../admin.module.css';
 
 // Ссылки из хедера сайта для выпадающих списков кнопок
@@ -88,6 +90,7 @@ const DEFAULT_CONTENT = {
       ],
     },
     { key: 'oopt', label: 'Посещение особо охраняемых природных территорий', type: 'oopt', content: '' },
+    { key: 'tic', label: 'Туристско-информационные центры', type: 'tic', content: '' },
   ],
   servicesTitle: 'СЕРВИС И УСЛУГИ',
   servicesButtonLink: '/services',
@@ -196,6 +199,10 @@ export default function AdminHomePage() {
   const [showToast, setShowToast] = useState(false);
   const [savedVersion, setSavedVersion] = useState(0);
   const savedContentRef = useRef(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [iconPickerTarget, setIconPickerTarget] = useState(null);
+  const [iconPickerGroup, setIconPickerGroup] = useState('all');
+  const [iconPickerSearch, setIconPickerSearch] = useState('');
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
 
   const hasPendingImages = Object.keys(pendingImages).length > 0;
@@ -657,13 +664,17 @@ export default function AdminHomePage() {
       linkType: undefined,
       linkValue: undefined,
       buttonText: '',
+      button1Link: '',
       buttonIcon: '',
+      buttonIconName: '',
       buttonBgColor: '#0d9488',
       buttonTextColor: '#ffffff',
       buttonBorderRadius: 10,
       buttonPosition: 'bottom-left',
       button2Text: '',
+      button2Position: 'bottom-left',
       button2Icon: '',
+      button2IconName: '',
       button2BgColor: '#ffffff',
       button2TextColor: '#0d9488',
       button2BorderRadius: 10,
@@ -819,6 +830,23 @@ export default function AdminHomePage() {
   const clearBannerImage = (bannerIndex) => {
     const imagePath = `banners.${bannerIndex}.image`;
     clearImage(imagePath);
+  };
+
+  const openIconPicker = (bannerIndex, field) => {
+    setIconPickerTarget({ bannerIndex, field });
+    setIconPickerGroup('all');
+    setIconPickerSearch('');
+    setIconPickerOpen(true);
+  };
+
+  const handleIconPickerSelect = (name) => {
+    if (!iconPickerTarget) return;
+    const { bannerIndex, field } = iconPickerTarget;
+    updateBanner(bannerIndex, field, name);
+    const imageField = field === 'buttonIconName' ? 'buttonIcon' : 'button2Icon';
+    if (name) clearImage(`banners.${bannerIndex}.${imageField}`);
+    setIconPickerOpen(false);
+    setIconPickerTarget(null);
   };
 
   if (isLoading) {
@@ -1779,187 +1807,270 @@ export default function AdminHomePage() {
                 )}
               </div>
 
-              <div className={styles.formGroup} style={{ marginBottom: 12 }}>
-                <label className={styles.formLabel}>Ссылка</label>
+              {/* Ссылка баннера */}
+              <div className={styles.formGroup} style={{ marginBottom: 16 }}>
+                <label className={styles.formLabel}>Ссылка баннера</label>
+                <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '2px 0 8px' }}>При клике на баннер пользователь перейдёт по этой ссылке</p>
                 <FooterLinkSelector
                   value={getBannerLinkValue(banner)}
                   onChange={(linkData) => handleBannerLinkChange(i, linkData)}
                 />
               </div>
 
-              <div className={styles.formGroup} style={{ marginBottom: 12 }}>
-                <label className={styles.formLabel}>Текст кнопки</label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  value={banner.buttonText || ''}
-                  onChange={(e) => updateBanner(i, 'buttonText', e.target.value)}
-                  placeholder="Например: Подробнее (оставьте пустым, чтобы не показывать кнопку)"
-                />
-              </div>
+              {/* Кнопка 1 */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 8, padding: 14, marginBottom: 12 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#065f46', marginBottom: 12 }}>Кнопка 1</div>
+                <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                  <label className={styles.formLabel}>Текст кнопки</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={banner.buttonText || ''}
+                    onChange={(e) => updateBanner(i, 'buttonText', e.target.value)}
+                    placeholder="Например: Подробнее (оставьте пустым, чтобы не показывать кнопку)"
+                  />
+                </div>
 
-              {!!banner.buttonText && (
-                <>
-                  <div className={styles.formGroup} style={{ marginBottom: 16 }}>
-                    <label className={styles.formLabel}>Позиция кнопки на баннере</label>
-                    <div style={{ display: 'inline-grid', gridTemplateColumns: 'repeat(3, 36px)', gap: 4, marginTop: 8 }}>
-                      {[
-                        ['top-left','top-center','top-right'],
-                        ['middle-left','middle-center','middle-right'],
-                        ['bottom-left','bottom-center','bottom-right'],
-                      ].map((row) => row.map((pos) => {
-                        const active = (banner.buttonPosition || 'bottom-left') === pos;
-                        return (
-                          <button
-                            key={pos}
-                            type="button"
-                            onClick={() => updateBanner(i, 'buttonPosition', pos)}
-                            title={pos}
-                            style={{
-                              width: 36, height: 36,
-                              border: `2px solid ${active ? '#0d9488' : '#e5e7eb'}`,
-                              borderRadius: 6,
-                              background: active ? '#f0fdf4' : '#fff',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: 0,
-                            }}
-                          >
-                            <div style={{
-                              width: 10, height: 10,
-                              borderRadius: '50%',
-                              background: active ? '#0d9488' : '#d1d5db',
-                            }} />
-                          </button>
-                        );
-                      }))}
-                    </div>
-                  </div>
-
-                  <div className={styles.formGroup} style={{ marginBottom: 12 }}>
-                    <label className={styles.formLabel}>Иконка кнопки (слева от текста)</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id={`bannerBtnIconUpload-${i}`}
-                      onChange={(e) => handleFileSelect(`banners.${i}.buttonIcon`, e)}
-                    />
-                    {hasImage(`banners.${i}.buttonIcon`) ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                        <img src={getImageSrc(`banners.${i}.buttonIcon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
-                        <button type="button" onClick={() => document.getElementById(`bannerBtnIconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
-                        <button type="button" onClick={() => clearImage(`banners.${i}.buttonIcon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <label htmlFor={`bannerBtnIconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 8 }}>
-                        <Upload size={18} /> Загрузить иконку
-                      </label>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-                    <div>
-                      <label className={styles.formLabel}>Цвет фона кнопки</label>
-                      <input
-                        type="color"
-                        value={banner.buttonBgColor || '#0d9488'}
-                        onChange={(e) => updateBanner(i, 'buttonBgColor', e.target.value)}
-                        className={styles.formInput}
-                        style={{ height: 40 }}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.formLabel}>Цвет текста</label>
-                      <input
-                        type="color"
-                        value={banner.buttonTextColor || '#ffffff'}
-                        onChange={(e) => updateBanner(i, 'buttonTextColor', e.target.value)}
-                        className={styles.formInput}
-                        style={{ height: 40 }}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.formLabel}>Скругление (px)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        value={banner.buttonBorderRadius ?? 10}
-                        onChange={(e) => updateBanner(i, 'buttonBorderRadius', parseInt(e.target.value, 10) || 0)}
-                        className={styles.formInput}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ borderTop: '1px dashed #e5e7eb', paddingTop: 16 }}>
-                    <label className={styles.formLabel} style={{ marginBottom: 8, display: 'block' }}>Вторая кнопка (рядом с первой)</label>
+                {!!banner.buttonText && (
+                  <>
                     <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                      <label className={styles.formLabel}>Ссылка кнопки</label>
                       <input
                         type="text"
                         className={styles.formInput}
-                        value={banner.button2Text || ''}
-                        onChange={(e) => updateBanner(i, 'button2Text', e.target.value)}
-                        placeholder="Текст второй кнопки (оставьте пустым, чтобы не показывать)"
+                        value={banner.button1Link || ''}
+                        onChange={(e) => updateBanner(i, 'button1Link', e.target.value)}
+                        placeholder="/places или https://example.com (если пусто — используется ссылка баннера)"
                       />
                     </div>
 
-                    {!!banner.button2Text && (
-                      <>
-                        <div className={styles.formGroup} style={{ marginBottom: 12 }}>
-                          <label className={styles.formLabel}>Ссылка второй кнопки</label>
-                          <input
-                            type="text"
-                            className={styles.formInput}
-                            value={banner.button2Link || ''}
-                            onChange={(e) => updateBanner(i, 'button2Link', e.target.value)}
-                            placeholder="/places или https://example.com"
-                          />
-                        </div>
+                    <div className={styles.formGroup} style={{ marginBottom: 16 }}>
+                      <label className={styles.formLabel}>Позиция кнопки на баннере</label>
+                      <div style={{ display: 'inline-grid', gridTemplateColumns: 'repeat(3, 36px)', gap: 4, marginTop: 8 }}>
+                        {[
+                          ['top-left','top-center','top-right'],
+                          ['middle-left','middle-center','middle-right'],
+                          ['bottom-left','bottom-center','bottom-right'],
+                        ].map((row) => row.map((pos) => {
+                          const active = (banner.buttonPosition || 'bottom-left') === pos;
+                          return (
+                            <button
+                              key={pos}
+                              type="button"
+                              onClick={() => updateBanner(i, 'buttonPosition', pos)}
+                              title={pos}
+                              style={{
+                                width: 36, height: 36,
+                                border: `2px solid ${active ? '#0d9488' : '#e5e7eb'}`,
+                                borderRadius: 6,
+                                background: active ? '#d1fae5' : '#fff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 0,
+                              }}
+                            >
+                              <div style={{
+                                width: 10, height: 10,
+                                borderRadius: '50%',
+                                background: active ? '#0d9488' : '#d1d5db',
+                              }} />
+                            </button>
+                          );
+                        }))}
+                      </div>
+                    </div>
 
-                        <div className={styles.formGroup} style={{ marginBottom: 12 }}>
-                          <label className={styles.formLabel}>Иконка второй кнопки</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id={`bannerBtn2IconUpload-${i}`}
-                            onChange={(e) => handleFileSelect(`banners.${i}.button2Icon`, e)}
-                          />
-                          {hasImage(`banners.${i}.button2Icon`) ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                              <img src={getImageSrc(`banners.${i}.button2Icon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
-                              <button type="button" onClick={() => document.getElementById(`bannerBtn2IconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
-                              <button type="button" onClick={() => clearImage(`banners.${i}.button2Icon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
-                            </div>
-                          ) : (
-                            <label htmlFor={`bannerBtn2IconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 8 }}>
-                              <Upload size={18} /> Загрузить иконку
-                            </label>
-                          )}
+                    <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                      <label className={styles.formLabel}>Иконка кнопки (слева от текста)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id={`bannerBtnIconUpload-${i}`}
+                        onChange={(e) => { updateBanner(i, 'buttonIconName', ''); handleFileSelect(`banners.${i}.buttonIcon`, e); }}
+                      />
+                      {banner.buttonIconName ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                          <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb' }}>
+                            {(() => { const IC = getMuiIconComponent(banner.buttonIconName); return IC ? <IC size={22} /> : null; })()}
+                          </div>
+                          <button type="button" onClick={() => openIconPicker(i, 'buttonIconName')} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                          <button type="button" onClick={() => updateBanner(i, 'buttonIconName', '')} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
                         </div>
+                      ) : hasImage(`banners.${i}.buttonIcon`) ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                          <img src={getImageSrc(`banners.${i}.buttonIcon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
+                          <button type="button" onClick={() => document.getElementById(`bannerBtnIconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                          <button type="button" onClick={() => clearImage(`banners.${i}.buttonIcon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <label htmlFor={`bannerBtnIconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flex: 1 }}>
+                            <Upload size={16} /> Загрузить
+                          </label>
+                          <button type="button" onClick={() => openIconPicker(i, 'buttonIconName')} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flex: 1, border: '1.5px dashed #9ca3af' }}>
+                            <Search size={16} /> Из библиотеки
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                          <div>
-                            <label className={styles.formLabel}>Цвет фона</label>
-                            <input type="color" value={banner.button2BgColor || '#ffffff'} onChange={(e) => updateBanner(i, 'button2BgColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label className={styles.formLabel}>Цвет фона кнопки</label>
+                        <input
+                          type="color"
+                          value={banner.buttonBgColor || '#0d9488'}
+                          onChange={(e) => updateBanner(i, 'buttonBgColor', e.target.value)}
+                          className={styles.formInput}
+                          style={{ height: 40 }}
+                        />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Цвет текста</label>
+                        <input
+                          type="color"
+                          value={banner.buttonTextColor || '#ffffff'}
+                          onChange={(e) => updateBanner(i, 'buttonTextColor', e.target.value)}
+                          className={styles.formInput}
+                          style={{ height: 40 }}
+                        />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Скругление (px)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="50"
+                          value={banner.buttonBorderRadius ?? 10}
+                          onChange={(e) => updateBanner(i, 'buttonBorderRadius', parseInt(e.target.value, 10) || 0)}
+                          className={styles.formInput}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Кнопка 2 */}
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: 14 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0c4a6e', marginBottom: 12 }}>Кнопка 2</div>
+                <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                  <label className={styles.formLabel}>Текст кнопки</label>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    value={banner.button2Text || ''}
+                    onChange={(e) => updateBanner(i, 'button2Text', e.target.value)}
+                    placeholder="Текст второй кнопки (оставьте пустым, чтобы не показывать)"
+                  />
+                </div>
+
+                {!!banner.button2Text && (
+                  <>
+                    <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                      <label className={styles.formLabel}>Ссылка кнопки</label>
+                      <input
+                        type="text"
+                        className={styles.formInput}
+                        value={banner.button2Link || ''}
+                        onChange={(e) => updateBanner(i, 'button2Link', e.target.value)}
+                        placeholder="/places или https://example.com"
+                      />
+                    </div>
+
+                    <div className={styles.formGroup} style={{ marginBottom: 16 }}>
+                      <label className={styles.formLabel}>Позиция кнопки на баннере</label>
+                      <div style={{ display: 'inline-grid', gridTemplateColumns: 'repeat(3, 36px)', gap: 4, marginTop: 8 }}>
+                        {[
+                          ['top-left','top-center','top-right'],
+                          ['middle-left','middle-center','middle-right'],
+                          ['bottom-left','bottom-center','bottom-right'],
+                        ].map((row) => row.map((pos) => {
+                          const active = (banner.button2Position || 'bottom-left') === pos;
+                          return (
+                            <button
+                              key={pos}
+                              type="button"
+                              onClick={() => updateBanner(i, 'button2Position', pos)}
+                              title={pos}
+                              style={{
+                                width: 36, height: 36,
+                                border: `2px solid ${active ? '#0284c7' : '#e5e7eb'}`,
+                                borderRadius: 6,
+                                background: active ? '#e0f2fe' : '#fff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 0,
+                              }}
+                            >
+                              <div style={{
+                                width: 10, height: 10,
+                                borderRadius: '50%',
+                                background: active ? '#0284c7' : '#d1d5db',
+                              }} />
+                            </button>
+                          );
+                        }))}
+                      </div>
+                    </div>
+
+                    <div className={styles.formGroup} style={{ marginBottom: 12 }}>
+                      <label className={styles.formLabel}>Иконка кнопки</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id={`bannerBtn2IconUpload-${i}`}
+                        onChange={(e) => { updateBanner(i, 'button2IconName', ''); handleFileSelect(`banners.${i}.button2Icon`, e); }}
+                      />
+                      {banner.button2IconName ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                          <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb' }}>
+                            {(() => { const IC = getMuiIconComponent(banner.button2IconName); return IC ? <IC size={22} /> : null; })()}
                           </div>
-                          <div>
-                            <label className={styles.formLabel}>Цвет текста</label>
-                            <input type="color" value={banner.button2TextColor || '#0d9488'} onChange={(e) => updateBanner(i, 'button2TextColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
-                          </div>
-                          <div>
-                            <label className={styles.formLabel}>Скругление (px)</label>
-                            <input type="number" min="0" max="50" value={banner.button2BorderRadius ?? 10} onChange={(e) => updateBanner(i, 'button2BorderRadius', parseInt(e.target.value, 10) || 0)} className={styles.formInput} />
-                          </div>
+                          <button type="button" onClick={() => openIconPicker(i, 'button2IconName')} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                          <button type="button" onClick={() => updateBanner(i, 'button2IconName', '')} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
+                      ) : hasImage(`banners.${i}.button2Icon`) ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                          <img src={getImageSrc(`banners.${i}.button2Icon`)} alt="" style={{ height: 40, objectFit: 'contain', borderRadius: 6, border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
+                          <button type="button" onClick={() => document.getElementById(`bannerBtn2IconUpload-${i}`)?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Заменить"><Upload size={14} /></button>
+                          <button type="button" onClick={() => clearImage(`banners.${i}.button2Icon`)} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} title="Удалить"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <label htmlFor={`bannerBtn2IconUpload-${i}`} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flex: 1 }}>
+                            <Upload size={16} /> Загрузить
+                          </label>
+                          <button type="button" onClick={() => openIconPicker(i, 'button2IconName')} className={styles.imageUpload} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flex: 1, border: '1.5px dashed #9ca3af' }}>
+                            <Search size={16} /> Из библиотеки
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label className={styles.formLabel}>Цвет фона</label>
+                        <input type="color" value={banner.button2BgColor || '#ffffff'} onChange={(e) => updateBanner(i, 'button2BgColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Цвет текста</label>
+                        <input type="color" value={banner.button2TextColor || '#0d9488'} onChange={(e) => updateBanner(i, 'button2TextColor', e.target.value)} className={styles.formInput} style={{ height: 40 }} />
+                      </div>
+                      <div>
+                        <label className={styles.formLabel}>Скругление (px)</label>
+                        <input type="number" min="0" max="50" value={banner.button2BorderRadius ?? 10} onChange={(e) => updateBanner(i, 'button2BorderRadius', parseInt(e.target.value, 10) || 0)} className={styles.formInput} />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ))}
 
@@ -2034,6 +2145,72 @@ export default function AdminHomePage() {
         onComplete={handleSeasonCropComplete}
         onCancel={handleSeasonCropCancel}
       />
+
+      {iconPickerOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className={styles.modalOverlay}
+          style={{ zIndex: 10000 }}
+          onClick={(e) => e.target === e.currentTarget && setIconPickerOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Выбор иконки"
+        >
+          <div className={styles.modalDialog} style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Выберите иконку</h3>
+              <button type="button" onClick={() => setIconPickerOpen(false)} className={styles.modalClose} aria-label="Закрыть">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody} style={{ maxHeight: 440, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div className={styles.whatToBringIconFilters}>
+                <input
+                  type="search"
+                  className={styles.whatToBringIconSearch}
+                  placeholder="Поиск иконки..."
+                  value={iconPickerSearch}
+                  onChange={(e) => setIconPickerSearch(e.target.value)}
+                  autoComplete="off"
+                />
+                <select
+                  className={styles.whatToBringIconGroupSelect}
+                  value={iconPickerGroup}
+                  onChange={(e) => setIconPickerGroup(e.target.value)}
+                >
+                  <option value="all">Все иконки</option>
+                  {getIconGroups().map((g) => (
+                    <option key={g.id} value={g.id}>{g.label} ({g.iconNames.length})</option>
+                  ))}
+                </select>
+              </div>
+              {(() => {
+                const groups = getIconGroups();
+                const baseNames = iconPickerGroup === 'all' ? MUI_ICON_NAMES : (groups.find((g) => g.id === iconPickerGroup)?.iconNames ?? []);
+                const searchLower = (iconPickerSearch || '').trim().toLowerCase();
+                const namesToShow = searchLower ? baseNames.filter((n) => n.toLowerCase().includes(searchLower)) : baseNames;
+                return (
+                  <>
+                    <div className={styles.whatToBringIconGridWrap}>
+                      <button type="button" className={styles.whatToBringIconGridItem} onClick={() => handleIconPickerSelect('')} title="Без иконки">—</button>
+                      {namesToShow.map((name) => {
+                        const IconComponent = MUI_ICONS[name];
+                        if (!IconComponent) return null;
+                        return (
+                          <button key={name} type="button" className={styles.whatToBringIconGridItem} onClick={() => handleIconPickerSelect(name)} title={name}>
+                            <IconComponent size={28} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {namesToShow.length === 0 && <p className={styles.whatToBringIconEmpty}>В этой группе нет иконок.</p>}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

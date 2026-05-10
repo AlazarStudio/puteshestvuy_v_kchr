@@ -7,6 +7,46 @@ import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
 
+function getCurrentLang() {
+  const cookie = document.cookie.split(';').find((c) => c.trim().startsWith('googtrans='))
+  return cookie?.trim().slice('googtrans='.length).includes('/en') ? 'en' : 'ru'
+}
+
+function switchLang(lang) {
+  if (lang === 'en') {
+    document.cookie = 'googtrans=/ru/en; path=/'
+    document.cookie = `googtrans=/ru/en; path=/; domain=${window.location.hostname}`
+  } else {
+    const exp = new Date(0).toUTCString()
+    document.cookie = `googtrans=; expires=${exp}; path=/`
+    document.cookie = `googtrans=; expires=${exp}; path=/; domain=${window.location.hostname}`
+  }
+  window.location.reload()
+}
+
+function LangSwitcher({ className }) {
+  const lang = getCurrentLang()
+  return (
+    <div className={`${styles.langSwitcher} ${className || ''}`}>
+      <button
+        type="button"
+        onClick={() => switchLang('ru')}
+        className={`${styles.langBtn} ${lang === 'ru' ? styles.langBtnActive : ''}`}
+      >
+        RU
+      </button>
+      <span className={styles.langDivider}>|</span>
+      <button
+        type="button"
+        onClick={() => switchLang('en')}
+        className={`${styles.langBtn} ${lang === 'en' ? styles.langBtnActive : ''}`}
+      >
+        EN
+      </button>
+    </div>
+  )
+}
+
 // Данные для выпадающего меню "На помощь туристу"
 const dropdownMenuData = {
   articles: {
@@ -420,6 +460,7 @@ export default function Header() {
 
         {/* Иконки справа */}
         <div className={styles.icons} aria-label="Дополнительные действия">
+          <LangSwitcher />
           <Link
             to="/profile?tab=routes-constructor"
             className={styles.iconButton}
@@ -491,6 +532,7 @@ export default function Header() {
         </nav>
 
         <div className={styles.burgerIcons}>
+          <LangSwitcher className={styles.burgerLangSwitcher} />
           <Link to="/profile?tab=routes-constructor" className={styles.burgerIconItem} onClick={closeBurger}>
             <img src="/konst_tours.png" alt="" width={20} height={21} />
             <span>Конструктор маршрутов {placeIds.length > 0 && <>({placeIds.length})</>}</span>

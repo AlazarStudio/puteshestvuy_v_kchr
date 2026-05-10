@@ -9,6 +9,7 @@
   position: absolute;
   inset: 0 0 0 0;
   overflow: hidden;
+  z-index: 0;
 }
 
 .carousel .list .item .image {

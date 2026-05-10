@@ -115,7 +115,13 @@ function placeToSlide(place) {
   }
 }
 
-export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScale = 1.03 }) {
+export default function SliderFullScreen({
+  thumbnailMaxOffset = 5,
+  thumbnailScale = 1.03,
+  sliderPlacesOverride = null,
+  introSlideOverride = null,
+  scrollTargetId = 'firstTime',
+}) {
   const [slides, setSlides] = useState([])
   const initialSlidesRef = useRef([])
   const [isLoading, setIsLoading] = useState(true)
@@ -132,15 +138,76 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
     (direction === 'prev' && slides[1]?.video) ||
     (direction === 'next' && slides[slides.length - 1]?.video)
 
+  const resolveSliderPlaces = (sliderPlaces, introSlide, cancelled, setLoadingFalse) => {
+    const placeIds = sliderPlaces.map(p => p.placeId || p.id).filter(Boolean)
+    if (placeIds.length === 0) {
+      setSlides([introSlide])
+      initialSlidesRef.current = [introSlide]
+      setLoadingFalse()
+      return
+    }
+    publicPlacesAPI.getAll({ limit: 500 })
+      .then((res) => {
+        if (cancelled.value) return
+        const allPlaces = res.data?.items || res.data || []
+        const placesMap = new Map(allPlaces.map(p => [p.id, p]))
+        const list = sliderPlaces
+          .map((savedPlace) => {
+            const placeId = savedPlace.placeId || savedPlace.id
+            const fullPlace = placesMap.get(placeId)
+            if (fullPlace) return placeToSlide(fullPlace)
+            const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
+            const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
+            return {
+              id: placeId,
+              slug: savedPlace.slug || placeId,
+              image: getImageUrl(savedPlace.image),
+              video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
+              place: savedPlace.location || '',
+              title: savedPlace.title || '',
+              rating: hasReviews && ratingValue != null ? (ratingValue % 1 === 0 ? String(ratingValue) : ratingValue.toFixed(1)) : null,
+              reviewsCount: savedPlace.reviewsCount ?? 0,
+              description: savedPlace.shortDescription || '',
+            }
+          })
+          .filter(Boolean)
+        const finalSlides = list.length > 0 ? [introSlide, ...list] : [introSlide]
+        setSlides(finalSlides)
+        initialSlidesRef.current = finalSlides
+      })
+      .catch(() => {
+        if (!cancelled.value) {
+          setSlides([introSlide])
+          initialSlidesRef.current = [introSlide]
+        }
+      })
+      .finally(() => {
+        if (!cancelled.value) setLoadingFalse()
+      })
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    let cancelled = false
+    const cancelled = { value: false }
     setIsLoading(true)
+
+    if (sliderPlacesOverride !== null) {
+      const introSlide = introSlideOverride || makeIntroSlide()
+      if (sliderPlacesOverride.length === 0) {
+        setSlides([introSlide])
+        initialSlidesRef.current = [introSlide]
+        setIsLoading(false)
+      } else {
+        resolveSliderPlaces(sliderPlacesOverride, introSlide, cancelled, () => setIsLoading(false))
+      }
+      return () => { cancelled.value = true }
+    }
 
     let introSlide = makeIntroSlide()
 
     publicHomeAPI.get()
       .then(({ data }) => {
-        if (cancelled) return
+        if (cancelled.value) return
         const bgImage = data?.backgroundImage ? getImageUrl(data.backgroundImage) : '/mountainBG.png'
         introSlide = makeIntroSlide(bgImage)
         const sliderPlaces = data?.sliderPlaces || []
@@ -150,7 +217,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
           if (placeIds.length > 0) {
             return publicPlacesAPI.getAll({ limit: 500 })
               .then((res) => {
-                if (cancelled) return
+                if (cancelled.value) return
                 const allPlaces = res.data?.items || res.data || []
                 const placesMap = new Map(allPlaces.map(p => [p.id, p]))
 
@@ -191,7 +258,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
 
         return publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
           .then((res) => {
-            if (cancelled) return
+            if (cancelled.value) return
             const items = res.data?.items || res.data || []
             const list = items.map(placeToSlide)
             if (list.length > 0) {
@@ -201,10 +268,10 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
           })
       })
       .catch(() => {
-        if (!cancelled) {
+        if (!cancelled.value) {
           publicPlacesAPI.getAll({ limit: SLIDER_LIMIT })
             .then((res) => {
-              if (cancelled) return
+              if (cancelled.value) return
               const items = res.data?.items || res.data || []
               const list = items.map(placeToSlide)
               if (list.length > 0) {
@@ -213,17 +280,17 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
               }
             })
             .catch(() => {
-              if (!cancelled) setSlides([introSlide])
+              if (!cancelled.value) setSlides([introSlide])
             })
             .finally(() => {
-              if (!cancelled) setIsLoading(false)
+              if (!cancelled.value) setIsLoading(false)
             })
         }
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false)
+        if (!cancelled.value) setIsLoading(false)
       })
-    return () => { cancelled = true }
+    return () => { cancelled.value = true }
   }, [])
 
   const doPrevTransition = () => {
@@ -440,7 +507,7 @@ export default function SliderFullScreen({ thumbnailMaxOffset = 5, thumbnailScal
               <div className={styles.buttons}>
                 {slide.isIntro ? (
                   <button
-                    onClick={() => document.getElementById('firstTime')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById(scrollTargetId)?.scrollIntoView({ behavior: 'smooth' })}
                     className={styles.ctaLinkIntro}
                   >
                     Начать путешествие

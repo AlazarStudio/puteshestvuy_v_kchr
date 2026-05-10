@@ -15,6 +15,7 @@ import MoveLines from '@/components/MoveLines/MoveLines'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import ParallaxImage from '@/components/ParallaxImage'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
+import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
 function getBtnPosition(pos) {
   switch (pos) {
@@ -241,6 +242,8 @@ export default function Main_page() {
               className={styles.mainBanner}>
                 {activeBanners.map((banner, index) => {
                   const isExternal = banner.link && (banner.link.startsWith('http://') || banner.link.startsWith('https://'));
+                  const btn1Link = banner.button1Link || banner.link;
+                  const isBtn1External = btn1Link && (btn1Link.startsWith('http://') || btn1Link.startsWith('https://'));
                   // Логика размещения:
                   // - 1 баннер: на всю ширину
                   // - 2 баннера: оба рядом (каждый по 50%)
@@ -282,17 +285,17 @@ export default function Main_page() {
                   };
 
                   const hasButton = !!banner.buttonText;
-                  const BannerComponent = hasButton ? 'div' : (isExternal ? 'a' : Link);
-                  const bannerProps = hasButton
-                    ? {}
-                    : isExternal
+                  const BannerComponent = !hasButton && banner.link ? (isExternal ? 'a' : Link) : 'div';
+                  const bannerProps = !hasButton && banner.link
+                    ? isExternal
                       ? { href: banner.link, target: '_blank', rel: 'noopener noreferrer' }
-                      : { to: banner.link || '#' };
+                      : { to: banner.link }
+                    : {};
 
-                  const BtnComponent = isExternal ? 'a' : Link;
-                  const btnProps = isExternal
-                    ? { href: banner.link, target: '_blank', rel: 'noopener noreferrer' }
-                    : { to: banner.link || '#' };
+                  const BtnComponent = isBtn1External ? 'a' : Link;
+                  const btnProps = isBtn1External
+                    ? { href: btn1Link, target: '_blank', rel: 'noopener noreferrer' }
+                    : { to: btn1Link || '#' };
 
                   const hasBtn2 = !!banner.button2Text;
                   const isBtn2External = banner.button2Link && (banner.button2Link.startsWith('http://') || banner.button2Link.startsWith('https://'));
@@ -322,8 +325,17 @@ export default function Main_page() {
                           objectFit: 'cover',
                         }}
                       />
-                      {hasButton && (
-                        <div className={styles.bannerBtns} style={getBtnPosition(banner.buttonPosition)}>
+                      {hasButton && banner.link && (
+                        isExternal
+                          ? <a href={banner.link} target="_blank" rel="noopener noreferrer" style={{ position: 'absolute', inset: 0, zIndex: 1 }} aria-label="Баннер" />
+                          : <Link to={banner.link} style={{ position: 'absolute', inset: 0, zIndex: 1 }} aria-label="Баннер" />
+                      )}
+                      {hasButton && (() => {
+                        const btn1Pos = banner.buttonPosition || 'bottom-left';
+                        const btn2Pos = banner.button2Position || 'bottom-left';
+                        const samePosition = hasBtn2 && btn1Pos === btn2Pos;
+
+                        const Btn1 = (
                           <BtnComponent
                             {...btnProps}
                             className={styles.bannerBtn}
@@ -333,29 +345,54 @@ export default function Main_page() {
                               borderRadius: banner.buttonBorderRadius != null ? `${banner.buttonBorderRadius}px` : undefined,
                             }}
                           >
-                            {banner.buttonIcon && (
+                            {banner.buttonIconName && (() => { const IC = getMuiIconComponent(banner.buttonIconName); return IC ? <IC size={18} style={{ flexShrink: 0 }} /> : null; })()}
+                            {!banner.buttonIconName && banner.buttonIcon && (
                               <img src={getImageUrl(banner.buttonIcon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
                             )}
                             {banner.buttonText}
                           </BtnComponent>
-                          {hasBtn2 && (
-                            <Btn2Component
-                              {...btn2Props}
-                              className={styles.bannerBtn}
-                              style={{
-                                background: banner.button2BgColor || undefined,
-                                color: banner.button2TextColor || undefined,
-                                borderRadius: banner.button2BorderRadius != null ? `${banner.button2BorderRadius}px` : undefined,
-                              }}
-                            >
-                              {banner.button2Icon && (
-                                <img src={getImageUrl(banner.button2Icon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
-                              )}
-                              {banner.button2Text}
-                            </Btn2Component>
-                          )}
-                        </div>
-                      )}
+                        );
+
+                        const Btn2 = hasBtn2 ? (
+                          <Btn2Component
+                            {...btn2Props}
+                            className={styles.bannerBtn}
+                            style={{
+                              background: banner.button2BgColor || undefined,
+                              color: banner.button2TextColor || undefined,
+                              borderRadius: banner.button2BorderRadius != null ? `${banner.button2BorderRadius}px` : undefined,
+                            }}
+                          >
+                            {banner.button2IconName && (() => { const IC = getMuiIconComponent(banner.button2IconName); return IC ? <IC size={18} style={{ flexShrink: 0 }} /> : null; })()}
+                            {!banner.button2IconName && banner.button2Icon && (
+                              <img src={getImageUrl(banner.button2Icon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
+                            )}
+                            {banner.button2Text}
+                          </Btn2Component>
+                        ) : null;
+
+                        if (samePosition) {
+                          return (
+                            <div className={styles.bannerBtns} style={getBtnPosition(btn1Pos)}>
+                              {Btn1}
+                              {Btn2}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <>
+                            <div className={styles.bannerBtns} style={getBtnPosition(btn1Pos)}>
+                              {Btn1}
+                            </div>
+                            {hasBtn2 && (
+                              <div className={styles.bannerBtns} style={getBtnPosition(btn2Pos)}>
+                                {Btn2}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </BannerComponent>
                   );
                 })}

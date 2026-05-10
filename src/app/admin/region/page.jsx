@@ -27,6 +27,7 @@ const DEFAULT_CONTENT = {
     buttonText: 'Исследовать маршруты',
     buttonLink: '/routes',
   },
+  sliderPlaces: [],
   intro: {
     title: '',
     content: '',
@@ -51,6 +52,7 @@ const DEFAULT_CONTENT = {
 function ensureContent(c) {
   return {
     hero: { ...DEFAULT_CONTENT.hero, ...(c?.hero || {}) },
+    sliderPlaces: Array.isArray(c?.sliderPlaces) ? c.sliderPlaces : [],
     intro: (() => {
       const ci = c?.intro || {};
       let content = ci.content;
@@ -93,6 +95,8 @@ export default function AdminRegionPage() {
   const [pendingImages, setPendingImages] = useState({}); // { path: { file, preview } }
   const [allPlaces, setAllPlaces] = useState([]);
   const [addPlacesModalOpen, setAddPlacesModalOpen] = useState(false);
+  const [sliderPlacesModalOpen, setSliderPlacesModalOpen] = useState(false);
+  const [sliderSearchQuery, setSliderSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -133,6 +137,22 @@ export default function AdminRegionPage() {
   useEffect(() => {
     fetchPlaces();
   }, [fetchPlaces]);
+
+  const placeToSliderItem = (p) => ({
+    placeId: p.id,
+    slug: p.slug || p.id,
+    title: p.title || '',
+    location: p.location || '',
+    image: p.images?.[0] || p.image || '',
+    rating: p.rating != null ? String(p.rating) : null,
+    reviewsCount: p.reviewsCount ?? 0,
+    sliderVideo: p.sliderVideo || null,
+  });
+
+  const addPlaceToSlider = (place) => {
+    if ((content.sliderPlaces || []).some((i) => i.placeId === place.id)) return;
+    addArrayItem('sliderPlaces', placeToSliderItem(place));
+  };
 
   const placeToItem = (p) => ({
     placeId: p.id,
@@ -424,6 +444,97 @@ export default function AdminRegionPage() {
               ))}
             </select>
           </div>
+        </section>
+
+        {/* Slider Places */}
+        <section className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Слайдер мест</h2>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Первый слайд — «О КЧР» — формируется из hero-блока выше. Здесь выбираются дополнительные места. Рекомендуется до 6.
+          </p>
+          {(content.sliderPlaces ?? []).length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+              {(content.sliderPlaces ?? []).map((item, i) => (
+                <div key={`${item.placeId}-${i}`} style={{ width: 140, position: 'relative', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+                  <img src={getImageUrl(item.image)} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
+                  <div style={{ padding: 8, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.title}>{item.title || item.location || 'Место'}</div>
+                  <button type="button" onClick={() => removeArrayItem('sliderPlaces', i)} className={styles.removeImage} style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }} aria-label="Удалить" title="Удалить"><X size={14} /></button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: '#6b7280', marginBottom: 12 }}>Места не выбраны</p>
+          )}
+          <button type="button" onClick={() => { setSliderPlacesModalOpen(true); setSliderSearchQuery(''); }} className={styles.addBtn}>
+            <Plus size={18} /> Добавить место
+          </button>
+
+          {sliderPlacesModalOpen && (
+            <div
+              className={styles.modalOverlay}
+              onClick={(e) => { if (e.target === e.currentTarget) { setSliderPlacesModalOpen(false); setSliderSearchQuery(''); } }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="slider-places-title"
+            >
+              <div className={styles.modalDialog} style={{ maxWidth: 640 }} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
+                  <h2 id="slider-places-title" className={styles.modalTitle}>Выбрать места для слайдера</h2>
+                  <button type="button" onClick={() => { setSliderPlacesModalOpen(false); setSliderSearchQuery(''); }} className={styles.modalClose} aria-label="Закрыть"><X size={20} /></button>
+                </div>
+                <div className={styles.modalBody}>
+                  <div style={{ marginBottom: 12 }}>
+                    <input
+                      type="text"
+                      placeholder="Поиск мест..."
+                      value={sliderSearchQuery}
+                      onChange={(e) => setSliderSearchQuery(e.target.value)}
+                      className={styles.formInput}
+                      aria-label="Поиск мест"
+                    />
+                  </div>
+                  {(() => {
+                    const query = sliderSearchQuery.trim().toLowerCase();
+                    const filtered = allPlaces.filter((p) => {
+                      if ((content.sliderPlaces ?? []).some((i) => i.placeId === p.id)) return false;
+                      if (!query) return true;
+                      return (p.title || '').toLowerCase().includes(query) || (p.location || '').toLowerCase().includes(query);
+                    });
+                    return filtered.length > 0 ? (
+                      <div className={styles.formAddPlaceList} style={{ maxHeight: 360 }}>
+                        {filtered.map((p) => (
+                          <div
+                            key={p.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => addPlaceToSlider(p)}
+                            onKeyDown={(e) => e.key === 'Enter' && addPlaceToSlider(p)}
+                            className={styles.formAddPlaceItem}
+                          >
+                            {(p.images?.[0] || p.image) && (
+                              <img src={getImageUrl(p.images?.[0] || p.image)} alt="" />
+                            )}
+                            <div className={styles.formAddPlaceItemTitle}>
+                              <div>{p.title}</div>
+                              {p.location && <div className={styles.formAddPlaceItemSub}>{p.location}</div>}
+                            </div>
+                            <span className={styles.formAddPlaceLabel}>+ Добавить</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={styles.formEmptyHint}>
+                        {sliderSearchQuery ? 'Ничего не найдено' : 'Все места уже добавлены'}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className={styles.modalFooter}>
+                  <button type="button" onClick={() => { setSliderPlacesModalOpen(false); setSliderSearchQuery(''); }} className={styles.submitBtn}>Готово</button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Intro */}

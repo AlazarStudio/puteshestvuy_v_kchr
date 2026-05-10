@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { publicRegionAPI, getImageUrl } from '@/lib/api'
+import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 
 const DEFAULT_CONTENT = {
   hero: {
@@ -77,6 +78,7 @@ const DEFAULT_CONTENT = {
     secondaryButtonText: 'Найти гида',
     secondaryButtonLink: '/services',
   },
+  sliderPlaces: [],
 }
 
 function AnimatedCounter({ target, suffix = '' }) {
@@ -160,6 +162,7 @@ export default function Region_page() {
             culture: { ...DEFAULT_CONTENT.culture, ...c.culture, items: Array.isArray(c.culture?.items) && c.culture.items.length > 0 ? c.culture.items : DEFAULT_CONTENT.culture.items },
             places: { ...DEFAULT_CONTENT.places, ...c.places, items: Array.isArray(c.places?.items) && c.places.items.length > 0 ? c.places.items : DEFAULT_CONTENT.places.items },
             cta: { ...DEFAULT_CONTENT.cta, ...c.cta },
+            sliderPlaces: Array.isArray(c.sliderPlaces) ? c.sliderPlaces : [],
           })
         }
       })
@@ -222,6 +225,18 @@ export default function Region_page() {
   }
 
   const hero = content.hero || DEFAULT_CONTENT.hero
+  const sliderPlaces = content.sliderPlaces || []
+  const introSlide = {
+    id: 'intro',
+    isIntro: true,
+    image: getImageUrl(hero.image),
+    video: null,
+    place: hero.subtitle || 'Карачаево-Черкесская Республика',
+    title: hero.title || 'КАРАЧАЕВО-ЧЕРКЕСИЯ',
+    description: 'Удивительные места, захватывающие маршруты и яркие точки притяжения региона.',
+    rating: null,
+    reviewsCount: 0,
+  }
   const intro = content.intro || DEFAULT_CONTENT.intro
   const facts = content.facts || DEFAULT_CONTENT.facts
   const history = content.history || DEFAULT_CONTENT.history
@@ -232,51 +247,11 @@ export default function Region_page() {
 
   return (
     <main className={styles.main}>
-      {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroImg}>
-          <img src={getImageUrl(hero.image)} alt="Карачаево-Черкесия" />
-        </div>
-        <div className={styles.heroOverlay}></div>
-        <div className={styles.heroContent}>
-          <motion.h1 
-            className={styles.heroTitle}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            {hero.title}
-          </motion.h1>
-          <motion.p 
-            className={styles.heroSubtitle}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            {hero.subtitle}
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <Link to={hero.buttonLink || '/routes'} className={styles.heroButton}>
-              {hero.buttonText}
-            </Link>
-          </motion.div>
-        </div>
-        <div className={styles.scrollIndicator}>
-          <motion.div 
-            className={styles.scrollIcon}
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5V19M12 19L5 12M12 19L19 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </motion.div>
-        </div>
-      </section>
+      <SliderFullScreen
+        sliderPlacesOverride={sliderPlaces}
+        introSlideOverride={introSlide}
+        scrollTargetId="intro"
+      />
 
       <CenterBlock>
         <div className={styles.pageContent}>
