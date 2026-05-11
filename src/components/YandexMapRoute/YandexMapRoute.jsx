@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useEffect, useRef, useState } from 'react';
 import { Route, ExternalLink } from 'lucide-react';

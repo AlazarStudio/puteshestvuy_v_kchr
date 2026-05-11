@@ -1,4 +1,4 @@
-'use client';
+
 
 import { Check, Loader2, XCircle } from 'lucide-react';
 import styles from './Modal.module.css';

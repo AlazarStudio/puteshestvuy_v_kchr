@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'

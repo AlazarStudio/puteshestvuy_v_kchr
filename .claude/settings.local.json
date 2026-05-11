@@ -30,7 +30,28 @@
       "Bash(Sort-Object FullName)",
       "WebFetch(domain:murmansk.travel)",
       "Bash(xargs grep -l \"Transport\\\\|Plane\\\\|Flight\")",
-      "Bash(xargs grep -l \"tab\\\\|Tab\")"
+      "Bash(xargs grep -l \"tab\\\\|Tab\")",
+      "Bash(Get-ChildItem \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\app\\\\admin\\\\services\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\github\\\\puteshestvuy_v_kchr\\\\src\\\\components\" -Recurse -Filter \"*.jsx\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(git checkout *)",
+      "Bash(git clean *)",
+      "Bash(grep -E '\\\\.\\(conf|yml|yaml|json|sh\\)$|Dockerfile|docker-compose|\\\\.htaccess|nginx')",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"DIR\"} else {\"FILE\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\app\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"DIR\"} else {\"FILE\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\" -File | Where-Object { $_.Name -match '\\\\.\\(js|json|yml|yaml|conf|config\\)$' } | Select-Object Name)",
+      "Bash(rm -rf dist)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('@vitejs/plugin-react:', p.devDependencies['@vitejs/plugin-react']\\); console.log\\('react:', p.dependencies.react\\); console.log\\('vite:', p.devDependencies.vite\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/@vitejs/plugin-react/package.json'\\); console.log\\('installed plugin-react:', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/react/package.json'\\); console.log\\('installed react:', p.version\\)\")",
+      "Bash(xargs sed -i \"s/^'use client';//g; s/^'use client'$//g\")",
+      "PowerShell(Get-ChildItem \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\" | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\" | ForEach-Object { $_.Name })",
+      "PowerShell(Select-String -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\\\\index.d.ts\" -Pattern \"array_contains|JsonFilter|JsonNullable\" | Select-Object -First 20 | ForEach-Object { $_.Line })",
+      "PowerShell(Select-String -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\\\\index.d.ts\" -Pattern \"export type JsonNullableFilter\" | Select-Object -First 5 | ForEach-Object { $_.LineNumber, $_.Line })"
     ]
   }
 }

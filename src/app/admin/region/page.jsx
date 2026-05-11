@@ -1,8 +1,9 @@
-'use client';
+
 
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Upload, Plus, X, Pencil } from 'lucide-react';
 import { regionAPI, mediaAPI, placesAPI, getImageUrl } from '@/lib/api';
+import ImageCropModal from '../components/ImageCropModal';
 import { stripHtml } from '@/lib/utils';
 import RichTextEditor from '@/components/RichTextEditor';
 import { AdminHeaderRightContext } from '../layout';
@@ -93,6 +94,8 @@ function ensureContent(c) {
 export default function AdminRegionPage() {
   const [content, setContent] = useState(ensureContent(null));
   const [pendingImages, setPendingImages] = useState({}); // { path: { file, preview } }
+  const [cropModal, setCropModal] = useState({ open: false, src: null, path: null, aspect: 16 / 9 });
+  const cropUrlRef = useRef(null);
   const [allPlaces, setAllPlaces] = useState([]);
   const [addPlacesModalOpen, setAddPlacesModalOpen] = useState(false);
   const [sliderPlacesModalOpen, setSliderPlacesModalOpen] = useState(false);
@@ -332,15 +335,31 @@ export default function AdminRegionPage() {
     return !!cur;
   };
 
-  const handleFileSelect = (path, e) => {
+  const handleFileSelect = (path, e, aspect = 16 / 9) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
+    const url = URL.createObjectURL(file);
+    cropUrlRef.current = url;
+    setCropModal({ open: true, src: url, path, aspect });
+  };
+
+  const handleCropComplete = (blob) => {
+    const { path } = cropModal;
+    const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
     setPendingImages((prev) => {
       const old = prev[path];
       if (old) URL.revokeObjectURL(old.preview);
       return { ...prev, [path]: { file, preview: URL.createObjectURL(file) } };
     });
+    setCropModal({ open: false, src: null, path: null, aspect: 16 / 9 });
+    if (cropUrlRef.current) { URL.revokeObjectURL(cropUrlRef.current); cropUrlRef.current = null; }
+  };
+
+  const handleCropCancel = () => {
+    setCropModal({ open: false, src: null, path: null, aspect: 16 / 9 });
+    if (cropUrlRef.current) { URL.revokeObjectURL(cropUrlRef.current); cropUrlRef.current = null; }
   };
 
   const clearImage = (path) => {
@@ -711,7 +730,7 @@ export default function AdminRegionPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleFileSelect(`nature.cards.${i}.image`, e)}
+                  onChange={(e) => handleFileSelect(`nature.cards.${i}.image`, e, 4 / 3)}
                   style={{ display: 'none' }}
                   id={`natureImg${i}`}
                 />
@@ -989,6 +1008,15 @@ export default function AdminRegionPage() {
           </div>
         </section>
       </div>
+
+      <ImageCropModal
+        open={cropModal.open}
+        imageSrc={cropModal.src}
+        title="Обрезка изображения"
+        aspect={cropModal.aspect}
+        onComplete={handleCropComplete}
+        onCancel={handleCropCancel}
+      />
 
       {showToast && <div className={styles.toast}>Сохранено</div>}
     </div>

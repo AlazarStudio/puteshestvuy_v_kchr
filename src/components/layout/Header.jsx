@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -6,6 +6,7 @@ import styles from './Header.module.css'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import AccessibilityButton from '@/components/AccessibilityButton/AccessibilityButton'
 
 function getCurrentLang() {
   const cookie = document.cookie.split(';').find((c) => c.trim().startsWith('googtrans='))
@@ -26,23 +27,19 @@ function switchLang(lang) {
 
 function LangSwitcher({ className }) {
   const lang = getCurrentLang()
+  const inactive = lang === 'ru' ? 'en' : 'ru'
   return (
     <div className={`${styles.langSwitcher} ${className || ''}`}>
-      <button
-        type="button"
-        onClick={() => switchLang('ru')}
-        className={`${styles.langBtn} ${lang === 'ru' ? styles.langBtnActive : ''}`}
-      >
-        RU
-      </button>
-      <span className={styles.langDivider}>|</span>
-      <button
-        type="button"
-        onClick={() => switchLang('en')}
-        className={`${styles.langBtn} ${lang === 'en' ? styles.langBtnActive : ''}`}
-      >
-        EN
-      </button>
+      <div className={styles.langInner}>
+        <span className={styles.langActive}>{lang.toUpperCase()}</span>
+        <button
+          type="button"
+          onClick={() => switchLang(inactive)}
+          className={styles.langInactiveBtn}
+        >
+          {inactive.toUpperCase()}
+        </button>
+      </div>
     </div>
   )
 }
@@ -460,6 +457,10 @@ export default function Header() {
 
         {/* Иконки справа */}
         <div className={styles.icons} aria-label="Дополнительные действия">
+          <AccessibilityButton
+            className={styles.iconButton}
+            src={(isDarkMode || isDropdownActive) ? '/bvi.png' : '/bvi_white.png'}
+          />
           <LangSwitcher />
           <Link
             to="/profile?tab=routes-constructor"
@@ -532,6 +533,14 @@ export default function Header() {
         </nav>
 
         <div className={styles.burgerIcons}>
+          <button
+            type="button"
+            className={styles.burgerIconItem}
+            onClick={() => { document.getElementById('specialButton')?.click(); closeBurger() }}
+          >
+            <img src="/bvi.png" alt="" width={20} height={20} />
+            <span>Версия для слабовидящих</span>
+          </button>
           <LangSwitcher className={styles.burgerLangSwitcher} />
           <Link to="/profile?tab=routes-constructor" className={styles.burgerIconItem} onClick={closeBurger}>
             <img src="/konst_tours.png" alt="" width={20} height={21} />

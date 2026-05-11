@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'

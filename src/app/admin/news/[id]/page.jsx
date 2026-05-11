@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,6 +7,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { newsAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
+import ImageCropModal from '../../components/ImageCropModal';
 import NewsBlockEditor from '../../components/NewsBlockEditor';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
@@ -74,6 +75,9 @@ export default function NewsEditPage() {
   const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   const [pendingImageFile, setPendingImageFile] = useState(null);
   const [pendingBlockFiles, setPendingBlockFiles] = useState({});
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropModalSrc, setCropModalSrc] = useState(null);
+  const cropUrlRef = useRef(null);
   const savedFormDataRef = useRef(null);
   const imageUploadRef = useRef(null);
 
@@ -233,7 +237,25 @@ export default function NewsEditPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
+    const url = URL.createObjectURL(file);
+    cropUrlRef.current = url;
+    setCropModalSrc(url);
+    setCropModalOpen(true);
+  };
+
+  const handleCropComplete = (blob) => {
+    const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
     setPendingImageFile(file);
+    setCropModalOpen(false);
+    setCropModalSrc(null);
+    if (cropUrlRef.current) { URL.revokeObjectURL(cropUrlRef.current); cropUrlRef.current = null; }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    setCropModalSrc(null);
+    if (cropUrlRef.current) { URL.revokeObjectURL(cropUrlRef.current); cropUrlRef.current = null; }
   };
 
   const handleSubmit = async (e) => {
@@ -550,6 +572,15 @@ export default function NewsEditPage() {
         open={saveProgress.open}
         steps={saveProgress.steps}
         totalProgress={saveProgress.totalProgress}
+      />
+
+      <ImageCropModal
+        open={cropModalOpen}
+        imageSrc={cropModalSrc}
+        title="Обрезка превью"
+        aspect={16 / 9}
+        onComplete={handleCropComplete}
+        onCancel={handleCropCancel}
       />
 
       {showToast && (

@@ -1,4 +1,4 @@
-'use client';
+
 
 import { AlertTriangle } from 'lucide-react';
 import styles from './Modal.module.css';

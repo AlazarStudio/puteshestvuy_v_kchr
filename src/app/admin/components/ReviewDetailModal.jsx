@@ -1,4 +1,4 @@
-'use client';
+
 
 import { X, Star, Map, MapPin, Building2, Calendar, User } from 'lucide-react';
 import styles from './Modal.module.css';

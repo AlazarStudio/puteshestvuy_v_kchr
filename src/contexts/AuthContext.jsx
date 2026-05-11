@@ -1,4 +1,4 @@
-'use client'
+
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authAPI, userAPI, USER_TOKEN_KEY } from '@/lib/api'

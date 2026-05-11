@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useEffect, useId } from 'react';
 import { newsAPI, placesAPI, routesAPI, servicesAPI, getImageUrl } from '@/lib/api';

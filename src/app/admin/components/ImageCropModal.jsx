@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';

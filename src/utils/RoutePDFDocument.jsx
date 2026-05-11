@@ -49,7 +49,7 @@ function stripHtml(html) {
     .trim()
 }
 
-function buildCharRows(route) {
+function buildCharRows(route, extraGroups = []) {
   const rows = []
 
   if (route.distance != null && route.distance !== '') {
@@ -80,12 +80,18 @@ function buildCharRows(route) {
     : (route.transport || '')
   if (transportDisplay) rows.push({ label: 'Транспорт', value: transportDisplay })
 
+  for (const group of extraGroups) {
+    const cfValues = route.customFilters?.[group.key]
+    if (!Array.isArray(cfValues) || cfValues.length === 0) continue
+    rows.push({ label: group.label, value: cfValues.join(', ') })
+  }
+
   return rows
 }
 
-export default function RoutePDFDocument({ route }) {
+export default function RoutePDFDocument({ route, extraGroups = [] }) {
   const points = Array.isArray(route.points) ? route.points : []
-  const charRows = buildCharRows(route)
+  const charRows = buildCharRows(route, extraGroups)
   const importantInfoText = stripHtml(route.importantInfo)
 
   return (

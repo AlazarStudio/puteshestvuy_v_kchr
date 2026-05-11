@@ -2,8 +2,8 @@ import { pdf } from '@react-pdf/renderer'
 import { createElement } from 'react'
 import RoutePDFDocument from './RoutePDFDocument'
 
-export async function exportRoutePDF(route) {
-  const blob = await pdf(createElement(RoutePDFDocument, { route })).toBlob()
+export async function exportRoutePDF(route, extraGroups = []) {
+  const blob = await pdf(createElement(RoutePDFDocument, { route, extraGroups })).toBlob()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

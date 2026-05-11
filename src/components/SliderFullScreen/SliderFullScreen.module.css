@@ -340,6 +340,16 @@
   object-fit: contain;
 }
 
+.carousel .list .item:not(:nth-child(1)) .content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.carousel.prev .list .item:nth-child(2) .content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .carousel .list .item:nth-child(1) {
   z-index: 1;
 }

@@ -1,4 +1,4 @@
-'use client';
+
 
 import { X, Calendar, User, Phone, Mail, MapPin, Tag, Clock } from 'lucide-react';
 import styles from './Modal.module.css';

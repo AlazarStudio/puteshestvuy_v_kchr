@@ -40,11 +40,11 @@
   filter: brightness(0) !important;
 }
 
-.headerDropdownActive .langBtn {
+.headerDropdownActive .langActive {
   color: #000000 !important;
 }
 
-.headerDropdownActive .langDivider {
+.headerDropdownActive .langInactiveBtn {
   color: #000000 !important;
 }
 
@@ -87,11 +87,11 @@
   filter: brightness(0) !important;
 }
 
-.headerDarkNoBg .langBtn {
+.headerDarkNoBg .langActive {
   color: #000000 !important;
 }
 
-.headerDarkNoBg .langDivider {
+.headerDarkNoBg .langInactiveBtn {
   color: #000000 !important;
 }
 
@@ -120,11 +120,11 @@
   filter: brightness(0) !important;
 }
 
-.headerDark .langBtn {
+.headerDark .langActive {
   color: #000000 !important;
 }
 
-.headerDark .langDivider {
+.headerDark .langInactiveBtn {
   color: #000000 !important;
 }
 
@@ -207,7 +207,7 @@
 .icons {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .iconButton {
@@ -821,13 +821,34 @@
 /* ===== Переключатель языка ===== */
 
 .langSwitcher {
-  display: flex;
-  align-items: center;
-  gap: 2px;
   margin-right: 4px;
 }
 
-.langBtn {
+.langInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  height: 18px;
+  transition: height 0.2s ease;
+  cursor: default;
+}
+
+.langSwitcher:hover .langInner {
+  height: 36px;
+}
+
+.langActive {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.langInactiveBtn {
+  display: block;
   background: none;
   border: none;
   cursor: pointer;
@@ -835,26 +856,15 @@
   font-weight: 500;
   color: #fff;
   opacity: 0.6;
-  padding: 2px 4px;
-  line-height: 1;
-  transition: opacity 0.2s;
+  padding: 0;
+  line-height: 18px;
   font-family: inherit;
+  white-space: nowrap;
+  transition: opacity 0.2s;
 }
 
-.langBtn:hover {
+.langInactiveBtn:hover {
   opacity: 1;
-}
-
-.langBtnActive {
-  opacity: 1;
-  font-weight: 700;
-}
-
-.langDivider {
-  opacity: 0.4;
-  font-size: 12px;
-  color: inherit;
-  pointer-events: none;
 }
 
 .burgerLangSwitcher {
@@ -865,11 +875,22 @@
   border-bottom: 1px solid #f1f3f8;
 }
 
-.burgerLangSwitcher .langBtn {
-  font-size: 15px;
-  color: #374151;
+.burgerLangSwitcher .langInner {
+  flex-direction: row;
+  height: auto;
+  overflow: visible;
+  gap: 6px;
 }
 
-.burgerLangSwitcher .langBtnActive {
+.burgerLangSwitcher .langActive {
+  font-size: 15px;
   color: #156A60;
+  line-height: 1.5;
+}
+
+.burgerLangSwitcher .langInactiveBtn {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.5;
+  opacity: 1;
 }

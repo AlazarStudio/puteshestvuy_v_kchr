@@ -1,4 +1,4 @@
-'use client'
+
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import styles from './ToastContext.module.css'

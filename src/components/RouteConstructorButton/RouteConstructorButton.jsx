@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModal } from '@/contexts/AuthModalContext'

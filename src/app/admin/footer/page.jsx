@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Upload, Plus, X, Pencil } from 'lucide-react';

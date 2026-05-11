@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -178,6 +178,9 @@ export default function AdminHomePage() {
   const [sliderDraggedIndex, setSliderDraggedIndex] = useState(null);
   const [sliderDragOverIndex, setSliderDragOverIndex] = useState(null);
   const sliderLastDragOverRef = useRef(null);
+  const [bannerDraggedIndex, setBannerDraggedIndex] = useState(null);
+  const [bannerDragOverIndex, setBannerDragOverIndex] = useState(null);
+  const bannerLastDragOverRef = useRef(null);
   const [addPlacesItemsModalOpen, setAddPlacesItemsModalOpen] = useState(false);
   const [placesItemsSearchQuery, setPlacesItemsSearchQuery] = useState('');
   const [placesItemsDraggedIndex, setPlacesItemsDraggedIndex] = useState(null);
@@ -793,6 +796,18 @@ export default function AdminHomePage() {
       if (next.banners[index]) {
         next.banners[index][field] = value;
       }
+      return next;
+    });
+  };
+
+  const moveBannerByDrag = (draggedIndex, targetIndex) => {
+    if (draggedIndex === targetIndex) return;
+    setContent((prev) => {
+      const next = JSON.parse(JSON.stringify(prev));
+      const banners = [...(next.banners || [])];
+      const [removed] = banners.splice(draggedIndex, 1);
+      banners.splice(targetIndex, 0, removed);
+      next.banners = banners;
       return next;
     });
   };
@@ -1685,9 +1700,46 @@ export default function AdminHomePage() {
           </p>
           
           {(content.banners || []).map((banner, i) => (
-            <div key={banner.id || i} className={styles.formGroup} style={{ border: '1px solid #e5e7eb', padding: 16, borderRadius: 10, marginBottom: 12, position: 'relative' }}>
+            <div
+              key={banner.id || i}
+              className={styles.formGroup}
+              style={{
+                border: '1px solid #e5e7eb',
+                padding: 16,
+                borderRadius: 10,
+                marginBottom: 12,
+                position: 'relative',
+                opacity: bannerDraggedIndex === i ? 0.5 : 1,
+                borderColor: bannerDragOverIndex === i ? '#3b82f6' : '#e5e7eb',
+                boxShadow: bannerDragOverIndex === i ? '0 0 0 2px #3b82f6' : 'none',
+                transition: 'all 0.15s',
+              }}
+              draggable
+              onDragStart={(e) => {
+                setBannerDraggedIndex(i);
+                e.dataTransfer.setData('text/plain', String(i));
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragEnd={() => { setBannerDraggedIndex(null); setBannerDragOverIndex(null); bannerLastDragOverRef.current = null; }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setBannerDragOverIndex(i);
+              }}
+              onDragLeave={() => setBannerDragOverIndex((idx) => (idx === i ? null : idx))}
+              onDrop={(e) => {
+                e.preventDefault();
+                const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                setBannerDragOverIndex(null);
+                bannerLastDragOverRef.current = null;
+                if (!Number.isNaN(from) && from !== i) moveBannerByDrag(from, i);
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                  <div style={{ cursor: 'grab', color: '#9ca3af', flexShrink: 0 }} title="Перетащите для изменения порядка">
+                    <GripVertical size={18} />
+                  </div>
                   <span className={styles.formLabel} style={{ margin: 0 }}>Баннер #{i + 1}</span>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                     <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Активен</span>

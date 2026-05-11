@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useState, useEffect, useRef } from 'react'
 import styles from './NewsDetail.module.css'

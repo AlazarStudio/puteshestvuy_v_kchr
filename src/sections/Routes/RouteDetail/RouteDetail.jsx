@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -605,7 +605,7 @@ export default function RouteDetail({ routeSlug }) {
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
               <div id="main" className={styles.title}>{route.title}</div>
-              <button className={styles.pdfButton} onClick={() => exportRoutePDF(route)}>
+              <button className={styles.pdfButton} onClick={() => exportRoutePDF(route, routeFilterMeta.extraGroups)}>
                 Выгрузить в PDF
               </button>
               <div className={styles.information}>

@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useState, useRef, useEffect } from 'react';
 import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading, Plus } from 'lucide-react';

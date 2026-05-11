@@ -1,4 +1,4 @@
-'use client';
+
 
 import DOMPurify from 'dompurify';
 import styles from './RichTextContent.module.css';

@@ -1,4 +1,4 @@
-'use client'
+
 
 import { createContext, useContext, useState, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'

@@ -1,4 +1,4 @@
-'use client'
+
 
 import styles from './ServiceCard.module.css'
 

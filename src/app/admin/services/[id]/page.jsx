@@ -1,8 +1,8 @@
-'use client';
+
 
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin } from 'lucide-react';
+import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -11,10 +11,17 @@ import { SERVICE_TYPE_FIELDS } from '@/sections/Services/ServiceDetail/serviceTy
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
+import ImageCropModal from '../../components/ImageCropModal';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
 
 const TOAST_DURATION_MS = 3000;
+
+const CONTACT_PRESETS = [
+  { label: 'Телефон', value: '', href: '', iconType: 'mui', icon: 'Phone' },
+  { label: 'Почта', value: '', href: '', iconType: 'mui', icon: 'Mail' },
+  { label: 'Сайт', value: '', href: '', iconType: 'mui', icon: 'Globe' },
+];
 
 /** Определяет тип контакта по значению и возвращает подходящий href (tel:/mailto:/https:). В tel: только цифры, без скобок и пробелов. */
 function deriveContactHref(value) {
@@ -126,6 +133,9 @@ export default function ServiceEditPage() {
   const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   /** Снимок последнего сохранённого состояния (строка) — для надёжного сравнения и обновления UI */
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState(null);
+  const [avatarCropOpen, setAvatarCropOpen] = useState(false);
+  const [avatarCropSrc, setAvatarCropSrc] = useState(null);
+  const avatarCropUrlRef = useRef(null);
   const certificateFileInputRef = useRef(null);
   const certificateFieldKeyRef = useRef(null);
   const roomListImageInputRef = useRef(null);
@@ -381,11 +391,53 @@ export default function ServiceEditPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    setGuideAvatar({ type: 'file', value: file, preview: URL.createObjectURL(file) });
+    if (avatarCropUrlRef.current) URL.revokeObjectURL(avatarCropUrlRef.current);
+    const url = URL.createObjectURL(file);
+    avatarCropUrlRef.current = url;
+    setAvatarCropSrc(url);
+    setAvatarCropOpen(true);
   };
+
+  const handleAvatarCropComplete = (blob) => {
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+    setGuideAvatar({ type: 'file', value: file, preview: URL.createObjectURL(file) });
+    setAvatarCropOpen(false);
+    setAvatarCropSrc(null);
+    if (avatarCropUrlRef.current) { URL.revokeObjectURL(avatarCropUrlRef.current); avatarCropUrlRef.current = null; }
+  };
+
+  const handleAvatarCropCancel = () => {
+    setAvatarCropOpen(false);
+    setAvatarCropSrc(null);
+    if (avatarCropUrlRef.current) { URL.revokeObjectURL(avatarCropUrlRef.current); avatarCropUrlRef.current = null; }
+  };
+
+  const [draggedGuideGalleryIndex, setDraggedGuideGalleryIndex] = useState(null);
+  const [dragOverGuideGalleryIndex, setDragOverGuideGalleryIndex] = useState(null);
 
   const setGuideGalleryImages = (list) => {
     setFormData((prev) => ({ ...prev, data: { ...prev.data, galleryImages: list } }));
+  };
+
+  const moveGuideGalleryImage = (index, direction) => {
+    const list = formData.data?.galleryImages ?? [];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= list.length) return;
+    setFormData((prev) => {
+      const arr = [...(prev.data?.galleryImages ?? [])];
+      [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+      return { ...prev, data: { ...prev.data, galleryImages: arr } };
+    });
+  };
+
+  const moveGuideGalleryImageTo = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setFormData((prev) => {
+      const arr = [...(prev.data?.galleryImages ?? [])];
+      const [item] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, item);
+      return { ...prev, data: { ...prev.data, galleryImages: arr } };
+    });
   };
 
   const handleGuideGalleryUpload = (e) => {
@@ -675,6 +727,22 @@ export default function ServiceEditPage() {
   const templateKey = getTemplateKey(formData.category);
   const typeFields = templateKey ? (SERVICE_TYPE_FIELDS[templateKey] || []) : [];
 
+  useEffect(() => {
+    if (isLoading) return;
+    if (!templateKey) return;
+    const hasContactsField = (SERVICE_TYPE_FIELDS[templateKey] || []).some(
+      (f) => f.key === 'contacts' && f.type === 'contactList'
+    );
+    if (!hasContactsField) return;
+    setFormData((prev) => {
+      const contacts = prev.data?.contacts;
+      if (!Array.isArray(contacts) || contacts.length === 0) {
+        return { ...prev, data: { ...prev.data, contacts: CONTACT_PRESETS } };
+      }
+      return prev;
+    });
+  }, [isLoading, templateKey]);
+
   const renderField = (field) => {
     const value = formData.data[field.key];
     const key = field.key;
@@ -918,6 +986,20 @@ export default function ServiceEditPage() {
               >
                 <Plus size={18} /> Добавить контакт
               </button>
+              {CONTACT_PRESETS.filter((p) => !list.some((c) => (c?.label ?? '') === p.label)).map((preset) => {
+                const IconComp = preset.icon === 'Phone' ? Phone : preset.icon === 'Mail' ? Mail : Globe;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className={styles.addBtn}
+                    style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' }}
+                    onClick={() => setData(key, [...list.map(normalizeItem), { ...preset }])}
+                  >
+                    <IconComp size={16} /> {preset.label}
+                  </button>
+                );
+              })}
             </div>
             {contactIconPickerKey === key && contactIconPickerIndex !== null && (
               <div
@@ -1681,14 +1763,68 @@ export default function ServiceEditPage() {
               </div>
               {(formData.data?.galleryImages ?? []).length > 0 && (
                 <div className={styles.imagePreview} style={{ marginTop: 12 }}>
-                  {(formData.data?.galleryImages ?? []).map((img, index) => (
-                    <div key={img.type === 'url' ? img.value : img.preview} className={styles.previewItem}>
-                      <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt={`Галерея ${index + 1}`} />
-                      <button type="button" onClick={() => removeGuideGalleryImage(index)} className={styles.removeImage} title="Удалить" aria-label="Удалить">
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
+                  {(formData.data?.galleryImages ?? []).map((img, index) => {
+                    const list = formData.data?.galleryImages ?? [];
+                    return (
+                      <div
+                        key={img.type === 'url' ? img.value : img.preview}
+                        className={`${styles.imagePreviewItemWrap} ${draggedGuideGalleryIndex === index ? styles.dragging : ''} ${dragOverGuideGalleryIndex === index ? styles.dragOver : ''}`}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedGuideGalleryIndex(index);
+                          e.dataTransfer.setData('text/plain', String(index));
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => { setDraggedGuideGalleryIndex(null); setDragOverGuideGalleryIndex(null); }}
+                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverGuideGalleryIndex(index); }}
+                        onDragLeave={() => setDragOverGuideGalleryIndex((i) => (i === index ? null : i))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                          setDragOverGuideGalleryIndex(null);
+                          if (!Number.isNaN(from) && from !== index) moveGuideGalleryImageTo(from, index);
+                        }}
+                      >
+                        <div className={styles.previewItem}>
+                          <img src={img.type === 'url' ? getImageUrl(img.value) : img.preview} alt={`Галерея ${index + 1}`} />
+                        </div>
+                        <div className={styles.imagePreviewActions}>
+                          <div className={styles.imageDragHandle} title="Перетащите для изменения порядка">
+                            <GripVertical size={18} />
+                          </div>
+                          <div className={styles.imageMoveButtonsRow}>
+                            <button
+                              type="button"
+                              onClick={() => moveGuideGalleryImage(index, -1)}
+                              disabled={index === 0}
+                              className={styles.formMoveBtn}
+                              aria-label="Влево"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveGuideGalleryImage(index, 1)}
+                              disabled={index === list.length - 1}
+                              className={styles.formMoveBtn}
+                              aria-label="Вправо"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeGuideGalleryImage(index)}
+                            className={styles.removeImageBtn}
+                            aria-label="Удалить"
+                            title="Удалить"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1814,6 +1950,15 @@ export default function ServiceEditPage() {
           </div>
         )}
       </form>
+
+      <ImageCropModal
+        open={avatarCropOpen}
+        imageSrc={avatarCropSrc}
+        title="Обрезка аватара"
+        aspect={1}
+        onComplete={handleAvatarCropComplete}
+        onCancel={handleAvatarCropCancel}
+      />
 
       <ConfirmModal
         open={leaveModalOpen}

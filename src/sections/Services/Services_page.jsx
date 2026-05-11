@@ -1,4 +1,4 @@
-'use client'
+
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -320,6 +320,14 @@ export default function Services_page() {
     return [...serviceSelected, ...emergencySelected]
   }, [filters.service, filters.emergency])
 
+  const applyHotelCardPaymentSort = useCallback((items) =>
+    [...items].sort((a, b) => {
+      const aIsHotel = a.category === 'Гостиница'
+      const bIsHotel = b.category === 'Гостиница'
+      if (aIsHotel && bIsHotel) return (b.cardPayment ? 1 : 0) - (a.cardPayment ? 1 : 0)
+      return 0
+    }), [])
+
   const fetchData = useCallback(async (page = 1) => {
     const startTime = Date.now()
     const MIN_LOADING_TIME = 500
@@ -376,6 +384,7 @@ export default function Services_page() {
         if (sortBy === 'rating') newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
         else if (sortBy === 'reviews') newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
         else if (sortBy === 'popularity') newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        newItems = applyHotelCardPaymentSort(newItems)
 
         totalItems = data.pagination?.total ?? 0
         pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
@@ -394,6 +403,7 @@ export default function Services_page() {
         if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
         else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
         else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        serviceItems = applyHotelCardPaymentSort(serviceItems)
 
         const articleItems = (articlesRes.data?.items || []).map((a) => ({
           id: a.id,
@@ -407,6 +417,7 @@ export default function Services_page() {
 
         newItems = [...serviceItems, ...articleItems]
         if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        newItems = applyHotelCardPaymentSort(newItems)
 
         totalItems = servicesTotal + articlesTotal
         pages = Math.max(servicesPages, articlesPages)
@@ -425,6 +436,7 @@ export default function Services_page() {
         if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
         else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
         else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        serviceItems = applyHotelCardPaymentSort(serviceItems)
 
         const articleItems = (articlesRes.data?.items || []).map((a) => ({
           id: a.id,
@@ -438,6 +450,7 @@ export default function Services_page() {
 
         newItems = [...serviceItems, ...articleItems]
         if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+        newItems = applyHotelCardPaymentSort(newItems)
 
         totalItems = servicesTotal + articlesTotal
         pages = Math.max(servicesPages, articlesPages)
@@ -462,7 +475,7 @@ export default function Services_page() {
     } finally {
       setLoading(false)
     }
-  }, [filters, buildCategoryParams, searchQuery, searchFallback, sortBy])
+  }, [filters, buildCategoryParams, searchQuery, searchFallback, sortBy, applyHotelCardPaymentSort])
 
   // При изменении критериев → page=1 (но НЕ на первом запуске)
   useEffect(() => {

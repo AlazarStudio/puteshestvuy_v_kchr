@@ -1,4 +1,4 @@
-'use client'
+
 
 import styles from './PlaceDetail.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
