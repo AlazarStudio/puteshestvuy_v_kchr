@@ -224,28 +224,28 @@ export default function AdminSuggestionsPage() {
                 {selected.shortDescription && (
                   <div className={suggestionStyles.detailSection}>
                     <div className={suggestionStyles.detailSectionLabel}>Краткое описание</div>
-                    <div className={suggestionStyles.detailText}>{stripHtml(selected.shortDescription)}</div>
+                    <div className={suggestionStyles.detailText} dangerouslySetInnerHTML={{__html: selected.shortDescription}} ></div>
                   </div>
                 )}
 
                 {selected.description && (
                   <div className={suggestionStyles.detailSection}>
                     <div className={suggestionStyles.detailSectionLabel}>Описание</div>
-                    <div className={suggestionStyles.detailText}>{stripHtml(selected.description)}</div>
+                    <div className={suggestionStyles.detailText} dangerouslySetInnerHTML={{__html: selected.description}} ></div>
                   </div>
                 )}
 
                 {selected.howToGet && (
                   <div className={suggestionStyles.detailSection}>
                     <div className={suggestionStyles.detailSectionLabel}>Как добраться</div>
-                    <div className={suggestionStyles.detailText}>{stripHtml(selected.howToGet)}</div>
+                    <div className={suggestionStyles.detailText} dangerouslySetInnerHTML={{__html: selected.howToGet}} ></div>
                   </div>
                 )}
 
                 {selected.importantInfo && (
                   <div className={suggestionStyles.detailSection}>
                     <div className={suggestionStyles.detailSectionLabel}>Важно знать</div>
-                    <div className={suggestionStyles.detailText}>{stripHtml(selected.importantInfo)}</div>
+                    <div className={suggestionStyles.detailText} dangerouslySetInnerHTML={{__html: selected.importantInfo}} ></div>
                   </div>
                 )}
 
