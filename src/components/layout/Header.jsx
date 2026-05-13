@@ -1,11 +1,10 @@
 
 
 import { useEffect, useState, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import styles from './Header.module.css'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
-import { publicNewsAPI, getImageUrl } from '@/lib/api'
 import AccessibilityButton from '@/components/AccessibilityButton/AccessibilityButton'
 
 function getCurrentLang() {
@@ -46,10 +45,6 @@ function LangSwitcher({ className }) {
 
 // Данные для выпадающего меню "На помощь туристу"
 const dropdownMenuData = {
-  articles: {
-    title: 'Статьи',
-    viewAllHref: '/services?filter=articles',
-  },
   services: {
     title: 'Сервис',
     columns: [
@@ -75,9 +70,9 @@ const dropdownMenuData = {
   emergency: {
     title: 'Экстренные службы',
     items: [
-      { title: 'Пункты медпомощи', href: '/services?filter=medical' },
-      { title: 'МВД', href: '/services?filter=police' },
-      { title: 'Пожарная охрана', href: '/services?filter=fire-department' },
+      { title: 'Пункты медпомощи', section: 'medhelp' },
+      { title: 'МВД', section: 'mvd' },
+      { title: 'Пожарная охрана', section: 'fire' },
     ],
   },
 }
@@ -126,6 +121,7 @@ const getPageConfig = (pathname) => {
 
 export default function Header() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { placeIds } = useRouteConstructor()
 
   const [isNotFound, setIsNotFound] = useState(false)
@@ -134,9 +130,6 @@ export default function Header() {
 
   // dropdown states
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [activeArticleIndex, setActiveArticleIndex] = useState(0)
-  const [isArticleHovered, setIsArticleHovered] = useState(false)
-  const [dropdownArticles, setDropdownArticles] = useState([])
   const dropdownRef = useRef(null)
   const dropdownTriggerRef = useRef(null)
 
@@ -161,41 +154,6 @@ export default function Header() {
       return () => observer.disconnect()
     }
   }, [])
-
-  // Загрузка статей для dropdown
-  useEffect(() => {
-    let cancelled = false
-    publicNewsAPI
-      .getAll({ type: 'article', limit: 6 })
-      .then((res) => {
-        if (cancelled) return
-        const items = (res.data?.items || []).map((a) => ({
-          title: a.title,
-          href: `/news/${a.slug || a.id}`,
-          image: getImageUrl(a.image) || '/new1.png',
-        }))
-        setDropdownArticles(items)
-      })
-      .catch(() => {
-        if (!cancelled) setDropdownArticles([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const articlesItems = dropdownArticles.length > 0 ? dropdownArticles : []
-
-  // Автосмена активной статьи
-  useEffect(() => {
-    if (!isDropdownOpen || isArticleHovered || articlesItems.length === 0) return
-
-    const interval = setInterval(() => {
-      setActiveArticleIndex((prev) => (prev + 1) % articlesItems.length)
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [isDropdownOpen, isArticleHovered, articlesItems.length])
 
   // Закрывать dropdown при смене роута (чтобы не зависал)
   useEffect(() => {
@@ -366,42 +324,6 @@ export default function Header() {
 
             <div ref={dropdownRef} className={`${styles.dropdownMenu} ${isDropdownOpen ? styles.dropdownMenuOpen : ''}`}>
               <div className={styles.dropdownContent}>
-                {/* превью слева */}
-                <div className={styles.dropdownImageWrapper}>
-                  <img
-                    src={articlesItems[activeArticleIndex]?.image || '/new1.png'}
-                    alt="Превью статьи"
-                    width={200}
-                    height={200}
-                    className={styles.dropdownImage}
-                  />
-                </div>
-
-                {/* статьи */}
-                <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionArticles}`}>
-                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.articles.title}</h3>
-                  <ul className={styles.dropdownList}>
-                    {articlesItems.map((item, index) => (
-                      <li key={index}>
-                        <Link
-                          to={item.href}
-                          className={`${styles.dropdownLink} ${activeArticleIndex === index ? styles.dropdownLinkActive : ''}`}
-                          onMouseEnter={() => {
-                            setIsArticleHovered(true)
-                            setActiveArticleIndex(index)
-                          }}
-                          onMouseLeave={() => setIsArticleHovered(false)}
-                        >
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link to={dropdownMenuData.articles.viewAllHref} className={styles.dropdownViewAll}>
-                    Смотреть все
-                  </Link>
-                </div>
-
                 {/* сервис */}
                 <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionServices}`}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.services.title}</h3>
@@ -429,9 +351,15 @@ export default function Header() {
                   <ul className={styles.dropdownList}>
                     {dropdownMenuData.emergency.items.map((item, index) => (
                       <li key={index}>
-                        <Link to={item.href} className={styles.dropdownLink}>
+                        <button
+                          className={styles.dropdownLink}
+                          onClick={() => {
+                            setIsDropdownOpen(false)
+                            navigate('/', { state: { emergencySection: item.section } })
+                          }}
+                        >
                           {item.title}
-                        </Link>
+                        </button>
                       </li>
                     ))}
                   </ul>

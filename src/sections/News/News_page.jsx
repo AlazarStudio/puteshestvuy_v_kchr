@@ -343,6 +343,21 @@ export default function News_page() {
 
       <CenterBlock>
         <section className={styles.newsSection}>
+          <div className={styles.typeTabs}>
+            <button
+              className={`${styles.typeTab} ${typeFilter === 'news' ? styles.typeTabActive : ''}`}
+              onClick={() => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set('type', 'news'); next.set('page', '1'); return next }, { replace: true })}
+            >
+              Новости
+            </button>
+            <button
+              className={`${styles.typeTab} ${typeFilter === 'article' ? styles.typeTabActive : ''}`}
+              onClick={() => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set('type', 'article'); next.set('page', '1'); return next }, { replace: true })}
+            >
+              Статьи
+            </button>
+          </div>
+
           <div className={styles.newsHeader}>
             <div className={styles.searchBlock}>
               <div className={styles.searchIcon}>

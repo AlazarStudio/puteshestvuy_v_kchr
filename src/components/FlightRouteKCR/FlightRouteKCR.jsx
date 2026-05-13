@@ -9,8 +9,8 @@ const DOT_R = 6
 const CITIES = ['Москва', 'Мин.⁠Воды', 'Санкт-Петербург']
 const POSITIONS = [0, 0.5, 1].map(t => PAD + t * INNER_W)
 const SEGMENTS = [
-  { from: 0, to: 1, duration: '≈ 2 ч 20 мин', flip: false },
-  { from: 1, to: 2, duration: '≈ 3 ч 55 мин', flip: true },
+  { from: 0, to: 1, duration: '≈ 3 ч 10 мин', flip: false },
+  { from: 1, to: 2, duration: '≈ 3 ч 45 мин', flip: true },
 ]
 
 export default function FlightRouteKCR() {

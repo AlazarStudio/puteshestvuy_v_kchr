@@ -507,7 +507,13 @@ export default function SliderFullScreen({
               <div className={styles.buttons}>
                 {slide.isIntro ? (
                   <button
-                    onClick={() => document.getElementById(scrollTargetId)?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => {
+                      const el = document.getElementById(scrollTargetId)
+                      if (el) {
+                        const top = el.getBoundingClientRect().top + window.pageYOffset - 80
+                        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+                      }
+                    }}
                     className={styles.ctaLinkIntro}
                   >
                     Начать путешествие

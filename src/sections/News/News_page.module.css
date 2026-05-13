@@ -53,6 +53,42 @@
   margin-bottom: 50px;
 }
 
+.typeTabs {
+  display: flex;
+  gap: 10px;
+}
+
+.typeTab {
+  padding: 10px 28px;
+  border-radius: 30px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.typeTab:hover {
+  border-color: #156A60;
+  color: #156A60;
+}
+
+.typeTabActive {
+  background: #156A60;
+  border-color: #156A60;
+  color: #fff;
+}
+
+.typeTabActive:hover {
+  background: #0d5248;
+  border-color: #0d5248;
+  color: #fff;
+}
+
 .newsHeader {
   display: flex;
   flex-direction: column;

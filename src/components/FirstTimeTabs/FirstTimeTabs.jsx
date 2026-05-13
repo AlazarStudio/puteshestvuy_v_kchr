@@ -32,7 +32,7 @@ function TransportSubTabs({ transportTabs }) {
 function GeographySections({ sections }) {
   return (
     <>
-      {(sections || []).map(section => (
+      {(sections || []).filter(s => s.key !== 'flight_time').map(section => (
         <div key={section.key} className={styles.geographySection}>
           <h4 className={styles.geographySectionTitle}>{section.label}</h4>
           {section.key === 'climate_info' && <ClimateChartKCR />}
@@ -53,12 +53,14 @@ function EmergencyContent({ sections }) {
           <div className={styles.emergencySubtitle}>единый телефон для всех экстренных служб</div>
         </div>
       </div>
-      {(sections || []).map(section => (
-        <div key={section.key} id={`emergency-${section.key}`} className={styles.emergencySection}>
-          <h4 className={styles.emergencySectionTitle}>{section.label}</h4>
-          <RichTextContent html={section.content} />
-        </div>
-      ))}
+      <div className={styles.emergencySectionsGrid}>
+        {(sections || []).map(section => (
+          <div key={section.key} id={`emergency-${section.key}`} className={styles.emergencySection}>
+            <h4 className={styles.emergencySectionTitle}>{section.label}</h4>
+            <RichTextContent html={section.content} />
+          </div>
+        ))}
+      </div>
     </>
   )
 }

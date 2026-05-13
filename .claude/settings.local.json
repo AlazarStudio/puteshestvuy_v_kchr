@@ -51,7 +51,8 @@
       "PowerShell(Get-ChildItem \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\" | ForEach-Object { $_.FullName })",
       "PowerShell(Get-ChildItem \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\" | ForEach-Object { $_.Name })",
       "PowerShell(Select-String -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\\\\index.d.ts\" -Pattern \"array_contains|JsonFilter|JsonNullable\" | Select-Object -First 20 | ForEach-Object { $_.Line })",
-      "PowerShell(Select-String -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\\\\index.d.ts\" -Pattern \"export type JsonNullableFilter\" | Select-Object -First 5 | ForEach-Object { $_.LineNumber, $_.Line })"
+      "PowerShell(Select-String -Path \"c:\\\\git back\\\\puteshestvuy_v_kchr_back\\\\generated\\\\client\\\\index.d.ts\" -Pattern \"export type JsonNullableFilter\" | Select-Object -First 5 | ForEach-Object { $_.LineNumber, $_.Line })",
+      "Bash(git -C \"c:\\\\github\\\\puteshestvuy_v_kchr\" diff --stat HEAD)"
     ]
   }
 }

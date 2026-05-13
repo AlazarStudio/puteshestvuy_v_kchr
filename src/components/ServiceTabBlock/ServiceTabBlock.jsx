@@ -1,9 +1,10 @@
 
 
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import styles from './ServiceTabBlock.module.css'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
-import { publicServicesAPI, publicHomeAPI } from '@/lib/api'
+import { publicServicesAPI } from '@/lib/api'
 
 const FILTER_TO_CATEGORY = {
   'Гиды': 'Гид',
@@ -23,54 +24,37 @@ const FILTER_TO_CATEGORY = {
   'Музеи': 'Музей',
 }
 
+const LABEL_TO_URL_FILTER = {
+  'Гиды': 'guides',
+  'Активности': 'activities',
+  'Прокат оборудования': 'equipment-rental',
+  'Пункты придорожного сервиса': 'roadside-service',
+  'Торговые точки': 'shops',
+  'Сувениры': 'souvenirs',
+  'Гостиницы': 'hotels',
+  'Кафе и рестораны': 'restaurants',
+  'Трансфер': 'transfer',
+  'АЗС': 'gas-stations',
+  'Санитарные узлы': 'restrooms',
+  'Пункты медпомощи': 'medical',
+  'МВД': 'police',
+  'Пожарная охрана': 'fire-department',
+  'Музеи': 'museums',
+}
+
 const TAB_ORDER = [
   'Гиды',
-  'Активности',
-  'Прокат оборудования',
-  'Пункты придорожного сервиса',
-  'Торговые точки',
-  'Сувениры',
   'Гостиницы',
   'Кафе и рестораны',
-  'Трансфер',
   'АЗС',
-  'Санитарные узлы',
   'Музеи',
-  'Пункты медпомощи',
-  'МВД',
-  'Пожарная охрана',
 ]
-
-const DEFAULT_CARDS_PER_TAB = 8
 
 export default function ServiceTabBlock() {
   const [tabs, setTabs] = useState([])
-  const [activeTab, setActiveTab] = useState(null)
   const [servicesByCategory, setServicesByCategory] = useState({})
   const [loading, setLoading] = useState(true)
-  const [cardsLimit, setCardsLimit] = useState(DEFAULT_CARDS_PER_TAB)
 
-  // Загружаем настройки главной страницы для получения лимита карточек
-  useEffect(() => {
-    let cancelled = false
-    publicHomeAPI.get()
-      .then(({ data }) => {
-        if (!cancelled && data?.servicesCardsLimit) {
-          const limit = typeof data.servicesCardsLimit === 'number' && data.servicesCardsLimit > 0 
-            ? data.servicesCardsLimit 
-            : DEFAULT_CARDS_PER_TAB
-          setCardsLimit(limit)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCardsLimit(DEFAULT_CARDS_PER_TAB)
-        }
-      })
-    return () => { cancelled = true }
-  }, [])
-
-  // Одна загрузка всех услуг — данные по категориям сохраняются для всех табов
   useEffect(() => {
     let cancelled = false
     publicServicesAPI.getAll({ limit: 500 })
@@ -84,25 +68,16 @@ export default function ServiceTabBlock() {
               byCategory[cat].push(s)
             }
           })
-          
-          // Сортируем услуги в каждой категории по популярности (uniqueViewsCount) от большего к меньшему
+
           Object.keys(byCategory).forEach((cat) => {
-            byCategory[cat].sort((a, b) => {
-              const viewsA = a.uniqueViewsCount ?? 0
-              const viewsB = b.uniqueViewsCount ?? 0
-              return viewsB - viewsA // От большего к меньшему
-            })
+            byCategory[cat].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
           })
-          
+
           setServicesByCategory(byCategory)
-          const filledTabs = TAB_ORDER.filter((label) => {
+          setTabs(TAB_ORDER.filter((label) => {
             const cat = FILTER_TO_CATEGORY[label]
             return cat && (byCategory[cat]?.length || 0) > 0
-          })
-          setTabs(filledTabs)
-          if (filledTabs.length > 0) {
-            setActiveTab(filledTabs[0])
-          }
+          }))
         } else if (!cancelled) {
           setServicesByCategory({})
           setTabs([])
@@ -120,45 +95,36 @@ export default function ServiceTabBlock() {
     return () => { cancelled = true }
   }, [])
 
-  const services = activeTab
-    ? (servicesByCategory[FILTER_TO_CATEGORY[activeTab]] || []).slice(0, cardsLimit)
-    : []
-
-  if (loading || tabs.length === 0) {
-    return null
-  }
+  if (loading || tabs.length === 0) return null
 
   return (
     <section className={styles.service}>
-      <nav className={styles.tabs}>
-        <ul>
-          {tabs.map((label) => (
-            <li
-              key={label}
-              className={activeTab === label ? styles.active : ''}
-              onClick={() => setActiveTab(label)}
-            >
-              {label}
-            </li>
-          ))}
-        </ul>
-        <div className={styles.line}></div>
-      </nav>
-      <div className={styles.cards}>
-        {services.length === 0 ? (
-          <div className={styles.empty}>Услуги не найдены</div>
-        ) : (
-          services.map((service) => (
-            <ServiceCardWithParallax
-              key={service.id}
-              service={service}
-              serviceUrl={`/services/${service.slug || service.id}`}
-              isArticle={false}
-              styles={styles}
-            />
-          ))
-        )}
-      </div>
+      {tabs.map((label) => {
+        const category = FILTER_TO_CATEGORY[label]
+        const items = (servicesByCategory[category] || []).slice(0, 4)
+        if (!items.length) return null
+        return (
+          <div key={label} className={styles.categorySection}>
+            <div className={styles.categoryHeader}>
+              <h3 className={styles.categoryTitle}>{label}</h3>
+              <Link to={`/services?filter=${LABEL_TO_URL_FILTER[label]}`} className={styles.categoryViewAll}>
+                Смотреть все
+              </Link>
+            </div>
+            <div className={styles.cards}>
+              {items.map((service) => (
+                <ServiceCardWithParallax
+                  key={service.id}
+                  service={service}
+                  serviceUrl={`/services/${service.slug || service.id}`}
+                  isArticle={false}
+                  styles={styles}
+                />
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </section>
   )
 }
