@@ -17,6 +17,7 @@ export const CATEGORY_TO_TEMPLATE_KEY = {
   'Пункт медпомощи': 'medical',
   'МВД': 'police',
   'Пожарная охрана': 'fire',
+  'МЧС': 'fire',
   'Туроператор': 'tour-operator',
   'Торговая точка': 'shop',
   'Придорожный пункт': 'roadside-point',

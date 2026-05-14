@@ -3,8 +3,8 @@
 import GenericServiceDetail from './GenericServiceDetail'
 
 const config = {
-  breadcrumbTitle: 'Пожарная охрана',
-  categoryLabel: 'Пожарная охрана',
+  breadcrumbTitle: 'МЧС',
+  categoryLabel: 'МЧС',
   serviceName: 'Пожарная часть',
   tags: ['экстренная связь'],
   aboutTitle: 'О подразделении',

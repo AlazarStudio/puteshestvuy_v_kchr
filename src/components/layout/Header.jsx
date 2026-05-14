@@ -72,7 +72,7 @@ const dropdownMenuData = {
     items: [
       { title: 'Пункты медпомощи', section: 'medhelp' },
       { title: 'МВД', section: 'mvd' },
-      { title: 'Пожарная охрана', section: 'fire' },
+      { title: 'МЧС', section: 'fire' },
     ],
   },
 }

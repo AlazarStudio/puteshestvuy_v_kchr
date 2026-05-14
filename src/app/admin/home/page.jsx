@@ -85,7 +85,7 @@ const DEFAULT_CONTENT = {
       emergencySections: [
         { key: 'medhelp', label: 'Пункты медпомощи', content: '' },
         { key: 'mvd', label: 'МВД', content: '' },
-        { key: 'fire', label: 'Пожарная охрана', content: '' },
+        { key: 'fire', label: 'МЧС', content: '' },
       ],
     },
     { key: 'oopt', label: 'Посещение особо охраняемых природных территорий', type: 'oopt', content: '' },

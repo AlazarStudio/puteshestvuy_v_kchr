@@ -298,7 +298,7 @@ export default function ServicesPage() {
             <option value="Санитарные узлы">Санитарные узлы</option>
             <option value="Пункт медпомощи">Пункт медпомощи</option>
             <option value="МВД">МВД</option>
-            <option value="Пожарная охрана">Пожарная охрана</option>
+            <option value="МЧС">МЧС</option>
             <option value="Туроператор">Туроператор</option>
           </select>
           <Link to="/admin/services/new" className={styles.addBtn}><Plus size={18} /> Добавить услугу</Link>

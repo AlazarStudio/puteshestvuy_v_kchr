@@ -16,6 +16,7 @@ import ParallaxImage from '@/components/ParallaxImage'
 import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import { exportRoutePDF } from '@/utils/exportRoutePDF'
+import RichTextContent from '@/components/RichTextContent'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
@@ -851,7 +852,7 @@ export default function RouteDetail({ routeSlug }) {
                       ))}
                     </div>
                     <div className={styles.tabsContent}>
-                      <div className={styles.tabsContentList} dangerouslySetInnerHTML={{ __html: points[activeDay - 1]?.description || '' }} />
+                      <RichTextContent html={points[activeDay - 1]?.description || ''} className={styles.text} />
                     </div>
                   </>
                 ) : (

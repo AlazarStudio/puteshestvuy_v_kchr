@@ -31,7 +31,7 @@ const FILTER_TO_CATEGORY = {
   'Санитарные узлы': 'Санитарные узлы',
   'Пункты медпомощи': 'Пункт медпомощи',
   МВД: 'МВД',
-  'Пожарная охрана': 'Пожарная охрана',
+  'МЧС': 'МЧС',
 }
 
 const SERVICE_FILTER_OPTIONS = [
@@ -49,7 +49,7 @@ const SERVICE_FILTER_OPTIONS = [
   'Санитарные узлы',
 ]
 
-const EMERGENCY_FILTER_OPTIONS = ['Пункты медпомощи', 'МВД', 'Пожарная охрана']
+const EMERGENCY_FILTER_OPTIONS = ['Пункты медпомощи', 'МВД', 'МЧС']
 
 const LABEL_TO_URL_FILTER = {
   Статьи: 'articles',
@@ -66,7 +66,7 @@ const LABEL_TO_URL_FILTER = {
   'Санитарные узлы': 'restrooms',
   'Пункты медпомощи': 'medical',
   МВД: 'police',
-  'Пожарная охрана': 'fire-department',
+  'МЧС': 'fire-department',
   Музеи: 'museums',
   'Оплата картой': 'card-payment',
 }
@@ -86,7 +86,7 @@ const URL_FILTER_TO_LABEL = {
   restrooms: 'Санитарные узлы',
   medical: 'Пункты медпомощи',
   police: 'МВД',
-  'fire-department': 'Пожарная охрана',
+  'fire-department': 'МЧС',
   museums: 'Музеи',
   'card-payment': 'Оплата картой',
 }

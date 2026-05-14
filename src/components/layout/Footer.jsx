@@ -116,7 +116,7 @@ export default function Footer() {
             })}
             <button onClick={() => navigate('/', { state: { emergencySection: 'medhelp' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>Пункты медпомощи</button>
             <button onClick={() => navigate('/', { state: { emergencySection: 'mvd' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>МВД</button>
-            <button onClick={() => navigate('/', { state: { emergencySection: 'fire' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>Пожарная охрана</button>
+            <button onClick={() => navigate('/', { state: { emergencySection: 'fire' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>МЧС</button>
           </div>
 
           <div className={styles.column}>
