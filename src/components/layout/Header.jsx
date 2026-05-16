@@ -273,7 +273,7 @@ export default function Header() {
 
           <Link
             to="/places"
-            className={`${styles.navLink} ${pathname === '/places' || pathname?.startsWith('/places/') ? styles.navLink_active : ''}`}
+            className={`${styles.navLink} ${(pathname === '/places' || pathname?.startsWith('/places/')) && pathname !== '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.navLink_active : ''}`}
             title="Интересные места для посещения"
           >
             Интересные места
@@ -285,14 +285,6 @@ export default function Header() {
             title="Новости"
           >
             Новости
-          </Link>
-
-          <Link
-            to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
-            className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
-            title="Экспедиция Аманауз"
-          >
-            Экспедиция "Аманауз"
           </Link>
 
           {/* DROPDOWN: На помощь туристу */}
@@ -367,6 +359,14 @@ export default function Header() {
               </div>
             </div>
           </div>
+
+          <Link
+            to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
+            className={`${styles.navLink} ${styles.navLinkAmanauz} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.navLink_active : ''}`}
+            title="Экспедиция «Аманауз»"
+          >
+            Экспедиция «Аманауз»
+          </Link>
 
         </nav>
 
@@ -446,14 +446,14 @@ export default function Header() {
           >
             Маршруты
           </Link>
-          <Link to="/places" className={`${styles.burgerLink} ${pathname === '/places' || pathname?.startsWith('/places/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+          <Link to="/places" className={`${styles.burgerLink} ${(pathname === '/places' || pathname?.startsWith('/places/')) && pathname !== '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Интересные места
           </Link>
           <Link to="/news" className={`${styles.burgerLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Новости
           </Link>
           <Link to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273" className={`${styles.burgerLink} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
-            Экспедиция "Аманауз"
+            Экспедиция «Аманауз»
           </Link>
           <Link to="/services" className={`${styles.burgerLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             На помощь туристу

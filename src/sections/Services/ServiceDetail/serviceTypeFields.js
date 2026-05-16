@@ -110,6 +110,10 @@ export const SERVICE_TYPE_FIELDS = {
     { key: 'workingHours', label: 'Режим работы (текст)', type: 'richtext' },
     { key: 'contacts', label: 'Контакты', type: 'contactList' },
   ],
+  tic: [
+    { key: 'aboutContent', label: 'Описание', type: 'richtext' },
+    { key: 'contacts', label: 'Контакты', type: 'contactList' },
+  ],
 }
 
 /** Типы полей для формы */

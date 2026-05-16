@@ -203,6 +203,10 @@
   border-bottom: 5px solid #fff;
 }
 
+.navLinkAmanauz {
+  margin-left: auto;
+}
+
 /* Иконки справа */
 .icons {
   display: flex;

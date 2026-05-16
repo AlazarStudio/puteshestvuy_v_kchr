@@ -257,11 +257,12 @@ export default function ReviewsPage() {
   };
 
   const getEntityIcon = (type) => {
+    const style = { width: 16, height: 16, flexShrink: 0 };
     switch (type) {
-      case 'route': return <Map size={16} />;
-      case 'place': return <MapPin size={16} />;
-      case 'service': return <Building2 size={16} />;
-      default: return null;
+      case 'route': return <Map size={16} style={style} />;
+      case 'place': return <MapPin size={16} style={style} />;
+      case 'service': return <Building2 size={16} style={style} />;
+      default: return <span style={{ display: 'inline-block', width: 16, height: 16, flexShrink: 0 }} />;
     }
   };
 

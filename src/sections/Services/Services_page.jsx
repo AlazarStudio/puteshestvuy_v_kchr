@@ -8,6 +8,7 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
+import CtaSection from '@/components/CtaSection/CtaSection'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
 import { publicServicesAPI, publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -32,6 +33,7 @@ const FILTER_TO_CATEGORY = {
   'Пункты медпомощи': 'Пункт медпомощи',
   МВД: 'МВД',
   'МЧС': 'МЧС',
+  'ТИЦ': 'ТИЦ',
 }
 
 const SERVICE_FILTER_OPTIONS = [
@@ -47,6 +49,7 @@ const SERVICE_FILTER_OPTIONS = [
   'Трансфер',
   'АЗС',
   'Санитарные узлы',
+  'ТИЦ',
 ]
 
 const EMERGENCY_FILTER_OPTIONS = ['Пункты медпомощи', 'МВД', 'МЧС']
@@ -69,6 +72,7 @@ const LABEL_TO_URL_FILTER = {
   'МЧС': 'fire-department',
   Музеи: 'museums',
   'Оплата картой': 'card-payment',
+  'ТИЦ': 'tic',
 }
 
 const URL_FILTER_TO_LABEL = {
@@ -89,6 +93,7 @@ const URL_FILTER_TO_LABEL = {
   'fire-department': 'МЧС',
   museums: 'Музеи',
   'card-payment': 'Оплата картой',
+  tic: 'ТИЦ',
 }
 
 const filterGroups = [
@@ -846,6 +851,15 @@ export default function Services_page() {
           </div>
         </section>
       </CenterBlock>
+
+      <CtaSection
+        title="Всё для комфортного путешествия"
+        text="Гиды, гостиницы, прокат и трансфер — найдите нужные услуги и планируйте поездку без лишних хлопот."
+        primaryButtonText="Новости"
+        primaryButtonLink="/news"
+        secondaryButtonText="Главная"
+        secondaryButtonLink="/"
+      />
     </main>
   )
 }

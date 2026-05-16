@@ -533,12 +533,20 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                   </button>
                 ))}
               </div>
-              {/* Кнопки снизу — функционал будет позже у каждого типа услуги свой
-              <div className={styles.anchorsButtons}>
-                <button type="button" className={`${styles.anchorButton} ${common.anchorButton}`}>Задать вопрос</button>
-                <button type="button" className={`${styles.anchorButtonPrimary} ${common.anchorButtonPrimary}`}>{primaryButtonText}</button>
-              </div>
-              */}
+              {(contacts.length > 0 || showReviews) && (
+                <div className={styles.anchorsButtons}>
+                  {showReviews && (
+                    <button type="button" className={`${styles.anchorButton} ${common.anchorButton}`} onClick={() => scrollToAnchor('reviews')}>
+                      Задать вопрос
+                    </button>
+                  )}
+                  {contacts.length > 0 && (
+                    <button type="button" className={`${styles.anchorButtonPrimary} ${common.anchorButtonPrimary}`} onClick={() => scrollToAnchor('contacts')}>
+                      {primaryButtonText}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

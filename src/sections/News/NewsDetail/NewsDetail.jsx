@@ -16,6 +16,7 @@ export default function NewsDetail({ slug }) {
   const [error, setError] = useState(null)
   const [activeSection, setActiveSection] = useState('')
   const contentRef = useRef(null)
+  const articleContentRef = useRef(null)
 
   const blocks = Array.isArray(news?.blocks) ? news.blocks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []
   const sections = blocks
@@ -24,6 +25,18 @@ export default function NewsDetail({ slug }) {
       id: slugFromText(b.data.text) || `h-${b.id}`,
       title: b.data.text.trim(),
     }))
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [slug])
+
+  useEffect(() => {
+    if (!loading && news && articleContentRef.current) {
+      const el = articleContentRef.current
+      const top = el.getBoundingClientRect().top + window.scrollY - 80
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    }
+  }, [loading, news])
 
   useEffect(() => {
     let cancelled = false
@@ -138,7 +151,7 @@ export default function NewsDetail({ slug }) {
         </div>
       </div>
 
-      <div className={styles.content}>
+      <div className={styles.content} ref={articleContentRef}>
         <CenterBlock>
           <div className={styles.breadCrumbs}>
             <Link to="/">Главная</Link>

@@ -14,6 +14,7 @@ import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import ParallaxImage from '@/components/ParallaxImage'
+import CtaSection from '@/components/CtaSection/CtaSection'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 
@@ -224,6 +225,37 @@ export default function Main_page() {
           </section>
         </CenterBlock>
 
+        {(placesLoading || places.length > 0) && (
+          <>
+            <CenterBlock>
+              <TitleButton title={homeContent.placesTitle} buttonLink={homeContent.placesButtonLink} />
+            </CenterBlock>
+
+            <CenterBlock>
+              <section className={styles.flexBlockPlaces}>
+                {placesLoading ? (
+                  <div className={`${styles.placesLoading} ${styles.placesLoadingFull}`}>Загрузка интересных мест...</div>
+                ) : (
+                  places.map((place) => (
+                    <PlaceBlock
+                      key={place.id}
+                      placeId={place.id}
+                      rating={place.rating != null ? String(place.rating) : '—'}
+                      feedback={formatReviews(place.reviewsCount ?? 0)}
+                      reviewsCount={place.reviewsCount ?? 0}
+                      place={place.location || '—'}
+                      title={place.title}
+                      desc={stripHtml(place.shortDescription || place.description || '')}
+                      img={getImageUrl(place.images?.[0] || place.image) || '/placeImg1.png'}
+                      onClick={() => navigate(`/places/${place.slug || place.id}`)}
+                    />
+                  ))
+                )}
+              </section>
+            </CenterBlock>
+          </>
+        )}
+
         {/* Баннеры */}
         {homeContent.banners && homeContent.banners.length > 0 && (() => {
           const activeBanners = homeContent.banners.filter((banner) => banner.isActive === true);
@@ -414,33 +446,6 @@ export default function Main_page() {
         <MoveLines />
 
         <CenterBlock>
-          <TitleButton title={homeContent.placesTitle} buttonLink={homeContent.placesButtonLink} />
-        </CenterBlock>
-
-        <CenterBlock>
-          <section className={styles.flexBlockPlaces}>
-            {placesLoading ? (
-              <div className={`${styles.placesLoading} ${styles.placesLoadingFull}`}>Загрузка интересных мест...</div>
-            ) : places.length === 0 ? null : (
-              places.map((place) => (
-                <PlaceBlock
-                  key={place.id}
-                  placeId={place.id}
-                  rating={place.rating != null ? String(place.rating) : '—'}
-                  feedback={formatReviews(place.reviewsCount ?? 0)}
-                  reviewsCount={place.reviewsCount ?? 0}
-                  place={place.location || '—'}
-                  title={place.title}
-                  desc={stripHtml(place.shortDescription || place.description || '')}
-                  img={getImageUrl(place.images?.[0] || place.image) || '/placeImg1.png'}
-                  onClick={() => navigate(`/places/${place.slug || place.id}`)}
-                />
-              ))
-            )}
-          </section>
-        </CenterBlock>
-
-        <CenterBlock>
           <SwiperSliderMain />
         </CenterBlock>
 
@@ -448,6 +453,13 @@ export default function Main_page() {
           <img src={getImageUrl(homeContent.backgroundImage) || '/mountainBG.png'} alt="" />
         </div>
       </div>
+
+      <CtaSection
+        title="Начните своё путешествие"
+        text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе и выберите свой маршрут."
+        primaryButtonText="Узнать о регионе"
+        primaryButtonLink="/region"
+      />
     </main>
   )
 }

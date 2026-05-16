@@ -1,0 +1,118 @@
+.ctaSection {
+  position: relative;
+  padding: 100px 0;
+  background-image: url('/mountainBG.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.ctaOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(21, 106, 96, 0.9) 0%, rgba(13, 74, 68, 0.95) 100%);
+}
+
+.ctaContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 20px;
+  color: #fff;
+}
+
+.ctaTitle {
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 150%;
+}
+
+.ctaText {
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 160%;
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaButtonPrimary {
+  display: inline-block;
+  padding: 16px 40px;
+  background-color: #fff;
+  color: #156A60;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonPrimary:hover {
+  background-color: #F1F3F8;
+  transform: translateY(-2px);
+}
+
+.ctaButtonSecondary {
+  display: inline-block;
+  padding: 16px 40px;
+  background-color: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.ctaButtonSecondary:hover {
+  background-color: #fff;
+  color: #156A60;
+  transform: translateY(-2px);
+}
+
+@media (min-width: 1025px) and (max-width: 1600px) {
+  .ctaSection {
+    padding: 80px 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ctaTitle {
+    font-size: 28px;
+  }
+
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ctaSection {
+    padding: 60px 16px;
+    background-attachment: scroll;
+  }
+}
+
+@media (max-width: 480px) {
+  .ctaSection {
+    padding: 60px 16px;
+  }
+
+  .ctaTitle {
+    font-size: 24px;
+  }
+
+  .ctaText {
+    font-size: 16px;
+  }
+}

@@ -22,6 +22,7 @@ export const CATEGORY_TO_TEMPLATE_KEY = {
   'Торговая точка': 'shop',
   'Придорожный пункт': 'roadside-point',
   'Музей': 'museum',
+  'ТИЦ': 'tic',
 }
 
 /** Ключ шаблона по умолчанию, если категория не найдена */

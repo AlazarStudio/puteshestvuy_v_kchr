@@ -8,6 +8,7 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
+import CtaSection from '@/components/CtaSection/CtaSection'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import SuggestPlaceModal from '@/components/SuggestPlaceModal/SuggestPlaceModal'
@@ -811,6 +812,15 @@ export default function Places_page() {
           </button>
         </div>
       </CenterBlock>
+
+      <CtaSection
+        title="Откройте лучшие места"
+        text="Водопады, ущелья, горные озёра — каждый уголок республики хранит свою историю и красоту. Исследуйте их сами!"
+        primaryButtonText="Маршруты"
+        primaryButtonLink="/routes"
+        secondaryButtonText="Новости"
+        secondaryButtonLink="/news"
+      />
 
       <SuggestPlaceModal isOpen={suggestModalOpen} onClose={() => setSuggestModalOpen(false)} />
 

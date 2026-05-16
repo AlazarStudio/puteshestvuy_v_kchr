@@ -224,7 +224,8 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
   const anchors = [
     { id: 'main', label: 'Основное' },
     ...(aboutContent != null && aboutContent !== '' ? [{ id: 'about', label: 'О специалисте' }] : []),
-    ...(serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    // скрыто для гидов: ...(isGuide && serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
+    ...(!isGuide && serviceData?.latitude != null && serviceData?.longitude != null ? [{ id: 'map', label: 'Как добраться' }] : []),
     ...(contactsList.length > 0 ? [{ id: 'contacts', label: 'Контакты' }] : []),
     ...(servicesList.length > 0 ? [{ id: 'services', label: 'Услуги' }] : []),
     ...(certificateList.length > 0 ? [{ id: 'certificates', label: 'Сертификаты' }] : []),
@@ -415,7 +416,8 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                 </>
               )}
 
-              {serviceData?.latitude != null && serviceData?.longitude != null && (
+              {/* скрыто для гидов: убрать !isGuide чтобы вернуть */}
+              {!isGuide && serviceData?.latitude != null && serviceData?.longitude != null && (
                 <>
                   <div id="map" className={`${styles.title} ${g.title}`} style={{ marginBottom: 16 }}>Как добраться</div>
                   <div style={{ marginBottom: 24 }}>

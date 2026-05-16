@@ -8,6 +8,7 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
+import CtaSection from '@/components/CtaSection/CtaSection'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import { publicRoutesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -810,6 +811,15 @@ export default function Routes_page() {
           </div>
         </section>
       </CenterBlock>
+
+      <CtaSection
+        title="Исследуйте маршруты КЧР"
+        text="Горные тропы, живописные перевалы и захватывающие вершины ждут вас. Выберите маршрут — и отправляйтесь навстречу приключению!"
+        primaryButtonText="О регионе"
+        primaryButtonLink="/region"
+        secondaryButtonText="Интересные места"
+        secondaryButtonLink="/places"
+      />
     </main>
   )
 }

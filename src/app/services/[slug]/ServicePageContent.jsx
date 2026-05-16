@@ -9,6 +9,7 @@ import ActivityDetail from '@/sections/Services/ServiceDetail/ActivityDetail'
 import EquipmentRentalDetail from '@/sections/Services/ServiceDetail/EquipmentRentalDetail'
 import RoadsideServiceDetail from '@/sections/Services/ServiceDetail/RoadsideServiceDetail'
 import MuseumDetail from '@/sections/Services/ServiceDetail/MuseumDetail'
+import TICDetail from '@/sections/Services/ServiceDetail/TICDetail'
 import GenericServiceDetail from '@/sections/Services/ServiceDetail/GenericServiceDetail'
 
 export default function ServicePageContent({ slug }) {
@@ -66,6 +67,8 @@ export default function ServicePageContent({ slug }) {
       return <RoadsideServiceDetail serviceSlug={slug} serviceData={service} />
     case 'museum':
       return <MuseumDetail serviceSlug={slug} serviceData={service} />
+    case 'tic':
+      return <TICDetail serviceSlug={slug} serviceData={service} />
     default:
       return (
         <GenericServiceDetail

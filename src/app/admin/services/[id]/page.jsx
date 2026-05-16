@@ -58,6 +58,7 @@ const categories = [
   'Туроператор',
   'Торговая точка',
   'Придорожный пункт',
+  'ТИЦ',
 ];
 
 function getTemplateKey(category) {
@@ -1613,7 +1614,8 @@ export default function ServiceEditPage() {
           </div>
         )}
 
-        {formData.category && (
+        {/* скрыто для гидов: убрать formData.category !== 'Гид' && чтобы вернуть */}
+        {formData.category && formData.category !== 'Гид' && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Адрес (для карты на сайте)</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1650,7 +1652,7 @@ export default function ServiceEditPage() {
           </div>
         )}
 
-        {formData.category && mapVisible && (
+        {formData.category && formData.category !== 'Гид' && mapVisible && (
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>Местоположение на карте</label>
             <div className={styles.mapSearchToggleWrap} style={{ marginBottom: 12 }}>
@@ -1719,7 +1721,7 @@ export default function ServiceEditPage() {
           </div>
         )}
 
-        {formData.category && !mapVisible && (
+        {formData.category && formData.category !== 'Гид' && !mapVisible && (
           <YandexMapPicker
             latitude={formData.latitude}
             longitude={formData.longitude}

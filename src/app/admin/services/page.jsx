@@ -300,6 +300,7 @@ export default function ServicesPage() {
             <option value="МВД">МВД</option>
             <option value="МЧС">МЧС</option>
             <option value="Туроператор">Туроператор</option>
+            <option value="ТИЦ">ТИЦ</option>
           </select>
           <Link to="/admin/services/new" className={styles.addBtn}><Plus size={18} /> Добавить услугу</Link>
         </div>
