@@ -855,10 +855,10 @@ export default function Services_page() {
       <CtaSection
         title="Всё для комфортного путешествия"
         text="Гиды, гостиницы, прокат и трансфер — найдите нужные услуги и планируйте поездку без лишних хлопот."
-        primaryButtonText="Новости"
-        primaryButtonLink="/news"
-        secondaryButtonText="Главная"
-        secondaryButtonLink="/"
+        primaryButtonText="Маршруты"
+        primaryButtonLink="/routes"
+        secondaryButtonText="Новости и статьи"
+        secondaryButtonLink="/news"
       />
     </main>
   )

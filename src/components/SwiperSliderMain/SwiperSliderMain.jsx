@@ -11,7 +11,6 @@ import 'swiper/css/navigation';
 
 import { Navigation } from 'swiper/modules';
 import { Link } from 'react-router-dom';
-import TitleButton from '../TitleButton/TitleButton';
 import { useRef } from 'react';
 import { publicNewsAPI, publicHomeAPI, getImageUrl } from '@/lib/api';
 
@@ -190,7 +189,6 @@ export default function SwiperSliderMain() {
 
   return (
     <section className={styles.slider}>
-      <TitleButton title="" buttonLink="/services?filter=articles" />
 
       {loading ? (
         <div className={styles.loading}>Загрузка статей...</div>

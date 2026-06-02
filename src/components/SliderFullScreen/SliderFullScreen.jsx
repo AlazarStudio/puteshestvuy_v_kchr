@@ -121,6 +121,7 @@ export default function SliderFullScreen({
   sliderPlacesOverride = null,
   introSlideOverride = null,
   scrollTargetId = 'firstTime',
+  introBtnText = 'Начать путешествие',
 }) {
   const [slides, setSlides] = useState([])
   const initialSlidesRef = useRef([])
@@ -516,7 +517,7 @@ export default function SliderFullScreen({
                     }}
                     className={styles.ctaLinkIntro}
                   >
-                    Начать путешествие
+                    {introBtnText}
                   </button>
                 ) : (
                   <Link to={placeHref(slide)} className={styles.ctaLink}>

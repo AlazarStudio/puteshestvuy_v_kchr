@@ -94,6 +94,7 @@ export default function Main_page() {
   const [places, setPlaces] = useState([])
   const [placesLoading, setPlacesLoading] = useState(true)
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT)
+  const [newsTab, setNewsTab] = useState('news')
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
   const [emergencyScrollId, setEmergencyScrollId] = useState(null)
 
@@ -223,6 +224,14 @@ export default function Main_page() {
               />
             ))}
           </section>
+        </CenterBlock>
+
+        <CenterBlock>
+          <TitleButton title={homeContent.servicesTitle} buttonLink={homeContent.servicesButtonLink} />
+        </CenterBlock>
+
+        <CenterBlock>
+          <ServiceTabBlock />
         </CenterBlock>
 
         {(placesLoading || places.length > 0) && (
@@ -433,33 +442,49 @@ export default function Main_page() {
           );
         })()}
 
-        <NewsFullBlock />
-
         <CenterBlock>
-          <TitleButton title={homeContent.servicesTitle} buttonLink={homeContent.servicesButtonLink} />
+          <TitleButton title="Новости и статьи" buttonLink="/news" />
         </CenterBlock>
 
         <CenterBlock>
-          <ServiceTabBlock />
+          <div className={styles.newsTabs}>
+            <button
+              type="button"
+              className={`${styles.newsTab} ${newsTab === 'news' ? styles.newsTabActive : ''}`}
+              onClick={() => setNewsTab('news')}
+            >
+              Новости
+            </button>
+            <button
+              type="button"
+              className={`${styles.newsTab} ${newsTab === 'article' ? styles.newsTabActive : ''}`}
+              onClick={() => setNewsTab('article')}
+            >
+              Статьи
+            </button>
+          </div>
         </CenterBlock>
+
+        {newsTab === 'news' ? (
+          <NewsFullBlock />
+        ) : (
+          <CenterBlock>
+            <SwiperSliderMain />
+          </CenterBlock>
+        )}
 
         <MoveLines />
 
-        <CenterBlock>
-          <SwiperSliderMain />
-        </CenterBlock>
-
         <div className={styles.imgBG}>
           <img src={getImageUrl(homeContent.backgroundImage) || '/mountainBG.png'} alt="" />
+          <CtaSection
+            title="Начните своё путешествие"
+            text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе и выберите свой маршрут."
+            primaryButtonText="Узнать о регионе"
+            primaryButtonLink="/region"
+          />
         </div>
       </div>
-
-      <CtaSection
-        title="Начните своё путешествие"
-        text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе и выберите свой маршрут."
-        primaryButtonText="Узнать о регионе"
-        primaryButtonLink="/region"
-      />
     </main>
   )
 }

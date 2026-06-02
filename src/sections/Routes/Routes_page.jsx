@@ -815,10 +815,10 @@ export default function Routes_page() {
       <CtaSection
         title="Исследуйте маршруты КЧР"
         text="Горные тропы, живописные перевалы и захватывающие вершины ждут вас. Выберите маршрут — и отправляйтесь навстречу приключению!"
-        primaryButtonText="О регионе"
-        primaryButtonLink="/region"
-        secondaryButtonText="Интересные места"
-        secondaryButtonLink="/places"
+        primaryButtonText="Интересные места"
+        primaryButtonLink="/places"
+        secondaryButtonText="Услуги и сервисы"
+        secondaryButtonLink="/services"
       />
     </main>
   )

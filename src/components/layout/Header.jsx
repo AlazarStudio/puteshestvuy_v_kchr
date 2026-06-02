@@ -264,14 +264,6 @@ export default function Header() {
           </Link>
 
           <Link
-            to="/routes"
-            className={`${styles.navLink} ${pathname === '/routes' || (pathname?.startsWith('/routes/') && pathname !== '/routes') ? styles.navLink_active : ''}`}
-            title="Туристические маршруты"
-          >
-            Маршруты
-          </Link>
-
-          <Link
             to="/places"
             className={`${styles.navLink} ${(pathname === '/places' || pathname?.startsWith('/places/')) && pathname !== '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.navLink_active : ''}`}
             title="Интересные места для посещения"
@@ -280,11 +272,11 @@ export default function Header() {
           </Link>
 
           <Link
-            to="/news"
-            className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
-            title="Новости"
+            to="/routes"
+            className={`${styles.navLink} ${pathname === '/routes' || (pathname?.startsWith('/routes/') && pathname !== '/routes') ? styles.navLink_active : ''}`}
+            title="Туристические маршруты"
           >
-            Новости
+            Маршруты
           </Link>
 
           {/* DROPDOWN: На помощь туристу */}
@@ -302,6 +294,14 @@ export default function Header() {
               {/* На помощь туристу */}
               Услуги и сервисы
             </Link>
+
+          <Link
+            to="/news"
+            className={`${styles.navLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.navLink_active : ''}`}
+            title="Новости и статьи"
+          >
+            Новости и статьи
+          </Link>
 
             {/* <svg
               className={`${styles.dropdownIcon} ${isDarkMode && styles.dropdownIconDark} ${isDropdownOpen ? styles.dropdownIconRotated : ''}`}
@@ -440,6 +440,9 @@ export default function Header() {
           <Link to="/region" className={`${styles.burgerLink} ${pathname === '/region' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             О регионе
           </Link>
+          <Link to="/places" className={`${styles.burgerLink} ${(pathname === '/places' || pathname?.startsWith('/places/')) && pathname !== '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+            Интересные места
+          </Link>
           <Link
             to="/routes"
             className={`${styles.burgerLink} ${pathname === '/routes' || (pathname?.startsWith('/routes/') && pathname !== '/routes') ? styles.burgerLinkActive : ''}`}
@@ -447,17 +450,14 @@ export default function Header() {
           >
             Маршруты
           </Link>
-          <Link to="/places" className={`${styles.burgerLink} ${(pathname === '/places' || pathname?.startsWith('/places/')) && pathname !== '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
-            Интересные места
+          <Link to="/services" className={`${styles.burgerLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+            Услуги и сервисы
           </Link>
           <Link to="/news" className={`${styles.burgerLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
-            Новости
+            Новости и статьи
           </Link>
           <Link to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273" className={`${styles.burgerLink} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Экспедиция «Аманауз»
-          </Link>
-          <Link to="/services" className={`${styles.burgerLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
-            На помощь туристу
           </Link>
         </nav>
 

@@ -43,10 +43,10 @@ const DEFAULT_CONTENT = {
     title: 'Готовы к путешествию?',
     text: '',
     image: '',
-    primaryButtonText: 'Выбрать маршрут',
-    primaryButtonLink: '/routes',
-    secondaryButtonText: 'Найти гида',
-    secondaryButtonLink: '/services',
+    primaryButtonText: 'Интересные места',
+    primaryButtonLink: '/places',
+    secondaryButtonText: 'Маршруты',
+    secondaryButtonLink: '/routes',
   },
 };
 
@@ -973,7 +973,7 @@ export default function AdminRegionPage() {
             <div>
               <label className={styles.formLabel}>Ссылка основной кнопки</label>
               <select
-                value={content.cta?.primaryButtonLink ?? '/routes'}
+                value={content.cta?.primaryButtonLink ?? '/places'}
                 onChange={(e) => update('cta.primaryButtonLink', e.target.value)}
                 className={styles.formSelect}
               >
@@ -996,7 +996,7 @@ export default function AdminRegionPage() {
             <div>
               <label className={styles.formLabel}>Ссылка второй кнопки</label>
               <select
-                value={content.cta?.secondaryButtonLink ?? '/services'}
+                value={content.cta?.secondaryButtonLink ?? '/routes'}
                 onChange={(e) => update('cta.secondaryButtonLink', e.target.value)}
                 className={styles.formSelect}
               >

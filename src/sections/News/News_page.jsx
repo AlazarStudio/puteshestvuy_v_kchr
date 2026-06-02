@@ -54,7 +54,7 @@ export default function News_page() {
 
   const [pageContent, setPageContent] = useState({
     hero: {
-      title: 'НОВОСТИ',
+      title: 'НОВОСТИ И СТАТЬИ',
       description: 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
       image: '/newBG.png',
     },
@@ -313,7 +313,7 @@ export default function News_page() {
         if (!cancelled) {
           setPageContent({
             hero: {
-              title: 'НОВОСТИ',
+              title: 'НОВОСТИ И СТАТЬИ',
               description:
                 'Актуальные новости о туризме, событиях и интересных местах Карачаево-Черкесии',
               image: '/newBG.png',
@@ -568,10 +568,10 @@ export default function News_page() {
       <CtaSection
         title="Будьте в курсе событий"
         text="Актуальные новости туризма, анонсы событий и интересные статьи о Карачаево-Черкесии — всё самое важное здесь."
-        primaryButtonText="Интересные места"
-        primaryButtonLink="/places"
-        secondaryButtonText="Услуги"
-        secondaryButtonLink="/services"
+        primaryButtonText="Услуги и сервисы"
+        primaryButtonLink="/services"
+        secondaryButtonText="Маршруты"
+        secondaryButtonLink="/routes"
       />
     </main>
   )

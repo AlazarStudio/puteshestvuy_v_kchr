@@ -816,10 +816,10 @@ export default function Places_page() {
       <CtaSection
         title="Откройте лучшие места"
         text="Водопады, ущелья, горные озёра — каждый уголок республики хранит свою историю и красоту. Исследуйте их сами!"
-        primaryButtonText="Маршруты"
-        primaryButtonLink="/routes"
-        secondaryButtonText="Новости"
-        secondaryButtonLink="/news"
+        primaryButtonText="О регионе"
+        primaryButtonLink="/region"
+        secondaryButtonText="Маршруты"
+        secondaryButtonLink="/routes"
       />
 
       <SuggestPlaceModal isOpen={suggestModalOpen} onClose={() => setSuggestModalOpen(false)} />

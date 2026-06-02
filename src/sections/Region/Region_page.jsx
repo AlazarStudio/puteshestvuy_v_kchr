@@ -73,10 +73,10 @@ const DEFAULT_CONTENT = {
   cta: {
     title: 'Готовы к путешествию?',
     text: 'Откройте для себя красоту Карачаево-Черкесии. Выберите маршрут и отправляйтесь в незабываемое приключение!',
-    primaryButtonText: 'Выбрать маршрут',
-    primaryButtonLink: '/routes',
-    secondaryButtonText: 'Найти гида',
-    secondaryButtonLink: '/services',
+    primaryButtonText: 'Интересные места',
+    primaryButtonLink: '/places',
+    secondaryButtonText: 'Маршруты',
+    secondaryButtonLink: '/routes',
   },
   sliderPlaces: [],
 }
@@ -251,6 +251,7 @@ export default function Region_page() {
         sliderPlacesOverride={sliderPlaces}
         introSlideOverride={introSlide}
         scrollTargetId="intro"
+        introBtnText="Начать знакомство"
       />
 
       <CenterBlock>
@@ -423,10 +424,10 @@ export default function Region_page() {
           <h2 className={styles.ctaTitle}>{cta.title}</h2>
           <p className={styles.ctaText}>{cta.text}</p>
           <div className={styles.ctaButtons}>
-            <Link to={cta.primaryButtonLink || '/routes'} className={styles.ctaButtonPrimary}>
+            <Link to={cta.primaryButtonLink || '/places'} className={styles.ctaButtonPrimary}>
               {cta.primaryButtonText}
             </Link>
-            <Link to={cta.secondaryButtonLink || '/services'} className={styles.ctaButtonSecondary}>
+            <Link to={cta.secondaryButtonLink || '/routes'} className={styles.ctaButtonSecondary}>
               {cta.secondaryButtonText}
             </Link>
           </div>

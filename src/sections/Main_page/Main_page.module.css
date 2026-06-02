@@ -34,6 +34,8 @@
   height: fit-content;
   margin-top: -150px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .imgBG::before {
@@ -48,8 +50,47 @@
 
 .imgBG img {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  max-height: 85vh;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+
+.newsTabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: -50px;
+}
+
+.newsTab {
+  padding: 10px 28px;
+  border-radius: 30px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.newsTab:hover {
+  border-color: #156A60;
+  color: #156A60;
+}
+
+.newsTabActive {
+  background: #156A60;
+  border-color: #156A60;
+  color: #fff;
+}
+
+.newsTabActive:hover {
+  background: #0d5248;
+  border-color: #0d5248;
+  color: #fff;
 }
 
 .placesLoading {
