@@ -92,7 +92,7 @@ const DEFAULT_CONTENT = {
     { key: 'border_zones', label: 'Посещение пограничных зон', type: 'border_zones', content: '' },
     { key: 'tic', label: 'Туристско-информационные центры', type: 'tic', content: '' },
   ],
-  servicesTitle: 'СЕРВИС И УСЛУГИ',
+  servicesTitle: 'УСЛУГИ И СЕРВИСЫ',
   servicesButtonLink: '/services',
   servicesCardsLimit: 8, // Максимальное количество карточек услуг в каждом табе
   placesTitle: 'КУДА ПОЕХАТЬ?',
@@ -1477,7 +1477,7 @@ export default function AdminHomePage() {
               value={content.servicesTitle ?? ''}
               onChange={(e) => update('servicesTitle', e.target.value)}
               className={styles.formInput}
-              placeholder="СЕРВИС И УСЛУГИ"
+              placeholder="УСЛУГИ И СЕРВИСЫ"
             />
           </div>
           <div className={styles.formGroup}>

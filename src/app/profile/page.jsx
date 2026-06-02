@@ -21,7 +21,7 @@ import serviceStyles from '@/sections/Services/Services_page.module.css'
 const TABS = [
   { id: 'routes', label: 'Маршруты', icon: 'route', countKey: 'routes' },
   { id: 'places', label: 'Интересные места', icon: 'place', countKey: 'places' },
-  { id: 'services', label: 'Сервис и услуги', icon: 'service', countKey: 'services' },
+  { id: 'services', label: 'Услуги и сервисы', icon: 'service', countKey: 'services' },
   { id: 'routes-constructor', label: 'Конструктор маршрутов', icon: 'constructor', iconImage: '/konst_tours_black.svg', countKey: 'constructor' },
 ]
 

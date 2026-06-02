@@ -853,12 +853,10 @@ export default function Services_page() {
       </CenterBlock>
 
       <CtaSection
-        title="Всё для комфортного путешествия"
-        text="Гиды, гостиницы, прокат и трансфер — найдите нужные услуги и планируйте поездку без лишних хлопот."
-        primaryButtonText="Маршруты"
-        primaryButtonLink="/routes"
-        secondaryButtonText="Новости и статьи"
-        secondaryButtonLink="/news"
+        title="Будьте в курсе событий"
+        text="Актуальные новости туризма, анонсы событий и интересные статьи о Карачаево-Черкесии — всё самое важное здесь."
+        primaryButtonText="Новости и статьи"
+        primaryButtonLink="/news"
       />
     </main>
   )

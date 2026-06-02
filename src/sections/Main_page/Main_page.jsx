@@ -79,7 +79,7 @@ const DEFAULT_HOME_CONTENT = {
   firstTimeTitle: 'Впервые в КЧР?',
   firstTimeDesc: 'Специально для вас нами собрана вся необходимая информация, чтобы знакомство с нашей удивительной республикой было легким, насыщенным и вдохновляющим, а путешествие по ней — комфортным, интересным и незабываемым.',
   firstTimeTabs: [],
-  servicesTitle: 'СЕРВИС И УСЛУГИ',
+  servicesTitle: 'УСЛУГИ И СЕРВИСЫ',
   servicesButtonLink: '/services',
   servicesCardsLimit: 8,
   placesTitle: 'КУДА ПОЕХАТЬ?',
@@ -479,8 +479,8 @@ export default function Main_page() {
           <img src={getImageUrl(homeContent.backgroundImage) || '/mountainBG.png'} alt="" />
           <CtaSection
             title="Начните своё путешествие"
-            text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе и выберите свой маршрут."
-            primaryButtonText="Узнать о регионе"
+            text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе, выберите интересные места и спланируйте свои маршруты."
+            primaryButtonText="Начать знакомство"
             primaryButtonLink="/region"
           />
         </div>

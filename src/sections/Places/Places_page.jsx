@@ -588,7 +588,7 @@ export default function Places_page() {
           setPageContent({
             hero: {
               title: data.content.hero.title || 'ИНТЕРЕСНЫЕ МЕСТА',
-              description: data.content.hero.description || 'Создайте свой уникальный маршрут!',
+              description: data.content.hero.description || 'Изучите места, с которых может начаться ваше путешествие.',
               image: data.content.hero.image || '/full_places_bg.jpg',
             },
           })
@@ -599,7 +599,7 @@ export default function Places_page() {
           setPageContent({
             hero: {
               title: 'ИНТЕРЕСНЫЕ МЕСТА',
-              description: 'Создайте свой уникальный маршрут!',
+              description: 'Изучите места, с которых может начаться ваше путешествие.',
               image: '/full_places_bg.jpg',
             },
           })
@@ -814,12 +814,10 @@ export default function Places_page() {
       </CenterBlock>
 
       <CtaSection
-        title="Откройте лучшие места"
-        text="Водопады, ущелья, горные озёра — каждый уголок республики хранит свою историю и красоту. Исследуйте их сами!"
-        primaryButtonText="О регионе"
-        primaryButtonLink="/region"
-        secondaryButtonText="Маршруты"
-        secondaryButtonLink="/routes"
+        title="Исследуйте маршруты КЧР"
+        text="Горные тропы, живописные перевалы и захватывающие вершины ждут вас. Выберите маршрут — и отправляйтесь навстречу приключению!"
+        primaryButtonText="Маршруты"
+        primaryButtonLink="/routes"
       />
 
       <SuggestPlaceModal isOpen={suggestModalOpen} onClose={() => setSuggestModalOpen(false)} />

@@ -75,8 +75,8 @@ const DEFAULT_CONTENT = {
     text: 'Откройте для себя красоту Карачаево-Черкесии. Выберите маршрут и отправляйтесь в незабываемое приключение!',
     primaryButtonText: 'Интересные места',
     primaryButtonLink: '/places',
-    secondaryButtonText: 'Маршруты',
-    secondaryButtonLink: '/routes',
+    secondaryButtonText: '',
+    secondaryButtonLink: '',
   },
   sliderPlaces: [],
 }
@@ -233,7 +233,7 @@ export default function Region_page() {
     video: null,
     place: hero.subtitle || 'Карачаево-Черкесская Республика',
     title: hero.title || 'КАРАЧАЕВО-ЧЕРКЕСИЯ',
-    description: 'Удивительные места, захватывающие маршруты и яркие точки притяжения региона.',
+    description: 'Познакомьтесь с республикой через её природу, культуру, историю и главные точки притяжения.',
     rating: null,
     reviewsCount: 0,
   }
@@ -251,7 +251,7 @@ export default function Region_page() {
         sliderPlacesOverride={sliderPlaces}
         introSlideOverride={introSlide}
         scrollTargetId="intro"
-        introBtnText="Начать знакомство"
+        introBtnText="Перейти к знакомству"
       />
 
       <CenterBlock>
@@ -427,9 +427,11 @@ export default function Region_page() {
             <Link to={cta.primaryButtonLink || '/places'} className={styles.ctaButtonPrimary}>
               {cta.primaryButtonText}
             </Link>
-            <Link to={cta.secondaryButtonLink || '/routes'} className={styles.ctaButtonSecondary}>
-              {cta.secondaryButtonText}
-            </Link>
+            {cta.secondaryButtonText && (
+              <Link to={cta.secondaryButtonLink || '/routes'} className={styles.ctaButtonSecondary}>
+                {cta.secondaryButtonText}
+              </Link>
+            )}
           </div>
         </div>
       </section>

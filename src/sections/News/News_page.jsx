@@ -7,7 +7,6 @@ import styles from './News_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import NewsBlock from '@/components/NewsBlock/NewsBlock'
-import CtaSection from '@/components/CtaSection/CtaSection'
 import { publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'news_scroll_position'
@@ -565,14 +564,6 @@ export default function News_page() {
         </section>
       </CenterBlock>
 
-      <CtaSection
-        title="Будьте в курсе событий"
-        text="Актуальные новости туризма, анонсы событий и интересные статьи о Карачаево-Черкесии — всё самое важное здесь."
-        primaryButtonText="Услуги и сервисы"
-        primaryButtonLink="/services"
-        secondaryButtonText="Маршруты"
-        secondaryButtonLink="/routes"
-      />
     </main>
   )
 }
