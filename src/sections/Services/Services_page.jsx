@@ -99,7 +99,7 @@ const URL_FILTER_TO_LABEL = {
 const filterGroups = [
   { key: 'articles', label: 'Статьи', options: ['Статьи'] },
   { key: 'service', label: 'Сервис', options: SERVICE_FILTER_OPTIONS },
-  { key: 'emergency', label: 'Экстренные службы', options: EMERGENCY_FILTER_OPTIONS },
+  // { key: 'emergency', label: 'Экстренные службы', options: EMERGENCY_FILTER_OPTIONS },
 ]
 
 const HOTEL_FILTER_GROUP = { key: 'hotelFilters', label: 'Параметры гостиниц', options: ['Оплата картой'] }

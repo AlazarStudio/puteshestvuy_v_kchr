@@ -288,21 +288,22 @@ export default function Header() {
           </Link>
 
           {/* DROPDOWN: На помощь туристу */}
-          <div
+          {/* <div
             className={styles.navDropdown}
             ref={dropdownTriggerRef}
             onMouseEnter={() => setIsDropdownOpen(true)}
             onMouseLeave={() => setIsDropdownOpen(false)}
-          >
+          > */}
             <Link
               to="/services"
               className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
               title="Услуги и сервисы для туристов"
             >
-              На помощь туристу
+              {/* На помощь туристу */}
+              Услуги и сервисы
             </Link>
 
-            <svg
+            {/* <svg
               className={`${styles.dropdownIcon} ${isDarkMode && styles.dropdownIconDark} ${isDropdownOpen ? styles.dropdownIconRotated : ''}`}
               width="12"
               height="12"
@@ -312,12 +313,12 @@ export default function Header() {
               aria-hidden="true"
             >
               <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            </svg> */}
 
-            <div ref={dropdownRef} className={`${styles.dropdownMenu} ${isDropdownOpen ? styles.dropdownMenuOpen : ''}`}>
-              <div className={styles.dropdownContent}>
+            {/* <div ref={dropdownRef} className={`${styles.dropdownMenu} ${isDropdownOpen ? styles.dropdownMenuOpen : ''}`}>
+              <div className={styles.dropdownContent}> */}
                 {/* сервис */}
-                <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionServices}`}>
+                {/* <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionServices}`}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.services.title}</h3>
                   <div className={styles.dropdownColumns}>
                     {dropdownMenuData.services.columns.map((column, colIndex) => (
@@ -335,10 +336,10 @@ export default function Header() {
                   <Link to={dropdownMenuData.services.viewAllHref} className={styles.dropdownViewAll}>
                     Смотреть все
                   </Link>
-                </div>
+                </div> */}
 
                 {/* экстренные */}
-                <div className={styles.dropdownSection}>
+                {/* <div className={styles.dropdownSection}>
                   <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.emergency.title}</h3>
                   <ul className={styles.dropdownList}>
                     {dropdownMenuData.emergency.items.map((item, index) => (
@@ -358,7 +359,7 @@ export default function Header() {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <Link
             to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
