@@ -683,6 +683,7 @@ export default function Services_page() {
             suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
+            initialOpenKeys={{ service: true }}
           />
 
           {/* Mobile filter */}
@@ -696,6 +697,7 @@ export default function Services_page() {
             suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
+            initialOpenKeys={{ service: true }}
           />
 
           <div className={styles.services}>
