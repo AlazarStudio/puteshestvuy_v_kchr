@@ -5,6 +5,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical, CheckCircle, XCircle } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, adminSuggestionsAPI, getImageUrl } from '@/lib/api';
 import YandexMapPicker from '@/components/YandexMapPicker';
+import { VK_PLAYLIST_PREFIX } from '@/components/VkPlaylistWidget';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
@@ -350,7 +351,7 @@ export default function PlaceEditPage() {
     let value = e.target.value.trim();
     const vkMatch = value.match(VK_PLAYLIST_EMBED_RE) || value.match(VK_PLAYLIST_URL_RE);
     if (vkMatch) {
-      value = `vk_playlist:${vkMatch[1]}_${vkMatch[2]}_${vkMatch[3] || ''}`;
+      value = `${VK_PLAYLIST_PREFIX}${vkMatch[1]}_${vkMatch[2]}_${vkMatch[3] || ''}`;
     } else if (value.includes('<iframe') && value.includes('src=')) {
       const match = value.match(/src=["']([^"']+)["']/);
       if (match) value = match[1];
