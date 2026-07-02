@@ -21,6 +21,29 @@ const VK_PLAYLIST_EMBED_RE = /VK\.Widgets\.Playlist\(\s*["'][^"']*["']\s*,\s*(-?
 // Ссылка на плейлист: https://vk.com/music/playlist/-217757946_1 или .../-217757946_1_hash
 const VK_PLAYLIST_URL_RE = /vk\.com\/music\/playlist\/(-?\d+)_(\d+)(?:_([A-Za-z0-9]+))?/;
 
+function buildVkPlaylistToken(match) {
+  return `${VK_PLAYLIST_PREFIX}${match[1]}_${match[2]}_${match[3] || ''}`;
+}
+
+/** Конвертирует вставленный код: виджет VK → токен, iframe → src. Безопасно при посимвольном вводе. */
+function convertAudioGuideEmbed(value) {
+  const vkMatch = value.match(VK_PLAYLIST_EMBED_RE);
+  if (vkMatch) return buildVkPlaylistToken(vkMatch);
+  if (value.includes('<iframe') && value.includes('src=')) {
+    const match = value.match(/src=["']([^"']+)["']/);
+    if (match) return match[1];
+  }
+  return value;
+}
+
+/** Полная нормализация перед сохранением: дополнительно распознаёт ссылку на плейлист VK. */
+function normalizeAudioGuide(rawValue) {
+  const value = (rawValue || '').trim();
+  const urlMatch = value.match(VK_PLAYLIST_URL_RE);
+  if (urlMatch) return buildVkPlaylistToken(urlMatch);
+  return convertAudioGuideEmbed(value);
+}
+
 /** Нормализованный снимок формы для сравнения (dirty check). */
 function getFormSnapshot(data) {
   return {
@@ -348,14 +371,7 @@ export default function PlaceEditPage() {
   };
 
   const handleAudioGuideChange = (e) => {
-    let value = e.target.value.trim();
-    const vkMatch = value.match(VK_PLAYLIST_EMBED_RE) || value.match(VK_PLAYLIST_URL_RE);
-    if (vkMatch) {
-      value = `${VK_PLAYLIST_PREFIX}${vkMatch[1]}_${vkMatch[2]}_${vkMatch[3] || ''}`;
-    } else if (value.includes('<iframe') && value.includes('src=')) {
-      const match = value.match(/src=["']([^"']+)["']/);
-      if (match) value = match[1];
-    }
+    const value = convertAudioGuideEmbed(e.target.value.trim());
     setFormData((prev) => ({ ...prev, audioGuide: value }));
   };
 
@@ -586,7 +602,11 @@ export default function PlaceEditPage() {
     setSaveProgress({ open: true, steps: initialSteps, totalProgress: 0 });
 
     try {
-      let dataToSave = { ...formData };
+      const normalizedAudioGuide = normalizeAudioGuide(formData.audioGuide);
+      let dataToSave = { ...formData, audioGuide: normalizedAudioGuide };
+      if (normalizedAudioGuide !== formData.audioGuide) {
+        setFormData((prev) => ({ ...prev, audioGuide: normalizedAudioGuide }));
+      }
 
       if (pendingImages.image) {
         setStepActive(0);
