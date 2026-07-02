@@ -14,6 +14,7 @@ import RichTextContent from '../RichTextContent'
 import RouteConstructorButton from '../RouteConstructorButton/RouteConstructorButton'
 import FavoriteButton from '../FavoriteButton/FavoriteButton'
 import ParallaxImage from '../ParallaxImage'
+import VkPlaylistWidget, { VK_PLAYLIST_PREFIX } from '../VkPlaylistWidget'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 
 const formatReviewDate = (dateStr) => {
@@ -426,18 +427,22 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                           </>
                         )}
 
-                        {/* Аудиогид — встраивание Яндекс.Музыки */}
+                        {/* Аудиогид — Яндекс.Музыка (iframe) или VK-плейлист (виджет) */}
                         {place?.audioGuide && (
                           <>
                             <div className={styles.title}>Аудиогид</div>
                             <div className={styles.audioEmbed}>
-                              <iframe
-                                title="Аудиогид — Яндекс.Музыка"
-                                src={place.audioGuide}
-                                frameBorder="0"
-                                allow="clipboard-write"
-                                style={{ border: 'none', width: '100%', maxWidth: '100%', height: 556 }}
-                              />
+                              {place.audioGuide.startsWith(VK_PLAYLIST_PREFIX) ? (
+                                <VkPlaylistWidget token={place.audioGuide} />
+                              ) : (
+                                <iframe
+                                  title="Аудиогид — Яндекс.Музыка"
+                                  src={place.audioGuide}
+                                  frameBorder="0"
+                                  allow="clipboard-write"
+                                  style={{ border: 'none', width: '100%', maxWidth: '100%', height: 556 }}
+                                />
+                              )}
                             </div>
                           </>
                         )}
