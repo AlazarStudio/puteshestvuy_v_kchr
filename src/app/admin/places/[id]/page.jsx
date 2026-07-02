@@ -15,6 +15,11 @@ import styles from '../../admin.module.css';
 const LOCATION_DEBOUNCE_MS = 400;
 const TOAST_DURATION_MS = 3000;
 
+// Код виджета VK: VK.Widgets.Playlist("vk_playlist_-217757946_1", -217757946, 1, "hash", {})
+const VK_PLAYLIST_EMBED_RE = /VK\.Widgets\.Playlist\(\s*["'][^"']*["']\s*,\s*(-?\d+)\s*,\s*(\d+)\s*,\s*["']([A-Za-z0-9]*)["']/;
+// Ссылка на плейлист: https://vk.com/music/playlist/-217757946_1 или .../-217757946_1_hash
+const VK_PLAYLIST_URL_RE = /vk\.com\/music\/playlist\/(-?\d+)_(\d+)(?:_([A-Za-z0-9]+))?/;
+
 /** Нормализованный снимок формы для сравнения (dirty check). */
 function getFormSnapshot(data) {
   return {
@@ -343,7 +348,10 @@ export default function PlaceEditPage() {
 
   const handleAudioGuideChange = (e) => {
     let value = e.target.value.trim();
-    if (value.includes('<iframe') && value.includes('src=')) {
+    const vkMatch = value.match(VK_PLAYLIST_EMBED_RE) || value.match(VK_PLAYLIST_URL_RE);
+    if (vkMatch) {
+      value = `vk_playlist:${vkMatch[1]}_${vkMatch[2]}_${vkMatch[3] || ''}`;
+    } else if (value.includes('<iframe') && value.includes('src=')) {
       const match = value.match(/src=["']([^"']+)["']/);
       if (match) value = match[1];
     }
@@ -978,11 +986,11 @@ export default function PlaceEditPage() {
 
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Аудиогид (Яндекс.Музыка)</label>
+            <label className={styles.formLabel}>Аудиогид (Яндекс.Музыка / VK)</label>
             <div className={styles.formHintBox}>
               <span className={styles.formHintIcon}>💡</span>
               <span className={styles.formHintText}>
-                Вставьте ссылку из кода встраивания (атрибут <code>src</code> из iframe) или вставьте весь код iframe — ссылка подставится автоматически.
+                Вставьте ссылку из кода встраивания Яндекс.Музыки (атрибут <code>src</code> из iframe) или весь код iframe — ссылка подставится автоматически. Также можно вставить код виджета плейлиста VK (Поделиться → Экспортировать) — он распознается автоматически.
               </span>
             </div>
             <input
