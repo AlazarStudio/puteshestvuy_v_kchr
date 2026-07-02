@@ -15,7 +15,11 @@ function loadVkOpenApi() {
         return;
       }
       existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Не удалось загрузить VK openapi.js')), { once: true });
+      existing.addEventListener('error', () => {
+        openApiPromise = null;
+        existing.remove();
+        reject(new Error('Не удалось загрузить VK openapi.js'));
+      }, { once: true });
       return;
     }
     const script = document.createElement('script');
@@ -69,7 +73,7 @@ export default function VkPlaylistWidget({ token }) {
         if (cancelled || !node || !window.VK?.Widgets?.Playlist) return;
         window.VK.Widgets.Playlist(idRef.current, ownerId, playlistId, hash);
       })
-      .catch(() => {});
+      .catch((e) => console.error('VkPlaylistWidget:', e));
     return () => {
       cancelled = true;
       if (node) node.innerHTML = '';
