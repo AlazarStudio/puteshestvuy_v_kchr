@@ -6,6 +6,7 @@ import { Upload, X, MapPin, GripVertical, ChevronLeft, ChevronRight, ChevronUp, 
 import { routesAPI, placesAPI, servicesAPI, mediaAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import RichTextEditor from '@/components/RichTextEditor';
 import YandexMapRoute from '@/components/YandexMapRoute';
+import { parseYandexRoute } from '@/lib/yandexRoute';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
@@ -247,6 +248,7 @@ function getFormSnapshot(data) {
       ? data.whatToBringItems.map((i) => ({ iconType: i.iconType ?? 'mui', icon: i.icon ?? '', text: i.text ?? '' }))
       : parseWhatToBring(data.whatToBring ?? ''),
     importantInfo: data.importantInfo ?? '',
+    mapUrl: data.mapUrl ?? '',
     isActive: !!data.isActive,
     images: Array.isArray(data.images) ? [...data.images] : [],
     placeIds: Array.isArray(data.placeIds) ? [...data.placeIds] : [],
@@ -282,6 +284,7 @@ export default function RouteEditPage() {
     whatToBring: '',
     whatToBringItems: [],
     importantInfo: '',
+    mapUrl: '',
     isActive: true,
     images: [],
     placeIds: [],
@@ -291,6 +294,7 @@ export default function RouteEditPage() {
     points: [],
   });
   const [activePointIndex, setActivePointIndex] = useState(0);
+  const [routeMode, setRouteMode] = useState('classic'); // 'classic' (места) | 'link' (ссылка Яндекс.Карт)
 
   const [allPlaces, setAllPlaces] = useState([]);
   const [allGuides, setAllGuides] = useState([]);
@@ -486,6 +490,7 @@ export default function RouteEditPage() {
       savedFormDataRef.current = next;
       savedSnapshotRef.current = getFormSnapshot(next);
       setActivePointIndex(0);
+      setRouteMode(next.mapUrl && String(next.mapUrl).trim() ? 'link' : 'classic');
     } catch (error) {
       console.error('Ошибка загрузки маршрута:', error);
       const status = error.response?.status;
@@ -1443,8 +1448,50 @@ export default function RouteEditPage() {
           </div>
         )}
 
-        {/* Секция выбора мест маршрута — тот же стиль, что и «Места рядом» в форме места */}
+        {/* Маршрут на карте: задаётся либо местами, либо ссылкой Яндекс.Карт */}
         <div className={styles.formGroup} style={{ marginTop: 30 }}>
+          <label className={styles.formLabel}>Маршрут на карте</label>
+          <div className={styles.routeDescTabsList} role="tablist" style={{ marginBottom: 8 }}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={routeMode === 'classic'}
+              className={`${styles.routeDescTab} ${routeMode === 'classic' ? styles.routeDescTabActive : ''}`}
+              onClick={() => setRouteMode('classic')}
+            >
+              Места на карте
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={routeMode === 'link'}
+              className={`${styles.routeDescTab} ${routeMode === 'link' ? styles.routeDescTabActive : ''}`}
+              onClick={() => setRouteMode('link')}
+            >
+              По ссылке Яндекс.Карт
+            </button>
+          </div>
+          {routeMode === 'link' && (
+            <>
+              <input
+                type="text"
+                name="mapUrl"
+                value={formData.mapUrl || ''}
+                onChange={handleChange}
+                className={styles.formInput}
+                placeholder="https://yandex.ru/web-maps/-/…"
+                style={{ marginTop: 8 }}
+              />
+              <p className={styles.imageHint}>
+                Постройте маршрут в Яндекс.Картах → «Поделиться» → скопируйте ссылку. Короткая ссылка развернётся автоматически при сохранении.
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Секция выбора мест маршрута — только в режиме «Места на карте» */}
+        {routeMode === 'classic' && (
+        <div className={styles.formGroup}>
           <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* <MapPin size={18} /> */}
             <span>Места на маршруте ({formData.placeIds.length})</span>
@@ -1582,6 +1629,7 @@ export default function RouteEditPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Карта маршрута: точки мест в порядке следования и маршрут между ними */}
         <div className={styles.formGroup} style={{ marginTop: 24 }}>
@@ -1596,6 +1644,8 @@ export default function RouteEditPage() {
                 latitude: p.latitude,
                 longitude: p.longitude,
               }))}
+            routeOverride={parseYandexRoute(formData.mapUrl) || undefined}
+            openUrl={formData.mapUrl || undefined}
             height={400}
           />
         </div>

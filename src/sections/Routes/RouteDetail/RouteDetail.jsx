@@ -20,6 +20,7 @@ import RichTextContent from '@/components/RichTextContent'
 import Seo from '@/components/Seo/Seo'
 import { touristTrip, itemList, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl, truncate } from '@/lib/seo/config'
+import { parseYandexRoute } from '@/lib/yandexRoute'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
@@ -411,6 +412,7 @@ export default function RouteDetail({ routeSlug }) {
     )
   }
 
+  const mapOverride = parseYandexRoute(route?.mapUrl)
   const points = Array.isArray(route.points) ? route.points : []
   const routePlaces = Array.isArray(route.places) ? route.places : []
   const whatToBringItems = parseWhatToBring(route.whatToBring)
@@ -830,6 +832,8 @@ export default function RouteDetail({ routeSlug }) {
                   height={400}
                   className={styles.mapYandex}
                   showRouteFromMe
+                  routeOverride={mapOverride || undefined}
+                  openUrl={route?.mapUrl || undefined}
                 />
               </div>
 

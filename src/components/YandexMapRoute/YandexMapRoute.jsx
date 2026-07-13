@@ -21,12 +21,13 @@ function buildYandexRouteUrlMulti(points) {
  * showRouteFromMe — показывать кнопки «Построить маршрут» (от меня до первой точки) и «Открыть в Яндекс.Картах» со всеми точками.
  * onPlacemarkClick — вызывается при клике на маркер, аргумент — объект места.
  */
-export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className, showRouteFromMe = false, onPlacemarkClick }) {
+export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, className, showRouteFromMe = false, onPlacemarkClick, routeOverride = null, openUrl = null }) {
   const containerRef = useRef(null);
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const placemarksRef = useRef([]);
   const routeRef = useRef(null);
+  const geocodedMarkersRef = useRef([]); // метки с названиями точек, определёнными по координатам
   const routeFromMeRef = useRef(null); // маршрут от пользователя до первой точки
   const userCoordsRef = useRef(null); // { lat, lon } — сохранённое местоположение пользователя
   const onPlacemarkClickRef = useRef(onPlacemarkClick);
@@ -45,6 +46,12 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
       Number(p.longitude)
   );
   const coordsOrdered = pointsWithCoords.map((p) => [Number(p.latitude), Number(p.longitude)]);
+  // routeOverride (из прикреплённой ссылки Яндекс.Карт) задаёт точки и режим маршрута
+  // вместо координат мест; метки мест при этом остаются прежними.
+  const routePoints = routeOverride?.points?.length ? routeOverride.points : coordsOrdered;
+  const routingMode = routeOverride?.mode || 'auto';
+  // Маршрут можно показать только по прикреплённой ссылке — даже если у маршрута нет мест.
+  const hasOverrideRoute = Array.isArray(routeOverride?.points) && routeOverride.points.length >= 2;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -100,13 +107,14 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
       controls.push('geolocationControl');
     }
     const map = new window.ymaps.Map(containerRef.current, {
-      center: coordsOrdered.length ? coordsOrdered[0] : DEFAULT_CENTER,
+      center: coordsOrdered.length ? coordsOrdered[0] : (routePoints.length ? routePoints[0] : DEFAULT_CENTER),
       zoom: DEFAULT_ZOOM,
       controls,
     });
     mapRef.current = map;
 
     const placemarks = [];
+    geocodedMarkersRef.current = [];
 
     if (pointsWithCoords.length > 0) {
       pointsWithCoords.forEach((place, index) => {
@@ -132,47 +140,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         placemarks.push(placemark);
       });
 
-      if (coordsOrdered.length >= 2) {
-        const requireModules = window.ymaps.modules?.require;
-        if (typeof requireModules === 'function') {
-          requireModules(['multiRouter.MultiRoute'], (MultiRoute) => {
-            if (!mapRef.current) return;
-            if (routeRef.current) {
-              mapRef.current.geoObjects.remove(routeRef.current);
-              routeRef.current = null;
-            }
-            const multiRoute = new MultiRoute(
-              {
-                referencePoints: coordsOrdered,
-                params: { routingMode: 'auto' },
-              },
-              {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: '#00BF00',
-                routeActiveStrokeWidth: 5,
-                routeStrokeColor: '#80BF8066',
-                routeStrokeWidth: 4,
-              }
-            );
-            mapRef.current.geoObjects.add(multiRoute);
-            routeRef.current = multiRoute;
-          });
-        } else {
-          const polyline = new window.ymaps.Polyline(coordsOrdered, {}, {
-            strokeColor: '#00BF00',
-            strokeWidth: 4,
-            strokeOpacity: 0.8,
-          });
-          map.geoObjects.add(polyline);
-          routeRef.current = polyline;
-          map.setBounds(window.ymaps.util.bounds.fromPoints(coordsOrdered), {
-            checkZoomRange: true,
-            zoomMargin: 50,
-          });
-        }
-      }
-
-      if (coordsOrdered.length === 1) {
+      if (coordsOrdered.length === 1 && !hasOverrideRoute) {
         map.setCenter(coordsOrdered[0], 14);
       } else if (coordsOrdered.length >= 2 && typeof window.ymaps.modules?.require !== 'function') {
         map.setBounds(window.ymaps.util.bounds.fromPoints(coordsOrdered), {
@@ -182,10 +150,134 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
       }
     }
 
+    // Линия маршрута строится по routePoints (из прикреплённой ссылки, если она задана,
+    // иначе по координатам мест) — независимо от того, есть ли у маршрута места.
+    if (routePoints.length >= 2) {
+      const requireModules = window.ymaps.modules?.require;
+      if (typeof requireModules === 'function') {
+        requireModules(['multiRouter.MultiRoute'], (MultiRoute) => {
+          if (!mapRef.current) return;
+          if (routeRef.current) {
+            mapRef.current.geoObjects.remove(routeRef.current);
+            routeRef.current = null;
+          }
+          const multiRoute = new MultiRoute(
+            {
+              referencePoints: routePoints,
+              params: { routingMode: routingMode },
+            },
+            {
+              boundsAutoApply: true,
+              // прячем «родной» бейдж Яндекса с длиной (у начала линии) — свою метку с
+              // длиной ставим по центру линии ниже (в requestsuccess).
+              routeActiveMarkerVisible: false,
+              // при маршруте из ссылки прячем технические A/B-метки Яндекса — на карте
+              // остаются названные POI-метки Яндекса (с их категорийными иконками) в
+              // этих точках, наши пронумерованные метки мест и сама линия маршрута.
+              wayPointVisible: !hasOverrideRoute,
+              routeActiveStrokeColor: '#00BF00',
+              routeActiveStrokeWidth: 5,
+              routeStrokeColor: '#80BF8066',
+              routeStrokeWidth: 4,
+            }
+          );
+          mapRef.current.geoObjects.add(multiRoute);
+          routeRef.current = multiRoute;
+
+          // Метка с длиной маршрута — по центру линии (пин Яндекса скрыт выше).
+          let distanceLabel = null;
+          multiRoute.model.events.add('requestsuccess', () => {
+            if (!mapRef.current) return;
+            const active = multiRoute.getActiveRoute && multiRoute.getActiveRoute();
+            if (!active) return;
+            const distance = active.properties.get('distance');
+            const distanceText = distance && distance.text ? distance.text : '';
+            if (!distanceText) return;
+            // Геометрия активного маршрута доступна только через paths → segments.
+            let coords = [];
+            try {
+              const paths = active.getPaths();
+              for (let i = 0; i < paths.getLength(); i++) {
+                const segments = paths.get(i).getSegments();
+                for (let j = 0; j < segments.getLength(); j++) {
+                  const g = segments.get(j).geometry.getCoordinates();
+                  if (Array.isArray(g)) coords.push(...g);
+                }
+              }
+            } catch {
+              coords = [];
+            }
+            if (!coords.length) return;
+            const mid = coords[Math.floor(coords.length / 2)];
+            if (!Array.isArray(mid) || typeof mid[0] !== 'number') return;
+            if (distanceLabel) {
+              try { mapRef.current.geoObjects.remove(distanceLabel); } catch { /* уже удалена */ }
+              const i = geocodedMarkersRef.current.indexOf(distanceLabel);
+              if (i >= 0) geocodedMarkersRef.current.splice(i, 1);
+            }
+            distanceLabel = new window.ymaps.Placemark(
+              mid,
+              { iconContent: distanceText },
+              { preset: 'islands#darkGreenStretchyIcon' }
+            );
+            mapRef.current.geoObjects.add(distanceLabel);
+            geocodedMarkersRef.current.push(distanceLabel);
+          });
+        });
+      } else {
+        const polyline = new window.ymaps.Polyline(routePoints, {}, {
+          strokeColor: '#00BF00',
+          strokeWidth: 4,
+          strokeOpacity: 0.8,
+        });
+        map.geoObjects.add(polyline);
+        routeRef.current = polyline;
+        map.setBounds(window.ymaps.util.bounds.fromPoints(routePoints), {
+          checkZoomRange: true,
+          zoomMargin: 50,
+        });
+      }
+    }
+
+    // Точки маршрута из ссылки не содержат названий — определяем их по координатам
+    // (reverse geocode) и подписываем метки. Только когда у маршрута нет своих мест.
+    const overridePts = routeOverride?.points;
+    if (
+      Array.isArray(overridePts) &&
+      overridePts.length &&
+      pointsWithCoords.length === 0 &&
+      typeof window.ymaps.geocode === 'function'
+    ) {
+      overridePts.forEach((pt, index) => {
+        const preset =
+          index === 0
+            ? 'islands#greenDotIconWithCaption'
+            : index === overridePts.length - 1
+              ? 'islands#redDotIconWithCaption'
+              : 'islands#blueDotIconWithCaption';
+        window.ymaps
+          .geocode(pt, { results: 1 })
+          .then((res) => {
+            if (!mapRef.current) return;
+            const obj = res.geoObjects.get(0);
+            const name =
+              (obj && (obj.properties.get('name') || obj.getAddressLine?.())) || `Точка ${index + 1}`;
+            const pm = new window.ymaps.Placemark(pt, { iconCaption: name, hintContent: name }, { preset });
+            mapRef.current.geoObjects.add(pm);
+            geocodedMarkersRef.current.push(pm);
+          })
+          .catch(() => {});
+      });
+    }
+
     placemarksRef.current = placemarks;
 
     return () => {
       placemarks.forEach((pm) => map.geoObjects.remove(pm));
+      geocodedMarkersRef.current.forEach((pm) => {
+        try { map.geoObjects.remove(pm); } catch { /* карта могла быть уже уничтожена */ }
+      });
+      geocodedMarkersRef.current = [];
       placemarksRef.current = [];
       if (routeRef.current && mapRef.current) {
         mapRef.current.geoObjects.remove(routeRef.current);
@@ -200,7 +292,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         mapRef.current = null;
       }
     };
-  }, [scriptReady, showRouteFromMe, JSON.stringify(coordsOrdered.map((c) => c.join(',')))]);
+  }, [scriptReady, showRouteFromMe, JSON.stringify(coordsOrdered.map((c) => c.join(','))), JSON.stringify(routePoints), routingMode]);
 
   const handleBuildRoute = () => {
     if (!scriptReady || !window.ymaps || !mapRef.current || coordsOrdered.length === 0) return;
@@ -252,7 +344,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
     const points = user
       ? [[user.lat, user.lon], ...coordsOrdered]
       : coordsOrdered;
-    window.open(buildYandexRouteUrlMulti(points), '_blank', 'noopener,noreferrer');
+    window.open(openUrl || buildYandexRouteUrlMulti(points), '_blank', 'noopener,noreferrer');
   };
 
   if (error) {
@@ -293,7 +385,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
     );
   }
 
-  if (places.length === 0) {
+  if (places.length === 0 && !hasOverrideRoute) {
     return (
       <div
         className={className}
@@ -313,7 +405,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
     );
   }
 
-  if (pointsWithCoords.length === 0) {
+  if (pointsWithCoords.length === 0 && !hasOverrideRoute) {
     return (
       <div
         className={className}
