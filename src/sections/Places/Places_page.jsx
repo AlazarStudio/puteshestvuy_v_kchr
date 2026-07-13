@@ -12,6 +12,9 @@ import CtaSection from '@/components/CtaSection/CtaSection'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import SuggestPlaceModal from '@/components/SuggestPlaceModal/SuggestPlaceModal'
+import Seo from '@/components/Seo/Seo'
+import { collectionPage, itemList, breadcrumbList, touristAttraction } from '@/lib/seo/schema'
+import { absoluteUrl, truncate } from '@/lib/seo/config'
 import { publicPlacesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
@@ -84,6 +87,9 @@ export default function Places_page() {
       image: '/full_places_bg.jpg',
     },
   })
+
+  const detailPlace = selectedPlace
+  const isDetail = Boolean(detailPlace && detailPlace.slug)
 
   // Текущая страница — только из URL
   const currentPage = useMemo(() => {
@@ -610,6 +616,45 @@ export default function Places_page() {
 
   return (
     <main className={styles.main}>
+      {isDetail ? (
+        <Seo
+          title={`${detailPlace.title} — интересное место Карачаево-Черкесии`}
+          description={detailPlace.shortDescription || truncate(detailPlace.description, 160)}
+          path={`/places/${detailPlace.slug}`}
+          image={detailPlace.images?.[0] ? getImageUrl(detailPlace.images[0]) : undefined}
+          jsonLd={[
+            touristAttraction({
+              name: detailPlace.title,
+              description: detailPlace.shortDescription || truncate(detailPlace.description, 160),
+              url: absoluteUrl(`/places/${detailPlace.slug}`),
+              image: detailPlace.images?.[0] ? getImageUrl(detailPlace.images[0]) : undefined,
+              geo: (detailPlace.latitude != null && detailPlace.longitude != null)
+                ? { lat: detailPlace.latitude, lng: detailPlace.longitude } : undefined,
+              address: detailPlace.location || undefined,
+            }),
+            breadcrumbList([
+              { name: 'Главная', url: absoluteUrl('/') },
+              { name: 'Интересные места', url: absoluteUrl('/places') },
+              { name: detailPlace.title, url: absoluteUrl(`/places/${detailPlace.slug}`) },
+            ]),
+          ]}
+        />
+      ) : (
+        <Seo
+          title="Интересные места Карачаево-Черкесии — что посмотреть в КЧР"
+          description="Достопримечательности, природные места, курорты, ущелья, озёра и точки притяжения Карачаево-Черкесии для путешествий."
+          path="/places"
+          jsonLd={[
+            collectionPage({ name: 'Интересные места', description: 'Достопримечательности и точки притяжения Карачаево-Черкесии.', url: absoluteUrl('/places') }),
+            itemList((places || []).slice(0, 20).map(p => ({ name: p.title, url: absoluteUrl(`/places/${p.slug}`) }))),
+            breadcrumbList([
+              { name: 'Главная', url: absoluteUrl('/') },
+              { name: 'Интересные места', url: absoluteUrl('/places') },
+            ]),
+          ]}
+        />
+      )}
+
       {pageOverlayLoading && (
         <div className={styles.pageOverlayLoader} aria-live="polite" aria-busy="true">
           <div className={styles.pageOverlayLoaderInner}>Загрузка...</div>
@@ -621,6 +666,7 @@ export default function Places_page() {
           img={getImageUrl(pageContent.hero.image)}
           title={pageContent.hero.title}
           desc={pageContent.hero.description}
+          alt="Интересные места Карачаево-Черкесии"
         />
       </div>
 

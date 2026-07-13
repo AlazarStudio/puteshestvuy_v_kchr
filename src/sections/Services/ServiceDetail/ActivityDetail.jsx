@@ -386,7 +386,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                 )}
                 <div className={styles.serviceInfo}>
                   {categoryLabel && <div className={`${styles.serviceCategory} ${a.serviceCategory}`}>{categoryLabel}</div>}
-                  {serviceName && <div className={`${styles.serviceName} ${a.serviceName}`}>{serviceName}</div>}
+                  {serviceName && <h1 className={`${styles.serviceName} ${a.serviceName}`}>{serviceName}</h1>}
                   {(serviceData?.rating != null || serviceData?.reviewsCount > 0) && (
                     <div className={styles.serviceRating}>
                       {serviceData?.rating != null && (

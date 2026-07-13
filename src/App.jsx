@@ -11,6 +11,7 @@ import Services_page from '@/sections/Services/Services_page'
 import ServicePageContent from '@/app/services/[slug]/ServicePageContent'
 import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
 import TemplateListPage from '@/sections/Services/ServiceDetail/templates/TemplateListPage'
+import Seo from '@/components/Seo/Seo'
 import NotFound from '@/app/not-found'
 import AdminLayout from '@/app/admin/layout'
 import AdminDashboard from '@/app/admin/page'
@@ -63,7 +64,12 @@ function ServiceTemplatePreviewWrapper() {
   // type из URL (на случай если useParams вложенного маршрута не отдаёт param)
   const typeFromPath = pathname.split('/').pop()
   const resolvedType = type || typeFromPath
-  return <ServiceTemplateByType type={resolvedType} />
+  return (
+    <>
+      <Seo noindex title="Шаблон услуги — Путешествуй КЧР" />
+      <ServiceTemplateByType type={resolvedType} />
+    </>
+  )
 }
 
 export default function App() {

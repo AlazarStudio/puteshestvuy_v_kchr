@@ -15,6 +15,7 @@ import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
 import { ImageCropModal, ConfirmModal } from '@/app/admin/components'
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor'
+import Seo from '@/components/Seo/Seo'
 import styles from './profile.module.css'
 import serviceStyles from '@/sections/Services/Services_page.module.css'
 
@@ -813,7 +814,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className={styles.profilePage}>
+    <>
+      <Seo noindex title="Профиль — Путешествуй КЧР" />
+      <main className={styles.profilePage}>
       <div className={styles.wrap}>
         <aside className={styles.sidebar}>
           <div className={styles.profileCard}>
@@ -1853,6 +1856,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </>
   )
 }

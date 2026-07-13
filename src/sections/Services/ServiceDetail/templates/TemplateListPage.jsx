@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
+import Seo from '@/components/Seo/Seo'
 import { TEMPLATE_COMPONENTS } from './index'
 import styles from '../ServiceDetail.module.css'
 
@@ -8,7 +9,9 @@ export default function TemplateListPage() {
   const typeKeys = Object.keys(TEMPLATE_COMPONENTS)
 
   return (
-    <main className={styles.main}>
+    <>
+      <Seo noindex title="Шаблоны услуг — Путешествуй КЧР" />
+      <main className={styles.main}>
       <CenterBlock className={styles.servicePage}>
         <nav className={styles.bread_crumbs}>
           <Link to="/">Главная</Link>
@@ -45,6 +48,7 @@ export default function TemplateListPage() {
           ))}
         </ul>
       </CenterBlock>
-    </main>
+      </main>
+    </>
   )
 }

@@ -43,40 +43,6 @@ function LangSwitcher({ className }) {
   )
 }
 
-// Данные для выпадающего меню "На помощь туристу"
-const dropdownMenuData = {
-  services: {
-    title: 'Сервис',
-    columns: [
-      [
-        { title: 'Гиды', href: '/services?filter=guides' },
-        { title: 'Активности', href: '/services?filter=activities' },
-        { title: 'Прокат оборудования', href: '/services?filter=equipment-rental' },
-        { title: 'Пункты придорожного сервиса', href: '/services?filter=roadside-service' },
-        { title: 'Торговые точки', href: '/services?filter=shops' },
-        { title: 'Сувениры', href: '/services?filter=souvenirs' },
-      ],
-      [
-        { title: 'Гостиницы', href: '/services?filter=hotels' },
-        { title: 'Кафе и рестораны', href: '/services?filter=restaurants' },
-        { title: 'Трансфер', href: '/services?filter=transfer' },
-        { title: 'АЗС', href: '/services?filter=gas-stations' },
-        { title: 'Санитарные узлы', href: '/services?filter=restrooms' },
-        { title: 'Музеи', href: '/services?filter=museums' },
-      ],
-    ],
-    viewAllHref: '/services',
-  },
-  emergency: {
-    title: 'Экстренные службы',
-    items: [
-      { title: 'Пункты медпомощи', section: 'medhelp' },
-      { title: 'МВД', section: 'mvd' },
-      { title: 'МЧС', section: 'fire' },
-    ],
-  },
-}
-
 // Конфигурация для каждой страницы
 const pageConfig = [
   { path: '/', initialColor: 'white', scrollThreshold: 100, enableScrollChange: true, backgroundColor: 'rgba(255, 255, 255, 0.6)' },
@@ -279,21 +245,13 @@ export default function Header() {
             Маршруты
           </Link>
 
-          {/* DROPDOWN: На помощь туристу */}
-          {/* <div
-            className={styles.navDropdown}
-            ref={dropdownTriggerRef}
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            onMouseLeave={() => setIsDropdownOpen(false)}
-          > */}
-            <Link
-              to="/services"
-              className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
-              title="Услуги и сервисы для туристов"
-            >
-              {/* На помощь туристу */}
-              Услуги и сервисы
-            </Link>
+          <Link
+            to="/services"
+            className={`${styles.navLink} ${pathname === '/services' || pathname?.startsWith('/services/') ? styles.navLink_active : ''}`}
+            title="Услуги и сервисы для туристов"
+          >
+            Услуги и сервисы
+          </Link>
 
           <Link
             to="/news"
@@ -302,64 +260,6 @@ export default function Header() {
           >
             Новости и статьи
           </Link>
-
-            {/* <svg
-              className={`${styles.dropdownIcon} ${isDarkMode && styles.dropdownIconDark} ${isDropdownOpen ? styles.dropdownIconRotated : ''}`}
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg> */}
-
-            {/* <div ref={dropdownRef} className={`${styles.dropdownMenu} ${isDropdownOpen ? styles.dropdownMenuOpen : ''}`}>
-              <div className={styles.dropdownContent}> */}
-                {/* сервис */}
-                {/* <div className={`${styles.dropdownSection} ${styles.dropdownSectionBorder} ${styles.dropdownSectionServices}`}>
-                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.services.title}</h3>
-                  <div className={styles.dropdownColumns}>
-                    {dropdownMenuData.services.columns.map((column, colIndex) => (
-                      <ul key={colIndex} className={styles.dropdownList}>
-                        {column.map((item, idx) => (
-                          <li key={idx}>
-                            <Link to={item.href} className={styles.dropdownLink}>
-                              {item.title}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    ))}
-                  </div>
-                  <Link to={dropdownMenuData.services.viewAllHref} className={styles.dropdownViewAll}>
-                    Смотреть все
-                  </Link>
-                </div> */}
-
-                {/* экстренные */}
-                {/* <div className={styles.dropdownSection}>
-                  <h3 className={styles.dropdownSectionTitle}>{dropdownMenuData.emergency.title}</h3>
-                  <ul className={styles.dropdownList}>
-                    {dropdownMenuData.emergency.items.map((item, index) => (
-                      <li key={index}>
-                        <button
-                          className={styles.dropdownLink}
-                          onClick={() => {
-                            setIsDropdownOpen(false)
-                            navigate('/', { state: { emergencySection: item.section } })
-                          }}
-                        >
-                          {item.title}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div> */}
 
           <Link
             to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"

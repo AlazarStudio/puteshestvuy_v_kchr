@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AuthModalProvider } from '@/contexts/AuthModalContext'
 import { RouteConstructorProvider } from '@/contexts/RouteConstructorContext'
@@ -10,16 +11,18 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <AuthModalProvider>
-          <RouteConstructorProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </RouteConstructorProvider>
-        </AuthModalProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <AuthModalProvider>
+            <RouteConstructorProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </RouteConstructorProvider>
+          </AuthModalProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 )

@@ -1,7 +1,7 @@
 
 
 import { useState, useEffect } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import styles from './Main_page.module.css'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 import TitleButton from '@/components/TitleButton/TitleButton'
@@ -12,11 +12,13 @@ import FirstTimeTabs from '@/components/FirstTimeTabs/FirstTimeTabs'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
-import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import ParallaxImage from '@/components/ParallaxImage'
 import CtaSection from '@/components/CtaSection/CtaSection'
-import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
+import { publicHomeAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
+import Seo from '@/components/Seo/Seo'
+import { touristDestination } from '@/lib/seo/schema'
+import { absoluteUrl } from '@/lib/seo/config'
 
 function getBtnPosition(pos) {
   switch (pos) {
@@ -30,17 +32,6 @@ function getBtnPosition(pos) {
     case 'bottom-right':  return { bottom: 24, right: 24 }
     default:              return { bottom: 24, left: 24 }
   }
-}
-
-function stripHtml(html) {
-  if (!html || typeof html !== 'string') return ''
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-function formatReviews(n) {
-  if (n === 1) return '1 отзыв'
-  if (n >= 2 && n <= 4) return `${n} отзыва`
-  return `${n} отзывов`
 }
 
 const DEFAULT_HOME_CONTENT = {
@@ -82,17 +73,12 @@ const DEFAULT_HOME_CONTENT = {
   servicesTitle: 'УСЛУГИ И СЕРВИСЫ',
   servicesButtonLink: '/services',
   servicesCardsLimit: 8,
-  placesTitle: 'КУДА ПОЕХАТЬ?',
-  placesButtonLink: '/places',
   backgroundImage: '/mountainBG.png',
   banners: [],
 }
 
 export default function Main_page() {
-  const navigate = useNavigate()
   const location = useLocation()
-  const [places, setPlaces] = useState([])
-  const [placesLoading, setPlacesLoading] = useState(true)
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT)
   const [newsTab, setNewsTab] = useState('news')
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
@@ -122,73 +108,20 @@ export default function Main_page() {
     return () => { cancelled = true }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    setPlacesLoading(true)
-
-    // Проверяем, есть ли выбранные места в настройках главной страницы
-    const placesItems = homeContent.placesItems || []
-
-    if (placesItems.length > 0) {
-      // Загружаем полные данные мест по их ID, чтобы получить актуальные images[0]
-      const placeIds = placesItems.map(p => p.placeId || p.id).filter(Boolean)
-      if (placeIds.length > 0) {
-        publicPlacesAPI.getAll({ limit: 500 })
-          .then(({ data }) => {
-            if (cancelled) return
-            const allPlaces = data?.items || []
-            const placesMap = new Map(allPlaces.map(p => [p.id, p]))
-
-            // Используем выбранные места из настроек, но берем актуальные данные из API
-            const list = placesItems
-              .map((savedPlace) => {
-                const placeId = savedPlace.placeId || savedPlace.id
-                const fullPlace = placesMap.get(placeId)
-
-                // Используем полные данные места, если они есть
-                if (fullPlace) {
-                  return fullPlace
-                }
-
-                // Если место не найдено в API, возвращаем null (будет отфильтровано)
-                return null
-              })
-              .filter(Boolean)
-
-            if (!cancelled) {
-              setPlaces(list)
-              setPlacesLoading(false)
-            }
-          })
-          .catch(() => {
-            if (!cancelled) {
-              setPlaces([])
-              setPlacesLoading(false)
-            }
-          })
-        return
-      }
-    }
-
-    // Если выбранных мест нет, загружаем из API
-    publicPlacesAPI.getAll({ limit: 4, page: 1 })
-      .then(({ data }) => {
-        if (!cancelled) {
-          setPlaces(data?.items || [])
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setPlaces([])
-      })
-      .finally(() => {
-        if (!cancelled) setPlacesLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [homeContent.placesItems])
-
   return (
     <main className={styles.main}>
-      <SliderFullScreen />
+      <Seo
+        title="Путешествуй КЧР — путеводитель по Карачаево-Черкесии"
+        description="Интересные места, маршруты, достопримечательности, услуги и идеи для путешествий по Карачаево-Черкесии."
+        path="/"
+        jsonLd={[touristDestination({
+          name: 'Карачаево-Черкесская Республика',
+          description: 'Интересные места, маршруты, достопримечательности и услуги для путешествий по Карачаево-Черкесии.',
+          url: absoluteUrl('/'),
+          image: absoluteUrl('/color_logo.png'),
+        })]}
+      />
+      <SliderFullScreen heading="Карачаево-Черкесская Республика" />
 
       <div className={styles.content}>
         <div className={styles.firstTime} id="firstTime">
@@ -233,37 +166,6 @@ export default function Main_page() {
         <CenterBlock>
           <ServiceTabBlock />
         </CenterBlock>
-
-        {(placesLoading || places.length > 0) && (
-          <>
-            <CenterBlock>
-              <TitleButton title={homeContent.placesTitle} buttonLink={homeContent.placesButtonLink} />
-            </CenterBlock>
-
-            <CenterBlock>
-              <section className={styles.flexBlockPlaces}>
-                {placesLoading ? (
-                  <div className={`${styles.placesLoading} ${styles.placesLoadingFull}`}>Загрузка интересных мест...</div>
-                ) : (
-                  places.map((place) => (
-                    <PlaceBlock
-                      key={place.id}
-                      placeId={place.id}
-                      rating={place.rating != null ? String(place.rating) : '—'}
-                      feedback={formatReviews(place.reviewsCount ?? 0)}
-                      reviewsCount={place.reviewsCount ?? 0}
-                      place={place.location || '—'}
-                      title={place.title}
-                      desc={stripHtml(place.shortDescription || place.description || '')}
-                      img={getImageUrl(place.images?.[0] || place.image) || '/placeImg1.png'}
-                      onClick={() => navigate(`/places/${place.slug || place.id}`)}
-                    />
-                  ))
-                )}
-              </section>
-            </CenterBlock>
-          </>
-        )}
 
         {/* Баннеры */}
         {homeContent.banners && homeContent.banners.length > 0 && (() => {
@@ -354,7 +256,7 @@ export default function Main_page() {
                     >
                       <ParallaxImage
                         src={getImageUrl(banner.image) || '/placeholder.png'}
-                        alt="Баннер"
+                        alt={banner.alt || banner.title || banner.buttonText || 'Баннер Путешествуй КЧР'}
                         maxOffset={15}
                         scale={1.03}
                         style={{

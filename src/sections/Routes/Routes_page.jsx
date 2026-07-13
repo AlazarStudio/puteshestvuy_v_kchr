@@ -10,6 +10,9 @@ import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import CtaSection from '@/components/CtaSection/CtaSection'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
+import Seo from '@/components/Seo/Seo'
+import { collectionPage, itemList, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl } from '@/lib/seo/config'
 import { publicRoutesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
@@ -606,6 +609,20 @@ export default function Routes_page() {
 
   return (
     <main className={styles.main}>
+      <Seo
+        title="Маршруты по Карачаево-Черкесии — туристические маршруты КЧР"
+        description="Готовые маршруты по Карачаево-Черкесии: сезоны, сложность, расстояние, места по пути и идеи для самостоятельного путешествия."
+        path="/routes"
+        jsonLd={[
+          collectionPage({ name: 'Маршруты', description: 'Готовые туристические маршруты по Карачаево-Черкесии.', url: absoluteUrl('/routes') }),
+          itemList((routes || []).slice(0, 20).map(r => ({ name: r.title, url: absoluteUrl(`/routes/${r.slug}`) }))),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'Маршруты', url: absoluteUrl('/routes') },
+          ]),
+        ]}
+      />
+
       {pageOverlayLoading && (
         <div className={styles.pageOverlayLoader} aria-live="polite" aria-busy="true">
           <div className={styles.pageOverlayLoaderInner}>
@@ -619,6 +636,7 @@ export default function Routes_page() {
           img={getImageUrl(pageContent.hero.image)}
           title={pageContent.hero.title}
           desc={pageContent.hero.description}
+          alt="Маршруты по Карачаево-Черкесии"
         />
       </div>
 

@@ -17,6 +17,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI } from '@/lib/api';
+import Seo from '@/components/Seo/Seo';
 import styles from './admin.module.css';
 
 export const AdminHeaderRightContext = createContext(null);
@@ -139,7 +140,9 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className={styles.adminContainer}>
+    <>
+      <Seo noindex title="Админ-панель — Путешествуй КЧР" />
+      <div className={styles.adminContainer}>
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
           <Link to="/" target="_blank" rel="noopener noreferrer" className={styles.logo}>КЧР Админ</Link>
@@ -233,6 +236,7 @@ export default function AdminLayout() {
           </AdminHeaderRightContext.Provider>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

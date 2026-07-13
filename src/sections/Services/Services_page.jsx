@@ -10,6 +10,9 @@ import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import CtaSection from '@/components/CtaSection/CtaSection'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
+import Seo from '@/components/Seo/Seo'
+import { collectionPage, itemList, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl } from '@/lib/seo/config'
 import { publicServicesAPI, publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
@@ -656,6 +659,20 @@ export default function Services_page() {
 
   return (
     <main className={styles.main}>
+      <Seo
+        title="Услуги и сервисы для туристов в Карачаево-Черкесии"
+        description="Гиды, гостиницы, кафе, музеи, трансфер, прокат и другие услуги для комфортного путешествия по Карачаево-Черкесии."
+        path="/services"
+        jsonLd={[
+          collectionPage({ name: 'Услуги и сервисы', description: 'Услуги для туристов в Карачаево-Черкесии.', url: absoluteUrl('/services') }),
+          itemList((services || []).slice(0, 20).map(s => ({ name: s.title, url: absoluteUrl(`/services/${s.slug}`) }))),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'Услуги и сервисы', url: absoluteUrl('/services') },
+          ]),
+        ]}
+      />
+
       {pageOverlayLoading && (
         <div className={styles.pageOverlayLoader} aria-live="polite" aria-busy="true">
           <div className={styles.pageOverlayLoaderInner}>Загрузка...</div>
@@ -667,6 +684,7 @@ export default function Services_page() {
           img={getImageUrl(pageContent.hero.image)}
           title={pageContent.hero.title}
           desc={pageContent.hero.description}
+          alt="Услуги и сервисы в Карачаево-Черкесии"
         />
       </div>
 

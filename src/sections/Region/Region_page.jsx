@@ -9,13 +9,16 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { publicRegionAPI, getImageUrl } from '@/lib/api'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
+import Seo from '@/components/Seo/Seo'
+import { touristDestination, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl } from '@/lib/seo/config'
 
 const DEFAULT_CONTENT = {
   hero: {
     title: 'КАРАЧАЕВО-ЧЕРКЕСИЯ',
     subtitle: 'Край величественных гор, древних традиций и гостеприимных народов',
     image: '/full_roates_bg.jpg',
-    buttonText: 'Исследовать маршруты',
+    buttonText: 'Перейти к знакомству',
     buttonLink: '/routes',
   },
   intro: {
@@ -71,8 +74,8 @@ const DEFAULT_CONTENT = {
     moreButtonLink: '/places',
   },
   cta: {
-    title: 'Готовы к путешествию?',
-    text: 'Откройте для себя красоту Карачаево-Черкесии. Выберите маршрут и отправляйтесь в незабываемое приключение!',
+    title: 'Откройте лучшие места',
+    text: 'Водопады, ущелья, горные озёра — каждый уголок республики хранит свою историю и красоту. Исследуйте их сами!',
     primaryButtonText: 'Интересные места',
     primaryButtonLink: '/places',
     secondaryButtonText: '',
@@ -247,11 +250,29 @@ export default function Region_page() {
 
   return (
     <main className={styles.main}>
+      <Seo
+        title="Карачаево-Черкесия — природа, культура и отдых в КЧР"
+        description="Познакомьтесь с Карачаево-Черкесией: природа, история, культура, традиции и главные точки притяжения региона."
+        path="/region"
+        jsonLd={[
+          touristDestination({
+            name: 'Карачаево-Черкесия',
+            description: 'Природа, история, культура, традиции и главные точки притяжения региона.',
+            url: absoluteUrl('/region'),
+            image: absoluteUrl('/color_logo.png'),
+          }),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'О регионе', url: absoluteUrl('/region') },
+          ]),
+        ]}
+      />
       <SliderFullScreen
         sliderPlacesOverride={sliderPlaces}
         introSlideOverride={introSlide}
         scrollTargetId="intro"
         introBtnText="Перейти к знакомству"
+        heading="Карачаево-Черкесия"
       />
 
       <CenterBlock>

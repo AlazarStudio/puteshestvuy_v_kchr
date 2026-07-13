@@ -279,7 +279,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>{categoryLabel}</div>
-                  <div className={`${styles.serviceName} ${common.serviceName}`}>{serviceName}</div>
+                  <h1 className={`${styles.serviceName} ${common.serviceName}`}>{serviceName}</h1>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${common.ratingStars}`}>
                       <img src="/star.png" alt="" /> {configRating != null ? configRating : '—'}

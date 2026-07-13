@@ -70,9 +70,9 @@ export default function PlaceBlock({ img, place, title, desc, rating, feedback, 
         onMouseLeave={handleMouseLeave}
       >
       <div className={styles.img}>
-        <motion.img 
-          src={img || '/placeholder.jpg'} 
-          alt="" 
+        <motion.img
+          src={img || '/placeholder.jpg'}
+          alt={title ? `${title} — интересное место Карачаево-Черкесии` : ''}
           onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder.jpg' }}
           style={{
             x: xSpring,

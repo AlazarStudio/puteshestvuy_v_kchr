@@ -8,6 +8,9 @@ import { Link } from 'react-router-dom'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
 import { slugFromText } from '@/app/admin/components/NewsBlockEditor'
 import NewsGalleryBlock from '@/components/NewsGalleryBlock'
+import Seo from '@/components/Seo/Seo'
+import { newsArticle, article, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl, truncate } from '@/lib/seo/config'
 
 export default function NewsDetail({ slug }) {
   const [news, setNews] = useState(null)
@@ -108,6 +111,7 @@ export default function NewsDetail({ slug }) {
   if (loading) {
     return (
       <main className={styles.main}>
+        <Seo noindex title="Материал — Путешествуй КЧР" />
         <div className={styles.content}>
           <CenterBlock>
             <div className={styles.loading}>Загрузка...</div>
@@ -120,6 +124,7 @@ export default function NewsDetail({ slug }) {
   if (error || !news) {
     return (
       <main className={styles.main}>
+        <Seo noindex title="Материал — Путешествуй КЧР" />
         <div className={styles.content}>
           <CenterBlock>
             <div className={styles.error}>{error || 'Запись не найдена'}</div>
@@ -132,9 +137,34 @@ export default function NewsDetail({ slug }) {
 
   const heroImage = news.image || news.images?.[0]
   const tagLabel = news.type === 'article' ? 'Статья' : 'Новость'
+  const isArticle = news.type === 'article'
+  const seoDesc = news.description || truncate(
+    (news.blocks || []).find(b => b.type === 'text')?.data?.content || news.title, 160
+  )
 
   return (
     <main className={styles.main}>
+      <Seo
+        title={isArticle ? `${news.title} — статьи о путешествиях по КЧР` : `${news.title} — новости КЧР`}
+        description={seoDesc}
+        path={`/news/${news.slug}`}
+        type="article"
+        image={heroImage ? getImageUrl(heroImage) : undefined}
+        jsonLd={[
+          (isArticle ? article : newsArticle)({
+            headline: news.title,
+            description: seoDesc,
+            url: absoluteUrl(`/news/${news.slug}`),
+            image: heroImage ? getImageUrl(heroImage) : undefined,
+            datePublished: news.publishedAt || undefined,
+          }),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'Новости и статьи', url: absoluteUrl('/news') },
+            { name: news.title, url: absoluteUrl(`/news/${news.slug}`) },
+          ]),
+        ]}
+      />
       <div className={styles.heroImage}>
         {heroImage && <img src={getImageUrl(heroImage)} alt={news.title} />}
         <div className={styles.heroOverlay}></div>

@@ -21,7 +21,7 @@ export default function ServiceCard({ img, name, rating = '—', reviewsCount = 
 
   return (
     <div className={styles.card}>
-      <div className={styles.img}><img src={img} alt="" /></div>
+      <div className={styles.img}><img src={img} alt={name || ''} /></div>
       <div className={styles.topLine}>
         {isVerified && (
           <div className={styles.verification}><img src="/verification.png" alt="" /></div>

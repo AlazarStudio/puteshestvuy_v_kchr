@@ -7,6 +7,9 @@ import styles from './News_page.module.css'
 import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import NewsBlock from '@/components/NewsBlock/NewsBlock'
+import Seo from '@/components/Seo/Seo'
+import { collectionPage, itemList, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl } from '@/lib/seo/config'
 import { publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 
 const SCROLL_KEY = 'news_scroll_position'
@@ -327,6 +330,20 @@ export default function News_page() {
 
   return (
     <main className={styles.main}>
+      <Seo
+        title="Новости и статьи о путешествиях по Карачаево-Черкесии"
+        description="Актуальные новости туризма, события, анонсы и полезные статьи о путешествиях по Карачаево-Черкесии."
+        path="/news"
+        jsonLd={[
+          collectionPage({ name: 'Новости и статьи', description: 'Новости туризма и статьи о путешествиях по Карачаево-Черкесии.', url: absoluteUrl('/news') }),
+          itemList((news || []).slice(0, 20).map(n => ({ name: n.title, url: absoluteUrl(`/news/${n.slug}`) }))),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'Новости и статьи', url: absoluteUrl('/news') },
+          ]),
+        ]}
+      />
+
       {pageOverlayLoading && (
         <div className={styles.pageOverlayLoader} aria-live="polite" aria-busy="true">
           <div className={styles.pageOverlayLoaderInner}>Загрузка...</div>
@@ -338,6 +355,7 @@ export default function News_page() {
           img={getImageUrl(pageContent.hero.image)}
           title={pageContent.hero.title}
           desc={pageContent.hero.description}
+          alt="Новости и статьи о Карачаево-Черкесии"
         />
       </div>
 

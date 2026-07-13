@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /profile/
+Disallow: /services/template
+Disallow: /services/template/
+
+Disallow: /*?page=
+Disallow: /*?search=
+
+Sitemap: https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/sitemap.xml

@@ -122,6 +122,8 @@ export default function SliderFullScreen({
   introSlideOverride = null,
   scrollTargetId = 'firstTime',
   introBtnText = 'Начать путешествие',
+  heading = null,
+  onHeroButtonClick = null,
 }) {
   const [slides, setSlides] = useState([])
   const initialSlidesRef = useRef([])
@@ -388,9 +390,24 @@ export default function SliderFullScreen({
 
   const placeHref = (slide) => slide.isIntro ? '/' : `/places/${slide.slug || slide.id}`
 
+  const handleHeroButton = () => {
+    if (typeof onHeroButtonClick === 'function') {
+      onHeroButtonClick()
+      return
+    }
+    const el = document.getElementById(scrollTargetId)
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.pageYOffset - 80
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      return
+    }
+    window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })
+  }
+
   if (isLoading) {
     return (
       <section className={styles.carousel}>
+        {heading ? <h1 className="sr-only">{heading}</h1> : null}
         <div className={styles.list}>
           <div className={styles.item}>
             <div className={styles.image} />
@@ -408,6 +425,7 @@ export default function SliderFullScreen({
   if (slides.length === 0) {
     return (
       <section className={styles.carousel}>
+        {heading ? <h1 className="sr-only">{heading}</h1> : null}
         <div className={styles.list}>
           <div className={styles.item}>
             <div className={styles.image} />
@@ -423,6 +441,7 @@ export default function SliderFullScreen({
 
   return (
     <section className={carouselClassNames}>
+      {heading ? <h1 className="sr-only">{heading}</h1> : null}
       {/* Основной список */}
       <div className={styles.list}>
         {slides.map((slide, index) => (
@@ -508,13 +527,7 @@ export default function SliderFullScreen({
               <div className={styles.buttons}>
                 {slide.isIntro ? (
                   <button
-                    onClick={() => {
-                      const el = document.getElementById(scrollTargetId)
-                      if (el) {
-                        const top = el.getBoundingClientRect().top + window.pageYOffset - 80
-                        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
-                      }
-                    }}
+                    onClick={handleHeroButton}
                     className={styles.ctaLinkIntro}
                   >
                     {introBtnText}

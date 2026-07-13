@@ -90,11 +90,11 @@ export default function Footer() {
       <CenterBlock>
         <div className={styles.footerTop}>
           <div className={styles.column}>
-            <div className={styles.img}><img src={getImageUrl(left.logo)} alt="" /></div>
+            <div className={styles.img}><img src={getImageUrl(left.logo)} alt="Путешествуй КЧР" /></div>
             <div className={styles.social}>
               {(left.social || []).map((s, i) => (
                 <Link key={i} to={s.url || '#'} target="_blank" rel="noopener noreferrer" className={styles.imgBlock}>
-                  <img src={getImageUrl(s.icon)} alt="" />
+                  <img src={getImageUrl(s.icon)} alt={s.name || s.title || 'Соцсеть'} />
                 </Link>
               ))}
             </div>
@@ -181,7 +181,7 @@ export default function Footer() {
               const { url } = resolveLink(p)
               return (
                 <Link key={i} to={url || '#'} target="_blank" rel="noopener noreferrer">
-                  <img src={getImageUrl(p.image)} alt="" />
+                  <img src={getImageUrl(p.image)} alt={p.name || p.title || 'Партнёр'} />
                 </Link>
               )
             })}

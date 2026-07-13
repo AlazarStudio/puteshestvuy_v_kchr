@@ -17,6 +17,9 @@ import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import { exportRoutePDF } from '@/utils/exportRoutePDF'
 import RichTextContent from '@/components/RichTextContent'
+import Seo from '@/components/Seo/Seo'
+import { touristTrip, itemList, breadcrumbList } from '@/lib/seo/schema'
+import { absoluteUrl, truncate } from '@/lib/seo/config'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
@@ -386,6 +389,7 @@ export default function RouteDetail({ routeSlug }) {
   if (loading) {
     return (
       <main className={styles.main}>
+        <Seo noindex title="Маршрут — Путешествуй КЧР" />
         <CenterBlock>
           <div className={styles.routePage} style={{ padding: '2rem', textAlign: 'center' }}>Загрузка маршрута...</div>
         </CenterBlock>
@@ -395,6 +399,7 @@ export default function RouteDetail({ routeSlug }) {
   if (error || !route) {
     return (
       <main className={styles.main}>
+        <Seo noindex title="Маршрут — Путешествуй КЧР" />
         <CenterBlock>
           <div className={styles.routePage} style={{ padding: '2rem', textAlign: 'center' }}>
             {error || 'Маршрут не найден'}
@@ -443,6 +448,27 @@ export default function RouteDetail({ routeSlug }) {
 
   return (
     <main className={styles.main}>
+      <Seo
+        title={`${route.title} — маршрут по Карачаево-Черкесии`}
+        description={truncate(route.description, 160)}
+        path={`/routes/${route.slug}`}
+        image={route.images?.[0] ? getImageUrl(route.images[0]) : undefined}
+        jsonLd={[
+          touristTrip({
+            name: route.title,
+            description: truncate(route.description, 160),
+            url: absoluteUrl(`/routes/${route.slug}`),
+            image: route.images?.[0] ? getImageUrl(route.images[0]) : undefined,
+            itinerary: (route.places || []).map(p => ({ name: p.title, url: p.slug ? absoluteUrl(`/places/${p.slug}`) : undefined })),
+          }),
+          itemList((route.places || []).map(p => ({ name: p.title, url: p.slug ? absoluteUrl(`/places/${p.slug}`) : absoluteUrl(`/routes/${route.slug}`) }))),
+          breadcrumbList([
+            { name: 'Главная', url: absoluteUrl('/') },
+            { name: 'Маршруты', url: absoluteUrl('/routes') },
+            { name: route.title, url: absoluteUrl(`/routes/${route.slug}`) },
+          ]),
+        ]}
+      />
       <CenterBlock>
         <div className={styles.routePage}>
           <div className={styles.bread_crumbs}>
@@ -554,7 +580,7 @@ export default function RouteDetail({ routeSlug }) {
                         >
                           <ParallaxImage
                             src={photo.src}
-                            alt={`Фото ${photoIndex + 1}`}
+                            alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
                             style={{ width: '100%', height: '100%' }}
@@ -576,7 +602,7 @@ export default function RouteDetail({ routeSlug }) {
                         >
                           <ParallaxImage
                             src={photo.src}
-                            alt={`Фото ${photoIndex + 1}`}
+                            alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
                             style={{ width: '100%', height: '100%' }}
@@ -605,7 +631,7 @@ export default function RouteDetail({ routeSlug }) {
 
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
-              <div id="main" className={styles.title}>{route.title}</div>
+              <h1 id="main" className={styles.title}>{route.title}</h1>
               <button className={styles.pdfButton} onClick={() => exportRoutePDF(route, routeFilterMeta.extraGroups)}>
                 Выгрузить в PDF
               </button>
@@ -1138,7 +1164,7 @@ export default function RouteDetail({ routeSlug }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.modalSlide}>
-                        <img src={photo.src} alt={`Фото ${index + 1}`} />
+                        <img src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -1158,7 +1184,7 @@ export default function RouteDetail({ routeSlug }) {
                       }
                     }}
                   >
-                    <img src={photo.src} alt={`Миниатюра ${index + 1}`} />
+                    <img src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
                   </div>
                 ))}
               </div>

@@ -393,7 +393,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                       </div>
                     )}
                   </div>
-                  <div className={`${styles.serviceName} ${g.serviceName}`}>{displayName}</div>
+                  <h1 className={`${styles.serviceName} ${g.serviceName}`}>{displayName}</h1>
                   <div className={styles.serviceRating}>
                     <div className={`${styles.ratingStars} ${g.ratingStars}`}>
                       <img src="/star.png" alt="" /> {serviceData?.rating ?? '—'}

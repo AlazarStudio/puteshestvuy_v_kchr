@@ -3,9 +3,11 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Helmet } from 'react-helmet-async'
 import Header from './Header'
 import Footer from './Footer'
 import CookieBanner from '@/components/CookieBanner/CookieBanner'
+import { organization, website } from '@/lib/seo/schema'
 import styles from './LayoutWrapper.module.css'
 
 export default function LayoutWrapper({ children }) {
@@ -129,6 +131,11 @@ export default function LayoutWrapper({ children }) {
 
   return (
     <>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(organization())}</script>
+        <script type="application/ld+json">{JSON.stringify(website())}</script>
+      </Helmet>
+
       <AnimatePresence mode="wait">
         {showPreloader && (
           <motion.div
