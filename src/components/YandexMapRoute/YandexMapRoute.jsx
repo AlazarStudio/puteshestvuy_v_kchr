@@ -183,11 +183,12 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
           );
           mapRef.current.geoObjects.add(multiRoute);
           routeRef.current = multiRoute;
-
           // Метка с длиной маршрута — по центру линии (пин Яндекса скрыт выше).
           let distanceLabel = null;
           multiRoute.model.events.add('requestsuccess', () => {
-            if (!mapRef.current) return;
+            // Сравниваем с картой этого запуска эффекта: после ре-рана mapRef.current
+            // указывает на новую карту, и устаревший колбэк рисовал бы на ней.
+            if (mapRef.current !== map) return;
             const active = multiRoute.getActiveRoute && multiRoute.getActiveRoute();
             if (!active) return;
             const distance = active.properties.get('distance');
@@ -211,7 +212,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
             const mid = coords[Math.floor(coords.length / 2)];
             if (!Array.isArray(mid) || typeof mid[0] !== 'number') return;
             if (distanceLabel) {
-              try { mapRef.current.geoObjects.remove(distanceLabel); } catch { /* уже удалена */ }
+              try { map.geoObjects.remove(distanceLabel); } catch { /* уже удалена */ }
               const i = geocodedMarkersRef.current.indexOf(distanceLabel);
               if (i >= 0) geocodedMarkersRef.current.splice(i, 1);
             }
@@ -220,7 +221,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
               { iconContent: distanceText },
               { preset: 'islands#darkGreenStretchyIcon' }
             );
-            mapRef.current.geoObjects.add(distanceLabel);
+            map.geoObjects.add(distanceLabel);
             geocodedMarkersRef.current.push(distanceLabel);
           });
         });
@@ -258,12 +259,13 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         window.ymaps
           .geocode(pt, { results: 1 })
           .then((res) => {
-            if (!mapRef.current) return;
+            // См. комментарий у requestsuccess: защищаемся от устаревшего колбэка.
+            if (mapRef.current !== map) return;
             const obj = res.geoObjects.get(0);
             const name =
               (obj && (obj.properties.get('name') || obj.getAddressLine?.())) || `Точка ${index + 1}`;
             const pm = new window.ymaps.Placemark(pt, { iconCaption: name, hintContent: name }, { preset });
-            mapRef.current.geoObjects.add(pm);
+            map.geoObjects.add(pm);
             geocodedMarkersRef.current.push(pm);
           })
           .catch(() => {});
@@ -295,7 +297,9 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
   }, [scriptReady, showRouteFromMe, JSON.stringify(coordsOrdered.map((c) => c.join(','))), JSON.stringify(routePoints), routingMode]);
 
   const handleBuildRoute = () => {
-    if (!scriptReady || !window.ymaps || !mapRef.current || coordsOrdered.length === 0) return;
+    // routePoints, а не coordsOrdered: у маршрута «только по ссылке» мест нет,
+    // но первая точка ссылки — валидная цель для маршрута «от меня».
+    if (!scriptReady || !window.ymaps || !mapRef.current || routePoints.length === 0) return;
     setRouteStatus('loading');
     if (!navigator.geolocation) {
       setRouteStatus('error');
@@ -306,7 +310,7 @@ export default function YandexMapRoute({ places = [], height = MAP_HEIGHT, class
         const fromLat = position.coords.latitude;
         const fromLon = position.coords.longitude;
         userCoordsRef.current = { lat: fromLat, lon: fromLon };
-        const referencePoints = [[fromLat, fromLon], coordsOrdered[0]];
+        const referencePoints = [[fromLat, fromLon], routePoints[0]];
         const requireModules = window.ymaps.modules?.require;
         if (typeof requireModules === 'function') {
           requireModules(['multiRouter.MultiRoute'], (MultiRoute) => {
