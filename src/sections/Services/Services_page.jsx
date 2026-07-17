@@ -13,7 +13,7 @@ import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/Servic
 import Seo from '@/components/Seo/Seo'
 import { collectionPage, itemList, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl } from '@/lib/seo/config'
-import { publicServicesAPI, publicNewsAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
+import { publicServicesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
 
 const SCROLL_KEY = 'services_scroll_position'
@@ -22,17 +22,14 @@ const ITEMS_PER_PAGE = 6
 // Соответствие опций фильтра и категорий в API (как в админке)
 const FILTER_TO_CATEGORY = {
   Гиды: 'Гид',
-  Активности: 'Активности',
+  'Досуг и развлечения': 'Активности',
   'Прокат оборудования': 'Прокат оборудования',
-  'Пункты придорожного сервиса': 'Придорожный пункт',
   'Торговые точки': 'Торговая точка',
   Музеи: 'Музей',
-  Сувениры: 'Сувениры',
   Гостиницы: 'Гостиница',
   'Кафе и рестораны': 'Кафе и ресторан',
-  Трансфер: 'Трансфер',
+  'Трансфер и прокат авто': 'Трансфер',
   АЗС: 'АЗС',
-  'Санитарные узлы': 'Санитарные узлы',
   'Пункты медпомощи': 'Пункт медпомощи',
   МВД: 'МВД',
   'МЧС': 'МЧС',
@@ -41,35 +38,39 @@ const FILTER_TO_CATEGORY = {
 
 const SERVICE_FILTER_OPTIONS = [
   'Гиды',
-  'Активности',
+  'Досуг и развлечения',
   'Музеи',
   'Прокат оборудования',
-  'Пункты придорожного сервиса',
   'Торговые точки',
-  'Сувениры',
   'Гостиницы',
   'Кафе и рестораны',
-  'Трансфер',
+  'Трансфер и прокат авто',
   'АЗС',
-  'Санитарные узлы',
   'ТИЦ',
+]
+
+// Локации для фильтра гостиниц/ресторанов.
+// Значения должны совпадать с ключами LOCATION_MATCH_ALIASES на бэкенде.
+const SERVICE_LOCATION_OPTIONS = [
+  'Теберда',
+  'Домбай',
+  'Архыз',
+  'Махар',
+  'Малокарачаевский район',
+  'Зеленчукский район',
 ]
 
 const EMERGENCY_FILTER_OPTIONS = ['Пункты медпомощи', 'МВД', 'МЧС']
 
 const LABEL_TO_URL_FILTER = {
-  Статьи: 'articles',
   Гиды: 'guides',
-  Активности: 'activities',
+  'Досуг и развлечения': 'activities',
   'Прокат оборудования': 'equipment-rental',
-  'Пункты придорожного сервиса': 'roadside-service',
   'Торговые точки': 'shops',
-  Сувениры: 'souvenirs',
   Гостиницы: 'hotels',
   'Кафе и рестораны': 'restaurants',
-  Трансфер: 'transfer',
+  'Трансфер и прокат авто': 'transfer',
   АЗС: 'gas-stations',
-  'Санитарные узлы': 'restrooms',
   'Пункты медпомощи': 'medical',
   МВД: 'police',
   'МЧС': 'fire-department',
@@ -79,18 +80,14 @@ const LABEL_TO_URL_FILTER = {
 }
 
 const URL_FILTER_TO_LABEL = {
-  articles: 'Статьи',
   guides: 'Гиды',
-  activities: 'Активности',
+  activities: 'Досуг и развлечения',
   'equipment-rental': 'Прокат оборудования',
-  'roadside-service': 'Пункты придорожного сервиса',
   shops: 'Торговые точки',
-  souvenirs: 'Сувениры',
   hotels: 'Гостиницы',
   restaurants: 'Кафе и рестораны',
-  transfer: 'Трансфер',
+  transfer: 'Трансфер и прокат авто',
   'gas-stations': 'АЗС',
-  restrooms: 'Санитарные узлы',
   medical: 'Пункты медпомощи',
   police: 'МВД',
   'fire-department': 'МЧС',
@@ -100,12 +97,13 @@ const URL_FILTER_TO_LABEL = {
 }
 
 const filterGroups = [
-  { key: 'articles', label: 'Статьи', options: ['Статьи'] },
   { key: 'service', label: 'Сервис', options: SERVICE_FILTER_OPTIONS },
   // { key: 'emergency', label: 'Экстренные службы', options: EMERGENCY_FILTER_OPTIONS },
 ]
 
 const HOTEL_FILTER_GROUP = { key: 'hotelFilters', label: 'Параметры гостиниц', options: ['Оплата картой'] }
+
+const LOCATION_FILTER_GROUP = { key: 'location', label: 'Локация', options: SERVICE_LOCATION_OPTIONS }
 
 function areFiltersEqual(a = {}, b = {}) {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)])
@@ -131,14 +129,12 @@ export default function Services_page() {
 
   const [filters, setFilters] = useState(() => {
     const filterValues = searchParams.getAll('filter')
-    const result = { articles: [], service: [], emergency: [], hotelFilters: [] }
+    const result = { service: [], emergency: [], hotelFilters: [] }
 
     filterValues.forEach((fv) => {
       const label = URL_FILTER_TO_LABEL[fv]
       if (!label) return
-      if (label === 'Статьи') {
-        result.articles = ['Статьи']
-      } else if (label === 'Оплата картой') {
+      if (label === 'Оплата картой') {
         result.hotelFilters = ['Оплата картой']
       } else if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
         if (!result.emergency.includes(label)) result.emergency.push(label)
@@ -147,17 +143,22 @@ export default function Services_page() {
       }
     })
 
+    const locationEligible =
+      result.service.includes('Гостиницы') || result.service.includes('Кафе и рестораны')
+    const location = locationEligible
+      ? searchParams.getAll('location').filter((v) => SERVICE_LOCATION_OPTIONS.includes(v))
+      : []
+
     return {
-      articles: result.articles,
       service: result.service,
       emergency: result.emergency,
       hotelFilters: result.hotelFilters,
+      location,
     }
   })
 
   const [searchQuery, setSearchQuery] = useState('')
   const [allServicesForSearch, setAllServicesForSearch] = useState([])
-  const [allArticlesForSearch, setAllArticlesForSearch] = useState([])
   const [searchFallback, setSearchFallback] = useState(null)
 
   const searchDebounceRef = useRef(null)
@@ -189,14 +190,12 @@ export default function Services_page() {
 
   const getFiltersFromUrl = useCallback(() => {
     const filterValues = searchParams.getAll('filter')
-    const result = { articles: [], service: [], emergency: [], hotelFilters: [] }
+    const result = { service: [], emergency: [], hotelFilters: [] }
 
     filterValues.forEach((fv) => {
       const label = URL_FILTER_TO_LABEL[fv]
       if (!label) return
-      if (label === 'Статьи') {
-        result.articles = ['Статьи']
-      } else if (label === 'Оплата картой') {
+      if (label === 'Оплата картой') {
         result.hotelFilters = ['Оплата картой']
       } else if (EMERGENCY_FILTER_OPTIONS.includes(label)) {
         if (!result.emergency.includes(label)) result.emergency.push(label)
@@ -205,11 +204,17 @@ export default function Services_page() {
       }
     })
 
+    const locationEligible =
+      result.service.includes('Гостиницы') || result.service.includes('Кафе и рестораны')
+    const location = locationEligible
+      ? searchParams.getAll('location').filter((v) => SERVICE_LOCATION_OPTIONS.includes(v))
+      : []
+
     return {
-      articles: result.articles,
       service: result.service,
       emergency: result.emergency,
       hotelFilters: result.hotelFilters,
+      location,
     }
   }, [searchParams])
 
@@ -226,17 +231,18 @@ export default function Services_page() {
     setSortBy(event.target.value)
   }
 
-  // Загрузка всех услуг и статей для умного поиска
+  // Загрузка всех услуг для умного поиска
   useEffect(() => {
     let cancelled = false
-    Promise.all([
-      publicServicesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { items: [] } })),
-      publicNewsAPI.getAll({ limit: 1000, type: 'article' }).catch(() => ({ data: { items: [] } })),
-    ]).then(([servicesRes, articlesRes]) => {
-      if (cancelled) return
-      setAllServicesForSearch(servicesRes.data?.items || [])
-      setAllArticlesForSearch(articlesRes.data?.items || [])
-    })
+    publicServicesAPI
+      .getAll({ limit: 1000 })
+      .then((servicesRes) => {
+        if (cancelled) return
+        setAllServicesForSearch(servicesRes.data?.items || [])
+      })
+      .catch(() => {
+        if (!cancelled) setAllServicesForSearch([])
+      })
     return () => {
       cancelled = true
     }
@@ -255,13 +261,7 @@ export default function Services_page() {
       const performSearch = async (query) => {
         if (!query || !query.trim()) return []
         const lowerQuery = query.toLowerCase().trim()
-
-        const allItems = [
-          ...allServicesForSearch.map((item) => ({ ...item, _searchType: 'service' })),
-          ...allArticlesForSearch.map((item) => ({ ...item, _searchType: 'article' })),
-        ]
-
-        return allItems.filter((item) => searchInObject(item, lowerQuery))
+        return allServicesForSearch.filter((item) => searchInObject(item, lowerQuery))
       }
 
       const { fallback } = await searchWithFallback(searchQuery, performSearch)
@@ -272,16 +272,15 @@ export default function Services_page() {
     return () => {
       if (timer) clearTimeout(timer)
     }
-  }, [searchQuery, allServicesForSearch, allArticlesForSearch])
+  }, [searchQuery, allServicesForSearch])
 
   const applyFiltersToUrl = useCallback((newFilters) => {
-    const articles = newFilters.articles || []
     const service = newFilters.service || []
     const emergency = newFilters.emergency || []
     const hotelFilters = newFilters.hotelFilters || []
+    const location = newFilters.location || []
 
     const filterValues = []
-    if (articles.includes('Статьи')) filterValues.push('articles')
     service.forEach((s) => {
       const v = LABEL_TO_URL_FILTER[s]
       if (v) filterValues.push(v)
@@ -300,6 +299,8 @@ export default function Services_page() {
       next.delete('filter')
       filterValues.forEach((f) => next.append('filter', f))
       if (filterValues.length === 0) next.delete('filter')
+      next.delete('location')
+      location.forEach((l) => next.append('location', l))
       return next
     }, { replace: true })
   }, [setSearchParams])
@@ -311,6 +312,11 @@ export default function Services_page() {
       if (!hotelsStillActive && (next.hotelFilters || []).length > 0) {
         next = { ...next, hotelFilters: [] }
       }
+      const locationEligible =
+        (next.service || []).includes('Гостиницы') || (next.service || []).includes('Кафе и рестораны')
+      if (!locationEligible && (next.location || []).length > 0) {
+        next = { ...next, location: [] }
+      }
       const same = areFiltersEqual(prev, next)
       if (!same) applyFiltersToUrl(next)
       return same ? prev : next
@@ -319,7 +325,11 @@ export default function Services_page() {
 
   const computedFilterGroups = useMemo(() => {
     const hotelsActive = (filters.service || []).includes('Гостиницы')
-    return hotelsActive ? [...filterGroups, HOTEL_FILTER_GROUP] : filterGroups
+    const restaurantsActive = (filters.service || []).includes('Кафе и рестораны')
+    let groups = filterGroups
+    if (hotelsActive || restaurantsActive) groups = [...groups, LOCATION_FILTER_GROUP]
+    if (hotelsActive) groups = [...groups, HOTEL_FILTER_GROUP]
+    return groups
   }, [filters.service])
 
   const buildCategoryParams = useCallback(() => {
@@ -343,126 +353,29 @@ export default function Services_page() {
     try {
       setLoading(true)
 
-      const showArticles = (filters.articles || []).includes('Статьи')
       const categories = buildCategoryParams()
-      const hasServiceFilter = categories.length > 0
       const effectiveSearchQuery = searchFallback || searchQuery.trim()
-
-      const fetchArticles = () =>
-        publicNewsAPI.getAll({
-          page,
-          limit: ITEMS_PER_PAGE,
-          type: 'article',
-          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
-        })
-
       const cardPaymentFilter = (filters.hotelFilters || []).includes('Оплата картой')
+      const locations = filters.location || []
 
-      const fetchServices = (cats) =>
-        publicServicesAPI.getAll({
-          page,
-          limit: ITEMS_PER_PAGE,
-          ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
-          ...(cats?.length > 0 && { category: cats }),
-          ...(cardPaymentFilter && { cardPayment: true }),
-          ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
-        })
+      const { data } = await publicServicesAPI.getAll({
+        page,
+        limit: ITEMS_PER_PAGE,
+        ...(effectiveSearchQuery && { search: effectiveSearchQuery }),
+        ...(categories.length > 0 && { category: categories }),
+        ...(cardPaymentFilter && { cardPayment: true }),
+        ...(locations.length > 0 && { locations }),
+        ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
+      })
 
-      let newItems = []
-      let totalItems = 0
-      let pages = 1
+      let newItems = data.items || []
+      if (sortBy === 'rating') newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      else if (sortBy === 'reviews') newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
+      else if (sortBy === 'popularity') newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
+      newItems = applyHotelCardPaymentSort(newItems)
 
-      if (showArticles && !hasServiceFilter) {
-        const { data } = await fetchArticles()
-        newItems = (data.items || []).map((a) => ({
-          id: a.id,
-          slug: a.slug,
-          title: a.title,
-          image: a.image,
-          category: 'Статья',
-          isArticle: true,
-          uniqueViewsCount: 0,
-        }))
-        totalItems = data.pagination?.total ?? 0
-        pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
-      } else if (hasServiceFilter && !showArticles) {
-        const { data } = await fetchServices(categories)
-        newItems = data.items || []
-
-        if (sortBy === 'rating') newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-        else if (sortBy === 'reviews') newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-        else if (sortBy === 'popularity') newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-        newItems = applyHotelCardPaymentSort(newItems)
-
-        totalItems = data.pagination?.total ?? 0
-        pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
-      } else if (showArticles && hasServiceFilter) {
-        const [articlesRes, servicesRes] = await Promise.all([fetchArticles(), fetchServices(categories)])
-
-        const servicesTotal = servicesRes.data?.pagination?.total ?? 0
-        const articlesTotal = articlesRes.data?.pagination?.total ?? 0
-
-        const servicesPages =
-          servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
-        const articlesPages =
-          articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
-
-        let serviceItems = servicesRes.data?.items || []
-        if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-        else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-        else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-        serviceItems = applyHotelCardPaymentSort(serviceItems)
-
-        const articleItems = (articlesRes.data?.items || []).map((a) => ({
-          id: a.id,
-          slug: a.slug,
-          title: a.title,
-          image: a.image,
-          category: 'Статья',
-          isArticle: true,
-          uniqueViewsCount: 0,
-        }))
-
-        newItems = [...serviceItems, ...articleItems]
-        if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-        newItems = applyHotelCardPaymentSort(newItems)
-
-        totalItems = servicesTotal + articlesTotal
-        pages = Math.max(servicesPages, articlesPages)
-      } else {
-        const [servicesRes, articlesRes] = await Promise.all([fetchServices(), fetchArticles()])
-
-        const servicesTotal = servicesRes.data?.pagination?.total ?? 0
-        const articlesTotal = articlesRes.data?.pagination?.total ?? 0
-
-        const servicesPages =
-          servicesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((servicesTotal || 0) / ITEMS_PER_PAGE))
-        const articlesPages =
-          articlesRes.data?.pagination?.pages ?? Math.max(1, Math.ceil((articlesTotal || 0) / ITEMS_PER_PAGE))
-
-        let serviceItems = servicesRes.data?.items || []
-        if (sortBy === 'rating') serviceItems = [...serviceItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-        else if (sortBy === 'reviews') serviceItems = [...serviceItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-        else if (sortBy === 'popularity') serviceItems = [...serviceItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-        serviceItems = applyHotelCardPaymentSort(serviceItems)
-
-        const articleItems = (articlesRes.data?.items || []).map((a) => ({
-          id: a.id,
-          slug: a.slug,
-          title: a.title,
-          image: a.image,
-          category: 'Статья',
-          isArticle: true,
-          uniqueViewsCount: 0,
-        }))
-
-        newItems = [...serviceItems, ...articleItems]
-        if (sortBy === 'popularity') newItems.sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-        newItems = applyHotelCardPaymentSort(newItems)
-
-        totalItems = servicesTotal + articlesTotal
-        pages = Math.max(servicesPages, articlesPages)
-      }
+      const totalItems = data.pagination?.total ?? 0
+      const pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
 
       setServices(newItems)
       setTotal(totalItems)
@@ -620,8 +533,6 @@ export default function Services_page() {
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  const showArticlesOnly = (filters.articles || []).includes('Статьи')
-
   // Загрузка данных страницы
   useEffect(() => {
     let cancelled = false
@@ -698,7 +609,7 @@ export default function Services_page() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Поиск по услугам..."
-            suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
+            suggestionsData={allServicesForSearch || []}
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
             initialOpenKeys={{ service: true }}
@@ -712,7 +623,7 @@ export default function Services_page() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Поиск по услугам..."
-            suggestionsData={[...(allServicesForSearch || []), ...(allArticlesForSearch || [])]}
+            suggestionsData={allServicesForSearch || []}
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
             initialOpenKeys={{ service: true }}
@@ -721,7 +632,7 @@ export default function Services_page() {
           <div className={styles.services}>
             <div className={styles.servicesSort}>
               <div className={styles.servicesSortFind}>
-                Найдено {total} {showArticlesOnly ? 'статей' : 'услуг'}
+                Найдено {total} услуг
               </div>
 
               <div className={styles.servicesSortSort}>
@@ -793,27 +704,20 @@ export default function Services_page() {
               </div>
             ) : services.length === 0 ? (
               <div className={styles.emptyState}>
-                <p>{showArticlesOnly ? 'Статьи не найдены.' : 'По выбранным фильтрам услуг не найдено.'}</p>
+                <p>По выбранным фильтрам услуг не найдено.</p>
               </div>
             ) : (
               <>
                 <div className={styles.servicesGrid}>
-                  {services.map((service) => {
-                    const isArticle = service.isArticle === true
-                    const serviceUrl = isArticle
-                      ? `/news/${service.slug || service.id}`
-                      : `/services/${service.slug || service.id}`
-
-                    return (
-                      <ServiceCardWithParallax
-                        key={service.id}
-                        service={service}
-                        serviceUrl={serviceUrl}
-                        isArticle={isArticle}
-                        styles={styles}
-                      />
-                    )
-                  })}
+                  {services.map((service) => (
+                    <ServiceCardWithParallax
+                      key={service.id}
+                      service={service}
+                      serviceUrl={`/services/${service.slug || service.id}`}
+                      isArticle={false}
+                      styles={styles}
+                    />
+                  ))}
                 </div>
 
                 {totalPages > 1 && (

@@ -189,7 +189,7 @@ export default function NewsDetail({ slug }) {
               <path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {news.type === 'article' ? (
-              <Link to="/services?filter=articles" className={styles.serviceLink}>Услуги и сервисы</Link>
+              <Link to="/news" className={styles.serviceLink}>Новости</Link>
             ) : (
               <Link to="/news">Новости</Link>
             )}

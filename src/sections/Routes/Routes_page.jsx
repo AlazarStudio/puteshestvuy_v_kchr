@@ -95,10 +95,7 @@ export default function Routes_page() {
   const FIXED_GROUP_KEYS = [
     'seasons',
     'transport',
-    'durationOptions',
     'difficultyLevels',
-    'distanceOptions',
-    'elevationOptions',
     'isFamilyOptions',
     'hasOvernightOptions',
   ]
@@ -236,10 +233,7 @@ export default function Routes_page() {
           setFilterOptions({
             seasons: Array.isArray(data.seasons) ? data.seasons : [],
             transport: Array.isArray(data.transport) ? data.transport : [],
-            durationOptions: Array.isArray(data.durationOptions) ? data.durationOptions : [],
             difficultyLevels: Array.isArray(data.difficultyLevels) ? data.difficultyLevels : [],
-            distanceOptions: Array.isArray(data.distanceOptions) ? data.distanceOptions : [],
-            elevationOptions: Array.isArray(data.elevationOptions) ? data.elevationOptions : [],
             isFamilyOptions: Array.isArray(data.isFamilyOptions) ? data.isFamilyOptions : [],
             hasOvernightOptions: Array.isArray(data.hasOvernightOptions) ? data.hasOvernightOptions : [],
             extraGroups: Array.isArray(data.extraGroups) ? data.extraGroups : [],
@@ -289,10 +283,7 @@ export default function Routes_page() {
           ...(sortBy && { sortBy }),
           ...(filters.seasons?.length > 0 && { seasons: filters.seasons }),
           ...(filters.transport?.length > 0 && { transport: filters.transport }),
-          ...(filters.durationOptions?.length > 0 && { durationOptions: filters.durationOptions }),
           ...(filters.difficultyLevels?.length > 0 && { difficultyLevels: filters.difficultyLevels }),
-          ...(filters.distanceOptions?.length > 0 && { distanceOptions: filters.distanceOptions }),
-          ...(filters.elevationOptions?.length > 0 && { elevationOptions: filters.elevationOptions }),
           ...(filters.isFamilyOptions?.length > 0 && { isFamilyOptions: filters.isFamilyOptions }),
           ...(filters.hasOvernightOptions?.length > 0 && { hasOvernightOptions: filters.hasOvernightOptions }),
         }

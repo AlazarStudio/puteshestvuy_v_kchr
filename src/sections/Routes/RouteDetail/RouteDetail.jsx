@@ -639,17 +639,13 @@ export default function RouteDetail({ routeSlug }) {
               </button>
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
-                  <Link
-                    to={buildFilterUrl('distanceOptions', route.distance)}
-                    className={styles.item}
-                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                  >
+                  <div className={styles.item}>
                     {renderInfoBlockIcon('distanceOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Расстояние</div>
                       <div className={styles.textDesc}>{route.distance} км</div>
                     </div>
-                  </Link>
+                  </div>
                 )}
                 {seasonDisplay && seasonsArray.length > 0 && (
                   <Link
@@ -665,17 +661,13 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.elevationGain != null && route.elevationGain !== '' && (
-                  <Link
-                    to={buildFilterUrl('elevationOptions', route.elevationGain)}
-                    className={styles.item}
-                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                  >
+                  <div className={styles.item}>
                     {renderInfoBlockIcon('elevationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Перепад высот</div>
                       <div className={styles.textDesc}>{route.elevationGain} м</div>
                     </div>
-                  </Link>
+                  </div>
                 )}
                 {route.hasOvernight && (
                   <Link
@@ -718,17 +710,13 @@ export default function RouteDetail({ routeSlug }) {
                   </Link>
                 )}
                 {route.duration && (
-                  <Link
-                    to={buildFilterUrl('durationOptions', route.duration)}
-                    className={styles.item}
-                    style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                  >
+                  <div className={styles.item}>
                     {renderInfoBlockIcon('durationOptions')}
                     <div className={styles.text}>
                       <div className={styles.textTitle}>Время прохождения</div>
                       <div className={styles.textDesc}>{route.duration}</div>
                     </div>
-                  </Link>
+                  </div>
                 )}
                 {route.isFamily && (
                   <Link
