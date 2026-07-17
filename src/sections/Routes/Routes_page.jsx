@@ -655,6 +655,12 @@ export default function Routes_page() {
             suggestionsData={allRoutesForSearch || []}
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            sortOptions={[
+              { value: 'popularity', label: 'По популярности' },
+              { value: 'difficulty', label: 'По сложности' },
+            ]}
           />
 
           <div className={styles.routes}>

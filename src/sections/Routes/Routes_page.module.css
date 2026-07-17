@@ -241,12 +241,6 @@
     box-sizing: border-box;
   }
 
-  .routesSortSort {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
   .routesShow {
     gap: 16px;
   }
@@ -259,6 +253,14 @@
 
   .loadingMore {
     padding: 32px 16px;
+  }
+}
+
+/* Сортировка переехала в шторку фильтров — скрываем select везде, где показан
+   мобильный FAB фильтров (≤1199px), чтобы не было двух контролов сортировки */
+@media (max-width: 1199px) {
+  .routesSortSort {
+    display: none;
   }
 }
 

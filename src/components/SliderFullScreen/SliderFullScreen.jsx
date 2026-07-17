@@ -136,6 +136,10 @@ export default function SliderFullScreen({
   const currentSlideIdRef = useRef(slides[0]?.id)
   currentSlideIdRef.current = slides[0]?.id
 
+  // Свайп на мобильных (вместо стрелок) + подсказка
+  const touchStartRef = useRef(null)
+  const [showSwipeHint, setShowSwipeHint] = useState(true)
+
   const currentSlideHasVideo = slides[0]?.video
   const outgoingSlideHasVideo =
     (direction === 'prev' && slides[1]?.video) ||
@@ -336,6 +340,35 @@ export default function SliderFullScreen({
     return () => clearTimeout(timeout)
   }, [direction])
 
+  // Свайп-навигация (мобильные): вызываем существующие handleNext/handlePrev
+  const SWIPE_THRESHOLD = 45
+  const handleTouchStart = (e) => {
+    const t = e.touches?.[0]
+    if (!t) return
+    touchStartRef.current = { x: t.clientX, y: t.clientY }
+  }
+  const handleTouchEnd = (e) => {
+    const start = touchStartRef.current
+    touchStartRef.current = null
+    if (!start || direction) return
+    const t = e.changedTouches?.[0]
+    if (!t) return
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    // только горизонтальный жест, чтобы не мешать вертикальному скроллу
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return
+    setShowSwipeHint(false)
+    if (dx < 0) handleNext()
+    else handlePrev()
+  }
+
+  // Автоскрытие подсказки о свайпе
+  useEffect(() => {
+    if (!showSwipeHint) return
+    const t = setTimeout(() => setShowSwipeHint(false), 5000)
+    return () => clearTimeout(t)
+  }, [showSwipeHint])
+
   // Запускаем затухание видео на уходящем слайде (только если показывали видео)
   const shouldFadeOutgoingVideo = outgoingSlideHasVideo && outgoingWasShowingVideoRef.current
   useEffect(() => {
@@ -440,7 +473,11 @@ export default function SliderFullScreen({
   }
 
   return (
-    <section className={carouselClassNames}>
+    <section
+      className={carouselClassNames}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {heading ? <h1 className="sr-only">{heading}</h1> : null}
       {/* Основной список */}
       <div className={styles.list}>
@@ -579,6 +616,15 @@ export default function SliderFullScreen({
         </div>
         <div className={styles.slidesNum}>{formattedSlideNumber}</div>
       </div>
+
+      {/* Подсказка о свайпе (только мобильные, автоскрытие) */}
+      {showSwipeHint && (
+        <div className={styles.swipeHint} aria-hidden="true">
+          <span className={styles.swipeHintIcon}>‹</span>
+          <span>Листайте</span>
+          <span className={styles.swipeHintIcon}>›</span>
+        </div>
+      )}
 
       {/* Полоса времени/анимация — можно анимировать через CSS по классу .next/.prev */}
 

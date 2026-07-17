@@ -699,6 +699,12 @@ export default function Places_page() {
               suggestionsData={allPlacesForSearch || []}
               getSuggestionTitle={(item) => item.title || item.name}
               maxSuggestions={5}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              sortOptions={[
+                { value: 'popularity', label: 'По популярности' },
+                { value: 'rating', label: 'По рейтингу' },
+              ]}
             />
           </div>
 

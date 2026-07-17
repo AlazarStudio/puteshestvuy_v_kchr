@@ -340,6 +340,17 @@
   object-fit: contain;
 }
 
+/* Подсказка о свайпе — по умолчанию скрыта (десктоп), показывается только на мобильных */
+.swipeHint {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeHint {
+    animation: none !important;
+  }
+}
+
 .carousel .list .item:not(:nth-child(1)) .content {
   opacity: 0;
   pointer-events: none;
@@ -515,13 +526,13 @@
   .carousel .list .item .content .title {
     margin-top: 10px;
     font-size: 24px;
+    line-height: 1.15;
   }
 
   .carousel .list .item .content .des {
     width: 100%;
-    margin-top: 15px;
+    margin-top: 10px;
     font-size: 14px;
-
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -532,7 +543,7 @@
   }
 
   .carousel .list .item .content .buttons {
-    margin-top: 15px;
+    margin-top: 10px;
   }
 
   .carousel .list .item .content {
@@ -558,14 +569,14 @@
   }
 
   .thumbnail .item {
-    width: 260px;
-    height: 310px;
+    width: 250px;
+    height: 260px;
   }
 
   .carousel.next .list .item:nth-child(1) .image {
     left: 20px;
     bottom: 120px;
-    height: 310px;
+    height: 260px;
   }
 
   .carousel.prev .list .item:nth-child(2) .image {
@@ -578,14 +589,14 @@
 
   @keyframes showThumbnailMobile {
     to {
-      width: 260px;
+      width: 250px;
     }
   }
 
   @keyframes outImageMobile {
     to {
-      width: 260px;
-      height: 310px;
+      width: 250px;
+      height: 260px;
       border-radius: 20px;
       left: 20px;
       bottom: 120px;
@@ -606,5 +617,111 @@
     width: 50px;
     height: 50px;
     padding: 12px;
+  }
+
+}
+
+/* Свайп-режим — ТОЛЬКО для тач-устройств (телефоны/планшеты).
+   На узком, но не-тач десктопе (напр. 1366px) стрелки остаются,
+   иначе слайдер нельзя листать мышью. */
+@media (hover: none) and (pointer: coarse) {
+  .arrows .buttons {
+    display: none;
+  }
+
+  .swipeHint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 50%;
+    bottom: 92px;
+    transform: translateX(-50%);
+    z-index: 100;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: swipeHintPulse 1.6s ease-in-out infinite;
+  }
+
+  .swipeHint .swipeHintIcon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  @keyframes swipeHintPulse {
+    0%, 100% {
+      opacity: 0.55;
+      transform: translateX(-50%) scale(0.98);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+  }
+}
+
+/* Короткие по высоте экраны (напр. альбомная ориентация телефона):
+   контент top-anchored + overflow:hidden срезали CTA — сжимаем стек, чтобы кнопка влезала */
+@media (max-width: 1400px) and (max-height: 700px) {
+  .carousel .list .item .content {
+    top: 44px;
+  }
+  .carousel .list .item .content .title {
+    font-size: 22px;
+    margin-top: 6px;
+  }
+  /* Превью крупнее (250px) → на невысоких экранах прячем описание,
+     чтобы кнопка не пересекалась с превью */
+  .carousel .list .item .content .des {
+    display: none;
+  }
+  .carousel .list .item .content .buttons {
+    margin-top: 12px;
+  }
+  .swipeHint {
+    bottom: 74px;
+  }
+}
+
+@media (max-width: 1400px) and (max-height: 620px) {
+  .carousel .list .item .content {
+    top: 20px;
+  }
+  .carousel .list .item .content .title {
+    font-size: 20px;
+  }
+  .carousel .list .item .content .des {
+    display: none;
+  }
+  .carousel .list .item .content .buttons {
+    margin-top: 10px;
+  }
+  /* На коротких экранах превью тоже ниже/меньше, чтобы не пересекаться с кнопкой */
+  .thumbnail .item {
+    height: 200px;
+  }
+  .carousel.next .list .item:nth-child(1) .image {
+    height: 200px;
+  }
+}
+
+/* Короткие широкие окна (десктоп): заголовок 90px не помещается по высоте */
+@media (min-width: 1401px) and (max-height: 820px) {
+  .carousel .list .item .content {
+    top: 90px;
+  }
+  .carousel .list .item .content .title {
+    font-size: 56px;
+  }
+  .carousel .list .item .content .buttons {
+    margin-top: 24px;
   }
 }

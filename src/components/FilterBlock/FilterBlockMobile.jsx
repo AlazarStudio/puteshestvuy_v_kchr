@@ -20,6 +20,9 @@ export default function FilterBlockMobile({
   getSuggestionTitle = (item) => item.title || item.name,
   maxSuggestions = 5,
   initialOpenKeys = {},
+  sortBy,
+  onSortChange,
+  sortOptions = [],
 }) {
   const groupsWithOptions = filterGroups.filter(
     (g) => Array.isArray(g.options) && g.options.length > 0
@@ -33,6 +36,8 @@ export default function FilterBlockMobile({
   const [isOpen, setIsOpen] = useState(false)
   const [openKeys, setOpenKeys] = useState(initialOpenKeys)
   const [isSearchOpen, setIsSearchOpen] = useState(true)
+  const [isSortOpen, setIsSortOpen] = useState(true)
+  const hasSort = typeof onSortChange === 'function' && sortOptions.length > 0
   const [similarTitles, setSimilarTitles] = useState([])
   const [bestMatch, setBestMatch] = useState(null)
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
@@ -290,7 +295,7 @@ export default function FilterBlockMobile({
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="M3 7H21M6 12H18M9 17H15"
+            d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -345,6 +350,58 @@ export default function FilterBlockMobile({
               </div>
 
               <div className={styles.modalContent}>
+                {hasSort && (
+                  <div className={styles.filterBlock}>
+                    <div className={styles.headerRow} onClick={() => setIsSortOpen(!isSortOpen)}>
+                      <div className={styles.title}>Сортировка</div>
+                      <motion.svg
+                        className={styles.arrow}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        animate={{ rotate: isSortOpen ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <path
+                          d="M2 4L6 8L10 4"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </motion.svg>
+                    </div>
+                    <AnimatePresence>
+                      {isSortOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className={styles.checkBlock}>
+                            {sortOptions.map((opt) => (
+                              <label key={opt.value} className={styles.checkboxLabel}>
+                                <input
+                                  type="radio"
+                                  name="mobileSort"
+                                  checked={sortBy === opt.value}
+                                  onChange={() => onSortChange(opt.value)}
+                                  className={styles.sortRadio}
+                                />
+                                <span className={styles.checkboxText}>{opt.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
                 {hasSearch && (
                   <div className={styles.filterBlock}>
                     <div className={styles.headerRow} onClick={() => setIsSearchOpen(!isSearchOpen)}>

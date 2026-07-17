@@ -271,6 +271,17 @@ export default function Header() {
 
         </nav>
 
+        {/* Кнопка поиска (мобильные) — дублирует десктопную лупу */}
+        <button
+          type="button"
+          className={styles.mobileSearchButton}
+          onClick={() => setIsSearchOpen(true)}
+          aria-label="Поиск"
+          title="Поиск по сайту"
+        >
+          <img src="/search.png" alt="Поиск" width={18} height={18} />
+        </button>
+
         {/* Кнопка бургер-меню (мобильные) */}
         <button
           type="button"
@@ -311,13 +322,14 @@ export default function Header() {
             <img src="/search.png" alt="Поиск" width={17} height={17} />
           </button>
 
-          <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-
           <Link to="/profile" className={styles.iconButton} aria-label="Личный кабинет" title="Войти в личный кабинет">
             <img src="/profile.png" alt="Личный кабинет" width={16} height={18} />
           </Link>
         </div>
       </div>
+
+      {/* Общий поиск — вне .icons (которая display:none на мобилке), иначе модалка не показывается */}
+      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Мобильное бургер-меню */}
       <div
@@ -335,6 +347,17 @@ export default function Header() {
         <Link to="/" className={styles.burgerLogo} onClick={closeBurger} aria-label="На главную">
           <img src="/color_logo.png" alt="Карачаево-Черкесия" />
         </Link>
+
+        {/* Строка поиска по платформе — открывает общий поиск */}
+        <button
+          type="button"
+          className={styles.burgerSearch}
+          onClick={() => { setIsSearchOpen(true); closeBurger() }}
+          aria-label="Поиск по сайту"
+        >
+          <img src="/search.png" alt="" width={18} height={18} />
+          <span>Поиск по сайту...</span>
+        </button>
 
         <nav className={styles.burgerNav}>
           <Link to="/region" className={`${styles.burgerLink} ${pathname === '/region' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>

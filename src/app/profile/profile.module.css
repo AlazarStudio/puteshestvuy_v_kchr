@@ -81,6 +81,16 @@
   /* закрепляем под фиксированным хедером */
 }
 
+/* В одну колонку карточка аккаунта не должна залипать над контентом
+   (иначе перекрывает вкладку и перехватывает клики).
+   Правило ПОСЛЕ базового .sidebar, чтобы победить в каскаде. */
+@media (max-width: 900px) {
+  .sidebar {
+    position: static;
+    top: auto;
+  }
+}
+
 .profileCard {
   background: #fff;
   border-radius: 20px;
@@ -1625,4 +1635,48 @@
   padding: 10px 12px;
   font-size: 0.9rem;
   color: #6b7280;
+}
+
+/* Мобильная адаптация панели и конструктора маршрутов */
+@media (max-width: 600px) {
+  .profilePage {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .panel {
+    padding: 20px 16px;
+  }
+
+  .panelTitle {
+    font-size: 1.25rem;
+  }
+
+  .constructorHeader {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .userRoutesSectionTitle {
+    font-size: 1.05rem;
+  }
+
+  /* Карточка маршрута: инфо сверху на всю ширину, кнопки снизу пополам —
+     иначе на узком экране «N точек на маршруте» сжимается и переносится по буквам */
+  .userRouteMain {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .userRouteActions {
+    width: 100%;
+  }
+
+  .userRouteActionBtn,
+  .userRouteActionBtnDanger {
+    flex: 1;
+    padding: 12px 16px;
+  }
 }

@@ -627,6 +627,13 @@ export default function Services_page() {
             getSuggestionTitle={(item) => item.title || item.name}
             maxSuggestions={5}
             initialOpenKeys={{ service: true }}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            sortOptions={[
+              { value: 'popularity', label: 'По популярности' },
+              { value: 'rating', label: 'По рейтингу' },
+              { value: 'reviews', label: 'По отзывам' },
+            ]}
           />
 
           <div className={styles.services}>

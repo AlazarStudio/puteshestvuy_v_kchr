@@ -183,8 +183,9 @@
     width: 100%;
   }
 
+  /* Сортировка переехала в шторку фильтров — на мобилке select скрыт */
   .placesSortSort {
-    width: 100%;
+    display: none;
   }
 
   .placesShow {
