@@ -8,6 +8,7 @@ import Places_page from '@/sections/Places/Places_page'
 import News_page from '@/sections/News/News_page'
 import NewsDetail from '@/sections/News/NewsDetail/NewsDetail'
 import Services_page from '@/sections/Services/Services_page'
+import Gallery_page from '@/sections/Gallery/Gallery_page'
 import ServicePageContent from '@/app/services/[slug]/ServicePageContent'
 import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
 import TemplateListPage from '@/sections/Services/ServiceDetail/templates/TemplateListPage'
@@ -34,6 +35,7 @@ import LoginPage from '@/app/login/page'
 import RegisterPage from '@/app/register/page'
 import ProfilePage from '@/app/profile/page'
 import AdminSuggestionsPage from '@/app/admin/suggestions/page'
+import AdminGalleryPage from '@/app/admin/gallery/page'
 
 function PublicLayout() {
   return (
@@ -89,6 +91,7 @@ export default function App() {
         <Route path="services/template" element={<TemplateListPage />} />
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
         <Route path="services/:slug" element={<ServiceDetailWrapper />} />
+        <Route path="gallery" element={<Gallery_page />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="profile" element={<ProfilePage />} />
@@ -115,6 +118,7 @@ export default function App() {
         <Route path="region" element={<AdminRegionPage />} />
         <Route path="footer" element={<AdminFooterPage />} />
         <Route path="suggestions" element={<AdminSuggestionsPage />} />
+        <Route path="gallery" element={<AdminGalleryPage />} />
       </Route>
 
       {/* 404 */}

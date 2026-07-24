@@ -6,6 +6,7 @@ import styles from './Region_page.module.css'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
+import GalleryPromoBlock from '@/components/GalleryPromoBlock'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { publicRegionAPI, getImageUrl } from '@/lib/api'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
@@ -73,6 +74,12 @@ const DEFAULT_CONTENT = {
     moreButtonText: 'Смотреть все места',
     moreButtonLink: '/places',
   },
+  photobank: {
+    title: 'Фотобанк региона',
+    text: 'Поделитесь своими снимками Карачаево-Черкесии — после проверки они войдут в общую коллекцию региона и станут доступны другим путешественникам.',
+    buttonText: 'Перейти в фотогалерею',
+    image: '',
+  },
   cta: {
     title: 'Откройте лучшие места',
     text: 'Водопады, ущелья, горные озёра — каждый уголок республики хранит свою историю и красоту. Исследуйте их сами!',
@@ -136,6 +143,7 @@ export default function Region_page() {
     { id: 'nature', label: 'Природа' },
     { id: 'culture', label: 'Культура' },
     { id: 'places', label: 'Достопримечательности' },
+    { id: 'photobank', label: 'Фотобанк' },
   ]
 
   useEffect(() => {
@@ -164,6 +172,7 @@ export default function Region_page() {
             nature: { ...DEFAULT_CONTENT.nature, ...c.nature, cards: Array.isArray(c.nature?.cards) && c.nature.cards.length > 0 ? c.nature.cards : DEFAULT_CONTENT.nature.cards },
             culture: { ...DEFAULT_CONTENT.culture, ...c.culture, items: Array.isArray(c.culture?.items) && c.culture.items.length > 0 ? c.culture.items : DEFAULT_CONTENT.culture.items },
             places: { ...DEFAULT_CONTENT.places, ...c.places, items: Array.isArray(c.places?.items) && c.places.items.length > 0 ? c.places.items : DEFAULT_CONTENT.places.items },
+            photobank: { ...DEFAULT_CONTENT.photobank, ...c.photobank },
             cta: { ...DEFAULT_CONTENT.cta, ...c.cta },
             sliderPlaces: Array.isArray(c.sliderPlaces) ? c.sliderPlaces : [],
           })
@@ -246,6 +255,7 @@ export default function Region_page() {
   const nature = content.nature || DEFAULT_CONTENT.nature
   const culture = content.culture || DEFAULT_CONTENT.culture
   const places = content.places || DEFAULT_CONTENT.places
+  const photobank = content.photobank || DEFAULT_CONTENT.photobank
   const cta = content.cta || DEFAULT_CONTENT.cta
 
   return (
@@ -430,6 +440,16 @@ export default function Region_page() {
                   {places.moreButtonText}
                 </Link>
               </div>
+            </section>
+
+            {/* Фотобанк */}
+            <section id="photobank" className={styles.section}>
+              <GalleryPromoBlock
+                title={photobank.title}
+                text={photobank.text}
+                buttonText={photobank.buttonText}
+                image={photobank.image}
+              />
             </section>
           </div>
         </div>

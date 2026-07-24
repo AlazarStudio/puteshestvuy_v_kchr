@@ -114,6 +114,7 @@ export default function Footer() {
                 <Link key={i} to={url || '#'} className={`${styles.text} ${styles.linkText}`}>{text}</Link>
               )
             })}
+            <Link to="/gallery" className={`${styles.text} ${styles.linkText}`}>Фотогалерея региона</Link>
             <button onClick={() => navigate('/', { state: { emergencySection: 'medhelp' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>Пункты медпомощи</button>
             <button onClick={() => navigate('/', { state: { emergencySection: 'mvd' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>МВД</button>
             <button onClick={() => navigate('/', { state: { emergencySection: 'fire' } })} className={`${styles.emergencyBtn} ${styles.text} ${styles.linkText}`}>МЧС</button>

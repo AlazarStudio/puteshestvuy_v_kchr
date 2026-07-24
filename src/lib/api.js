@@ -306,4 +306,33 @@ export const adminSuggestionsAPI = {
   delete: (id) => api.delete(`/admin/suggestions/${id}`),
 };
 
+// User media API (загрузка изображений авторизованным пользователем)
+export const userMediaAPI = {
+  upload: (formData, { onUploadProgress } = {}) => api.post('/users/profile/media', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  }),
+};
+
+// Gallery API (public — фотобанк региона)
+export const publicGalleryAPI = {
+  getAll: (params) => api.get('/gallery', { params }),
+};
+
+// Gallery API (user — свои фотографии)
+export const galleryAPI = {
+  create: (data) => api.post('/gallery/photos', data),
+  getMy: () => api.get('/gallery/photos/my'),
+  delete: (id) => api.delete(`/gallery/photos/${id}`),
+};
+
+// Gallery API (admin — модерация фотобанка)
+export const adminGalleryAPI = {
+  getAll: (params) => api.get('/admin/gallery', { params }),
+  getPendingCount: () => api.get('/admin/gallery/pending-count'),
+  update: (id, data) => api.put(`/admin/gallery/${id}`, data),
+  bulkUpdate: (ids, status, adminComment) => api.post('/admin/gallery/bulk', { ids, status, adminComment }),
+  delete: (id) => api.delete(`/admin/gallery/${id}`),
+};
+
 export default api;

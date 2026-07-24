@@ -1,0 +1,325 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  overflow-y: auto;
+  display: flex;
+  padding: 40px 16px;
+}
+
+.modal {
+  max-width: 720px;
+  width: 100%;
+  background: #fff;
+  border-radius: 20px;
+  margin: auto;
+  position: relative;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 28px 0;
+}
+
+.modalTitleBlock { flex: 1; }
+
+.modalTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.modalSubtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.closeBtn {
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.closeBtn:hover { background: #e2e8f0; color: #1e293b; }
+.closeBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.modalBody {
+  padding: 20px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.itemsList { display: flex; flex-direction: column; gap: 16px; }
+
+.item {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.itemPreview {
+  position: relative;
+  width: 120px;
+  height: 90px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.itemPreview img { width: 100%; height: 100%; object-fit: cover; }
+
+.itemRemove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemFields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.label { font-size: 0.82rem; font-weight: 600; color: #475569; }
+
+.required { color: #ef4444; }
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: #fff;
+  color: #1e293b;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.input:focus { outline: none; border-color: #156A60; }
+
+.placeInputWrap { position: relative; }
+
+.placeInputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.placeInput { padding-left: 34px; }
+
+.placeDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.placeOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.placeOption:hover { background: #f1f5f9; }
+
+.placeLinked { font-size: 0.75rem; color: #156A60; }
+
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px dashed #94a3b8;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.uploadBtn:hover:not(:disabled) { border-color: #156A60; color: #156A60; }
+.uploadBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.linkBtn {
+  border: none;
+  background: transparent;
+  color: #156A60;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+}
+
+.hint { font-size: 0.78rem; color: #94a3b8; }
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #475569;
+  cursor: pointer;
+}
+
+.consent input { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #156A60; }
+
+.error {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.submitRow { display: flex; justify-content: flex-end; }
+
+.primaryBtn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 30px;
+  background: #156A60;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.3s ease, opacity 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) { background: #0d4a44; }
+.primaryBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.secondaryBtn {
+  padding: 12px 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 30px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.secondaryBtn:hover { background: #f1f5f9; }
+
+.notAuth, .successBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.successIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successBlock h3 { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0; }
+.successBlock p { font-size: 0.9rem; color: #64748b; margin: 0; max-width: 420px; }
+.successActions { display: flex; gap: 12px; margin-top: 8px; }
+
+.successWarning {
+  font-size: 0.85rem;
+  color: #b45309;
+  margin: 0;
+  max-width: 420px;
+}
+
+@media (max-width: 640px) {
+  .modalHeader { padding: 20px 18px 0; }
+  .modalBody { padding: 16px 18px 20px; }
+  .item { flex-direction: column; }
+  .itemPreview { width: 100%; height: 160px; }
+}

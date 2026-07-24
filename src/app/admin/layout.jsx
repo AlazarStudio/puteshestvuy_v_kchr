@@ -15,8 +15,9 @@ import {
   FileText,
   Users,
   Lightbulb,
+  Images,
 } from 'lucide-react';
-import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI } from '@/lib/api';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI, adminGalleryAPI } from '@/lib/api';
 import Seo from '@/components/Seo/Seo';
 import styles from './admin.module.css';
 
@@ -35,6 +36,7 @@ const menuItems = [
   { href: '/admin/reviews', label: 'Отзывы', icon: Star, key: 'reviews' },
   { href: '/admin/users', label: 'Пользователи', icon: Users, key: 'users' },
   { href: '/admin/suggestions', label: 'Предложения', icon: Lightbulb, key: 'suggestions' },
+  { href: '/admin/gallery', label: 'Фотогалерея', icon: Images, key: 'gallery' },
 ];
 
 export default function AdminLayout() {
@@ -55,6 +57,7 @@ export default function AdminLayout() {
     reviews: null,
     users: null,
     suggestions: null,
+    gallery: null,
   });
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function AdminLayout() {
 
     const fetchCounts = async () => {
       try {
-        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes, suggestionsRes] = await Promise.all([
+        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes, suggestionsRes, galleryRes] = await Promise.all([
           placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
@@ -100,6 +103,7 @@ export default function AdminLayout() {
           reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminUsersAPI.getAll({ page: 1, limit: 1, includeSuperadmin: 'true' }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminSuggestionsAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
+          adminGalleryAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
         ]);
 
         setCounts({
@@ -111,6 +115,7 @@ export default function AdminLayout() {
           reviews: reviewsRes.data?.pagination?.total ?? 0,
           users: usersRes.data?.pagination?.total ?? 0,
           suggestions: suggestionsRes.data?.count ?? 0,
+          gallery: galleryRes.data?.count ?? 0,
         });
       } catch (error) {
         console.error('Ошибка загрузки счетчиков:', error);
@@ -207,7 +212,8 @@ export default function AdminLayout() {
                   part === 'pages' ? 'Страницы сайта' :
                   part === 'region' ? 'О регионе' :
                   part === 'footer' ? 'Подвал сайта' :
-                  part === 'suggestions' ? 'Предложения' : part;
+                  part === 'suggestions' ? 'Предложения' :
+                  part === 'gallery' ? 'Фотогалерея' : part;
               const href = '/' + arr.slice(0, index + 1).join('/');
               return (
                 <span key={index}>

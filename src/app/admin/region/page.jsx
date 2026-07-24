@@ -39,6 +39,12 @@ const DEFAULT_CONTENT = {
   nature: { title: 'Природа и география', cards: [] },
   culture: { title: 'Народы и культура', intro: '', items: [] },
   places: { title: 'Достопримечательности', items: [], moreButtonText: 'Смотреть все места', moreButtonLink: '/places' },
+  photobank: {
+    title: 'Фотобанк региона',
+    text: 'Поделитесь своими снимками Карачаево-Черкесии — после проверки они войдут в общую коллекцию региона и станут доступны другим путешественникам.',
+    buttonText: 'Перейти в фотогалерею',
+    image: '',
+  },
   cta: {
     title: 'Готовы к путешествию?',
     text: '',
@@ -87,6 +93,7 @@ function ensureContent(c) {
       moreButtonText: c?.places?.moreButtonText ?? 'Смотреть все места',
       moreButtonLink: c?.places?.moreButtonLink ?? '/places',
     },
+    photobank: { ...DEFAULT_CONTENT.photobank, ...(c?.photobank || {}) },
     cta: { ...DEFAULT_CONTENT.cta, ...(c?.cta || {}) },
   };
 }
@@ -911,6 +918,64 @@ export default function AdminRegionPage() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Фотобанк */}
+        <section className={styles.formSection}>
+          <h2 className={styles.sectionTitle}>Блок «Фотобанк региона»</h2>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Фоновое изображение</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileSelect('photobank.image', e)}
+              style={{ display: 'none' }}
+              id="photobankImage"
+            />
+            {hasImage('photobank.image') ? (
+              <div className={`${styles.previewItem} ${styles.previewItemMain}`} style={{ width: 280, aspectRatio: '16/9', position: 'relative', overflow: 'hidden', borderRadius: 8 }}>
+                <img src={getImageSrc('photobank.image')} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <span className={styles.previewItemBadge}>Фотобанк</span>
+                <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', flexDirection: 'row', gap: 6 }}>
+                  <button type="button" onClick={() => document.getElementById('photobankImage')?.click()} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} aria-label="Изменить" title="Изменить"><Pencil size={14} /></button>
+                  <button type="button" onClick={() => clearImage('photobank.image')} className={styles.removeImage} style={{ position: 'relative', top: 0, right: 0 }} aria-label="Удалить" title="Удалить"><X size={14} /></button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.imageUpload} style={{ maxWidth: 280 }} onClick={() => document.getElementById('photobankImage')?.click()} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('photobankImage')?.click(); }}>
+                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                  <Upload size={20} /> Загрузить изображение
+                </label>
+              </div>
+            )}
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Заголовок</label>
+            <input
+              type="text"
+              value={content.photobank?.title ?? ''}
+              onChange={(e) => update('photobank.title', e.target.value)}
+              className={styles.formInput}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Текст</label>
+            <textarea
+              value={content.photobank?.text ?? ''}
+              onChange={(e) => update('photobank.text', e.target.value)}
+              className={styles.formTextarea}
+              rows={3}
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>Текст кнопки</label>
+            <input
+              type="text"
+              value={content.photobank?.buttonText ?? ''}
+              onChange={(e) => update('photobank.buttonText', e.target.value)}
+              className={styles.formInput}
+            />
+          </div>
         </section>
 
         {/* CTA */}

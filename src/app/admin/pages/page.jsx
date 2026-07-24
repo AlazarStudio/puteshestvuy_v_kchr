@@ -9,9 +9,10 @@ import AdminRoutesPage from './routes/page';
 import AdminPlacesPage from './places/page';
 import AdminNewsPage from './news/page';
 import AdminServicesPage from './services/page';
+import AdminGalleryPageCms from './gallery/page';
 import styles from '../admin.module.css';
 
-const TABS = ['home', 'region', 'footer', 'routes', 'places', 'news', 'services'];
+const TABS = ['home', 'region', 'footer', 'routes', 'places', 'news', 'services', 'gallery'];
 
 export default function AdminPagesPage() {
   const [searchParams] = useSearchParams();
@@ -84,6 +85,13 @@ export default function AdminPagesPage() {
         </button>
         <button
           type="button"
+          className={`${styles.pageTab} ${activeTab === 'gallery' ? styles.pageTabActive : ''}`}
+          onClick={() => handleTabChange('gallery')}
+        >
+          Фотогалерея
+        </button>
+        <button
+          type="button"
           className={`${styles.pageTab} ${activeTab === 'footer' ? styles.pageTabActive : ''}`}
           onClick={() => handleTabChange('footer')}
         >
@@ -99,6 +107,7 @@ export default function AdminPagesPage() {
         {activeTab === 'places' && <AdminPlacesPage />}
         {activeTab === 'news' && <AdminNewsPage />}
         {activeTab === 'services' && <AdminServicesPage />}
+        {activeTab === 'gallery' && <AdminGalleryPageCms />}
       </div>
     </div>
   );

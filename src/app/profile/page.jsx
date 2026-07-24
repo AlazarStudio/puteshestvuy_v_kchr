@@ -16,6 +16,7 @@ import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/Servic
 import { ImageCropModal, ConfirmModal } from '@/app/admin/components'
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor'
 import Seo from '@/components/Seo/Seo'
+import MyPhotosTab from './MyPhotosTab'
 import styles from './profile.module.css'
 import serviceStyles from '@/sections/Services/Services_page.module.css'
 
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'places', label: 'Интересные места', icon: 'place', countKey: 'places' },
   { id: 'services', label: 'Услуги и сервисы', icon: 'service', countKey: 'services' },
   { id: 'routes-constructor', label: 'Конструктор маршрутов', icon: 'constructor', iconImage: '/konst_tours_black.svg', countKey: 'constructor' },
+  { id: 'photos', label: 'Мои фото', icon: 'photo', countKey: null },
 ]
 
 function NavIcon({ icon, iconImage, className }) {
@@ -50,6 +52,13 @@ function NavIcon({ icon, iconImage, className }) {
         <svg {...svgProps} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9z" />
           <path d="M6 6h.01M10 6h.01M14 6h.01" />
+        </svg>
+      )
+    case 'photo':
+      return (
+        <svg {...svgProps} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9a2 2 0 0 1 2-2h1.5l1.2-2h6.6l1.2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" />
+          <circle cx="12" cy="13" r="3.2" />
         </svg>
       )
     case 'edit':
@@ -1673,6 +1682,8 @@ export default function ProfilePage() {
               )}
             </div>
           )}
+
+          {activeTab === 'photos' && <MyPhotosTab />}
             </>
           )}
         </div>

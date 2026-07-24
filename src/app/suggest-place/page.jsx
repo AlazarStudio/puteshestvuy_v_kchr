@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload, X, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
-import { suggestionsAPI, publicPlacesAPI, mediaAPI, getImageUrl } from '@/lib/api'
+import { suggestionsAPI, publicPlacesAPI, userMediaAPI, getImageUrl } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModal } from '@/contexts/AuthModalContext'
 import YandexMapPicker from '@/components/YandexMapPicker'
@@ -171,7 +171,7 @@ export default function SuggestPlacePage() {
       if (pendingPreview) {
         const fd = new FormData()
         fd.append('file', pendingPreview.file)
-        const { data } = await mediaAPI.upload(fd)
+        const { data } = await userMediaAPI.upload(fd)
         imageUrl = data.url
       }
 
@@ -179,7 +179,7 @@ export default function SuggestPlacePage() {
       for (const { file } of pendingGallery) {
         const fd = new FormData()
         fd.append('file', file)
-        const { data } = await mediaAPI.upload(fd)
+        const { data } = await userMediaAPI.upload(fd)
         uploadedImages.push(data.url)
       }
 
