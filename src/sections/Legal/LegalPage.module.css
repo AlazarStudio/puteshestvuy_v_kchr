@@ -1,0 +1,95 @@
+.page {
+  min-height: 60vh;
+  padding: 130px 20px 80px;
+}
+
+.doc {
+  color: #334155;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 130%;
+  color: #0f172a;
+}
+
+.subtitle {
+  margin-top: 12px;
+  font-size: 17px;
+  line-height: 150%;
+  color: #64748b;
+}
+
+.heading {
+  margin: 44px 0 16px;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 140%;
+  color: #0f172a;
+}
+
+.subheading {
+  margin: 32px 0 14px;
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 140%;
+  color: #156A60;
+}
+
+.paragraph {
+  margin-bottom: 14px;
+  font-size: 16px;
+  line-height: 170%;
+}
+
+.strong {
+  margin-top: 32px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.list {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  list-style: disc;
+}
+
+.list li {
+  margin-bottom: 10px;
+  font-size: 16px;
+  line-height: 170%;
+}
+
+.doc a {
+  color: #156A60;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(21, 106, 96, 0.35);
+  transition: border-color 0.3s ease;
+}
+
+.doc a:hover {
+  border-bottom-color: #156A60;
+}
+
+@media (max-width: 1024px) {
+  .page { padding: 110px 20px 60px; }
+  .title { font-size: 32px; }
+  .heading { font-size: 21px; margin-top: 36px; }
+  .subheading { font-size: 18px; }
+}
+
+@media (max-width: 560px) {
+  .page { padding: 100px 16px 48px; }
+  .title { font-size: 25px; }
+  .subtitle { font-size: 15px; }
+  .heading { font-size: 19px; margin-top: 30px; }
+  .subheading { font-size: 17px; }
+  .paragraph,
+  .list li { font-size: 15px; }
+}

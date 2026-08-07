@@ -1,5 +1,6 @@
 // src/lib/seo/config.js
-export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://xn--b1aahavh3aoehdhg3dg.xn--p1ai').replace(/\/+$/, '')
+// посетикчр.рф в punycode — канонический домен сайта
+export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://xn--e1aggnekdj1c.xn--p1ai').replace(/\/+$/, '')
 export const SITE_NAME = 'Путешествуй КЧР'
 export const DEFAULT_TITLE = 'Путешествуй КЧР'
 export const DEFAULT_DESCRIPTION = 'Путеводитель по Карачаево-Черкесии: интересные места, маршруты, услуги и идеи для путешествий.'

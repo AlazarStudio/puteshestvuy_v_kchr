@@ -22,6 +22,9 @@ const PAGE_OPTIONS = [
   { url: '/news', title: 'Новости' },
   { url: '/services', title: 'Услуги' },
   { url: '/search', title: 'Поиск' },
+  { url: '/legal/terms', title: 'Пользовательское соглашение' },
+  { url: '/legal/privacy-policy', title: 'Политика обработки персональных данных' },
+  { url: '/legal/consent', title: 'Согласие на обработку персональных данных' },
 ];
 
 /** Resolves link object to { text, url, isFile? } for display */

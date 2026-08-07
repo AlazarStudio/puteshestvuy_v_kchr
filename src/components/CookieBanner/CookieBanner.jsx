@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { LEGAL_PATHS } from '@/lib/legal'
 import styles from './CookieBanner.module.css'
 
 const STORAGE_KEY = 'cookie_consent'
@@ -23,7 +24,7 @@ export default function CookieBanner() {
     <div className={styles.banner}>
       <p className={styles.text}>
         Мы используем файлы cookie для улучшения работы сайта. Продолжая использовать сайт, вы соглашаетесь с нашей{' '}
-        <a href="/pages/privacy-policy" className={styles.link}>
+        <a href={LEGAL_PATHS.privacyPolicy} className={styles.link}>
           политикой конфиденциальности
         </a>
         .

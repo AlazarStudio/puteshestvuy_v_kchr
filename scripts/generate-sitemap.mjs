@@ -5,6 +5,8 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
+// TODO: домен на согласовании с SEO — временно оставлен путешествуйвкчр.рф,
+// хотя канонический сейчас посетикчр.рф (см. SITE_URL в src/lib/seo/config.js)
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://xn--b1aahavh3aoehdhg3dg.xn--p1ai').replace(/\/+$/, '')
 const API_URL = (process.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/+$/, '')
 
@@ -15,6 +17,9 @@ const STATIC = [
   { loc: '/services', priority: '0.80', changefreq: 'weekly' },
   { loc: '/region', priority: '0.70', changefreq: 'monthly' },
   { loc: '/news', priority: '0.65', changefreq: 'weekly' },
+  { loc: '/legal/terms', priority: '0.30', changefreq: 'yearly' },
+  { loc: '/legal/privacy-policy', priority: '0.30', changefreq: 'yearly' },
+  { loc: '/legal/consent', priority: '0.30', changefreq: 'yearly' },
 ]
 
 const DYNAMIC = [

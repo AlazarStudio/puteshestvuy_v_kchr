@@ -9,6 +9,7 @@ import News_page from '@/sections/News/News_page'
 import NewsDetail from '@/sections/News/NewsDetail/NewsDetail'
 import Services_page from '@/sections/Services/Services_page'
 import Gallery_page from '@/sections/Gallery/Gallery_page'
+import LegalPage from '@/sections/Legal/LegalPage'
 import ServicePageContent from '@/app/services/[slug]/ServicePageContent'
 import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
 import TemplateListPage from '@/sections/Services/ServiceDetail/templates/TemplateListPage'
@@ -60,6 +61,11 @@ function ServiceDetailWrapper() {
   return <ServicePageContent slug={slug} />
 }
 
+function LegalPageWrapper() {
+  const { slug } = useParams()
+  return <LegalPage slug={slug} />
+}
+
 function ServiceTemplatePreviewWrapper() {
   const { type } = useParams()
   const pathname = useLocation().pathname
@@ -92,6 +98,7 @@ export default function App() {
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
         <Route path="services/:slug" element={<ServiceDetailWrapper />} />
         <Route path="gallery" element={<Gallery_page />} />
+        <Route path="legal/:slug" element={<LegalPageWrapper />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="profile" element={<ProfilePage />} />

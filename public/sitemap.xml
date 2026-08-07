@@ -6,6 +6,9 @@
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/services</loc><priority>0.80</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/region</loc><priority>0.70</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/news</loc><priority>0.65</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/terms</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/privacy-policy</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/consent</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/places/teshik-tash-skala-arka-1782745367682</loc><priority>0.70</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/places/immersivnaya-progulka-po-dombayu-1782731053716</loc><priority>0.70</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/places/ust-dzheguta-1779264378489</loc><priority>0.70</priority><changefreq>monthly</changefreq></url>

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
+import { LEGAL_PATHS } from '@/lib/legal'
 import styles from './Footer.module.css'
 
 const EMPTY_CONTENT = {
@@ -55,6 +56,8 @@ export default function Footer() {
   const phoneHref = (left.phone || '').replace(/\D/g, '')
 
   const [feedback, setFeedback] = useState({ name: '', email: '', text: '' })
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dataAccepted, setDataAccepted] = useState(false)
   const [feedbackStatus, setFeedbackStatus] = useState(null)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
 
@@ -76,6 +79,8 @@ export default function Footer() {
         text: feedback.text.trim(),
       })
       setFeedback({ name: '', email: '', text: '' })
+      setTermsAccepted(false)
+      setDataAccepted(false)
       setFeedbackStatus('success')
     } catch (err) {
       setFeedbackStatus('error')
@@ -145,6 +150,42 @@ export default function Footer() {
                   onChange={(e) => setFeedback((p) => ({ ...p, text: e.target.value }))}
                   required
                 />
+                <div className={styles.consents}>
+                  <label className={styles.consent}>
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      required
+                    />
+                    <span>
+                      Согласен с{' '}
+                      <a href={LEGAL_PATHS.terms} target="_blank" rel="noopener noreferrer">
+                        «Соглашением пользования сайтом»
+                      </a>
+                    </span>
+                  </label>
+
+                  <label className={styles.consent}>
+                    <input
+                      type="checkbox"
+                      checked={dataAccepted}
+                      onChange={(e) => setDataAccepted(e.target.checked)}
+                      required
+                    />
+                    <span>
+                      Ознакомлен с{' '}
+                      <a href={LEGAL_PATHS.privacyPolicy} target="_blank" rel="noopener noreferrer">
+                        «Политикой конфиденциальности»
+                      </a>{' '}
+                      и согласен на{' '}
+                      <a href={LEGAL_PATHS.consent} target="_blank" rel="noopener noreferrer">
+                        «обработку персональных данных»
+                      </a>
+                    </span>
+                  </label>
+                </div>
+
                 <button type="submit" disabled={feedbackLoading}>
                   {feedbackLoading ? 'Отправка...' : right.formButtonText}
                 </button>
