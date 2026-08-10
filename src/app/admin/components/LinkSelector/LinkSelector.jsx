@@ -1,13 +1,14 @@
 
 
 import { useState, useEffect, useId } from 'react';
-import { newsAPI, placesAPI, routesAPI, servicesAPI, getImageUrl } from '@/lib/api';
+import { newsAPI, placesAPI, routesAPI, servicesAPI, eventsAPI, getImageUrl } from '@/lib/api';
 import styles from '../../admin.module.css';
 
 const LINK_TYPES = [
   { value: 'news', label: 'Новость' },
   { value: 'place', label: 'Место' },
   { value: 'route', label: 'Маршрут' },
+  { value: 'event', label: 'Событие' },
   { value: 'service', label: 'Услуга' },
   { value: 'page', label: 'Страница сайта' },
   { value: 'file', label: 'Файл' },
@@ -20,6 +21,7 @@ const PAGE_OPTIONS = [
   { url: '/routes', title: 'Маршруты' },
   { url: '/places', title: 'Места' },
   { url: '/news', title: 'Новости' },
+  { url: '/events', title: 'Афиша событий' },
   { url: '/services', title: 'Услуги' },
   { url: '/search', title: 'Поиск' },
   { url: '/legal/terms', title: 'Пользовательское соглашение' },
@@ -34,6 +36,7 @@ export function resolveLink(link) {
   if (link.type === 'news') return { text: link.title || '', url: `/news/${link.slug || link.id}`, isFile: false };
   if (link.type === 'place') return { text: link.title || '', url: `/places/${link.slug || link.id}`, isFile: false };
   if (link.type === 'route') return { text: link.title || '', url: `/routes/${link.slug || link.id}`, isFile: false };
+  if (link.type === 'event') return { text: link.title || '', url: `/events/${link.slug || link.id}`, isFile: false };
   if (link.type === 'service') return { text: link.title || '', url: `/services/${link.slug || link.id}`, isFile: false };
   if (link.type === 'page') return { text: link.title || '', url: link.url || '#', isFile: false };
   if (link.type === 'file') return { text: link.title || '', url: link.url || '#', isFile: true };
@@ -50,6 +53,7 @@ export default function LinkSelector({ value, onChange, filePath, onFileSelect, 
   const [news, setNews] = useState([]);
   const [places, setPlaces] = useState([]);
   const [routes, setRoutes] = useState([]);
+  const [events, setEvents] = useState([]);
   const [services, setServices] = useState([]);
 
   useEffect(() => {
@@ -59,6 +63,8 @@ export default function LinkSelector({ value, onChange, filePath, onFileSelect, 
       placesAPI.getAll({ page: 1, limit: 500 }).then((r) => setPlaces(r.data?.items || []));
     } else if (type === 'route') {
       routesAPI.getAll({ limit: 500 }).then((r) => setRoutes(r.data?.items || []));
+    } else if (type === 'event') {
+      eventsAPI.getAll({ page: 1, limit: 500 }).then((r) => setEvents(r.data?.items || []));
     } else if (type === 'service') {
       servicesAPI.getAll({ limit: 500 }).then((r) => setServices(r.data?.items || []));
     }
@@ -77,6 +83,8 @@ export default function LinkSelector({ value, onChange, filePath, onFileSelect, 
       onChange({ type: 'place', id: item.id, slug: item.slug, title: item.title });
     } else if (type === 'route') {
       onChange({ type: 'route', id: item.id, slug: item.slug, title: item.title });
+    } else if (type === 'event') {
+      onChange({ type: 'event', id: item.id, slug: item.slug, title: item.title });
     } else if (type === 'service') {
       onChange({ type: 'service', id: item.id, slug: item.slug, title: item.title });
     } else if (type === 'page') {
@@ -98,7 +106,7 @@ export default function LinkSelector({ value, onChange, filePath, onFileSelect, 
     onFileSelect?.(filePath, file || null);
   };
 
-  const items = type === 'news' ? news : type === 'place' ? places : type === 'route' ? routes : type === 'service' ? services : [];
+  const items = type === 'news' ? news : type === 'place' ? places : type === 'route' ? routes : type === 'event' ? events : type === 'service' ? services : [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -131,7 +139,7 @@ export default function LinkSelector({ value, onChange, filePath, onFileSelect, 
             ))}
           </select>
         )}
-        {['news', 'place', 'route', 'service'].includes(type) && (
+        {['news', 'place', 'route', 'event', 'service'].includes(type) && (
           <select
             value={value?.id ?? ''}
             onChange={(e) => {

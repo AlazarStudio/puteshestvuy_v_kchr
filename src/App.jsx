@@ -7,6 +7,8 @@ import RouteDetail from '@/sections/Routes/RouteDetail/RouteDetail'
 import Places_page from '@/sections/Places/Places_page'
 import News_page from '@/sections/News/News_page'
 import NewsDetail from '@/sections/News/NewsDetail/NewsDetail'
+import Events_page from '@/sections/Events/Events_page'
+import EventDetail from '@/sections/Events/EventDetail/EventDetail'
 import Services_page from '@/sections/Services/Services_page'
 import Gallery_page from '@/sections/Gallery/Gallery_page'
 import LegalPage from '@/sections/Legal/LegalPage'
@@ -24,6 +26,8 @@ import AdminRoutesPage from '@/app/admin/routes/page'
 import AdminRouteEditPage from '@/app/admin/routes/[id]/page'
 import AdminNewsPage from '@/app/admin/news/page'
 import AdminNewsEditPage from '@/app/admin/news/[id]/page'
+import AdminEventsPage from '@/app/admin/events/page'
+import AdminEventEditPage from '@/app/admin/events/[id]/page'
 import AdminServicesPage from '@/app/admin/services/page'
 import AdminServiceEditPage from '@/app/admin/services/[id]/page'
 import AdminReviewsPage from '@/app/admin/reviews/page'
@@ -49,6 +53,11 @@ function PublicLayout() {
 function NewsDetailWrapper() {
   const { slug } = useParams()
   return <NewsDetail slug={slug} />
+}
+
+function EventDetailWrapper() {
+  const { slug } = useParams()
+  return <EventDetail slug={slug} />
 }
 
 function RouteDetailWrapper() {
@@ -93,6 +102,8 @@ export default function App() {
         <Route path="places/:slug" element={<Places_page />} />
         <Route path="news" element={<News_page />} />
         <Route path="news/:slug" element={<NewsDetailWrapper />} />
+        <Route path="events" element={<Events_page />} />
+        <Route path="events/:slug" element={<EventDetailWrapper />} />
         <Route path="services" element={<Services_page />} />
         <Route path="services/template" element={<TemplateListPage />} />
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
@@ -116,6 +127,8 @@ export default function App() {
         <Route path="routes/:id" element={<AdminRouteEditPage />} />
         <Route path="news" element={<AdminNewsPage />} />
         <Route path="news/:id" element={<AdminNewsEditPage />} />
+        <Route path="events" element={<AdminEventsPage />} />
+        <Route path="events/:id" element={<AdminEventEditPage />} />
         <Route path="services" element={<AdminServicesPage />} />
         <Route path="services/:id" element={<AdminServiceEditPage />} />
         <Route path="bookings" element={<AdminBookingsPage />} />

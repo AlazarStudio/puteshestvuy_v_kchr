@@ -503,3 +503,10 @@
 .addBlockOption:hover {
   background: #f1f5f9;
 }
+
+.blockHint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+  word-break: break-all;
+}

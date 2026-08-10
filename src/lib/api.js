@@ -171,10 +171,23 @@ export const newsAPI = {
   delete: (id) => api.delete(`/admin/news/${id}`),
 };
 
+export const eventsAPI = {
+  getAll: (params) => api.get('/admin/events', { params }),
+  getById: (id) => api.get(`/admin/events/${id}`),
+  create: (data) => api.post('/admin/events', data),
+  update: (id, data) => api.put(`/admin/events/${id}`, data),
+  delete: (id) => api.delete(`/admin/events/${id}`),
+};
+
 // News API (public — для страницы «Новости и статьи»)
 export const publicNewsAPI = {
   getAll: (params) => api.get('/news', { params }),
   getByIdOrSlug: (idOrSlug) => api.get(`/news/${idOrSlug}`),
+};
+
+export const publicEventsAPI = {
+  getAll: (params) => api.get('/events', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/events/${idOrSlug}`),
 };
 
 // Services API (admin)

@@ -51,6 +51,8 @@ const pageConfig = [
   { path: '/region', initialColor: 'white', scrollThreshold: 300, enableScrollChange: true, backgroundColor: '#f1f3f8b7' },
   { path: '/places', initialColor: 'white', scrollThreshold: 200, enableScrollChange: true, backgroundColor: '#f1f3f8b7' },
   { path: '/news', initialColor: 'white', scrollThreshold: 200, enableScrollChange: true, backgroundColor: '#f1f3f8b7' },
+  { path: '/events', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
+  { path: '/events/*', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/merch', initialColor: 'white', scrollThreshold: 200, enableScrollChange: true, backgroundColor: '#f1f3f8b7' },
   { path: '/services', initialColor: 'white', scrollThreshold: 200, enableScrollChange: true, backgroundColor: '#f1f3f8b7' },
   { path: '/services/*', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
@@ -262,6 +264,17 @@ export default function Header() {
             Новости и статьи
           </Link>
 
+          {/* Пункт меню «Афиша» скрыт до решения заказчика: в ТЗ он не заявлен,
+              там про афишу сказано только как про блок на главной.
+              Раздел работает, ссылка возвращается снятием комментария */}
+          {/* <Link
+            to="/events"
+            className={`${styles.navLink} ${pathname === '/events' || pathname?.startsWith('/events/') ? styles.navLink_active : ''}`}
+            title="Афиша событий Карачаево-Черкесии"
+          >
+            Афиша
+          </Link> */}
+
           <Link
             to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
             className={`${styles.navLink} ${styles.navLinkAmanauz} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.navLink_active : ''}`}
@@ -380,6 +393,10 @@ export default function Header() {
           <Link to="/news" className={`${styles.burgerLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Новости и статьи
           </Link>
+          {/* Скрыто вместе с пунктом в десктопной шапке, см. комментарий выше */}
+          {/* <Link to="/events" className={`${styles.burgerLink} ${pathname === '/events' || pathname?.startsWith('/events/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+            Афиша
+          </Link> */}
           <Link to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273" className={`${styles.burgerLink} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Экспедиция «Аманауз»
           </Link>

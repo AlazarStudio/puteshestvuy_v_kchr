@@ -1,0 +1,84 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.heading {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 130%;
+    margin: 12px 0 0;
+    scroll-margin-top: 100px;
+}
+
+.quote {
+    margin: 0;
+    padding: 16px 24px;
+    border-left: 4px solid #156A60;
+    background: #F0FDFA;
+    border-radius: 0 12px 12px 0;
+}
+
+.imageFigure {
+    margin: 0;
+}
+
+.imageBlock {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.imageBlock img {
+    width: 100%;
+    display: block;
+}
+
+.caption {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 140%;
+    color: #64748b;
+}
+
+.videoEmbed,
+.videoFile {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #000;
+}
+
+.videoEmbed iframe,
+.videoFile video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: contain;
+}
+
+.button {
+    align-self: flex-start;
+    padding: 14px 32px;
+    border-radius: 30px;
+    background: #156A60;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.button:hover {
+    background: #0d4a44;
+}
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .heading {
+        font-size: 22px;
+    }
+}

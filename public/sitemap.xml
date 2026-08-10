@@ -6,6 +6,7 @@
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/services</loc><priority>0.80</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/region</loc><priority>0.70</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/news</loc><priority>0.65</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/events</loc><priority>0.80</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/terms</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/privacy-policy</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>
   <url><loc>https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/legal/consent</loc><priority>0.30</priority><changefreq>yearly</changefreq></url>

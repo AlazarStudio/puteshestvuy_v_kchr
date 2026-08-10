@@ -1,8 +1,9 @@
 
 
 import { useState, useRef, useEffect } from 'react';
-import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading, Plus } from 'lucide-react';
+import { GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, X, Type, Image, Images, Quote, Video, Heading, Plus, Link2, Film } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
+import LinkSelector from '../LinkSelector/LinkSelector';
 import { getImageUrl } from '@/lib/api';
 import styles from './NewsBlockEditor.module.css';
 
@@ -28,7 +29,13 @@ const BLOCK_TYPES = [
   { type: 'gallery', label: 'Галерея картинок', icon: Images },
   { type: 'quote', label: 'Цитата', icon: Quote },
   { type: 'video', label: 'Видео VK', icon: Video },
+  { type: 'button', label: 'Кнопка-ссылка', icon: Link2 },
+  { type: 'eventVideo', label: 'Видео (ссылка или файл)', icon: Film },
 ];
+
+// Набор по умолчанию — исторические типы блоков новости.
+// Новые типы доступны только тем редакторам, которые запросят их явно
+const DEFAULT_BLOCK_TYPES = ['heading', 'text', 'image', 'gallery', 'quote', 'video'];
 
 function generateBlockId() {
   return `b-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -50,6 +57,10 @@ function createEmptyBlock(type) {
       return { ...base, data: { content: '' } };
     case 'video':
       return { ...base, data: { url: '' } };
+    case 'button':
+      return { ...base, data: { link: null, text: '' } };
+    case 'eventVideo':
+      return { ...base, data: { source: 'embed', url: '', poster: '' } };
     default:
       return { ...base, data: {} };
   }
@@ -67,7 +78,7 @@ function slugFromText(text) {
     .replace(/(^-|-$)/g, '');
 }
 
-export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFiles = {}, onPendingBlockFilesChange }) {
+export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFiles = {}, onPendingBlockFilesChange, availableTypes }) {
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [hoveredInsertIndex, setHoveredInsertIndex] = useState(null);
   const [openInsertIndex, setOpenInsertIndex] = useState(null);
@@ -76,6 +87,10 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
   const insertRefs = useRef({});
 
   const sortedBlocks = [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  // Набор по умолчанию — исторические типы блоков новости.
+  // Новые типы доступны только тем редакторам, которые запросят их явно
+  const blockTypes = BLOCK_TYPES.filter((b) => (availableTypes || DEFAULT_BLOCK_TYPES).includes(b.type));
 
   const calculateDropdownPosition = (index) => {
     const insertArea = insertRefs.current[index];
@@ -192,6 +207,18 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
       if (m) url = m[1];
     }
     updateBlock(index, { data: { url } });
+  };
+
+  // При смене источника сбрасываем и ссылку, и отложенный видеофайл:
+  // иначе выбранный ранее файл перезапишет url уже после переключения на «ссылку»
+  const handleVideoSourceChange = (source, index) => {
+    const block = sortedBlocks[index];
+    if (block && pendingBlockFiles[block.id]?.video) {
+      const pending = pendingBlockFiles[block.id];
+      const hasOtherFiles = !!(pending.url || pending.images?.length);
+      onPendingBlockFilesChange?.(block.id, hasOtherFiles ? { video: undefined } : null);
+    }
+    updateBlock(index, { data: { source, url: '' } });
   };
 
   const handleImageFileSelect = (e, index) => {
@@ -651,6 +678,67 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                   />
                 </>
               )}
+
+              {block.type === 'button' && (
+                <>
+                  <label className={styles.blockLabel}>Куда ведёт кнопка</label>
+                  <LinkSelector
+                    value={block.data?.link || null}
+                    onChange={(link) => updateBlock(index, { data: { link } })}
+                  />
+                  <label className={styles.blockLabel} style={{ marginTop: 12 }}>Подпись на кнопке</label>
+                  <input
+                    type="text"
+                    className={styles.blockInput}
+                    value={block.data?.text || ''}
+                    onChange={(e) => updateBlock(index, { data: { text: e.target.value } })}
+                    placeholder="Оставьте пустым — возьмётся название выбранного объекта"
+                  />
+                </>
+              )}
+
+              {block.type === 'eventVideo' && (
+                <>
+                  <label className={styles.blockLabel}>Источник видео</label>
+                  <select
+                    className={styles.blockInput}
+                    value={block.data?.source || 'embed'}
+                    onChange={(e) => handleVideoSourceChange(e.target.value, index)}
+                  >
+                    <option value="embed">Ссылка на плеер (VK, Rutube)</option>
+                    <option value="file">Файл на нашем сервере</option>
+                  </select>
+
+                  {block.data?.source === 'file' ? (
+                    <>
+                      <label className={styles.blockLabel} style={{ marginTop: 12 }}>Видеофайл</label>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className={styles.blockInput}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onPendingBlockFilesChange?.(block.id, { video: file });
+                        }}
+                      />
+                      {block.data?.url && (
+                        <div className={styles.blockHint}>Загружено: {block.data.url}</div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <label className={styles.blockLabel} style={{ marginTop: 12 }}>Ссылка на плеер</label>
+                      <input
+                        type="text"
+                        className={styles.blockInput}
+                        value={block.data?.url || ''}
+                        onChange={(e) => updateBlock(index, { data: { url: e.target.value } })}
+                        placeholder="https://vk.com/video_ext.php?..."
+                      />
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             <button
@@ -709,7 +797,7 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                   }
                 }}
               >
-                {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+                {blockTypes.map(({ type, label, icon: Icon }) => (
                   <button
                     key={type}
                     type="button"
@@ -772,7 +860,7 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                   }
                 }}
               >
-                {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+                {blockTypes.map(({ type, label, icon: Icon }) => (
                   <button
                     key={type}
                     type="button"
@@ -800,7 +888,7 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
         </button>
         {addBlockOpen && (
           <div className={styles.addBlockDropdown}>
-            {BLOCK_TYPES.map(({ type, label, icon: Icon }) => (
+            {blockTypes.map(({ type, label, icon: Icon }) => (
               <button
                 key={type}
                 type="button"

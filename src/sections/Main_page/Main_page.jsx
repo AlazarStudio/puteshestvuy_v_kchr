@@ -11,10 +11,11 @@ import SwiperSliderMain from '@/components/SwiperSliderMain/SwiperSliderMain'
 import FirstTimeTabs from '@/components/FirstTimeTabs/FirstTimeTabs'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
+import EventBlock from '@/components/EventBlock/EventBlock'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import ParallaxImage from '@/components/ParallaxImage'
 import CtaSection from '@/components/CtaSection/CtaSection'
-import { publicHomeAPI, getImageUrl } from '@/lib/api'
+import { publicHomeAPI, publicEventsAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import Seo from '@/components/Seo/Seo'
 import { touristDestination } from '@/lib/seo/schema'
@@ -81,6 +82,7 @@ export default function Main_page() {
   const location = useLocation()
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT)
   const [newsTab, setNewsTab] = useState('news')
+  const [events, setEvents] = useState([])
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
   const [emergencyScrollId, setEmergencyScrollId] = useState(null)
 
@@ -105,6 +107,16 @@ export default function Main_page() {
           setHomeContent(DEFAULT_HOME_CONTENT)
         }
       })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    publicEventsAPI.getAll({ page: 1, limit: 4 })
+      .then(({ data }) => {
+        if (!cancelled) setEvents(data?.items || [])
+      })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [])
 
@@ -335,6 +347,22 @@ export default function Main_page() {
             </CenterBlock>
           );
         })()}
+
+        {events.length > 0 && (
+          <>
+            <CenterBlock>
+              <TitleButton title="Афиша событий" buttonLink="/events" />
+            </CenterBlock>
+
+            <CenterBlock>
+              <section className={styles.flexBlock}>
+                {events.map((event) => (
+                  <EventBlock key={event.id} event={event} />
+                ))}
+              </section>
+            </CenterBlock>
+          </>
+        )}
 
         <section className={styles.servicesBand}>
           <div className={styles.servicesHead}>
