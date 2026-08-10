@@ -9,6 +9,18 @@ import 'swiper/css/navigation'
 import { getImageUrl } from '@/lib/api'
 import styles from './NewsGalleryBlock.module.css'
 
+function GalleryTile({ photo, mediaClass, onClick, children }) {
+  return (
+    <div className={styles.tile}>
+      <div className={mediaClass} onClick={onClick}>
+        <img src={photo?.src} alt="" />
+        {children}
+      </div>
+      {photo?.author && <div className={styles.photoCaption}>Фото: {photo.author}</div>}
+    </div>
+  )
+}
+
 export default function NewsGalleryBlock({ images = [], authors, className }) {
   const photos = images.map((url) => ({
     src: getImageUrl(url),
@@ -58,57 +70,41 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
 
   const renderGallery = () => {
     if (count === 1) {
-      return (
-        <>
-          <div className={styles.galleryFull} onClick={() => openModal(0)}>
-            <img src={photos[0]?.src} alt="" />
-          </div>
-          {photos[0]?.author && <div className={styles.photoCaption}>Фото: {photos[0].author}</div>}
-        </>
-      )
+      return <GalleryTile photo={photos[0]} mediaClass={styles.galleryFull} onClick={() => openModal(0)} />
     }
     if (count === 2) {
       return (
         <>
-          <div className={styles.galleryHalf} onClick={() => openModal(0)}>
-            <img src={photos[0]?.src} alt="" />
-          </div>
-          <div className={styles.galleryHalf} onClick={() => openModal(1)}>
-            <img src={photos[1]?.src} alt="" />
-          </div>
+          <GalleryTile photo={photos[0]} mediaClass={styles.galleryHalf} onClick={() => openModal(0)} />
+          <GalleryTile photo={photos[1]} mediaClass={styles.galleryHalf} onClick={() => openModal(1)} />
         </>
       )
     }
     if (count === 3) {
       return (
         <>
-          <div className={styles.galleryThirdLeft} onClick={() => openModal(0)}>
-            <img src={photos[0]?.src} alt="" />
-          </div>
+          <GalleryTile photo={photos[0]} mediaClass={styles.galleryThirdLeft} onClick={() => openModal(0)} />
           <div className={styles.galleryThirdRight}>
-            <div className={styles.galleryThirdRightItem} onClick={() => openModal(1)}>
-              <img src={photos[1]?.src} alt="" />
-            </div>
-            <div className={styles.galleryThirdRightItem} onClick={() => openModal(2)}>
-              <img src={photos[2]?.src} alt="" />
-            </div>
+            <GalleryTile photo={photos[1]} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(1)} />
+            <GalleryTile photo={photos[2]} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(2)} />
           </div>
         </>
       )
     }
     return (
       <>
-        <div className={styles.galleryMain} onClick={() => openModal(0)}>
-          <img src={photos[0]?.src} alt="" />
-        </div>
+        <GalleryTile photo={photos[0]} mediaClass={styles.galleryMain} onClick={() => openModal(0)} />
         <div className={styles.galleryGrid}>
           <div className={styles.galleryGridRow}>
             {visiblePhotos.slice(1, 3).map((photo, index) => {
               const photoIndex = index + 1
               return (
-                <div key={photoIndex} className={styles.galleryItem} onClick={() => openModal(photoIndex)}>
-                  <img src={photo.src} alt="" />
-                </div>
+                <GalleryTile
+                  key={photoIndex}
+                  photo={photo}
+                  mediaClass={styles.galleryItem}
+                  onClick={() => openModal(photoIndex)}
+                />
               )
             })}
           </div>
@@ -117,15 +113,19 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
               const photoIndex = index + 3
               const isLast = photoIndex === 4 && showMoreButton
               return (
-                <div key={photoIndex} className={`${styles.galleryItem} ${isLast ? styles.galleryItemLast : ''}`} onClick={() => openModal(photoIndex)}>
-                  <img src={photo.src} alt="" />
+                <GalleryTile
+                  key={photoIndex}
+                  photo={photo}
+                  mediaClass={`${styles.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
+                  onClick={() => openModal(photoIndex)}
+                >
                   {isLast && (
                     <div className={styles.moreButton} onClick={(e) => { e.stopPropagation(); openModal(5); }}>
                       <img src="/morePhoto.png" alt="" />
                       <span>Еще {remainingCount} фото</span>
                     </div>
                   )}
-                </div>
+                </GalleryTile>
               )
             })}
           </div>
@@ -136,7 +136,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
 
   return (
     <>
-      <div className={`${styles.gallery} ${countClass} ${className || ''}`}>
+      <div className={`${styles.gallery} ${countClass} ${hasAnyAuthor ? styles.withCaptions : ''} ${className || ''}`}>
         {renderGallery()}
       </div>
 

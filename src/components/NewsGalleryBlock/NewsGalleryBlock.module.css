@@ -1,11 +1,21 @@
 /* Галерея — layout зависит от количества фото */
 .gallery {
+  --gallery-media: 300px;
+  --gallery-gap: 10px;
   display: flex;
   gap: 10px;
   height: 300px;
   margin: 30px 0;
   border-radius: 20px;
   overflow: hidden;
+}
+
+/* Плитка — колонка из фото и подписи под ним */
+.tile {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 1 фото — на всю ширину */
@@ -15,6 +25,10 @@
   height: auto;
   border-radius: 0;
   overflow: visible;
+}
+
+.galleryCount1>.tile {
+  flex: none;
 }
 
 .galleryCount1 .galleryFull {
@@ -38,12 +52,14 @@
 
 /* 2 фото — два рядом */
 .galleryCount2 {
+  --gallery-media: 400px;
   height: 400px;
 }
 
 .galleryCount2 .galleryHalf {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   cursor: pointer;
   overflow: hidden;
   border-radius: 20px;
@@ -62,12 +78,14 @@
 
 /* 3 фото — слева одна, справа две друг под другом */
 .galleryCount3 {
+  --gallery-media: 400px;
   height: 400px;
 }
 
 .galleryCount3 .galleryThirdLeft {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   cursor: pointer;
   overflow: hidden;
   border-radius: 20px;
@@ -92,6 +110,10 @@
   gap: 10px;
 }
 
+.galleryCount3 .galleryThirdRight>.tile {
+  min-height: 0;
+}
+
 .galleryCount3 .galleryThirdRightItem {
   flex: 1;
   min-height: 0;
@@ -113,6 +135,7 @@
 
 .galleryMain {
   flex: 1;
+  min-height: 0;
   cursor: pointer;
   border-radius: 20px;
   overflow: hidden;
@@ -355,6 +378,8 @@
 
 
   .gallery {
+    --gallery-media: 150px;
+    --gallery-gap: 5px;
     height: 150px;
     gap: 5px;
     border-radius: 0;
@@ -425,6 +450,32 @@
   .moreButton img {
     width: 10px;
   }
+}
+
+/* Подписи авторов в статье: размеры фото сохраняются, подпись добавляется снизу.
+   Правила идут после медиазапроса, чтобы перебивать мобильные высоты. */
+.gallery.withCaptions {
+  height: auto;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.withCaptions .galleryHalf,
+.withCaptions .galleryThirdLeft,
+.withCaptions .galleryMain {
+  flex: none;
+  height: var(--gallery-media);
+}
+
+.withCaptions .galleryThirdRightItem,
+.withCaptions .galleryItem {
+  flex: none;
+  height: calc((var(--gallery-media) - var(--gallery-gap)) / 2);
+}
+
+.withCaptions .galleryThirdRight>.tile,
+.withCaptions .galleryGridRow {
+  flex: none;
 }
 
 .photoCaption {
