@@ -361,6 +361,10 @@
   order: 2;
 }
 
+.galleryItemWrap .galleryAuthorInput {
+  order: 3;
+}
+
 .galleryItemWrap .imageDragHandle {
   display: flex;
   align-items: center;

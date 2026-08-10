@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Map, Eye, EyeOff, Filter, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, BarChart3 } from 'lucide-react';
-import { routesAPI, getImageUrl } from '@/lib/api';
+import { routesAPI, routeFiltersAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal, RouteFiltersModal } from '../components';
 import styles from '../admin.module.css';
 
@@ -17,6 +17,8 @@ export default function RoutesPage() {
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
   const [togglingId, setTogglingId] = useState(null);
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const [showPlacesOnCard, setShowPlacesOnCard] = useState(null);
+  const [savingDisplay, setSavingDisplay] = useState(false);
   const searchDebounceRef = useRef(null);
 
   // Загружаем сохраненный limit из localStorage или используем значение по умолчанию
@@ -194,6 +196,18 @@ export default function RoutesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, limit]);
 
+  // Текущее значение флага показа точек маршрута на карточках
+  useEffect(() => {
+    let cancelled = false;
+    routeFiltersAPI
+      .get()
+      .then(({ data }) => {
+        if (!cancelled) setShowPlacesOnCard(data?.showPlacesOnCard !== false);
+      })
+      .catch((error) => console.error('Ошибка загрузки настройки показа точек:', error));
+    return () => { cancelled = true; };
+  }, []);
+
   const handleDeleteClick = (id) => {
     setConfirmModal({
       title: 'Удалить маршрут?',
@@ -236,6 +250,26 @@ export default function RoutesPage() {
     }
   };
 
+  const handleToggleShowPlaces = async () => {
+    if (savingDisplay) return;
+    const next = !showPlacesOnCard;
+    setShowPlacesOnCard(next);
+    setSavingDisplay(true);
+    try {
+      await routeFiltersAPI.setDisplay({ showPlacesOnCard: next });
+    } catch (error) {
+      console.error('Ошибка сохранения настройки показа точек:', error);
+      setShowPlacesOnCard(!next);
+      setAlertModal({
+        open: true,
+        title: 'Ошибка',
+        message: 'Настройка показа точек маршрута не сохранена. Попробуйте ещё раз.',
+      });
+    } finally {
+      setSavingDisplay(false);
+    }
+  };
+
   const renderPagination = () => (
     <>
       <div className={styles.paginationLimit}>
@@ -275,6 +309,17 @@ export default function RoutesPage() {
             <input type="text" placeholder="Поиск маршрутов..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={styles.searchInput} aria-label="Поиск маршрутов" />
             <Search size={18} className={styles.searchIcon} aria-hidden />
           </div>
+          <label className={styles.visibilityToggle}>
+            <input
+              type="checkbox"
+              title="Блок «Маршрут: A → Б» на карточках маршрутов"
+              checked={showPlacesOnCard === true}
+              onChange={handleToggleShowPlaces}
+              disabled={showPlacesOnCard === null}
+            />
+            <span className={styles.visibilitySwitch} />
+            <span className={styles.visibilityLabel}>Точки на карточках</span>
+          </label>
           <button type="button" onClick={() => setFiltersModalOpen(true)} className={styles.filtersBtn} title="Управление фильтрами">
             <Filter size={18} /> Фильтры
           </button>

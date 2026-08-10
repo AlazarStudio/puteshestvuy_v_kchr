@@ -219,15 +219,19 @@ export default function NewsDetail({ slug }) {
                   )
                 }
                 if (block.type === 'image' && block.data?.url) {
+                  const author = block.data?.author?.trim()
                   return (
-                    <div key={block.id} className={styles.imageBlock}>
-                      <img src={getImageUrl(block.data.url)} alt="" />
-                    </div>
+                    <figure key={block.id} className={styles.imageFigure}>
+                      <div className={styles.imageBlock}>
+                        <img src={getImageUrl(block.data.url)} alt="" />
+                      </div>
+                      {author && <figcaption className={styles.imageCaption}>Фото: {author}</figcaption>}
+                    </figure>
                   )
                 }
                 if (block.type === 'gallery' && Array.isArray(block.data?.images) && block.data.images.length > 0) {
                   return (
-                    <NewsGalleryBlock key={block.id} images={block.data.images} />
+                    <NewsGalleryBlock key={block.id} images={block.data.images} authors={block.data.imageAuthors} />
                   )
                 }
                 if (block.type === 'quote' && (block.data?.content?.trim() || block.data?.text?.trim())) {

@@ -43,7 +43,7 @@ function createEmptyBlock(type) {
     case 'text':
       return { ...base, data: { content: '' } };
     case 'image':
-      return { ...base, data: { url: '' } };
+      return { ...base, data: { url: '', author: '' } };
     case 'gallery':
       return { ...base, data: { images: [] } };
     case 'quote':
@@ -213,6 +213,29 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     onPendingBlockFilesChange?.(block.id, { url: undefined, images: [...prev, ...files] });
   };
 
+  const padAuthors = (authors, length) => {
+    const arr = [...authors];
+    while (arr.length < length) arr.push('');
+    return arr;
+  };
+
+  const setSavedGalleryAuthor = (blockIndex, url, author) => {
+    const block = sortedBlocks[blockIndex];
+    if (!block) return;
+    const authors = { ...(block.data?.imageAuthors || {}) };
+    if (author.trim()) authors[url] = author.trim();
+    else delete authors[url];
+    updateBlock(blockIndex, { data: { imageAuthors: authors } });
+  };
+
+  const setPendingGalleryAuthor = (blockIndex, pendingIndex, author) => {
+    const block = sortedBlocks[blockIndex];
+    if (!block) return;
+    const arr = padAuthors(pendingBlockFiles[block.id]?.imageAuthors || [], pendingIndex + 1);
+    arr[pendingIndex] = author;
+    onPendingBlockFilesChange?.(block.id, { imageAuthors: arr });
+  };
+
   const removeGalleryImage = (blockIndex, imgIndex) => {
     const block = sortedBlocks[blockIndex];
     if (!block) return;
@@ -220,11 +243,14 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     const pending = pendingBlockFiles[block.id]?.images || [];
     if (imgIndex < saved.length) {
       const images = saved.filter((_, i) => i !== imgIndex);
-      updateBlock(blockIndex, { data: { images } });
+      const authors = { ...(block.data?.imageAuthors || {}) };
+      if (!images.includes(saved[imgIndex])) delete authors[saved[imgIndex]];
+      updateBlock(blockIndex, { data: { images, imageAuthors: authors } });
     } else {
       const pendingIndex = imgIndex - saved.length;
       const next = pending.filter((_, i) => i !== pendingIndex);
-      onPendingBlockFilesChange?.(block.id, next.length ? { images: next } : null);
+      const authors = (pendingBlockFiles[block.id]?.imageAuthors || []).filter((_, i) => i !== pendingIndex);
+      onPendingBlockFilesChange?.(block.id, next.length ? { images: next, imageAuthors: authors } : null);
     }
   };
 
@@ -244,12 +270,15 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
       updateBlock(blockIndex, { data: { images: arr } });
     } else if (fromIndex >= saved.length && toIndex >= saved.length) {
       const arr = [...pending];
+      const authors = padAuthors(pendingBlockFiles[block.id]?.imageAuthors || [], pending.length);
       const fi = fromIndex - saved.length;
       const ti = toIndex - saved.length;
       const [item] = arr.splice(fi, 1);
+      const [auth] = authors.splice(fi, 1);
       const dropIdx = fi < ti ? ti - 1 : ti;
       arr.splice(dropIdx, 0, item);
-      onPendingBlockFilesChange?.(block.id, { images: arr });
+      authors.splice(dropIdx, 0, auth);
+      onPendingBlockFilesChange?.(block.id, { images: arr, imageAuthors: authors });
     }
   };
 
@@ -268,8 +297,10 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
       const pIdx = imgIndex - saved.length;
       const pNewIdx = newIdx - saved.length;
       const arr = [...pending];
+      const authors = padAuthors(pendingBlockFiles[block.id]?.imageAuthors || [], pending.length);
       [arr[pIdx], arr[pNewIdx]] = [arr[pNewIdx], arr[pIdx]];
-      onPendingBlockFilesChange?.(block.id, { images: arr });
+      [authors[pIdx], authors[pNewIdx]] = [authors[pNewIdx], authors[pIdx]];
+      onPendingBlockFilesChange?.(block.id, { images: arr, imageAuthors: authors });
     }
   };
 
@@ -277,7 +308,7 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
     const block = sortedBlocks[blockIndex];
     if (!block) return;
     onPendingBlockFilesChange?.(block.id, null);
-    updateBlock(blockIndex, { data: { url: '' } });
+    updateBlock(blockIndex, { data: { url: '', author: '' } });
   };
 
   const getBlockImageDisplay = (block) => {
@@ -402,6 +433,14 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                       Загрузить изображение
                     </label>
                   )}
+                  <label className={styles.blockLabel} style={{ marginTop: 12 }}>Автор фото</label>
+                  <input
+                    type="text"
+                    className={styles.blockInput}
+                    value={block.data?.author || ''}
+                    onChange={(e) => updateBlock(index, { data: { author: e.target.value } })}
+                    placeholder="Например: Мой Магнит"
+                  />
                 </>
               )}
 
@@ -490,6 +529,15 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                                 <X size={16} />
                               </button>
                             </div>
+                            <input
+                              type="text"
+                              className={`${styles.blockInput} ${styles.galleryAuthorInput}`}
+                              value={block.data?.imageAuthors?.[img] || ''}
+                              onChange={(e) => setSavedGalleryAuthor(index, img, e.target.value)}
+                              placeholder="Автор фото"
+                              onDragStart={(e) => e.stopPropagation()}
+                              draggable={false}
+                            />
                           </div>
                           );
                         })}
@@ -558,6 +606,15 @@ export default function NewsBlockEditor({ blocks = [], onChange, pendingBlockFil
                                 <X size={16} />
                               </button>
                             </div>
+                            <input
+                              type="text"
+                              className={`${styles.blockInput} ${styles.galleryAuthorInput}`}
+                              value={pendingBlockFiles[block.id]?.imageAuthors?.[i] || ''}
+                              onChange={(e) => setPendingGalleryAuthor(index, i, e.target.value)}
+                              placeholder="Автор фото"
+                              onDragStart={(e) => e.stopPropagation()}
+                              draggable={false}
+                            />
                           </div>
                           );
                         })}

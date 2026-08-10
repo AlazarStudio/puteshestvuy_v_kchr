@@ -334,6 +334,8 @@ export default function NewsEditPage() {
         }
         if (pending.images?.length) {
           const urls = [];
+          const uploadedAuthors = {};
+          let pendingIdx = 0;
           for (const file of pending.images) {
             const fd = new FormData();
             fd.append('file', file);
@@ -351,10 +353,19 @@ export default function NewsEditPage() {
                 });
               },
             });
-            if (res.data?.url) urls.push(res.data.url);
+            if (res.data?.url) {
+              urls.push(res.data.url);
+              const author = pending.imageAuthors?.[pendingIdx];
+              if (author && author.trim()) uploadedAuthors[res.data.url] = author.trim();
+            }
+            pendingIdx++;
             blockUploadIdx++;
           }
-          block.data = { ...block.data, images: [...(block.data?.images || []), ...urls] };
+          block.data = {
+            ...block.data,
+            images: [...(block.data?.images || []), ...urls],
+            imageAuthors: { ...(block.data?.imageAuthors || {}), ...uploadedAuthors },
+          };
         }
       }
       setPendingBlockFiles({});

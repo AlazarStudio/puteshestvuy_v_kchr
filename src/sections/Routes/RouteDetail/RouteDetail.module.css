@@ -1172,7 +1172,6 @@
   font-weight: 500;
   font-size: 15px;
   cursor: pointer;
-  margin-bottom: 20px;
   transition: all 0.3s ease-in-out;
 }
 
@@ -1597,4 +1596,19 @@
     top: 0;
     right: 0;
   }
+}
+
+.routeActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.routeActions .pdfButton {
+  flex: 1;
+}
+
+.routeShare svg {
+  color: #156A60;
 }

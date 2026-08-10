@@ -796,6 +796,7 @@ export default function Places_page() {
                       }
                       reviewsCount={place.reviewsCount ?? 0}
                       place={place.location || '—'}
+                      slug={place.slug}
                       title={place.title}
                       desc={stripHtml(place.shortDescription || place.description || '')}
                       img={getImageUrl(place.image)}

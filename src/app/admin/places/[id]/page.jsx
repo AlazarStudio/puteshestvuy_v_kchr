@@ -147,6 +147,7 @@ export default function PlaceEditPage() {
   const pendingSliderVideoRef = useRef(null);
   pendingSliderVideoRef.current = pendingSliderVideo;
   const sliderVideoUploadRef = useRef(null);
+  const locationTouchedRef = useRef(false);
   const setHeaderRight = useContext(AdminHeaderRightContext)?.setHeaderRight;
   const setBreadcrumbLabel = useContext(AdminBreadcrumbContext)?.setBreadcrumbLabel;
 
@@ -191,6 +192,7 @@ export default function PlaceEditPage() {
   }, [isDirty, navigateToList]);
 
   useEffect(() => {
+    locationTouchedRef.current = false;
     if (!isNew) {
       fetchPlace();
     }
@@ -334,10 +336,7 @@ export default function PlaceEditPage() {
   };
 
   const loadPlacesByLocation = useCallback(async (location, excludePlaceId) => {
-    if (!location || !location.trim()) {
-      setFormData((prev) => ({ ...prev, nearbyPlaceIds: [] }));
-      return;
-    }
+    if (!location || !location.trim()) return;
     try {
       const res = await placesAPI.getAll({
         page: 1,
@@ -345,10 +344,14 @@ export default function PlaceEditPage() {
         byLocation: location.trim(),
       });
       const items = res.data.items || [];
-      const ids = items
+      const found = items
         .map((p) => p.id)
         .filter((id) => id !== excludePlaceId);
-      setFormData((prev) => ({ ...prev, nearbyPlaceIds: ids }));
+      // Дополняем, а не заменяем: ручная привязка не должна теряться
+      setFormData((prev) => ({
+        ...prev,
+        nearbyPlaceIds: [...new Set([...(prev.nearbyPlaceIds || []), ...found])],
+      }));
     } catch (e) {
       console.error('Ошибка подгрузки мест по локации:', e);
     }
@@ -356,6 +359,10 @@ export default function PlaceEditPage() {
 
   useEffect(() => {
     if (!formData.location?.trim()) return;
+    // Автоподбор только когда редактор сам менял локацию.
+    // Без этого простое открытие существующего места и сохранение
+    // молча перезаписывало вручную выбранные «Места рядом».
+    if (!isNew && !locationTouchedRef.current) return;
     const t = setTimeout(() => {
       loadPlacesByLocation(formData.location, isNew ? null : params.id);
     }, LOCATION_DEBOUNCE_MS);
@@ -364,10 +371,17 @@ export default function PlaceEditPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === 'location') locationTouchedRef.current = true;
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handleLocationFromMap = (addr) => {
+    if (!addr || addr === formData.location) return;
+    locationTouchedRef.current = true;
+    setFormData((prev) => ({ ...prev, location: addr }));
   };
 
   const handleAudioGuideChange = (e) => {
@@ -943,7 +957,7 @@ export default function PlaceEditPage() {
               longitude={formData.longitude}
               geocodeQuery={mapSearchMode === 'byName' ? (formData.title?.trim() || '') : ''}
               onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
-              onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+              onLocationChange={handleLocationFromMap}
               determineLocationTrigger={determineLocationTrigger}
               determineLocationBy={mapSearchMode === 'byName' ? 'name' : 'coordinates'}
               visible={true}
@@ -957,7 +971,7 @@ export default function PlaceEditPage() {
             longitude={formData.longitude}
             geocodeQuery={mapSearchMode === 'byName' ? (formData.title?.trim() || '') : ''}
             onCoordinatesChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
-            onLocationChange={(addr) => setFormData((prev) => ({ ...prev, location: addr || prev.location }))}
+            onLocationChange={handleLocationFromMap}
             determineLocationTrigger={determineLocationTrigger}
             determineLocationBy={mapSearchMode === 'byName' ? 'name' : 'coordinates'}
             visible={false}

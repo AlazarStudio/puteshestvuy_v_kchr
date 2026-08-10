@@ -143,8 +143,18 @@
   /* margin-bottom: 20px; */
 }
 
-.imageBlock {
+.imageFigure {
   margin: 30px 0;
+}
+
+.imageCaption {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 140%;
+  color: #64748b;
+}
+
+.imageBlock {
   border-radius: 15px;
   overflow: hidden;
 }

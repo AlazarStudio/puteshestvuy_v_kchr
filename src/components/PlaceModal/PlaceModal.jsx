@@ -13,9 +13,11 @@ import YandexMapPlace from '../YandexMapPlace'
 import RichTextContent from '../RichTextContent'
 import RouteConstructorButton from '../RouteConstructorButton/RouteConstructorButton'
 import FavoriteButton from '../FavoriteButton/FavoriteButton'
+import ShareButton from '../ShareButton/ShareButton'
 import ParallaxImage from '../ParallaxImage'
 import VkPlaylistWidget, { VK_PLAYLIST_PREFIX } from '../VkPlaylistWidget'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
+import { haversineKm, formatDistance } from '@/utils/geo'
 
 const formatReviewDate = (dateStr) => {
   if (!dateStr) return ''
@@ -194,6 +196,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                       <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
                         <RouteConstructorButton placeId={place.id} place={place} />
                         <FavoriteButton entityType="place" entityId={place.id} />
+                        {place.slug && <ShareButton path={`/places/${place.slug}`} title={place.title} />}
                       </div>
                     </div>
                   )}
@@ -576,7 +579,11 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                         <div className={styles.sidebarTitle}>Места рядом</div>
                         {nearbyPlaces.length > 0 ? (
                           <div className={styles.sidebarPlaces}>
-                            {nearbyPlaces.map((nearbyPlace) => (
+                            {nearbyPlaces.map((nearbyPlace) => {
+                              const distance = formatDistance(
+                                haversineKm(place.latitude, place.longitude, nearbyPlace.latitude, nearbyPlace.longitude)
+                              )
+                              return (
                               <div
                                 key={nearbyPlace.id}
                                 className={styles.sidebarPlaceCard}
@@ -586,20 +593,22 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenPlace?.(nearbyPlace.id); } }}
                                 aria-label={`Открыть: ${nearbyPlace.title}`}
                               >
+                                {distance && (
+                                  <div className={styles.sidebarPlaceDistance} title="Расстояние от текущего места">
+                                    {distance}
+                                  </div>
+                                )}
                                 <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
                                 <div className={styles.sidebarPlaceInfo}>
-                                  {/* <div className={styles.sidebarPlaceRating}>
-                                    <img src="/star.png" alt="" />
-                                    {nearbyPlace.rating}
-                                  </div> */}
-                                  <div className={styles.sidebarPlaceTitle}>{nearbyPlace.title}</div>
+                                  <div className={`${styles.sidebarPlaceTitle} ${distance ? styles.sidebarPlaceTitleWithDistance : ''}`}>{nearbyPlace.title}</div>
                                   <div className={styles.sidebarPlaceLocation}>
                                     <img src="/place_black.png" alt="" />
                                     {nearbyPlace.location}
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         ) : (
                           <p className={styles.sidebarEmpty}>Места рядом не найдены</p>

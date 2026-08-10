@@ -8,6 +8,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 import { userAPI, userRoutesAPI } from '@/lib/api'
 import { publicRoutesAPI, publicPlacesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
+import { haversineKm } from '@/utils/geo'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
@@ -514,20 +515,6 @@ export default function ProfilePage() {
     if (toId === openedRouteStartPlaceId || toId === openedRouteEndPlaceId) return
     ;[ids[index], ids[newIndex]] = [ids[newIndex], ids[index]]
     setOpenedRouteEdit((prev) => ({ ...prev, placeIds: ids }))
-  }
-
-  const haversineKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371
-    const dLat = ((lat2 - lat1) * Math.PI) / 180
-    const dLon = ((lon2 - lon1) * Math.PI) / 180
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
   }
 
   const optimizeOpenedRoute = () => {
@@ -1645,6 +1632,7 @@ export default function ProfilePage() {
                         placeId={place.id}
                         img={getImageUrl(place.image || place.images?.[0]) || '/placeholder.jpg'}
                         place={place.location || ''}
+                        slug={place.slug}
                         title={place.title}
                         desc={place.shortDescription || ''}
                         rating={place.rating}

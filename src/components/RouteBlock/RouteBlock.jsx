@@ -2,6 +2,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import ShareButton from '@/components/ShareButton/ShareButton'
 import styles from './RouteBlock.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
@@ -10,8 +11,10 @@ import { Navigation } from 'swiper/modules'
 import { Link } from 'react-router-dom'
 import { getImageUrl } from '@/lib/api'
 import { generateSlug } from '@/utils/transliterate'
+import { useRoutePlacesVisible } from '@/lib/useRoutePlacesVisible'
 
 export default function RouteBlock({ route: routeProp, title: titleProp, hideFavoriteButton }) {
+  const placesVisible = useRoutePlacesVisible()
   const route = routeProp || (titleProp ? { title: titleProp, slug: generateSlug(titleProp) } : null)
   if (!route) return null
 
@@ -30,6 +33,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
   const distance = route.distance != null && route.distance !== '' ? `${route.distance} км` : ''
   const difficulty = route.difficulty != null ? String(route.difficulty) : ''
   const places = Array.isArray(route.places) ? route.places : []
+  const showPlaces = placesVisible === true && places.length > 0
 
   const slides = route.images?.length > 0
     ? route.images.map((src, i) => (
@@ -62,11 +66,10 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
+          if (e.target.closest('a') || e.target.closest('[data-no-navigate]')) return
           e.preventDefault()
-          if (!e.target.closest('a')) {
-            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('navigate-start'))
-            navigate(`/routes/${slug}`)
-          }
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('navigate-start'))
+          navigate(`/routes/${slug}`)
         }
       }}
     >
@@ -74,6 +77,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
         {route.id && !hideFavoriteButton && (
           <div className={styles.favoriteWrap} data-no-navigate>
             <FavoriteButton entityType="route" entityId={route.id} />
+            <ShareButton path={`/routes/${slug}`} title={title} />
           </div>
         )}
         <Swiper
@@ -86,7 +90,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
         </Swiper>
       </div>
 
-      <div className={styles.routeInfo}>
+      <div className={`${styles.routeInfo} ${showPlaces ? '' : styles.routeInfoNoPlaces}`}>
         <div className={styles.params}>
           <div className={styles.routeTags}>
             <div className={styles.tag} title="Время в пути">
@@ -128,9 +132,12 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
         </div>
         <div className={styles.title}>{title}</div>
         {shortDesc && (
-          <div className={styles.desc} dangerouslySetInnerHTML={{ __html: shortDesc }} />
+          <div
+            className={`${styles.desc} ${showPlaces ? '' : styles.descNoPlaces}`}
+            dangerouslySetInnerHTML={{ __html: shortDesc }}
+          />
         )}
-        {places.length > 0 && (
+        {showPlaces && (
           <div className={styles.routePlaces}>
             <div className={styles.title}>Маршрут:</div>
             <div className={styles.places}>

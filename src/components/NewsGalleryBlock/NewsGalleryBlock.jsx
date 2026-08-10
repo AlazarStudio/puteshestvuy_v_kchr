@@ -9,8 +9,11 @@ import 'swiper/css/navigation'
 import { getImageUrl } from '@/lib/api'
 import styles from './NewsGalleryBlock.module.css'
 
-export default function NewsGalleryBlock({ images = [], className }) {
-  const photos = images.map((url) => ({ src: getImageUrl(url) }))
+export default function NewsGalleryBlock({ images = [], authors, className }) {
+  const photos = images.map((url) => ({
+    src: getImageUrl(url),
+    author: authors?.[url]?.trim() || '',
+  }))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const swiperRef = useRef(null)
@@ -50,14 +53,18 @@ export default function NewsGalleryBlock({ images = [], className }) {
   if (photos.length === 0) return null
 
   const count = photos.length
-  const countClass = count === 1 ? styles.galleryCount1 : count === 2 ? styles.galleryCount2 : count === 3 ? styles.galleryCount3 : ''
+  const hasAnyAuthor = photos.some((p) => p.author)
+  const countClass =count === 1 ? styles.galleryCount1 : count === 2 ? styles.galleryCount2 : count === 3 ? styles.galleryCount3 : ''
 
   const renderGallery = () => {
     if (count === 1) {
       return (
-        <div className={styles.galleryFull} onClick={() => openModal(0)}>
-          <img src={photos[0]?.src} alt="" />
-        </div>
+        <>
+          <div className={styles.galleryFull} onClick={() => openModal(0)}>
+            <img src={photos[0]?.src} alt="" />
+          </div>
+          {photos[0]?.author && <div className={styles.photoCaption}>Фото: {photos[0].author}</div>}
+        </>
       )
     }
     if (count === 2) {
@@ -170,6 +177,11 @@ export default function NewsGalleryBlock({ images = [], className }) {
                     <SwiperSlide key={index}>
                       <div className={styles.galleryModalSlide}>
                         <img src={photo.src} alt="" />
+                        {hasAnyAuthor && (
+                          <div className={styles.photoCaptionModal}>
+                            {photo.author ? `Фото: ${photo.author}` : ''}
+                          </div>
+                        )}
                       </div>
                     </SwiperSlide>
                   ))}

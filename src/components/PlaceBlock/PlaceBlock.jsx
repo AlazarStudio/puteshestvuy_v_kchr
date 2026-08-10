@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
+import ShareButton from '@/components/ShareButton/ShareButton'
 import styles from './PlaceBlock.module.css'
 
 function formatRating(value) {
@@ -13,7 +14,7 @@ function formatRating(value) {
   return num % 1 === 0 ? String(num) : num.toFixed(1)
 }
 
-export default function PlaceBlock({ img, place, title, desc, rating, feedback, reviewsCount = 0, width = '330px', onClick, placeId, maxOffset = 5, scale = 1.03 }) {
+export default function PlaceBlock({ img, place, slug, title, desc, rating, feedback, reviewsCount = 0, width = '330px', onClick, placeId, maxOffset = 5, scale = 1.03 }) {
   const hasReviews = (reviewsCount ?? 0) > 0
   const displayRating = hasReviews ? formatRating(rating) : null
 
@@ -58,6 +59,7 @@ export default function PlaceBlock({ img, place, title, desc, rating, feedback, 
         <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
           <RouteConstructorButton placeId={placeId} />
           <FavoriteButton entityType="place" entityId={placeId} />
+          {slug && <ShareButton path={`/places/${slug}`} title={title} />}
         </div>
       )}
       <div

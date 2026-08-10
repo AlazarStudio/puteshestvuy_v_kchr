@@ -10,11 +10,16 @@
 
 /* 1 фото — на всю ширину */
 .galleryCount1 {
-  height: 400px;
+  flex-direction: column;
+  gap: 0;
+  height: auto;
+  border-radius: 0;
+  overflow: visible;
 }
 
 .galleryCount1 .galleryFull {
-  flex: 1;
+  flex: none;
+  height: 400px;
   cursor: pointer;
   overflow: hidden;
   border-radius: 20px;
@@ -254,6 +259,7 @@
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
@@ -261,6 +267,8 @@
 .galleryModalSlide img {
   width: 100%;
   height: 100%;
+  flex: 1;
+  min-height: 0;
   object-fit: contain;
 }
 
@@ -352,6 +360,15 @@
     border-radius: 0;
   }
 
+  .galleryCount1 {
+    height: auto;
+    gap: 0;
+  }
+
+  .galleryCount1 .galleryFull {
+    height: 150px;
+  }
+
   .galleryGridRow {
     gap: 5px;
   }
@@ -408,4 +425,21 @@
   .moreButton img {
     width: 10px;
   }
+}
+
+.photoCaption {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 140%;
+  color: #64748b;
+}
+
+.photoCaptionModal {
+  margin-top: 10px;
+  min-height: 20px;
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 140%;
+  color: #e2e8f0;
+  text-align: center;
 }

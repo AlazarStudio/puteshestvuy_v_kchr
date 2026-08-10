@@ -156,6 +156,7 @@ export const routeFiltersAPI = {
   replaceValue: (group, oldValue, newValue) =>
     api.post('/admin/route-filters/replace-value', { group, oldValue, newValue }),
   removeValue: (group, value) => api.post('/admin/route-filters/remove-value', { group, value }),
+  setDisplay: (data) => api.patch('/admin/route-filters/display', data),
 };
 
 // News API (admin)

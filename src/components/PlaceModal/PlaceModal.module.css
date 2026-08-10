@@ -807,6 +807,7 @@
 }
 
 .sidebarPlaceCard {
+  position: relative;
   display: flex;
   gap: 15px;
   background-color: #fff;
@@ -819,6 +820,17 @@
 .sidebarPlaceCard:hover {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+}
+
+.sidebarPlaceDistance {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #767B78;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .sidebarPlaceImg {
@@ -837,22 +849,14 @@
   flex: 1;
 }
 
-.sidebarPlaceRating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.sidebarPlaceRating img {
-  width: 14px;
-}
-
 .sidebarPlaceTitle {
   font-weight: 600;
   font-size: 16px;
   line-height: 130%;
+}
+
+.sidebarPlaceTitleWithDistance {
+  padding-right: 52px;
 }
 
 .sidebarPlaceLocation {

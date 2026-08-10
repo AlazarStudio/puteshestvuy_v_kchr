@@ -13,6 +13,7 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import RouteBlock from '@/components/RouteBlock/RouteBlock'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import ParallaxImage from '@/components/ParallaxImage'
+import ShareButton from '@/components/ShareButton/ShareButton'
 import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import { exportRoutePDF } from '@/utils/exportRoutePDF'
@@ -634,9 +635,12 @@ export default function RouteDetail({ routeSlug }) {
           <div className={styles.routeBlock}>
             <div className={styles.routeBlock_content}>
               <h1 id="main" className={styles.title}>{route.title}</h1>
-              <button className={styles.pdfButton} onClick={() => exportRoutePDF(route, routeFilterMeta.extraGroups)}>
-                Выгрузить в PDF
-              </button>
+              <div className={styles.routeActions}>
+                <button className={styles.pdfButton} onClick={() => exportRoutePDF(route, routeFilterMeta.extraGroups)}>
+                  Выгрузить в PDF
+                </button>
+                {route.slug && <ShareButton className={styles.routeShare} path={`/routes/${route.slug}`} title={route.title} />}
+              </div>
               <div className={styles.information}>
                 {route.distance != null && route.distance !== '' && (
                   <div className={styles.item}>

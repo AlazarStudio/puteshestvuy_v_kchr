@@ -8,6 +8,10 @@
     top: 12px;
     right: 12px;
     z-index: 2;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 8px;
 }
 
 .route {
@@ -432,5 +436,16 @@
 
     .placeLink {
         font-size: 14px;
+    }
+}
+
+/* Блок точек маршрута скрыт — распределяем освободившееся место */
+@media (min-width: 768px) {
+    .routeInfoNoPlaces {
+        justify-content: center;
+    }
+
+    .descNoPlaces {
+        -webkit-line-clamp: 5;
     }
 }
