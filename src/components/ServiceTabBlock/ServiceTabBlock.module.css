@@ -1,10 +1,28 @@
 .service {
     display: flex;
     flex-direction: column;
-    gap: 60px;
 }
 
+/* Полоса категории тянется во всю ширину экрана, центрирует контент CenterBlock
+   внутри неё. Расстояние между категориями набирается паддингами соседних полос,
+   а не gap: цвет должен доходить до самой границы */
 .categorySection {
+    padding: 30px 0;
+}
+
+.categorySection:nth-child(odd) {
+    background: #E0F2FE;
+}
+
+.categorySection:nth-child(even) {
+    background: #FFFFFF;
+}
+
+.categorySection:last-child {
+    padding-bottom: 90px;
+}
+
+.categoryInner {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -171,10 +189,28 @@
     color: #666;
 }
 
+/* Ритм страницы на ноутбуках — 72px, нижний край блока подстраивается под него.
+   Порядок правил тот же, что в Main_page.module.css: на 1025–1400px
+   выигрывает следующий медиазапрос, потому что он ниже */
+@media (min-width: 1025px) and (max-width: 1600px) {
+    .categorySection:last-child {
+        padding-bottom: 72px;
+    }
+}
+
 @media (min-width: 320px) and (max-width: 1400px) {
-    .service {
+    /* Горизонтальный отступ переезжает внутрь полосы: на .service он оставил бы
+       белые поля по краям, и фон перестал бы доходить до границ экрана */
+    .categoryInner {
         padding: 0 10px;
-        gap: 40px;
+    }
+
+    .categorySection {
+        padding: 20px 0;
+    }
+
+    .categorySection:last-child {
+        padding-bottom: 20px;
     }
 
     .cards {

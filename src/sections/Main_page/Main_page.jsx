@@ -159,14 +159,6 @@ export default function Main_page() {
           </section>
         </CenterBlock>
 
-        <CenterBlock>
-          <TitleButton title={homeContent.servicesTitle} buttonLink={homeContent.servicesButtonLink} />
-        </CenterBlock>
-
-        <CenterBlock>
-          <ServiceTabBlock />
-        </CenterBlock>
-
         {/* Баннеры */}
         {homeContent.banners && homeContent.banners.length > 0 && (() => {
           const activeBanners = homeContent.banners.filter((banner) => banner.isActive === true);
@@ -343,6 +335,16 @@ export default function Main_page() {
             </CenterBlock>
           );
         })()}
+
+        <section className={styles.servicesBand}>
+          <div className={styles.servicesHead}>
+            <CenterBlock>
+              <TitleButton title={homeContent.servicesTitle} buttonLink={homeContent.servicesButtonLink} />
+            </CenterBlock>
+          </div>
+
+          <ServiceTabBlock />
+        </section>
 
         <CenterBlock>
           <TitleButton title="Новости и статьи" buttonLink="/news" />

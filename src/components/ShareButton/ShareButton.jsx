@@ -110,9 +110,9 @@ export default function ShareButton({ path, title = '', className = '' }) {
 
   const targets = [
     { key: 'vk', label: 'ВКонтакте', icon: ICONS.vk, href: `https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(shareText)}` },
-    { key: 'tg', label: 'Telegram', icon: ICONS.tg, href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}` },
+    // { key: 'tg', label: 'Telegram', icon: ICONS.tg, href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}` },
     { key: 'max', label: 'MAX', icon: ICONS.max, href: `https://max.ru/:share?text=${encodeURIComponent(`${shareText} ${url}`)}` },
-    { key: 'wa', label: 'WhatsApp', icon: ICONS.wa, href: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}` },
+    // { key: 'wa', label: 'WhatsApp', icon: ICONS.wa, href: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}` },
   ]
 
   const handleClick = async (e) => {

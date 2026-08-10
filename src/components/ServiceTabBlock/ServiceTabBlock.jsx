@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import styles from './ServiceTabBlock.module.css'
 import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
+import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import { publicServicesAPI } from '@/lib/api'
 
 const FILTER_TO_CATEGORY = {
@@ -105,23 +106,27 @@ export default function ServiceTabBlock() {
         if (!items.length) return null
         return (
           <div key={label} className={styles.categorySection}>
-            <div className={styles.categoryHeader}>
-              <h3 className={styles.categoryTitle}>{label}</h3>
-              <Link to={`/services?filter=${LABEL_TO_URL_FILTER[label]}`} className={styles.categoryViewAll}>
-                Смотреть все
-              </Link>
-            </div>
-            <div className={styles.cards}>
-              {items.map((service) => (
-                <ServiceCardWithParallax
-                  key={service.id}
-                  service={service}
-                  serviceUrl={`/services/${service.slug || service.id}`}
-                  isArticle={false}
-                  styles={styles}
-                />
-              ))}
-            </div>
+            <CenterBlock>
+              <div className={styles.categoryInner}>
+                <div className={styles.categoryHeader}>
+                  <h3 className={styles.categoryTitle}>{label}</h3>
+                  <Link to={`/services?filter=${LABEL_TO_URL_FILTER[label]}`} className={styles.categoryViewAll}>
+                    Смотреть все
+                  </Link>
+                </div>
+                <div className={styles.cards}>
+                  {items.map((service) => (
+                    <ServiceCardWithParallax
+                      key={service.id}
+                      service={service}
+                      serviceUrl={`/services/${service.slug || service.id}`}
+                      isArticle={false}
+                      styles={styles}
+                    />
+                  ))}
+                </div>
+              </div>
+            </CenterBlock>
           </div>
         )
       })}
