@@ -7,6 +7,9 @@ const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api')?.
 export const getImageUrl = (path) => {
   if (!path) return '/placeholder.jpg';
   if (path.startsWith('http')) return path;
+  // Бэкенд отдаёт статику только из /uploads. Всё остальное — файлы из public/
+  // фронтенда (дефолтные фоны разделов), их нельзя склеивать с адресом бэкенда.
+  if (!path.startsWith('/uploads')) return path;
   return `${BASE_URL}${path}`;
 };
 
