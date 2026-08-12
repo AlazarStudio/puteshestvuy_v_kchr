@@ -206,6 +206,11 @@ export const publicServicesAPI = {
   createReview: (serviceId, data) => api.post(`/services/${serviceId}/reviews`, data),
 };
 
+// Map API (public — точки обоих слоёв для интерактивной карты)
+export const publicMapAPI = {
+  getObjects: () => api.get('/map-objects'),
+};
+
 // Bookings API (public — заявки на бронирование)
 export const bookingsAPI = {
   create: (data) => api.post('/bookings', data),

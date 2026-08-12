@@ -1,0 +1,117 @@
+/* Оформление списано с попапа в YandexMapPlace: те же скругления, тень,
+   подложка фотографии и типографика. Раскладка вертикальная — фотография
+   сверху, под ней заголовок, локация и кнопка перехода. */
+
+.popup {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    max-width: calc(100vw - 40px);
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 10;
+}
+
+.close {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    z-index: 1;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #64748b;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.close:hover {
+    background: #fff;
+    color: #111;
+}
+
+.image {
+    width: 100%;
+    height: 140px;
+    background: #f1f5f9;
+}
+
+.image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px 18px;
+}
+
+.title {
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 130%;
+    color: #111;
+    word-break: break-word;
+}
+
+.location {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 130%;
+    color: #6b7280;
+}
+
+.location img {
+    width: 12px;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.action {
+    width: 100%;
+    margin-top: 4px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 30px;
+    background: #156A60;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.action:hover {
+    background: #0d4a44;
+}
+
+@media (min-width: 320px) and (max-width: 1400px) {
+    .popup {
+        width: 240px;
+    }
+
+    .image {
+        height: 120px;
+    }
+
+    .title {
+        font-size: 16px;
+    }
+}

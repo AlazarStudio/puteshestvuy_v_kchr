@@ -11,6 +11,7 @@ import Events_page from '@/sections/Events/Events_page'
 import EventDetail from '@/sections/Events/EventDetail/EventDetail'
 import Services_page from '@/sections/Services/Services_page'
 import Gallery_page from '@/sections/Gallery/Gallery_page'
+import Map_page from '@/sections/Map/Map_page'
 import LegalPage from '@/sections/Legal/LegalPage'
 import ServicePageContent from '@/app/services/[slug]/ServicePageContent'
 import { ServiceTemplateByType } from '@/sections/Services/ServiceDetail/templates'
@@ -109,6 +110,7 @@ export default function App() {
         <Route path="services/template/:type" element={<ServiceTemplatePreviewWrapper />} />
         <Route path="services/:slug" element={<ServiceDetailWrapper />} />
         <Route path="gallery" element={<Gallery_page />} />
+        <Route path="map" element={<Map_page />} />
         <Route path="legal/:slug" element={<LegalPageWrapper />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
