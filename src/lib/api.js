@@ -122,6 +122,7 @@ export const publicPlacesAPI = {
   getAll: (params) => api.get('/places', { params }),
   getByIdOrSlug: (idOrSlug) => api.get(`/places/${idOrSlug}`),
   getFilters: () => api.get('/places/filters'),
+  getRandom: (params) => api.get('/places/random', { params }),
   createReview: (placeId, data) => api.post(`/places/${placeId}/reviews`, data),
 };
 

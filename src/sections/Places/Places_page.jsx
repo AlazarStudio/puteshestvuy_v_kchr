@@ -10,6 +10,7 @@ import FilterBlock from '@/components/FilterBlock/FilterBlock'
 import FilterBlockMobile from '@/components/FilterBlock/FilterBlockMobile'
 import CtaSection from '@/components/CtaSection/CtaSection'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
+import RandomPlaceBlock from '@/components/RandomPlaceBlock/RandomPlaceBlock'
 import PlaceModal from '@/components/PlaceModal/PlaceModal'
 import SuggestPlaceModal from '@/components/SuggestPlaceModal/SuggestPlaceModal'
 import Seo from '@/components/Seo/Seo'
@@ -774,6 +775,8 @@ export default function Places_page() {
                 </FormControl>
               </div>
             </div>
+
+            <RandomPlaceBlock filters={filters} />
 
             <div className={styles.placesShow}>
               {loading ? (
