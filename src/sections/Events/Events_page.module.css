@@ -18,6 +18,30 @@
   color: #0f172a;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.suggestBtn {
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 28px;
+  background: #156A60;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.suggestBtn:hover {
+  opacity: 0.9;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -66,6 +90,10 @@
   text-align: center;
   font-size: 18px;
   color: #64748b;
+}
+
+.empty p {
+  margin: 0 0 16px;
 }
 
 .pagination {

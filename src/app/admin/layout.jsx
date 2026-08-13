@@ -18,7 +18,7 @@ import {
   Lightbulb,
   Images,
 } from 'lucide-react';
-import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI, adminGalleryAPI } from '@/lib/api';
+import { placesAPI, routesAPI, newsAPI, servicesAPI, reviewsAPI, adminUsersAPI, adminBookingsAPI, adminSuggestionsAPI, adminEventSuggestionsAPI, adminGalleryAPI } from '@/lib/api';
 import Seo from '@/components/Seo/Seo';
 import styles from './admin.module.css';
 
@@ -96,7 +96,7 @@ export default function AdminLayout() {
 
     const fetchCounts = async () => {
       try {
-        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes, suggestionsRes, galleryRes] = await Promise.all([
+        const [placesRes, routesRes, newsRes, servicesRes, bookingsRes, reviewsRes, usersRes, suggestionsRes, eventSuggestionsRes, galleryRes] = await Promise.all([
           placesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           routesAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           newsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
@@ -105,6 +105,7 @@ export default function AdminLayout() {
           reviewsAPI.getAll({ page: 1, limit: 1 }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminUsersAPI.getAll({ page: 1, limit: 1, includeSuperadmin: 'true' }).catch(() => ({ data: { pagination: { total: 0 } } })),
           adminSuggestionsAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
+          adminEventSuggestionsAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
           adminGalleryAPI.getPendingCount().catch(() => ({ data: { count: 0 } })),
         ]);
 
@@ -116,7 +117,7 @@ export default function AdminLayout() {
           bookings: bookingsRes.data?.pagination?.total ?? 0,
           reviews: reviewsRes.data?.pagination?.total ?? 0,
           users: usersRes.data?.pagination?.total ?? 0,
-          suggestions: suggestionsRes.data?.count ?? 0,
+          suggestions: (suggestionsRes.data?.count ?? 0) + (eventSuggestionsRes.data?.count ?? 0),
           gallery: galleryRes.data?.count ?? 0,
         });
       } catch (error) {

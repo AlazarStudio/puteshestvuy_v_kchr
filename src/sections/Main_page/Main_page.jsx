@@ -12,6 +12,7 @@ import FirstTimeTabs from '@/components/FirstTimeTabs/FirstTimeTabs'
 import NewsFullBlock from '@/components/NewsFullBlock/NewsFullBlock'
 import ServiceTabBlock from '@/components/ServiceTabBlock/ServiceTabBlock'
 import EventBlock from '@/components/EventBlock/EventBlock'
+import SuggestEventModal from '@/components/SuggestEventModal/SuggestEventModal'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import ParallaxImage from '@/components/ParallaxImage'
 import CtaSection from '@/components/CtaSection/CtaSection'
@@ -85,6 +86,7 @@ export default function Main_page() {
   const [events, setEvents] = useState([])
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
   const [emergencyScrollId, setEmergencyScrollId] = useState(null)
+  const [suggestEventOpen, setSuggestEventOpen] = useState(false)
 
   useEffect(() => {
     const section = location.state?.emergencySection
@@ -348,20 +350,27 @@ export default function Main_page() {
           );
         })()}
 
-        {events.length > 0 && (
-          <>
-            <CenterBlock>
-              <TitleButton title="Афиша событий" buttonLink="/events" />
-            </CenterBlock>
+        <CenterBlock>
+          <TitleButton title="Афиша событий" buttonLink="/events" />
+        </CenterBlock>
 
-            <CenterBlock>
-              <section className={styles.flexBlock}>
-                {events.map((event) => (
-                  <EventBlock key={event.id} event={event} />
-                ))}
-              </section>
-            </CenterBlock>
-          </>
+        {events.length > 0 ? (
+          <CenterBlock>
+            <section className={styles.flexBlock}>
+              {events.map((event) => (
+                <EventBlock key={event.id} event={event} />
+              ))}
+            </section>
+          </CenterBlock>
+        ) : (
+          <CenterBlock>
+            <div className={styles.eventsEmpty}>
+              <p>В ближайшее время событий не запланировано</p>
+              <button type="button" onClick={() => setSuggestEventOpen(true)}>
+                Предложить событие
+              </button>
+            </div>
+          </CenterBlock>
         )}
 
         <section className={styles.servicesBand}>
@@ -417,6 +426,8 @@ export default function Main_page() {
           />
         </div>
       </div>
+
+      <SuggestEventModal isOpen={suggestEventOpen} onClose={() => setSuggestEventOpen(false)} />
     </main>
   )
 }

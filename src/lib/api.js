@@ -316,10 +316,12 @@ export const publicPagesAPI = {
   get: (pageName) => api.get(`/pages/${pageName}`),
 };
 
-// Suggestions API (user — предложить место)
+// Suggestions API (user — предложить место или событие)
 export const suggestionsAPI = {
   create: (data) => api.post('/suggestions/places', data),
   getMy: () => api.get('/suggestions/places/my'),
+  createEvent: (data) => api.post('/suggestions/events', data),
+  getMyEvents: () => api.get('/suggestions/events/my'),
 };
 
 // Suggestions API (admin — управление предложениями)
@@ -331,6 +333,17 @@ export const adminSuggestionsAPI = {
   approve: (id) => api.post(`/admin/suggestions/${id}/approve`),
   confirmApprove: (id) => api.post(`/admin/suggestions/${id}/confirm-approve`),
   delete: (id) => api.delete(`/admin/suggestions/${id}`),
+};
+
+// Suggestions API (admin — предложения событий)
+export const adminEventSuggestionsAPI = {
+  getAll: (params) => api.get('/admin/event-suggestions', { params }),
+  getPendingCount: () => api.get('/admin/event-suggestions/pending-count'),
+  getById: (id) => api.get(`/admin/event-suggestions/${id}`),
+  update: (id, data) => api.put(`/admin/event-suggestions/${id}`, data),
+  approve: (id) => api.post(`/admin/event-suggestions/${id}/approve`),
+  confirmApprove: (id) => api.post(`/admin/event-suggestions/${id}/confirm-approve`),
+  delete: (id) => api.delete(`/admin/event-suggestions/${id}`),
 };
 
 // User media API (загрузка изображений авторизованным пользователем)

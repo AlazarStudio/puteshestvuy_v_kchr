@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import EventBlock from '@/components/EventBlock/EventBlock'
+import SuggestEventModal from '@/components/SuggestEventModal/SuggestEventModal'
 import Seo from '@/components/Seo/Seo'
 import { collectionPage, itemList, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl } from '@/lib/seo/config'
@@ -19,6 +20,7 @@ export default function Events_page() {
   const [items, setItems] = useState([])
   const [pages, setPages] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [suggestEventOpen, setSuggestEventOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -81,7 +83,12 @@ export default function Events_page() {
 
       <CenterBlock>
         <section className={styles.section}>
-          <h1 className={styles.title}>Афиша событий</h1>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>Афиша событий</h1>
+            <button type="button" className={styles.suggestBtn} onClick={() => setSuggestEventOpen(true)}>
+              Предложить событие
+            </button>
+          </div>
 
           <div className={styles.filters}>
             <button
@@ -107,9 +114,14 @@ export default function Events_page() {
             <div className={styles.empty}>Загрузка...</div>
           ) : items.length === 0 ? (
             <div className={styles.empty}>
-              {category
-                ? 'В этой категории пока нет предстоящих событий'
-                : 'Предстоящих событий пока нет'}
+              <p>
+                {category
+                  ? 'В этой категории пока нет предстоящих событий'
+                  : 'Предстоящих событий пока нет'}
+              </p>
+              <button type="button" className={styles.suggestBtn} onClick={() => setSuggestEventOpen(true)}>
+                Предложить событие
+              </button>
             </div>
           ) : (
             <div className={styles.grid}>
@@ -136,6 +148,8 @@ export default function Events_page() {
           )}
         </section>
       </CenterBlock>
+
+      <SuggestEventModal isOpen={suggestEventOpen} onClose={() => setSuggestEventOpen(false)} />
     </main>
   )
 }

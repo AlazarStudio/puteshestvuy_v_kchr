@@ -1,3 +1,33 @@
+.sectionTabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  margin-bottom: 24px;
+}
+
+.sectionTab {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sectionTab:not(.sectionTabActive):hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.sectionTabActive {
+  background: #156A60;
+  color: #fff;
+}
+
 .filterBtn {
   padding: 6px 14px;
   border: 1px solid #e2e8f0;
