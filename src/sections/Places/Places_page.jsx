@@ -311,6 +311,13 @@ export default function Places_page() {
     })
   }, [searchParams, filterOptions])
 
+  // Запрос, которым реально сужается выдача: блок случайного места обязан
+  // спрашивать ровно по нему, иначе показанное им число разойдётся со списком
+  const effectiveSearchQuery = useMemo(
+    () => searchFallback || searchQuery.trim(),
+    [searchFallback, searchQuery]
+  )
+
   // --- fetchPlaces ---
   const fetchPlaces = useCallback(async (page = 1) => {
     const startTime = Date.now()
@@ -318,8 +325,6 @@ export default function Places_page() {
 
     try {
       setLoading(true)
-
-      const effectiveSearchQuery = searchFallback || searchQuery.trim()
 
       const params = {
         page,
@@ -375,7 +380,7 @@ export default function Places_page() {
     } finally {
       setLoading(false)
     }
-  }, [filters, searchQuery, searchFallback, sortBy, filterOptions, allPlacesForSearch])
+  }, [filters, effectiveSearchQuery, sortBy, filterOptions, allPlacesForSearch])
 
   // --- reset page=1 when criteria changes (но не на первом запуске) ---
   useEffect(() => {
@@ -776,7 +781,7 @@ export default function Places_page() {
               </div>
             </div>
 
-            <RandomPlaceBlock filters={filters} />
+            <RandomPlaceBlock filters={filters} search={effectiveSearchQuery} total={total} />
 
             <div className={styles.placesShow}>
               {loading ? (
