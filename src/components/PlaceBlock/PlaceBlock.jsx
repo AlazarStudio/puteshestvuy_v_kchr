@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import VisitedButton from '@/components/VisitedButton/VisitedButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
 import ShareButton from '@/components/ShareButton/ShareButton'
 import styles from './PlaceBlock.module.css'
@@ -59,6 +60,7 @@ export default function PlaceBlock({ img, place, slug, title, desc, rating, feed
         <div className={styles.favoriteWrap} onClick={(e) => e.stopPropagation()}>
           <RouteConstructorButton placeId={placeId} />
           <FavoriteButton entityType="place" entityId={placeId} />
+          <VisitedButton entityType="place" entityId={placeId} />
           {slug && <ShareButton path={`/places/${slug}`} title={title} />}
         </div>
       )}

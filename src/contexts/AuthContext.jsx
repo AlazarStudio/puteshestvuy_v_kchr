@@ -21,6 +21,11 @@ export function AuthProvider({ children }) {
     service: user?.favoriteServiceIds || [],
   }
 
+  const visited = {
+    route: user?.visitedRouteIds || [],
+    place: user?.visitedPlaceIds || [],
+  }
+
   const refreshProfile = useCallback(async () => {
     const token = typeof window !== 'undefined' 
       ? (localStorage.getItem(USER_TOKEN_KEY) || localStorage.getItem('adminToken'))
@@ -134,6 +139,35 @@ export function AuthProvider({ children }) {
     [user, isFavorite]
   )
 
+  const isVisited = useCallback(
+    (entityType, entityId) => {
+      const list = visited[entityType]
+      return Array.isArray(list) && list.includes(entityId)
+    },
+    [visited.route, visited.place]
+  )
+
+  const toggleVisited = useCallback(
+    async (entityType, entityId) => {
+      if (!user) return null
+      const wasVisited = isVisited(entityType, entityId)
+      try {
+        if (wasVisited) {
+          const { data } = await userAPI.removeVisited(entityType, entityId)
+          setUser(data)
+          return false
+        }
+        const { data } = await userAPI.addVisited(entityType, entityId)
+        setUser(data)
+        return true
+      } catch (err) {
+        console.error('[Visited] toggle failed:', err?.response?.data || err)
+        return null
+      }
+    },
+    [user, isVisited]
+  )
+
   const value = {
     user,
     loading,
@@ -144,6 +178,9 @@ export function AuthProvider({ children }) {
     favorites,
     isFavorite,
     toggleFavorite,
+    visited,
+    isVisited,
+    toggleVisited,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

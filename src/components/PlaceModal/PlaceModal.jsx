@@ -13,6 +13,7 @@ import YandexMapPlace from '../YandexMapPlace'
 import RichTextContent from '../RichTextContent'
 import RouteConstructorButton from '../RouteConstructorButton/RouteConstructorButton'
 import FavoriteButton from '../FavoriteButton/FavoriteButton'
+import VisitedButton from '../VisitedButton/VisitedButton'
 import ShareButton from '../ShareButton/ShareButton'
 import ParallaxImage from '../ParallaxImage'
 import VkPlaylistWidget, { VK_PLAYLIST_PREFIX } from '../VkPlaylistWidget'
@@ -196,6 +197,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                       <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
                         <RouteConstructorButton placeId={place.id} place={place} />
                         <FavoriteButton entityType="place" entityId={place.id} />
+                        <VisitedButton entityType="place" entityId={place.id} />
                         {place.slug && <ShareButton path={`/places/${place.slug}`} title={place.title} />}
                       </div>
                     </div>

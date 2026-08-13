@@ -7,19 +7,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 import { userAPI, userRoutesAPI } from '@/lib/api'
-import { publicRoutesAPI, publicPlacesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
+import { publicPlacesAPI, getImageUrl } from '@/lib/api'
 import { haversineKm } from '@/utils/geo'
 import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
-import RouteBlock from '@/components/RouteBlock/RouteBlock'
-import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
-import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
-import ServiceCardWithParallax from '@/components/ServiceCardWithParallax/ServiceCardWithParallax'
 import { ImageCropModal, ConfirmModal } from '@/app/admin/components'
 import RichTextEditor from '@/components/RichTextEditor/RichTextEditor'
 import Seo from '@/components/Seo/Seo'
 import MyPhotosTab from './MyPhotosTab'
+import PlacesTab from './PlacesTab'
+import RoutesTab from './RoutesTab'
+import ServicesTab from './ServicesTab'
+import { useProfileLists } from './useProfileLists'
 import styles from './profile.module.css'
-import serviceStyles from '@/sections/Services/Services_page.module.css'
 
 const TABS = [
   { id: 'routes', label: 'Маршруты', icon: 'route', countKey: 'routes' },
@@ -142,10 +141,14 @@ export default function ProfilePage() {
   })
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [favoriteRoutes, setFavoriteRoutes] = useState([])
-  const [favoritePlaces, setFavoritePlaces] = useState([])
-  const [favoriteServices, setFavoriteServices] = useState([])
-  const [favLoading, setFavLoading] = useState(true)
+  const {
+    wantedRoutes,
+    wantedPlaces,
+    services: favoriteServices,
+    visitedRoutes,
+    visitedPlaces,
+    loading: favLoading,
+  } = useProfileLists(user)
   const [userRoutes, setUserRoutes] = useState([])
   const [userRoutesLoading, setUserRoutesLoading] = useState(true)
   const [userRoutesError, setUserRoutesError] = useState('')
@@ -181,33 +184,6 @@ export default function ProfilePage() {
       lastName: user.userInformation?.lastName ?? '',
     })
   }, [user])
-
-  useEffect(() => {
-    if (!user) {
-      setFavLoading(false)
-      return
-    }
-    const load = async () => {
-      setFavLoading(true)
-      try {
-        const [routes, places, services] = await Promise.all([
-          Promise.all((user.favoriteRouteIds || []).map((id) => publicRoutesAPI.getByIdOrSlug(id).then((r) => r.data).catch(() => null))),
-          Promise.all((user.favoritePlaceIds || []).map((id) => publicPlacesAPI.getByIdOrSlug(id).then((r) => r.data).catch(() => null))),
-          Promise.all((user.favoriteServiceIds || []).map((id) => publicServicesAPI.getByIdOrSlug(id).then((r) => r.data).catch(() => null))),
-        ])
-        setFavoriteRoutes(routes.filter(Boolean))
-        setFavoritePlaces(places.filter(Boolean))
-        setFavoriteServices(services.filter(Boolean))
-      } catch {
-        setFavoriteRoutes([])
-        setFavoritePlaces([])
-        setFavoriteServices([])
-      } finally {
-        setFavLoading(false)
-      }
-    }
-    load()
-  }, [user?.id, user?.favoriteRouteIds, user?.favoritePlaceIds, user?.favoriteServiceIds])
 
   // Загрузка пользовательских маршрутов и доступных мест для конструктора
   useEffect(() => {
@@ -878,9 +854,9 @@ export default function ProfilePage() {
               {TABS.map((tab) => {
                 let count = null
                 if (tab.countKey === 'routes') {
-                  count = favoriteRoutes.length
+                  count = wantedRoutes.length + visitedRoutes.length
                 } else if (tab.countKey === 'places') {
-                  count = favoritePlaces.length
+                  count = wantedPlaces.length + visitedPlaces.length
                 } else if (tab.countKey === 'services') {
                   count = favoriteServices.length
                 } else if (tab.countKey === 'constructor') {
@@ -1315,24 +1291,7 @@ export default function ProfilePage() {
           )}
 
           {activeTab === 'routes' && (
-            <div className={styles.panel}>
-              <h2 className={styles.panelTitle}>Избранные маршруты</h2>
-              {favLoading ? (
-                <p className={styles.favLoading}>Загрузка...</p>
-              ) : favoriteRoutes.length === 0 ? (
-                <p className={styles.empty}>
-                  Нет избранных маршрутов. <Link to="/routes">Добавить маршруты</Link>
-                </p>
-              ) : (
-                <div className={styles.routesList}>
-                  {favoriteRoutes.map((route) => (
-                    <div key={route.id} className={styles.routeCardWrap}>
-                      <RouteBlock route={route} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <RoutesTab wantedRoutes={wantedRoutes} visitedRoutes={visitedRoutes} loading={favLoading} />
           )}
 
           {activeTab === 'routes-constructor' && (
@@ -1618,57 +1577,11 @@ export default function ProfilePage() {
           )}
 
           {activeTab === 'places' && (
-            <div className={styles.panel}>
-              <h2 className={styles.panelTitle}>Избранные интересные места</h2>
-              {favLoading ? (
-                <p className={styles.favLoading}>Загрузка...</p>
-              ) : favoritePlaces.length === 0 ? (
-                <p className={styles.empty}>Нет избранных мест. <Link to="/places">Добавить места</Link></p>
-              ) : (
-                <div className={styles.placesGrid}>
-                  {favoritePlaces.map((place) => (
-                    <div key={place.id} className={styles.placeCardWrap}>
-                      <PlaceBlock
-                        placeId={place.id}
-                        img={getImageUrl(place.image || place.images?.[0]) || '/placeholder.jpg'}
-                        place={place.location || ''}
-                        slug={place.slug}
-                        title={place.title}
-                        desc={place.shortDescription || ''}
-                        rating={place.rating}
-                        feedback={`${place.reviewsCount || 0} отзывов`}
-                        reviewsCount={place.reviewsCount || 0}
-                        onClick={() => navigate(`/places/${place.slug}`)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <PlacesTab wantedPlaces={wantedPlaces} visitedPlaces={visitedPlaces} loading={favLoading} />
           )}
 
           {activeTab === 'services' && (
-            <div className={styles.panel}>
-              <h2 className={styles.panelTitle}>Избранные сервис и услуги</h2>
-              {favLoading ? (
-                <p className={styles.favLoading}>Загрузка...</p>
-              ) : favoriteServices.length === 0 ? (
-                <p className={styles.empty}>Нет избранных услуг. <Link to="/services">Добавить услуги</Link></p>
-              ) : (
-                <div className={serviceStyles.servicesGrid}>
-                  {favoriteServices.map((service) => (
-                    <div key={service.id} className={styles.serviceCardWrap}>
-                      <ServiceCardWithParallax
-                        service={service}
-                        serviceUrl={`/services/${service.slug || service.id}`}
-                        isArticle={false}
-                        styles={serviceStyles}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ServicesTab services={favoriteServices} loading={favLoading} />
           )}
 
           {activeTab === 'photos' && <MyPhotosTab />}

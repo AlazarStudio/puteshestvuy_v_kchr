@@ -86,6 +86,10 @@ export const userAPI = {
     api.post(`/users/favorites/${entityType}/${entityId}`),
   removeFavorite: (entityType, entityId) =>
     api.delete(`/users/favorites/${entityType}/${entityId}`),
+  addVisited: (entityType, entityId) =>
+    api.post(`/users/visited/${entityType}/${entityId}`),
+  removeVisited: (entityType, entityId) =>
+    api.delete(`/users/visited/${entityType}/${entityId}`),
 };
 
 export { USER_TOKEN_KEY };

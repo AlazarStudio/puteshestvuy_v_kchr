@@ -2,6 +2,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
+import VisitedButton from '@/components/VisitedButton/VisitedButton'
 import ShareButton from '@/components/ShareButton/ShareButton'
 import styles from './RouteBlock.module.css'
 import { Swiper, SwiperSlide } from 'swiper/react'
@@ -77,6 +78,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
         {route.id && !hideFavoriteButton && (
           <div className={styles.favoriteWrap} data-no-navigate>
             <FavoriteButton entityType="route" entityId={route.id} />
+            <VisitedButton entityType="route" entityId={route.id} />
             <ShareButton path={`/routes/${slug}`} title={title} />
           </div>
         )}
