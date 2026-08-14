@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'r
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical, CheckCircle, XCircle } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, adminSuggestionsAPI, getImageUrl } from '@/lib/api';
+import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import { VK_PLAYLIST_PREFIX } from '@/components/VkPlaylistWidget';
 import RichTextEditor from '@/components/RichTextEditor';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
 import ImageCropModal from '../../components/ImageCropModal';
+import RatingField from '../../components/RatingField/RatingField';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -60,6 +62,8 @@ function getFormSnapshot(data) {
     video: data.video ?? '',
     rating: Number(data.rating) || 0,
     reviewsCount: Number(data.reviewsCount) || 0,
+    manualRating: normalizeManualRating(data.manualRating),
+    ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
     isActive: !!data.isActive,
     image: data.image ?? '',
     sliderVideo: data.sliderVideo ?? '',
@@ -97,6 +101,8 @@ export default function PlaceEditPage() {
     video: '',
     rating: 0,
     reviewsCount: 0,
+    manualRating: '',
+    ratingSource: 'reviews',
     isActive: true,
     image: '',
     sliderVideo: '',
@@ -108,6 +114,8 @@ export default function PlaceEditPage() {
     nearbyPlaceIds: [],
   });
 
+  /** Одобренные отзывы записи — только для строки состояния под переключателем рейтинга */
+  const [approvedReviews, setApprovedReviews] = useState([]);
   const [allPlaces, setAllPlaces] = useState([]);
   const [filterOptions, setFilterOptions] = useState({
     directions: [],
@@ -158,6 +166,8 @@ export default function PlaceEditPage() {
     ...pendingGallery.map((p) => ({ type: 'pending', file: p.file, preview: p.preview })),
   ], [formData.images, pendingGallery]);
 
+  const reviewsRating = ratingFromReviews(approvedReviews);
+
   const isDirty = useMemo(() => {
     if (isNew) return hasPendingImages;
     if (!savedFormDataRef.current) return hasPendingImages;
@@ -193,6 +203,7 @@ export default function PlaceEditPage() {
 
   useEffect(() => {
     locationTouchedRef.current = false;
+    setApprovedReviews([]);
     if (!isNew) {
       fetchPlace();
     }
@@ -324,9 +335,12 @@ export default function PlaceEditPage() {
       const next = {
         ...data,
         nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? data.nearbyPlaceIds : [],
+        manualRating: data.manualRating ?? '',
+        ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
       };
       setFormData((prev) => ({ ...prev, ...next }));
       savedFormDataRef.current = next;
+      setApprovedReviews(Array.isArray(data.reviews) ? data.reviews : []);
     } catch (error) {
       console.error('Ошибка загрузки места:', error);
       setError('Место не найдено');
@@ -617,7 +631,12 @@ export default function PlaceEditPage() {
 
     try {
       const normalizedAudioGuide = normalizeAudioGuide(formData.audioGuide);
-      let dataToSave = { ...formData, audioGuide: normalizedAudioGuide };
+      let dataToSave = {
+        ...formData,
+        audioGuide: normalizedAudioGuide,
+        ratingSource: formData.ratingSource === 'manual' ? 'manual' : 'reviews',
+        manualRating: formData.manualRating === '' || formData.manualRating == null ? null : Number(formData.manualRating),
+      };
       if (normalizedAudioGuide !== formData.audioGuide) {
         setFormData((prev) => ({ ...prev, audioGuide: normalizedAudioGuide }));
       }
@@ -1090,6 +1109,14 @@ export default function PlaceEditPage() {
             </div>
           )}
         </div>
+
+        <RatingField
+          source={formData.ratingSource}
+          manualRating={formData.manualRating}
+          reviewsRating={reviewsRating}
+          reviewsCount={approvedReviews.length}
+          onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+        />
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Превью (обложка места)</label>

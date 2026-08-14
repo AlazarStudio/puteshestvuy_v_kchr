@@ -17,6 +17,7 @@ import ShareButton from '@/components/ShareButton/ShareButton'
 import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import { exportRoutePDF } from '@/utils/exportRoutePDF'
+import { formatRating, formatReviews, hasRating } from '@/utils/rating'
 import RichTextContent from '@/components/RichTextContent'
 import Seo from '@/components/Seo/Seo'
 import { touristTrip, itemList, breadcrumbList } from '@/lib/seo/schema'
@@ -1034,8 +1035,8 @@ export default function RouteDetail({ routeSlug }) {
                       const mainImage = place.images?.[0] ?? place.image
                       const imgSrc = mainImage ? getImageUrl(mainImage) : '/placeImg1.png'
                       const n = place.reviewsCount ?? 0
-                      const feedbackStr = n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`
-                      const ratingStr = place.rating != null && place.rating !== '' ? String(place.rating) : '—'
+                      const feedbackStr = formatReviews(n)
+                      const ratingStr = formatRating(place.rating)
                       return (
                         <Link key={place.id} to={`/places/${place.slug || place.id}`}>
                           <PlaceBlock
@@ -1094,18 +1095,21 @@ export default function RouteDetail({ routeSlug }) {
                       const imgSrc = guide.images?.[0] ? getImageUrl(guide.images[0]) : '/no-avatar.png'
                       const n = guide.reviewsCount ?? 0
                       const hasReviews = n > 0
-                      const ratingStr = hasReviews && guide.rating != null ? String(guide.rating) : null
-                      const reviewsStr = n === 1 ? '1 отзыв' : n >= 2 && n <= 4 ? `${n} отзыва` : `${n} отзывов`
+                      const showRating = hasRating(guide.rating)
                       return (
                         <SwiperSlide key={guide.id}>
                           <Link to={guideHref} className={styles.guideCard}>
                             <div className={styles.guideCard_img}><img src={imgSrc} alt="" /></div>
                             <div className={styles.guideCard_info}>
                               <div className={styles.guideCard_category}>Гид</div>
-                              {hasReviews && (
+                              {(showRating || hasReviews) && (
                                 <div className={styles.guideCard_rating}>
-                                  <div className={styles.guideCard_stars}><img src="/star.png" alt="" />{ratingStr}</div>
-                                  <div className={styles.guideCard_reviews}>{reviewsStr}</div>
+                                  {showRating && (
+                                    <div className={styles.guideCard_stars}><img src="/star.png" alt="" />{formatRating(guide.rating)}</div>
+                                  )}
+                                  {hasReviews && (
+                                    <div className={styles.guideCard_reviews}>{formatReviews(n)}</div>
+                                  )}
                                 </div>
                               )}
                               <div className={styles.guideCard_name}>{guide.title || 'Гид'}</div>

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import { getImageUrl } from '@/lib/api'
+import { formatRating, formatReviews, hasRating } from '@/utils/rating'
 
 export default function ServiceCardWithParallax({ 
   service, 
@@ -47,15 +48,8 @@ export default function ServiceCardWithParallax({
   }
 
   const hasReviews = !isArticle && (service.reviewsCount ?? 0) > 0
-  const displayRating = hasReviews && service.rating != null && service.rating !== '' 
-    ? (Number(service.rating) % 1 === 0 ? String(service.rating) : Number(service.rating).toFixed(1))
-    : null
-
-  const formatReviews = (n) => {
-    if (n === 1) return '1 отзыв'
-    if (n >= 2 && n <= 4) return `${n} отзыва`
-    return `${n} отзывов`
-  }
+  const showRating = !isArticle && hasRating(service.rating)
+  const displayRating = showRating ? formatRating(service.rating) : null
 
   return (
     <Link
@@ -89,15 +83,19 @@ export default function ServiceCardWithParallax({
       )}
       <div className={styles.serviceCardInfo}>
         <div className={styles.serviceCardCategory}>{service.category || 'Услуга'}</div>
-        {hasReviews && (
+        {(showRating || hasReviews) && (
           <div className={styles.serviceCardRating}>
-            <div className={styles.serviceCardStars}>
-              <img src="/star.png" alt="" />
-              {displayRating}
-            </div>
-            <div className={styles.serviceCardFeedback}>
-              {formatReviews(service.reviewsCount ?? 0)}
-            </div>
+            {showRating && (
+              <div className={styles.serviceCardStars}>
+                <img src="/star.png" alt="" />
+                {displayRating}
+              </div>
+            )}
+            {hasReviews && (
+              <div className={styles.serviceCardFeedback}>
+                {formatReviews(service.reviewsCount ?? 0)}
+              </div>
+            )}
           </div>
         )}
         <div className={styles.serviceCardName}>{service.title}</div>

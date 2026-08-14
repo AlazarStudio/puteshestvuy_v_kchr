@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImageUrl } from '@/lib/api'
 import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
+import { formatReviews } from '@/utils/rating'
 import styles from './profile.module.css'
 
 export default function PlacesTab({ wantedPlaces, visitedPlaces, loading }) {
@@ -53,7 +54,7 @@ export default function PlacesTab({ wantedPlaces, visitedPlaces, loading }) {
                 title={place.title}
                 desc={place.shortDescription || ''}
                 rating={place.rating}
-                feedback={`${place.reviewsCount || 0} отзывов`}
+                feedback={formatReviews(place.reviewsCount)}
                 reviewsCount={place.reviewsCount || 0}
                 onClick={() => navigate(`/places/${place.slug}`)}
               />

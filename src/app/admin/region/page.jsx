@@ -5,6 +5,7 @@ import { Upload, Plus, X, Pencil } from 'lucide-react';
 import { regionAPI, mediaAPI, placesAPI, getImageUrl } from '@/lib/api';
 import ImageCropModal from '../components/ImageCropModal';
 import { stripHtml } from '@/lib/utils';
+import { formatReviews } from '@/utils/rating';
 import RichTextEditor from '@/components/RichTextEditor';
 import { AdminHeaderRightContext } from '../layout';
 import styles from '../admin.module.css';
@@ -172,7 +173,7 @@ export default function AdminRegionPage() {
     link: `/places/${p.slug || p.id}`,
     img: p.image || p.images?.[0] || '',
     rating: p.rating != null ? String(p.rating) : '',
-    feedback: p.reviewsCount === 1 ? '1 отзыв' : p.reviewsCount >= 2 && p.reviewsCount <= 4 ? `${p.reviewsCount} отзыва` : `${p.reviewsCount || 0} отзывов`,
+    feedback: formatReviews(p.reviewsCount),
   });
 
   const addPlaceToItems = (place) => {

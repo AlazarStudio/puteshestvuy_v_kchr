@@ -8,6 +8,7 @@ import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
+import { formatRating, hasRating } from '@/utils/rating'
 
 const SLIDER_LIMIT = 6
 const TIME_RUNNING = 500
@@ -89,7 +90,6 @@ function makeIntroSlide(bgImage = '/mountainBG.png') {
     title: 'Карачаево-Черкесская Республика',
     description: 'Удивительные места, захватывающие маршруты и яркие точки притяжения региона.',
     rating: null,
-    reviewsCount: 0,
   }
 }
 
@@ -97,11 +97,7 @@ function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
   const mainImage = place.images?.[0] ?? place.image
   const sliderVideo = place.sliderVideo || null
-  const reviewsCount = place.reviewsCount ?? 0
-  const hasReviews = reviewsCount > 0
-  const rating = hasReviews && place.rating != null && place.rating !== ''
-    ? (Number(place.rating) % 1 === 0 ? String(place.rating) : Number(place.rating).toFixed(1))
-    : null
+  const rating = hasRating(place.rating) ? formatRating(place.rating) : null
   return {
     id: place.id,
     slug: place.slug,
@@ -110,7 +106,6 @@ function placeToSlide(place) {
     place: place.location || '',
     title: place.title || '',
     rating,
-    reviewsCount,
     description,
   }
 }
@@ -163,8 +158,6 @@ export default function SliderFullScreen({
             const placeId = savedPlace.placeId || savedPlace.id
             const fullPlace = placesMap.get(placeId)
             if (fullPlace) return placeToSlide(fullPlace)
-            const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
-            const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
             return {
               id: placeId,
               slug: savedPlace.slug || placeId,
@@ -172,8 +165,7 @@ export default function SliderFullScreen({
               video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
               place: savedPlace.location || '',
               title: savedPlace.title || '',
-              rating: hasReviews && ratingValue != null ? (ratingValue % 1 === 0 ? String(ratingValue) : ratingValue.toFixed(1)) : null,
-              reviewsCount: savedPlace.reviewsCount ?? 0,
+              rating: hasRating(savedPlace.rating) ? formatRating(savedPlace.rating) : null,
               description: savedPlace.shortDescription || '',
             }
           })
@@ -237,8 +229,6 @@ export default function SliderFullScreen({
                       return placeToSlide(fullPlace)
                     }
 
-                    const ratingValue = savedPlace.rating != null && savedPlace.rating !== '' ? Number(savedPlace.rating) : null
-                    const hasReviews = (savedPlace.reviewsCount ?? 0) > 0
                     return {
                       id: placeId,
                       slug: savedPlace.slug || placeId,
@@ -246,9 +236,8 @@ export default function SliderFullScreen({
                       video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
                       place: savedPlace.location || '',
                       title: savedPlace.title || '',
-                      rating: hasReviews && ratingValue != null ? (ratingValue % 1 === 0 ? String(ratingValue) : ratingValue.toFixed(1)) : null,
-                      reviewsCount: savedPlace.reviewsCount ?? 0,
-                      description: savedPlace.shortDescription || '',
+                      rating: hasRating(savedPlace.rating) ? formatRating(savedPlace.rating) : null,
+                              description: savedPlace.shortDescription || '',
                     }
                   })
                   .filter(Boolean)

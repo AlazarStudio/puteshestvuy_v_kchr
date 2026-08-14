@@ -12,6 +12,7 @@ import { Navigation } from 'swiper/modules'
 import { Link } from 'react-router-dom'
 import { getImageUrl } from '@/lib/api'
 import { generateSlug } from '@/utils/transliterate'
+import { formatRating, hasRating } from '@/utils/rating'
 import { useRoutePlacesVisible } from '@/lib/useRoutePlacesVisible'
 
 export default function RouteBlock({ route: routeProp, title: titleProp, hideFavoriteButton }) {
@@ -33,6 +34,7 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
   const duration = route.duration ?? ''
   const distance = route.distance != null && route.distance !== '' ? `${route.distance} км` : ''
   const difficulty = route.difficulty != null ? String(route.difficulty) : ''
+  const routeRating = hasRating(route.rating) ? formatRating(route.rating) : null
   const places = Array.isArray(route.places) ? route.places : []
   const showPlaces = placesVisible === true && places.length > 0
 
@@ -103,6 +105,12 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
               <div className={styles.tag}>
                 <img src="/routeTagLength.png" alt="" />
                 <div className={styles.typeText}>{distance}</div>
+              </div>
+            )}
+            {routeRating && (
+              <div className={styles.tag} title="Рейтинг">
+                <img src="/star.png" alt="" aria-hidden />
+                <div className={styles.typeText}>{routeRating}</div>
               </div>
             )}
           </div>

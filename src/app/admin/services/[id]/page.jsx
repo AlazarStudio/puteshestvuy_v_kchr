@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'r
 import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import { CATEGORY_TO_TEMPLATE_KEY } from '@/sections/Services/ServiceDetail/serviceTypeTemplates';
@@ -12,6 +13,7 @@ import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
 import ImageCropModal from '../../components/ImageCropModal';
+import RatingField from '../../components/RatingField/RatingField';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
 
@@ -98,6 +100,8 @@ function getFormSnapshot(data) {
     isActive: !!data.isActive,
     isVerified: !!data.isVerified,
     cardPayment: !!data.cardPayment,
+    manualRating: normalizeManualRating(data.manualRating),
+    ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
     data: JSON.stringify(dataForSnapshot),
     images: imageKeys.join(','),
   };
@@ -120,8 +124,12 @@ export default function ServiceEditPage() {
     isActive: true,
     isVerified: false,
     cardPayment: false,
+    manualRating: '',
+    ratingSource: 'reviews',
     data: {},
   });
+  /** Одобренные отзывы записи — только для строки состояния под переключателем рейтинга */
+  const [approvedReviews, setApprovedReviews] = useState([]);
   const [mapVisible, setMapVisible] = useState(false);
   const [mapSearchMode, setMapSearchMode] = useState('byAddress'); // 'byAddress' | 'byCoordinates'
   const [determineLocationTrigger, setDetermineLocationTrigger] = useState(0);
@@ -146,6 +154,8 @@ export default function ServiceEditPage() {
   const [contactIconPickerIndex, setContactIconPickerIndex] = useState(null);
   const [contactIconSearch, setContactIconSearch] = useState('');
   const [contactIconGroup, setContactIconGroup] = useState('all');
+
+  const reviewsRating = ratingFromReviews(approvedReviews);
 
   const currentSnapshot = useMemo(() => JSON.stringify(getFormSnapshot(formData)), [formData]);
   const isDirty = useMemo(() => {
@@ -182,6 +192,7 @@ export default function ServiceEditPage() {
   }, [isDirty, navigateToList]);
 
   useEffect(() => {
+    setApprovedReviews([]);
     if (!isNew) fetchService();
   }, [params.id, isNew]);
 
@@ -276,6 +287,8 @@ export default function ServiceEditPage() {
         isActive: data.isActive !== false,
         isVerified: data.isVerified === true,
         cardPayment: data.cardPayment === true,
+        manualRating: data.manualRating ?? '',
+        ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
         data: {
           ...rawData,
           certificatesInData,
@@ -290,6 +303,7 @@ export default function ServiceEditPage() {
       };
       setFormData(next);
       setLastSavedSnapshot(JSON.stringify(getFormSnapshot(next)));
+      setApprovedReviews(Array.isArray(data.reviews) ? data.reviews : []);
     } catch (err) {
       console.error('Ошибка загрузки услуги:', err);
       setError('Услуга не найдена');
@@ -635,6 +649,8 @@ export default function ServiceEditPage() {
         isActive: formData.isActive,
         isVerified: formData.category === 'Гид' ? formData.isVerified : false,
         cardPayment: formData.category === 'Гостиница' ? formData.cardPayment : false,
+        ratingSource: formData.ratingSource === 'manual' ? 'manual' : 'reviews',
+        manualRating: formData.manualRating === '' || formData.manualRating == null ? null : Number(formData.manualRating),
         data: dataToSave,
       };
 
@@ -1574,6 +1590,16 @@ export default function ServiceEditPage() {
               placeholder="Название услуги или имя специалиста"
             />
           </div>
+        )}
+
+        {formData.category && (
+          <RatingField
+            source={formData.ratingSource}
+            manualRating={formData.manualRating}
+            reviewsRating={reviewsRating}
+            reviewsCount={approvedReviews.length}
+            onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+          />
         )}
 
         {formData.category && (

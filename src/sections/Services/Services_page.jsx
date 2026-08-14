@@ -338,14 +338,6 @@ export default function Services_page() {
     return [...serviceSelected, ...emergencySelected]
   }, [filters.service, filters.emergency])
 
-  const applyHotelCardPaymentSort = useCallback((items) =>
-    [...items].sort((a, b) => {
-      const aIsHotel = a.category === 'Гостиница'
-      const bIsHotel = b.category === 'Гостиница'
-      if (aIsHotel && bIsHotel) return (b.cardPayment ? 1 : 0) - (a.cardPayment ? 1 : 0)
-      return 0
-    }), [])
-
   const fetchData = useCallback(async (page = 1) => {
     const startTime = Date.now()
     const MIN_LOADING_TIME = 500
@@ -365,14 +357,13 @@ export default function Services_page() {
         ...(categories.length > 0 && { category: categories }),
         ...(cardPaymentFilter && { cardPayment: true }),
         ...(locations.length > 0 && { locations }),
-        ...(sortBy && sortBy !== 'rating' && sortBy !== 'reviews' && { sortBy }),
+        ...(sortBy && { sortBy }),
       })
 
-      let newItems = data.items || []
-      if (sortBy === 'rating') newItems = [...newItems].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      else if (sortBy === 'reviews') newItems = [...newItems].sort((a, b) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0))
-      else if (sortBy === 'popularity') newItems = [...newItems].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-      newItems = applyHotelCardPaymentSort(newItems)
+      // Сортировку целиком считает сервер, включая приоритет оплаты картой у гостиниц:
+      // на клиенте она видела бы только текущую страницу и упорядочивала двенадцать
+      // карточек вместо всего каталога
+      const newItems = data.items || []
 
       const totalItems = data.pagination?.total ?? 0
       const pages = data.pagination?.pages ?? Math.max(1, Math.ceil((totalItems || 0) / ITEMS_PER_PAGE))
@@ -396,7 +387,7 @@ export default function Services_page() {
     } finally {
       setLoading(false)
     }
-  }, [filters, buildCategoryParams, searchQuery, searchFallback, sortBy, applyHotelCardPaymentSort])
+  }, [filters, buildCategoryParams, searchQuery, searchFallback, sortBy])
 
   // При изменении критериев → page=1 (но НЕ на первом запуске)
   useEffect(() => {

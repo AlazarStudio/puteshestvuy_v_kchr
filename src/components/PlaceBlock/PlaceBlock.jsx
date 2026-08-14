@@ -7,17 +7,12 @@ import VisitedButton from '@/components/VisitedButton/VisitedButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
 import ShareButton from '@/components/ShareButton/ShareButton'
 import styles from './PlaceBlock.module.css'
-
-function formatRating(value) {
-  if (value == null || value === '' || value === '—') return '—'
-  const num = Number(value)
-  if (Number.isNaN(num)) return '—'
-  return num % 1 === 0 ? String(num) : num.toFixed(1)
-}
+import { formatRating, hasRating } from '@/utils/rating'
 
 export default function PlaceBlock({ img, place, slug, title, desc, rating, feedback, reviewsCount = 0, width = '330px', onClick, placeId, maxOffset = 5, scale = 1.03 }) {
   const hasReviews = (reviewsCount ?? 0) > 0
-  const displayRating = hasReviews ? formatRating(rating) : null
+  const showRating = hasRating(rating)
+  const displayRating = showRating ? formatRating(rating) : null
 
   const cardRef = useRef(null)
   const x = useMotionValue(0)
@@ -90,19 +85,18 @@ export default function PlaceBlock({ img, place, slug, title, desc, rating, feed
       </div>
       <div className={styles.info}>
         <div className={styles.ratingFeedback}>
-          {hasReviews ? (
-            <>
-              <div className={styles.rating}>
-                <img src="/star.png" alt="" />
-                {displayRating}
-              </div>
-              <div className={styles.feedback}>{feedback}</div>
-            </>
+          {showRating ? (
+            <div className={styles.rating}>
+              <img src="/star.png" alt="" />
+              {displayRating}
+            </div>
           ) : (
-            <>
-              <div className={styles.rating} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
-              <div className={styles.feedback} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
-            </>
+            <div className={styles.rating} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
+          )}
+          {hasReviews ? (
+            <div className={styles.feedback}>{feedback}</div>
+          ) : (
+            <div className={styles.feedback} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</div>
           )}
         </div>
         <div className={styles.text}>

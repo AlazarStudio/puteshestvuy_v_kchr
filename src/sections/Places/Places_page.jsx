@@ -19,6 +19,7 @@ import { absoluteUrl, truncate } from '@/lib/seo/config'
 import { publicPlacesAPI, publicPagesAPI, getImageUrl } from '@/lib/api'
 import { stripHtml } from '@/lib/utils'
 import { searchInObject, searchWithFallback } from '@/lib/searchUtils'
+import { formatReviews } from '@/utils/rating'
 
 const ITEMS_PER_PAGE = 15
 
@@ -795,13 +796,7 @@ export default function Places_page() {
                       key={place.id}
                       placeId={place.id}
                       rating={place.rating != null ? String(place.rating) : '—'}
-                      feedback={
-                        place.reviewsCount === 1
-                          ? '1 отзыв'
-                          : place.reviewsCount >= 2 && place.reviewsCount <= 4
-                            ? `${place.reviewsCount} отзыва`
-                            : `${place.reviewsCount || 0} отзывов`
-                      }
+                      feedback={formatReviews(place.reviewsCount)}
                       reviewsCount={place.reviewsCount ?? 0}
                       place={place.location || '—'}
                       slug={place.slug}

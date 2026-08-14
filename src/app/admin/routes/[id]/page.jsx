@@ -7,8 +7,10 @@ import { routesAPI, placesAPI, servicesAPI, mediaAPI, routeFiltersAPI, getImageU
 import RichTextEditor from '@/components/RichTextEditor';
 import YandexMapRoute from '@/components/YandexMapRoute';
 import { parseYandexRoute } from '@/lib/yandexRoute';
+import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
 import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
+import RatingField from '../../components/RatingField/RatingField';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
@@ -249,6 +251,8 @@ function getFormSnapshot(data) {
       : parseWhatToBring(data.whatToBring ?? ''),
     importantInfo: data.importantInfo ?? '',
     mapUrl: data.mapUrl ?? '',
+    manualRating: normalizeManualRating(data.manualRating),
+    ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
     isActive: !!data.isActive,
     images: Array.isArray(data.images) ? [...data.images] : [],
     placeIds: Array.isArray(data.placeIds) ? [...data.placeIds] : [],
@@ -285,6 +289,8 @@ export default function RouteEditPage() {
     whatToBringItems: [],
     importantInfo: '',
     mapUrl: '',
+    manualRating: '',
+    ratingSource: 'reviews',
     isActive: true,
     images: [],
     placeIds: [],
@@ -293,6 +299,8 @@ export default function RouteEditPage() {
     similarRouteIds: [],
     points: [],
   });
+  /** Одобренные отзывы записи — только для строки состояния под переключателем рейтинга */
+  const [approvedReviews, setApprovedReviews] = useState([]);
   const [activePointIndex, setActivePointIndex] = useState(0);
   const [routeMode, setRouteMode] = useState('classic'); // 'classic' (места) | 'link' (ссылка Яндекс.Карт)
 
@@ -345,6 +353,8 @@ export default function RouteEditPage() {
     ...pendingGallery.map((p) => ({ type: 'pending', file: p.file, preview: p.preview })),
   ], [formData.images, pendingGallery]);
 
+  const reviewsRating = ratingFromReviews(approvedReviews);
+
   const isDirty = useMemo(() => {
     if (isNew) return pendingGallery.length > 0;
     if (savedSnapshotRef.current == null) return pendingGallery.length > 0;
@@ -379,6 +389,7 @@ export default function RouteEditPage() {
   }, [isDirty, navigateToList]);
 
   useEffect(() => {
+    setApprovedReviews([]);
     if (!isNew) {
       fetchRoute();
     }
@@ -482,6 +493,8 @@ export default function RouteEditPage() {
         nearbyPlaceIds: response.data.nearbyPlaceIds || [],
         guideIds: response.data.guideIds || [],
         similarRouteIds: response.data.similarRouteIds || [],
+        manualRating: response.data.manualRating ?? '',
+        ratingSource: response.data.ratingSource === 'manual' ? 'manual' : 'reviews',
         customFilters,
         points,
         whatToBringItems,
@@ -489,6 +502,7 @@ export default function RouteEditPage() {
       setFormData(next);
       savedFormDataRef.current = next;
       savedSnapshotRef.current = getFormSnapshot(next);
+      setApprovedReviews(Array.isArray(response.data.reviews) ? response.data.reviews : []);
       setActivePointIndex(0);
       setRouteMode(next.mapUrl && String(next.mapUrl).trim() ? 'link' : 'classic');
     } catch (error) {
@@ -997,6 +1011,8 @@ export default function RouteEditPage() {
         whatToBring: JSON.stringify(formData.whatToBringItems ?? []),
         importantInfo: formData.importantInfo ?? null,
         mapUrl: formData.mapUrl ?? null,
+        ratingSource: formData.ratingSource === 'manual' ? 'manual' : 'reviews',
+        manualRating: formData.manualRating === '' || formData.manualRating == null ? null : Number(formData.manualRating),
         isActive: formData.isActive !== false,
         images: Array.isArray(imagesToSend) ? imagesToSend : [],
         placeIds: Array.isArray(formData.placeIds) ? formData.placeIds : [],
@@ -1063,6 +1079,8 @@ export default function RouteEditPage() {
             nearbyPlaceIds: Array.isArray(updated.nearbyPlaceIds) ? updated.nearbyPlaceIds : [],
             guideIds: Array.isArray(updated.guideIds) ? updated.guideIds : [],
             similarRouteIds: Array.isArray(updated.similarRouteIds) ? updated.similarRouteIds : [],
+            manualRating: updated.manualRating ?? '',
+            ratingSource: updated.ratingSource === 'manual' ? 'manual' : 'reviews',
             customFilters,
             points,
             whatToBringItems,
@@ -2050,6 +2068,14 @@ export default function RouteEditPage() {
             minHeight={300}
           />
         </div>
+
+        <RatingField
+          source={formData.ratingSource}
+          manualRating={formData.manualRating}
+          reviewsRating={reviewsRating}
+          reviewsCount={approvedReviews.length}
+          onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+        />
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Изображения</label>
