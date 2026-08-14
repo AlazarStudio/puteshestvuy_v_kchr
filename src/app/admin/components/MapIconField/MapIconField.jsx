@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { getIconGroups, getMuiIconComponent } from '../WhatToBringIcons';
-import { buildMapIconHref } from '@/lib/mapPin';
+import ImageCropModal from '../ImageCropModal';
+import { buildMapIconHref, composePinFromImage } from '@/lib/mapPin';
 import { mediaAPI } from '@/lib/api';
-import styles from '../../admin.module.css';
+import adminStyles from '../../admin.module.css';
+import styles from './MapIconField.module.css';
 
 /** Сколько значков показывать в выдаче: их полторы тысячи, все разом не нужны */
 const MAX_VISIBLE = 60;
@@ -31,6 +33,7 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
   const [query, setQuery] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [cropSrc, setCropSrc] = useState('');
   // Режим — состояние поля, а не формы: сам по себе он ничего не меняет в записи,
   // наверх уходит только выбранный значок, загруженный файл или сброс
   const [mode, setMode] = useState(iconType === 'upload' ? 'upload' : 'library');
@@ -44,14 +47,26 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
     return { visible: found.slice(0, MAX_VISIBLE), total: found.length };
   }, [query]);
 
-  const handleUpload = async (e) => {
+  // Файл сперва кадрируется в квадрат, потом вписывается в булавку и только затем уходит на сервер:
+  // без этого на карту попадала бы исходная фотография прямоугольником среди меток
+  const handleFilePick = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     setUploadError('');
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(String(reader.result || ''));
+    reader.onerror = () => setUploadError('Не удалось прочитать файл.');
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (blob) => {
+    setCropSrc('');
     setUploading(true);
     try {
+      const pin = await composePinFromImage(blob);
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', new File([pin], 'map-icon.png', { type: 'image/png' }));
       const res = await mediaAPI.upload(fd);
       const url = res.data?.url;
       // Пустой адрес молча означал бы «иконки нет» при заданном типе — считаем это ошибкой
@@ -62,34 +77,27 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
       setUploadError('Не удалось загрузить файл. Попробуйте ещё раз.');
     } finally {
       setUploading(false);
-      e.target.value = '';
     }
   };
 
   return (
-    <div className={styles.formGroup}>
-      <label className={styles.formLabel}>Иконка на карте</label>
+    <div className={adminStyles.formGroup}>
+      <label className={adminStyles.formLabel}>Иконка на карте</label>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <img
-          src={previewHref}
-          alt=""
-          width={42}
-          height={52}
-          style={{ flexShrink: 0 }}
-        />
+      <div className={styles.head}>
+        <img src={previewHref} alt="" className={styles.preview} />
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className={styles.segments}>
           <button
             type="button"
-            className={`${styles.whatToBringTypeSegment} ${mode === 'library' ? styles.whatToBringTypeSegmentActive : ''}`}
+            className={`${styles.segment} ${mode === 'library' ? styles.segmentActive : ''}`}
             onClick={() => setMode('library')}
           >
             Библиотека
           </button>
           <button
             type="button"
-            className={`${styles.whatToBringTypeSegment} ${mode === 'upload' ? styles.whatToBringTypeSegmentActive : ''}`}
+            className={`${styles.segment} ${mode === 'upload' ? styles.segmentActive : ''}`}
             onClick={() => setMode('upload')}
           >
             Загрузить
@@ -99,11 +107,11 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
         {icon || iconType ? (
           <button
             type="button"
+            className={styles.reset}
             onClick={() => {
               setUploadError('');
               onChange({ mapIcon: '', mapIconType: null });
             }}
-            className={styles.whatToBringUploadBtn}
           >
             Сбросить
           </button>
@@ -111,41 +119,33 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
       </div>
 
       {mode === 'upload' ? (
-        <div style={{ marginTop: 10 }}>
+        <div className={styles.panel}>
           <input
             type="file"
             accept="image/*"
             id="map-icon-upload"
             style={{ display: 'none' }}
-            onChange={handleUpload}
+            onChange={handleFilePick}
           />
-          <label htmlFor="map-icon-upload" className={styles.whatToBringUploadBtn}>
+          <label htmlFor="map-icon-upload" className={styles.uploadBtn}>
             {uploading ? 'Загрузка…' : 'Выбрать файл'}
           </label>
-          {uploadError ? (
-            <div style={{ marginTop: 6, fontSize: '0.85rem', color: '#dc2626' }}>
-              {uploadError}
-            </div>
-          ) : null}
-          <div style={{ marginTop: 6, fontSize: '0.85rem', color: '#64748b' }}>
-            Картинка заменит метку целиком и будет показана размером 42×52.
+          {uploadError ? <div className={styles.error}>{uploadError}</div> : null}
+          <div className={styles.hint}>
+            Картинку можно будет кадрировать. Она встанет в круг внутри булавки — форма и цвет метки
+            останутся такими же, как у остальных.
           </div>
         </div>
       ) : (
-        <div style={{ marginTop: 10 }}>
+        <div className={styles.panel}>
           <input
             type="text"
-            className={styles.formInput}
+            className={styles.search}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Поиск значка по названию, например waves"
           />
-          <div
-            style={{
-              display: 'flex', flexWrap: 'wrap', gap: 6,
-              marginTop: 8, maxHeight: 180, overflowY: 'auto',
-            }}
-          >
+          <div className={styles.grid}>
             {visible.map((name) => {
               const Icon = getMuiIconComponent(name);
               if (!Icon) return null;
@@ -155,20 +155,15 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
                   key={name}
                   type="button"
                   title={name}
+                  className={`${styles.cell} ${active ? styles.cellActive : ''}`}
                   onClick={() => onChange({ mapIcon: name, mapIconType: 'library' })}
-                  style={{
-                    width: 36, height: 36, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
-                    borderRadius: 6, cursor: 'pointer', background: 'transparent',
-                    border: active ? '2px solid #156A60' : '1px solid #e2e8f0',
-                  }}
                 >
                   <Icon size={20} />
                 </button>
               );
             })}
           </div>
-          <div style={{ marginTop: 6, fontSize: '0.85rem', color: '#64748b' }}>
+          <div className={styles.hint}>
             {total === 0
               ? 'Ничего не найдено'
               : visible.length < total
@@ -177,6 +172,15 @@ export default function MapIconField({ icon, iconType, fallbackHref, onChange })
           </div>
         </div>
       )}
+
+      <ImageCropModal
+        open={!!cropSrc}
+        imageSrc={cropSrc}
+        title="Обрезка иконки"
+        aspect={1}
+        onComplete={handleCropComplete}
+        onCancel={() => setCropSrc('')}
+      />
     </div>
   );
 }

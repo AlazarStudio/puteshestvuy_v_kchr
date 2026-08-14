@@ -37,6 +37,64 @@ function buildPin(glyph) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
+/** Метка рисуется в тройном разрешении: на карте она 42×52, но экраны бывают плотные */
+const PIN_SCALE = 3
+
+/** Центр и радиусы круглой головы булавки в системе координат 42×52 */
+const HEAD = { x: 21, y: 21, ring: 15, photo: 13 }
+
+/**
+ * Вписывает картинку в круглую голову булавки и возвращает готовую метку.
+ * Нужна затем, чтобы загруженная иконка выглядела частью набора, а не
+ * прямоугольной фотографией среди булавок: силуэт и цвет остаются наши.
+ * @param {Blob} imageBlob обрезанная в квадрат картинка
+ * @returns {Promise<Blob>} PNG с прозрачным фоном размером 42×52 в тройном масштабе
+ */
+export async function composePinFromImage(imageBlob) {
+  const url = URL.createObjectURL(imageBlob)
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = () => reject(new Error('Не удалось прочитать картинку'))
+      el.src = url
+    })
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 42 * PIN_SCALE
+    canvas.height = 52 * PIN_SCALE
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2d недоступен')
+    ctx.scale(PIN_SCALE, PIN_SCALE)
+
+    ctx.fillStyle = PIN_FILL
+    ctx.fill(new Path2D(PIN_PATH))
+
+    ctx.beginPath()
+    ctx.arc(HEAD.x, HEAD.y, HEAD.ring, 0, Math.PI * 2)
+    ctx.fillStyle = '#fff'
+    ctx.fill()
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(HEAD.x, HEAD.y, HEAD.photo, 0, Math.PI * 2)
+    ctx.clip()
+    // Картинка уже квадратная после кадрирования, поэтому вписывается без искажений
+    const side = HEAD.photo * 2
+    ctx.drawImage(img, HEAD.x - HEAD.photo, HEAD.y - HEAD.photo, side, side)
+    ctx.restore()
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Не удалось собрать метку'))),
+        'image/png',
+      )
+    })
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 /**
  * @param {string|null} mapIcon имя значка Lucide либо адрес загруженного файла
  * @param {string|null} mapIconType library | upload
