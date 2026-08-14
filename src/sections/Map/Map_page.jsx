@@ -8,6 +8,7 @@ import { collectionPage, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl } from '@/lib/seo/config'
 import { publicMapAPI } from '@/lib/api'
 import { PLACE_FAMILIES, SERVICE_FAMILIES, DEFAULT_FAMILY, placeFamily, serviceFamily } from '@/lib/mapFamilies'
+import { buildMapIconHref } from '@/lib/mapPin'
 import styles from './Map_page.module.css'
 
 const LAYERS = [
@@ -43,7 +44,7 @@ export default function Map_page() {
       return {
         id: `place-${p.id}`,
         coords: [p.latitude, p.longitude],
-        iconHref: family.icon,
+        iconHref: buildMapIconHref(p.mapIcon, p.mapIconType, family.icon),
         payload: { ...p, layer: 'places', familyKey: family.key },
       }
     })
@@ -52,7 +53,7 @@ export default function Map_page() {
       return {
         id: `service-${s.id}`,
         coords: [s.latitude, s.longitude],
-        iconHref: family.icon,
+        iconHref: buildMapIconHref(s.mapIcon, s.mapIconType, family.icon),
         payload: { ...s, layer: 'services', familyKey: family.key },
       }
     })

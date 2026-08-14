@@ -5,6 +5,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Upload, X, MapPin, Plus, Search, Map, EyeOff, Eye, Pencil, ChevronLeft, ChevronRight, GripVertical, CheckCircle, XCircle } from 'lucide-react';
 import { placesAPI, mediaAPI, placeFiltersAPI, adminSuggestionsAPI, getImageUrl } from '@/lib/api';
 import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
+import { placeFamily } from '@/lib/mapFamilies';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import { VK_PLAYLIST_PREFIX } from '@/components/VkPlaylistWidget';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -12,6 +13,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
 import ImageCropModal from '../../components/ImageCropModal';
 import RatingField from '../../components/RatingField/RatingField';
+import MapIconField from '../../components/MapIconField/MapIconField';
 import { AdminHeaderRightContext, AdminBreadcrumbContext } from '../../layout';
 import styles from '../../admin.module.css';
 
@@ -64,6 +66,8 @@ function getFormSnapshot(data) {
     reviewsCount: Number(data.reviewsCount) || 0,
     manualRating: normalizeManualRating(data.manualRating),
     ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
+    mapIcon: data.mapIcon ?? '',
+    mapIconType: data.mapIconType ?? null,
     isActive: !!data.isActive,
     image: data.image ?? '',
     sliderVideo: data.sliderVideo ?? '',
@@ -103,6 +107,8 @@ export default function PlaceEditPage() {
     reviewsCount: 0,
     manualRating: '',
     ratingSource: 'reviews',
+    mapIcon: '',
+    mapIconType: null,
     isActive: true,
     image: '',
     sliderVideo: '',
@@ -337,6 +343,8 @@ export default function PlaceEditPage() {
         nearbyPlaceIds: Array.isArray(data.nearbyPlaceIds) ? data.nearbyPlaceIds : [],
         manualRating: data.manualRating ?? '',
         ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
+        mapIcon: data.mapIcon ?? '',
+        mapIconType: data.mapIconType ?? null,
       };
       setFormData((prev) => ({ ...prev, ...next }));
       savedFormDataRef.current = next;
@@ -1115,6 +1123,13 @@ export default function PlaceEditPage() {
           manualRating={formData.manualRating}
           reviewsRating={reviewsRating}
           reviewsCount={approvedReviews.length}
+          onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+        />
+
+        <MapIconField
+          icon={formData.mapIcon}
+          iconType={formData.mapIconType}
+          fallbackHref={placeFamily(formData.objectTypes).icon}
           onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
         />
 

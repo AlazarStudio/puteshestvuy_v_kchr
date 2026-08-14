@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
 import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
+import { serviceFamily } from '@/lib/mapFamilies';
 import YandexMapPicker from '@/components/YandexMapPicker';
 import RichTextEditor from '@/components/RichTextEditor';
 import { CATEGORY_TO_TEMPLATE_KEY } from '@/sections/Services/ServiceDetail/serviceTypeTemplates';
@@ -14,6 +15,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import SaveProgressModal from '../../components/SaveProgressModal';
 import ImageCropModal from '../../components/ImageCropModal';
 import RatingField from '../../components/RatingField/RatingField';
+import MapIconField from '../../components/MapIconField/MapIconField';
 import { MUI_ICON_NAMES, MUI_ICONS, getMuiIconComponent, getIconGroups } from '../../components/WhatToBringIcons';
 import styles from '../../admin.module.css';
 
@@ -102,6 +104,8 @@ function getFormSnapshot(data) {
     cardPayment: !!data.cardPayment,
     manualRating: normalizeManualRating(data.manualRating),
     ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
+    mapIcon: data.mapIcon ?? '',
+    mapIconType: data.mapIconType ?? null,
     data: JSON.stringify(dataForSnapshot),
     images: imageKeys.join(','),
   };
@@ -126,6 +130,8 @@ export default function ServiceEditPage() {
     cardPayment: false,
     manualRating: '',
     ratingSource: 'reviews',
+    mapIcon: '',
+    mapIconType: null,
     data: {},
   });
   /** Одобренные отзывы записи — только для строки состояния под переключателем рейтинга */
@@ -289,6 +295,8 @@ export default function ServiceEditPage() {
         cardPayment: data.cardPayment === true,
         manualRating: data.manualRating ?? '',
         ratingSource: data.ratingSource === 'manual' ? 'manual' : 'reviews',
+        mapIcon: data.mapIcon ?? '',
+        mapIconType: data.mapIconType ?? null,
         data: {
           ...rawData,
           certificatesInData,
@@ -651,6 +659,8 @@ export default function ServiceEditPage() {
         cardPayment: formData.category === 'Гостиница' ? formData.cardPayment : false,
         ratingSource: formData.ratingSource === 'manual' ? 'manual' : 'reviews',
         manualRating: formData.manualRating === '' || formData.manualRating == null ? null : Number(formData.manualRating),
+        mapIcon: formData.mapIcon || null,
+        mapIconType: formData.mapIconType || null,
         data: dataToSave,
       };
 
@@ -1598,6 +1608,17 @@ export default function ServiceEditPage() {
             manualRating={formData.manualRating}
             reviewsRating={reviewsRating}
             reviewsCount={approvedReviews.length}
+            onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+          />
+        )}
+
+        {/* Гиды исключены из карты на сервере — часть их координат жилые адреса физлиц,
+            поэтому иконка им нигде не проявилась бы */}
+        {formData.category && formData.category !== 'Гид' && (
+          <MapIconField
+            icon={formData.mapIcon}
+            iconType={formData.mapIconType}
+            fallbackHref={serviceFamily(formData.category).icon}
             onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
           />
         )}
