@@ -138,22 +138,6 @@ export default function Main_page() {
       <SliderFullScreen heading="Карачаево-Черкесская Республика" />
 
       <div className={styles.content}>
-        <div className={styles.firstTime} id="firstTime">
-          <CenterBlock>
-            <TitleButton
-              title={homeContent.firstTimeTitle}
-              desc={homeContent.firstTimeDesc}
-            />
-          </CenterBlock>
-          <CenterBlock>
-            <FirstTimeTabs
-              tabs={(homeContent.firstTimeTabs || []).filter(t => t.type !== 'climate')}
-              activeTabKey={emergencyTabKey}
-              scrollToId={emergencyScrollId}
-            />
-          </CenterBlock>
-        </div>
-
         <CenterBlock>
           <TitleButton title={homeContent.routesTitle} buttonLink={homeContent.routesButtonLink} />
         </CenterBlock>
@@ -382,6 +366,22 @@ export default function Main_page() {
 
           <ServiceTabBlock />
         </section>
+
+        <div className={styles.firstTime} id="firstTime">
+          <CenterBlock>
+            <TitleButton
+              title={homeContent.firstTimeTitle}
+              desc={homeContent.firstTimeDesc}
+            />
+          </CenterBlock>
+          <CenterBlock>
+            <FirstTimeTabs
+              tabs={(homeContent.firstTimeTabs || []).filter(t => t.type !== 'climate')}
+              activeTabKey={emergencyTabKey}
+              scrollToId={emergencyScrollId}
+            />
+          </CenterBlock>
+        </div>
 
         <CenterBlock>
           <TitleButton title="Новости и статьи" buttonLink="/news" />
