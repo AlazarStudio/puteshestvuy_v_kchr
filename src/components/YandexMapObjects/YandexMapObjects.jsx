@@ -69,6 +69,11 @@ export default function YandexMapObjects({ objects = [], visibleKeys, onSelect }
     })
     mapRef.current = map
 
+    // Карта занимает весь экран под шапкой, и вне неё курсору оказаться негде:
+    // с зумом колесом страницу было бы нечем прокрутить до подвала.
+    // Зум остаётся кнопками zoomControl, двойным кликом и щипком
+    map.behaviors.disable('scrollZoom')
+
     const manager = new window.ymaps.ObjectManager({
       clusterize: true,
       gridSize: 64,

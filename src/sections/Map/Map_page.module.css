@@ -1,33 +1,94 @@
+/* Высота фиксированной шапки: она перекрывает контент, поэтому карта опускается
+   ровно на неё. Значение вынесено в переменную, чтобы отступ и высота карты
+   не разъезжались при правках.
+   Брейкпоинты повторяют Header.module.css: высота шапки там не постоянна, и с
+   единственным значением на широких мониторах шапка накрывала бы верх карты,
+   а на мобильных между ними оставалась бы полоса фона */
 .main {
+    --header-h: 85px;
     background-color: #F1F3F8;
-    min-height: 60vh;
-    padding: 150px 0 80px;
+    padding-top: var(--header-h);
 }
 
+@media (min-width: 1101px) and (max-width: 1600px) {
+    .main { --header-h: 82px; }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .main { --header-h: 78px; }
+}
+
+@media (max-width: 768px) {
+    .main { --header-h: 70px; }
+}
+
+/* Заголовок нужен структуре документа и поиску, но места на экране занимать не должен */
 .title {
-    margin-bottom: 30px;
-    font-weight: 700;
-    font-size: 40px;
-    line-height: 130%;
-    text-transform: uppercase;
-    color: #0f172a;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-.layout {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
+.mapSection {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - var(--header-h));
 }
 
+/* Панель лежит поверх карты, поэтому её собственная высота ограничена
+   размером карты: четырнадцать строк на низком экране иначе вылезут за край */
 .panel {
+    position: absolute;
+    top: 112px;
+    left: 16px;
+    z-index: 6;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    flex: 0 0 280px;
-    width: 280px;
+    width: 300px;
+    max-height: calc(100% - 144px);
+    overflow-y: auto;
     padding: 20px;
     border-radius: 15px;
     background: #fff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+}
+
+/* Не в самом углу: слева сверху Яндекс ставит свой контрол геолокации,
+   и кнопка в углу накрывала бы его целиком — нажать было бы нельзя */
+.filterToggle {
+    position: absolute;
+    top: 56px;
+    left: 16px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.filterToggle:hover {
+    background: #f1f5f9;
+}
+
+.filterToggleCount {
+    color: #64748b;
+    font-weight: 500;
 }
 
 .layers {
@@ -123,10 +184,8 @@
 
 .mapWrap {
     position: relative;
-    flex: 1;
-    min-width: 0;
-    height: calc(100vh - 220px);
-    min-height: 480px;
+    width: 100%;
+    height: 100%;
 }
 
 .state {
@@ -152,57 +211,9 @@
     z-index: 5;
 }
 
-@media (min-width: 320px) and (max-width: 1400px) {
-    .main {
-        padding: 110px 10px 40px;
-    }
-
-    .title {
-        margin-bottom: 20px;
-        font-size: 24px;
-    }
-
-    .layout {
-        flex-direction: column;
-    }
-
-    /* flex: 1 сбрасывается: в колоночном контейнере flex-basis: 0%
-       перебивает height, и карта схлопывается до min-height */
-    .mapWrap {
-        order: 1;
-        flex: none;
-        width: 100%;
-        height: calc(100vh - 300px);
-        min-height: 360px;
-    }
-
+@media (max-width: 768px) {
     .panel {
-        order: 2;
-        flex: none;
-        width: 100%;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 16px;
-    }
-
-    .layers {
-        width: 100%;
-    }
-
-    .legendGroup {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .legendGroup + .legendGroup {
-        padding-top: 0;
-        border-top: none;
-    }
-
-    .legendItem {
-        width: auto;
-        background: #F1F3F8;
+        width: calc(100vw - 32px);
+        max-width: 320px;
     }
 }

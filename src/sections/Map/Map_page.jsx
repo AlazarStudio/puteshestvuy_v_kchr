@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import YandexMapObjects from '@/components/YandexMapObjects/YandexMapObjects'
 import MapObjectPopup from '@/components/MapObjectPopup/MapObjectPopup'
 import Seo from '@/components/Seo/Seo'
@@ -24,6 +23,8 @@ export default function Map_page() {
   const [activeLayers, setActiveLayers] = useState(() => new Set(['places', 'services']))
   const [offKeys, setOffKeys] = useState(() => new Set())
   const [selected, setSelected] = useState(null)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const filterRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -88,6 +89,33 @@ export default function Map_page() {
     return keys
   }, [activeLayers, offKeys])
 
+  // Число объектов, реально показанных на карте: кнопка со свёрнутой панелью
+  // иначе не сообщает ничего — ни легенды, ни того, что слой выключен
+  const visibleCount = useMemo(
+    () => objects.filter((o) => visibleKeys.has(`${o.payload.layer}:${o.payload.familyKey}`)).length,
+    [objects, visibleKeys],
+  )
+
+  // Панель лежит поверх карты, поэтому закрывается и кликом мимо, и Esc
+  useEffect(() => {
+    if (!isFilterOpen) return
+
+    const onPointerDown = (e) => {
+      if (filterRef.current?.contains(e.target)) return
+      setIsFilterOpen(false)
+    }
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setIsFilterOpen(false)
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isFilterOpen])
+
   const toggleLayer = (key) => {
     setActiveLayers((prev) => {
       const next = new Set(prev)
@@ -147,57 +175,69 @@ export default function Map_page() {
         ]}
       />
 
-      <CenterBlock>
-        <h1 className={styles.title}>Карта объектов</h1>
+      <h1 className={styles.title}>Карта объектов</h1>
 
-        <div className={styles.layout}>
-          <aside className={styles.panel}>
-            <div className={styles.layers}>
-              {LAYERS.map((l) => (
-                <button
-                  key={l.key}
-                  type="button"
-                  className={`${styles.layer} ${activeLayers.has(l.key) ? styles.layerOn : ''}`}
-                  onClick={() => toggleLayer(l.key)}
-                >
-                  {l.label}
-                </button>
-              ))}
+      <section className={styles.mapSection}>
+        <div className={styles.mapWrap}>
+          {failed ? (
+            <div className={styles.state}>Не удалось загрузить объекты карты</div>
+          ) : loading ? (
+            <div className={styles.state}>Загрузка…</div>
+          ) : (
+            <YandexMapObjects objects={objects} visibleKeys={visibleKeys} onSelect={setSelected} />
+          )}
+
+          {selected && (
+            <div className={styles.popupWrap}>
+              <MapObjectPopup
+                object={selected}
+                actionLabel={selected.layer === 'places' ? 'Открыть место' : 'Открыть услугу'}
+                onAction={openObject}
+                onClose={() => setSelected(null)}
+              />
             </div>
-
-            {renderLegendGroup(PLACE_FAMILIES, 'places')}
-            {renderLegendGroup(SERVICE_FAMILIES, 'services')}
-
-            {/* Семейство по умолчанию — общее для обоих слоёв, поэтому стоит
-                отдельной строкой: без неё сумма счётчиков легенды не сходится
-                с числом объектов в ответе API */}
-            <div className={styles.legendGroup}>
-              {renderLegendItem(DEFAULT_FAMILY, activeLayers.size > 0)}
-            </div>
-          </aside>
-
-          <div className={styles.mapWrap}>
-            {failed ? (
-              <div className={styles.state}>Не удалось загрузить объекты карты</div>
-            ) : loading ? (
-              <div className={styles.state}>Загрузка…</div>
-            ) : (
-              <YandexMapObjects objects={objects} visibleKeys={visibleKeys} onSelect={setSelected} />
-            )}
-
-            {selected && (
-              <div className={styles.popupWrap}>
-                <MapObjectPopup
-                  object={selected}
-                  actionLabel={selected.layer === 'places' ? 'Открыть место' : 'Открыть услугу'}
-                  onAction={openObject}
-                  onClose={() => setSelected(null)}
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      </CenterBlock>
+
+        <div ref={filterRef}>
+          <button
+            type="button"
+            className={styles.filterToggle}
+            onClick={() => setIsFilterOpen((p) => !p)}
+            aria-expanded={isFilterOpen}
+          >
+            Фильтры
+            <span className={styles.filterToggleCount}>· {visibleCount}</span>
+          </button>
+
+          {isFilterOpen && (
+            <aside className={styles.panel}>
+              <div className={styles.layers}>
+                {LAYERS.map((l) => (
+                  <button
+                    key={l.key}
+                    type="button"
+                    className={`${styles.layer} ${activeLayers.has(l.key) ? styles.layerOn : ''}`}
+                    onClick={() => toggleLayer(l.key)}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+
+              {renderLegendGroup(PLACE_FAMILIES, 'places')}
+              {renderLegendGroup(SERVICE_FAMILIES, 'services')}
+
+              {/* Семейство по умолчанию — общее для обоих слоёв, поэтому стоит
+                  отдельной строкой: без неё сумма счётчиков легенды не сходится
+                  с числом объектов в ответе API */}
+              <div className={styles.legendGroup}>
+                {renderLegendItem(DEFAULT_FAMILY, activeLayers.size > 0)}
+              </div>
+            </aside>
+          )}
+        </div>
+      </section>
     </main>
   )
 }
