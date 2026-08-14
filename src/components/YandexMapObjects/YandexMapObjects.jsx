@@ -30,8 +30,12 @@ export default function YandexMapObjects({ objects = [], visibleKeys, onSelect }
 
     const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY || ''
 
+    // Через ready, а не сразу: сам ymaps.ready появляется в момент выполнения
+    // загрузчика, то есть раньше, чем догрузятся модули, и ymaps.Map в этот
+    // момент ещё не определён. Повторный вызов ready безопасен — если API уже
+    // готово, колбэк выполнится немедленно
     if (window.ymaps && window.ymaps.ready) {
-      setScriptReady(true)
+      window.ymaps.ready(() => setScriptReady(true))
       return
     }
 

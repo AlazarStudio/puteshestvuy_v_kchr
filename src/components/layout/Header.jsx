@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ChevronDown, MapPinned } from 'lucide-react'
 import styles from './Header.module.css'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
@@ -61,6 +62,15 @@ const pageConfig = [
   { path: '/login', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/register', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/profile', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
+]
+
+const AMANAUZ_PATH = '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273'
+
+/** Разделы, ушедшие под «Ещё»: порядок задаёт порядок в панели */
+const MORE_LINKS = [
+  { to: '/events', label: 'Афиша' },
+  { to: '/gallery', label: 'Фотогалерея' },
+  { to: AMANAUZ_PATH, label: 'Экспедиция «Аманауз»' },
 ]
 
 const getPageConfig = (pathname) => {
@@ -130,6 +140,26 @@ export default function Header() {
     setIsDropdownOpen(false)
   }, [pathname])
 
+  // Закрывать dropdown по клику вне панели и по Esc
+  useEffect(() => {
+    if (!isDropdownOpen) return
+
+    const onPointerDown = (e) => {
+      if (dropdownRef.current?.contains(e.target)) return
+      setIsDropdownOpen(false)
+    }
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setIsDropdownOpen(false)
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isDropdownOpen])
+
   // scroll logic
   useEffect(() => {
     if (!currentConfig) return
@@ -181,6 +211,12 @@ export default function Header() {
 
   const backgroundColor = currentConfig?.backgroundColor || '#f1f3f8b7'
   const isDropdownActive = isDropdownOpen
+
+  // Подчёркивать сам «Ещё», когда открыт раздел изнутри панели:
+  // иначе на странице афиши пользователь не понимает, где находится
+  const isMoreActive = MORE_LINKS.some(
+    ({ to }) => pathname === to || (to !== AMANAUZ_PATH && pathname?.startsWith(`${to}/`)),
+  )
 
   // Закрытие бургер-меню при смене роута
   useEffect(() => {
@@ -265,24 +301,38 @@ export default function Header() {
             Новости и статьи
           </Link>
 
-          {/* Пункт меню «Афиша» скрыт до решения заказчика: в ТЗ он не заявлен,
-              там про афишу сказано только как про блок на главной.
-              Раздел работает, ссылка возвращается снятием комментария */}
-          {/* <Link
-            to="/events"
-            className={`${styles.navLink} ${pathname === '/events' || pathname?.startsWith('/events/') ? styles.navLink_active : ''}`}
-            title="Афиша событий Карачаево-Черкесии"
-          >
-            Афиша
-          </Link> */}
+          <div className={styles.navDropdown} ref={dropdownRef}>
+            <button
+              type="button"
+              ref={dropdownTriggerRef}
+              className={`${styles.navLink} ${styles.navMoreTrigger} ${isMoreActive ? styles.navLink_active : ''}`}
+              onClick={() => setIsDropdownOpen((p) => !p)}
+              aria-expanded={isDropdownOpen}
+              aria-haspopup="true"
+            >
+              Ещё
+              <ChevronDown
+                className={`${styles.dropdownIcon} ${isDarkMode ? styles.dropdownIconDark : ''} ${isDropdownOpen ? styles.dropdownIconRotated : ''}`}
+                aria-hidden
+              />
+            </button>
 
-          <Link
-            to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273"
-            className={`${styles.navLink} ${styles.navLinkAmanauz} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.navLink_active : ''}`}
-            title="Экспедиция «Аманауз»"
-          >
-            Экспедиция «Аманауз»
-          </Link>
+            {isDropdownOpen && (
+              <div className={styles.morePanel} role="menu">
+                {MORE_LINKS.map(({ to, label }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    role="menuitem"
+                    className={`${styles.dropdownLink} ${pathname === to ? styles.dropdownLinkActive : ''}`}
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
         </nav>
 
@@ -312,6 +362,14 @@ export default function Header() {
 
         {/* Иконки справа */}
         <div className={styles.icons} aria-label="Дополнительные действия">
+          <Link
+            to="/map"
+            className={styles.mapButton}
+            aria-label="Карта объектов"
+            title="Карта объектов Карачаево-Черкесии"
+          >
+            <MapPinned size={22} aria-hidden />
+          </Link>
           <AccessibilityButton
             className={styles.iconButton}
             src={(isDarkMode || isDropdownActive) ? '/bvi.png' : '/bvi_white.png'}
@@ -394,10 +452,26 @@ export default function Header() {
           <Link to="/news" className={`${styles.burgerLink} ${pathname === '/news' || pathname?.startsWith('/news/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Новости и статьи
           </Link>
-          {/* Скрыто вместе с пунктом в десктопной шапке, см. комментарий выше */}
-          {/* <Link to="/events" className={`${styles.burgerLink} ${pathname === '/events' || pathname?.startsWith('/events/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
+          <Link to="/events" className={`${styles.burgerLink} ${pathname === '/events' || pathname?.startsWith('/events/') ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Афиша
-          </Link> */}
+          </Link>
+
+          <Link
+            to="/gallery"
+            className={`${styles.burgerLink} ${pathname === '/gallery' ? styles.burgerLinkActive : ''}`}
+            onClick={closeBurger}
+          >
+            Фотогалерея
+          </Link>
+
+          <Link
+            to="/map"
+            className={`${styles.burgerLink} ${pathname === '/map' ? styles.burgerLinkActive : ''}`}
+            onClick={closeBurger}
+          >
+            Карта
+          </Link>
+
           <Link to="/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273" className={`${styles.burgerLink} ${pathname === '/places/artefakty-ekspeditsii-kollektsiya-amanauz-1774863515273' ? styles.burgerLinkActive : ''}`} onClick={closeBurger}>
             Экспедиция «Аманауз»
           </Link>
