@@ -42,6 +42,39 @@
   opacity: 0.9;
 }
 
+/* Своего отступа снизу нет: секция уже разделяет блоки через gap,
+   и margin складывался бы с ним, выбивая вкладки из ритма страницы */
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab {
+  padding: 10px 28px;
+  border-radius: 30px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  border-color: #156A60;
+  color: #156A60;
+}
+
+.tabActive,
+.tabActive:hover {
+  background: #156A60;
+  border-color: #156A60;
+  color: #fff;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -143,6 +176,9 @@
     font-size: 24px;
   }
 
+  /* Вкладки ужимаются вместе с чипами категорий: иначе на узком экране
+     они возвышались бы над рядом, который стоит прямо под ними */
+  .tab,
   .filter {
     padding: 8px 18px;
     font-size: 13px;

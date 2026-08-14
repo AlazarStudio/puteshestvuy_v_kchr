@@ -16,6 +16,8 @@ export default function Events_page() {
   const [searchParams, setSearchParams] = useSearchParams()
   const category = searchParams.get('category') || ''
   const page = parseInt(searchParams.get('page'), 10) || 1
+  const when = searchParams.get('when') === 'past' ? 'past' : 'upcoming'
+  const isPast = when === 'past'
 
   const [items, setItems] = useState([])
   const [pages, setPages] = useState(1)
@@ -26,7 +28,7 @@ export default function Events_page() {
     let cancelled = false
     setLoading(true)
     publicEventsAPI
-      .getAll({ page, limit: LIMIT, ...(category ? { category } : {}) })
+      .getAll({ page, limit: LIMIT, ...(category ? { category } : {}), ...(isPast ? { when: 'past' } : {}) })
       .then(({ data }) => {
         if (cancelled) return
         setItems(data?.items || [])
@@ -44,20 +46,26 @@ export default function Events_page() {
     return () => {
       cancelled = true
     }
-  }, [page, category])
+  }, [page, category, isPast])
 
-  // Смена категории всегда возвращает на первую страницу: page в адрес не переносится
-  const selectCategory = (value) => {
+  // Единственное место, где собирается адрес: с тремя параметрами
+  // потерять один при переходе — вопрос времени
+  const buildParams = ({ category: c = category, when: w = when, page: p = 1 }) => {
     const next = {}
-    if (value) next.category = value
-    setSearchParams(next)
+    if (c) next.category = c
+    if (w === 'past') next.when = 'past'
+    if (p > 1) next.page = String(p)
+    return next
   }
 
+  // Смена категории и вкладки всегда возвращает на первую страницу:
+  // на четвёртой странице архива и анонсов лежат разные события
+  const selectCategory = (value) => setSearchParams(buildParams({ category: value, page: 1 }))
+
+  const selectWhen = (value) => setSearchParams(buildParams({ when: value, page: 1 }))
+
   const goToPage = (p) => {
-    const next = {}
-    if (category) next.category = category
-    if (p > 1) next.page = String(p)
-    setSearchParams(next)
+    setSearchParams(buildParams({ page: p }))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -70,7 +78,9 @@ export default function Events_page() {
         jsonLd={[
           collectionPage({
             name: 'Афиша событий',
-            description: 'Предстоящие события Карачаево-Черкесии: фестивали, концерты, выставки и народные праздники.',
+            description: isPast
+              ? 'Прошедшие события Карачаево-Черкесии: фестивали, концерты, выставки и народные праздники.'
+              : 'Предстоящие события Карачаево-Черкесии: фестивали, концерты, выставки и народные праздники.',
             url: absoluteUrl('/events'),
           }),
           itemList(items.slice(0, 20).map((e) => ({ name: e.title, url: absoluteUrl(`/events/${e.slug}`) }))),
@@ -87,6 +97,23 @@ export default function Events_page() {
             <h1 className={styles.title}>Афиша событий</h1>
             <button type="button" className={styles.suggestBtn} onClick={() => setSuggestEventOpen(true)}>
               Предложить событие
+            </button>
+          </div>
+
+          <div className={styles.tabs}>
+            <button
+              type="button"
+              className={`${styles.tab} ${!isPast ? styles.tabActive : ''}`}
+              onClick={() => selectWhen('upcoming')}
+            >
+              Ближайшие
+            </button>
+            <button
+              type="button"
+              className={`${styles.tab} ${isPast ? styles.tabActive : ''}`}
+              onClick={() => selectWhen('past')}
+            >
+              Прошедшие
             </button>
           </div>
 
@@ -115,13 +142,15 @@ export default function Events_page() {
           ) : items.length === 0 ? (
             <div className={styles.empty}>
               <p>
-                {category
-                  ? 'В этой категории пока нет предстоящих событий'
-                  : 'Предстоящих событий пока нет'}
+                {isPast
+                  ? (category ? 'В этой категории нет прошедших событий' : 'Прошедших событий пока нет')
+                  : (category ? 'В этой категории пока нет предстоящих событий' : 'Предстоящих событий пока нет')}
               </p>
-              <button type="button" className={styles.suggestBtn} onClick={() => setSuggestEventOpen(true)}>
-                Предложить событие
-              </button>
+              {!isPast && (
+                <button type="button" className={styles.suggestBtn} onClick={() => setSuggestEventOpen(true)}>
+                  Предложить событие
+                </button>
+              )}
             </div>
           ) : (
             <div className={styles.grid}>
