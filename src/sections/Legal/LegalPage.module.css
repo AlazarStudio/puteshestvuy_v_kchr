@@ -7,6 +7,16 @@
   color: #334155;
 }
 
+.kicker {
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 130%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #156A60;
+}
+
 .title {
   font-weight: 700;
   font-size: 40px;

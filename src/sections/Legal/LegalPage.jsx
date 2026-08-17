@@ -52,6 +52,7 @@ export default function LegalPage({ slug }) {
 
       <CenterBlock width={900}>
         <article className={styles.doc}>
+          {doc.kicker && <div className={styles.kicker}>{doc.kicker}</div>}
           <h1 className={styles.title}>{doc.title}</h1>
           {doc.subtitle && <p className={styles.subtitle}>{linkify(doc.subtitle)}</p>}
           {doc.blocks.map((block, i) => (

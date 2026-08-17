@@ -138,6 +138,13 @@
   cursor: pointer;
 }
 
+.policyNote {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 150%;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .consent input {
   margin-top: 2px;
   width: 18px;
@@ -147,12 +154,14 @@
   cursor: pointer;
 }
 
-.footer .consent a {
+.footer .consent a,
+.footer .policyNote a {
   color: #0d9488;
   border-bottom: 1px solid transparent;
 }
 
-.footer .consent a:hover {
+.footer .consent a:hover,
+.footer .policyNote a:hover {
   border-bottom-color: #0d9488;
 }
 

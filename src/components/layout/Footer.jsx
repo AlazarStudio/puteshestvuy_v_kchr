@@ -6,6 +6,7 @@ import CenterBlock from '../CenterBlock/CenterBlock'
 import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
 import { LEGAL_PATHS } from '@/lib/legal'
+import { buildConsentRecord } from '@/lib/legal/consentRecord'
 import styles from './Footer.module.css'
 
 const EMPTY_CONTENT = {
@@ -69,6 +70,12 @@ export default function Footer() {
       setFeedbackError('Почта для получения не настроена')
       return
     }
+    // Дублирует нативный required: без обеих отметок отправка невозможна
+    if (!termsAccepted || !dataAccepted) {
+      setFeedbackStatus('error')
+      setFeedbackError('Отметьте согласие с соглашением и обработкой персональных данных')
+      return
+    }
     setFeedbackLoading(true)
     setFeedbackStatus(null)
     setFeedbackError('')
@@ -77,6 +84,7 @@ export default function Footer() {
         name: feedback.name.trim(),
         email: feedback.email.trim(),
         text: feedback.text.trim(),
+        consent: buildConsentRecord({ termsAccepted, dataAccepted }),
       })
       setFeedback({ name: '', email: '', text: '' })
       setTermsAccepted(false)
@@ -128,7 +136,7 @@ export default function Footer() {
           <div className={styles.column}>
             <div className={styles.textTitle}>{right.title}</div>
             {right.formRecipientEmail ? (
-              <form onSubmit={handleFeedbackSubmit}>
+              <form onSubmit={handleFeedbackSubmit} method="post">
                 <input
                   type="text"
                   placeholder={right.formPlaceholderName}
@@ -166,6 +174,13 @@ export default function Footer() {
                     </span>
                   </label>
 
+                  <p className={styles.policyNote}>
+                    Перед отправкой ознакомьтесь с{' '}
+                    <a href={LEGAL_PATHS.privacyPolicy} target="_blank" rel="noopener noreferrer">
+                      «Политикой в отношении обработки персональных данных»
+                    </a>
+                  </p>
+
                   <label className={styles.consent}>
                     <input
                       type="checkbox"
@@ -174,13 +189,9 @@ export default function Footer() {
                       required
                     />
                     <span>
-                      Ознакомлен с{' '}
-                      <a href={LEGAL_PATHS.privacyPolicy} target="_blank" rel="noopener noreferrer">
-                        «Политикой конфиденциальности»
-                      </a>{' '}
-                      и согласен на{' '}
+                      Даю{' '}
                       <a href={LEGAL_PATHS.consent} target="_blank" rel="noopener noreferrer">
-                        «обработку персональных данных»
+                        «Согласие на обработку персональных данных»
                       </a>
                     </span>
                   </label>
