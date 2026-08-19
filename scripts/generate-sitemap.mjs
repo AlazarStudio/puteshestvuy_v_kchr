@@ -20,6 +20,9 @@ const STATIC = [
   { loc: '/legal/terms', priority: '0.30', changefreq: 'yearly' },
   { loc: '/legal/privacy-policy', priority: '0.30', changefreq: 'yearly' },
   { loc: '/legal/consent', priority: '0.30', changefreq: 'yearly' },
+  { loc: '/legal/account-consent', priority: '0.30', changefreq: 'yearly' },
+  { loc: '/legal/cookie-policy', priority: '0.30', changefreq: 'yearly' },
+  { loc: '/legal/distribution-consent', priority: '0.30', changefreq: 'yearly' },
 ]
 
 const DYNAMIC = [

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import Seo from '@/components/Seo/Seo'
+import LegalConsentFields from '@/components/LegalConsentFields/LegalConsentFields'
+import { buildRegistrationConsentRecord } from '@/lib/legal/consentRecord'
 import styles from '../login/auth.module.css'
 
 export default function RegisterPage() {
@@ -15,6 +17,8 @@ export default function RegisterPage() {
     password: '',
     name: '',
   })
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dataAccepted, setDataAccepted] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -26,10 +30,18 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    // Дублирует нативный required: без обеих отметок регистрация невозможна
+    if (!termsAccepted || !dataAccepted) {
+      setError('Примите Пользовательское соглашение и дайте согласие на обработку персональных данных')
+      return
+    }
     setIsLoading(true)
     setError('')
     try {
-      await register(formData)
+      await register({
+        ...formData,
+        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted }),
+      })
       navigate('/profile', { replace: true })
     } catch (err) {
       setError(
@@ -108,6 +120,13 @@ export default function RegisterPage() {
                 autoComplete="name"
               />
             </div>
+            <LegalConsentFields
+              terms={termsAccepted}
+              data={dataAccepted}
+              onTermsChange={setTermsAccepted}
+              onDataChange={setDataAccepted}
+            />
+
             <button type="submit" className={styles.submitBtn} disabled={isLoading}>
               {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
             </button>

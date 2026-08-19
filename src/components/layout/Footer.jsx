@@ -7,6 +7,7 @@ import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
 import { LEGAL_PATHS } from '@/lib/legal'
 import { buildConsentRecord } from '@/lib/legal/consentRecord'
+import { useCookieConsent } from '@/contexts/CookieConsentContext'
 import styles from './Footer.module.css'
 
 const EMPTY_CONTENT = {
@@ -18,6 +19,7 @@ const EMPTY_CONTENT = {
 
 export default function Footer() {
   const navigate = useNavigate()
+  const { openSettings } = useCookieConsent()
   const [content, setContent] = useState(EMPTY_CONTENT)
 
   const fetchFooter = useCallback(() => {
@@ -227,6 +229,9 @@ export default function Footer() {
                   <Link key={i} to={url || '#'} className={styles.linkText}>{text}</Link>
                 )
               })}
+              <button type="button" onClick={openSettings} className={`${styles.linkText} ${styles.cookieSettingsBtn}`}>
+                Настройки cookie
+              </button>
             </div>
           </div>
           <div className={styles.partners}>

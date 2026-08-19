@@ -26,7 +26,10 @@ const PAGE_OPTIONS = [
   { url: '/search', title: 'Поиск' },
   { url: '/legal/terms', title: 'Пользовательское соглашение' },
   { url: '/legal/privacy-policy', title: 'Политика обработки персональных данных' },
-  { url: '/legal/consent', title: 'Согласие на обработку персональных данных' },
+  { url: '/legal/consent', title: 'Согласие для формы обратной связи' },
+  { url: '/legal/account-consent', title: 'Согласие для регистрации и личного кабинета' },
+  { url: '/legal/cookie-policy', title: 'Политика использования файлов cookie' },
+  { url: '/legal/distribution-consent', title: 'Согласие на распространение персональных данных' },
 ];
 
 /** Resolves link object to { text, url, isFile? } for display */

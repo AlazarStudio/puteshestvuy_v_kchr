@@ -7,6 +7,7 @@ import styles from './Header.module.css'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
 import AccessibilityButton from '@/components/AccessibilityButton/AccessibilityButton'
+import { useCookieConsent } from '@/contexts/CookieConsentContext'
 
 function getCurrentLang() {
   const cookie = document.cookie.split(';').find((c) => c.trim().startsWith('googtrans='))
@@ -26,15 +27,26 @@ function switchLang(lang) {
 }
 
 function LangSwitcher({ className }) {
+  const { isAllowed, openSettings } = useCookieConsent()
   const lang = getCurrentLang()
   const inactive = lang === 'ru' ? 'en' : 'ru'
+
+  // Перевод выполняет внешний сервис: без согласия не включаем его молча,
+  // а открываем настройки cookie. Возврат на русский согласия не требует.
+  const handleSwitch = () => {
+    if (inactive === 'en' && !isAllowed('googleTranslate')) {
+      openSettings()
+      return
+    }
+    switchLang(inactive)
+  }
   return (
     <div className={`${styles.langSwitcher} ${className || ''}`}>
       <div className={styles.langInner}>
         <span className={styles.langActive}>{lang.toUpperCase()}</span>
         <button
           type="button"
-          onClick={() => switchLang(inactive)}
+          onClick={handleSwitch}
           className={styles.langInactiveBtn}
         >
           {inactive.toUpperCase()}

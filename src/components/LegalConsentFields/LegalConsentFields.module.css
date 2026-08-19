@@ -1,0 +1,43 @@
+.consents {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #475569;
+  cursor: pointer;
+}
+
+.consent input {
+  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: #156A60;
+  cursor: pointer;
+}
+
+.policyNote {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #64748b;
+  padding-left: 27px;
+}
+
+.consents a {
+  color: #156A60;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consents a:hover {
+  color: #0d4a44;
+}

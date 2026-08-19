@@ -19,17 +19,9 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Контейнер переводчика. Сам скрипт Google Translate и виджет Jivo
+         подключаются из src/lib/externalServices.js только после согласия
+         пользователя в cookie-панели. -->
     <div id="google_translate_element" style="display:none"></div>
-    <script type="text/javascript">
-      function googleTranslateElementInit() {
-        new google.translate.TranslateElement({
-          pageLanguage: 'ru',
-          includedLanguages: 'en',
-          autoDisplay: false
-        }, 'google_translate_element');
-      }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    <script src="//code.jivo.ru/widget/9cDG32AjU8" async></script>
   </body>
 </html>

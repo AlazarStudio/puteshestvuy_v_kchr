@@ -5,23 +5,29 @@
   transform: translateX(-50%);
   z-index: 10001;
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  gap: 14px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  padding: 16px 24px;
-  max-width: 680px;
+  padding: 20px 24px;
+  max-width: 720px;
   width: calc(100% - 32px);
   animation: slideUp 0.3s ease-out;
 }
 
 .text {
-  flex: 1;
   font-size: 14px;
   line-height: 1.5;
   color: #374151;
   margin: 0;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
 }
 
 .link {
@@ -34,23 +40,53 @@
   color: #0f766e;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* «Принять все» и «Отклонить необязательные» оформлены одинаково: закон требует
+   равнозначных действий, выделять принятие нельзя */
 .btn {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 180px;
   background: #0d9488;
   color: #fff;
-  border: none;
+  border: 1px solid #0d9488;
   border-radius: 10px;
-  padding: 10px 22px;
+  padding: 11px 22px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
 }
 
 .btn:hover {
   background: #0f766e;
+  border-color: #0f766e;
+}
+
+.btnGhost {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #0d9488;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.btnGhost:hover {
+  border-color: #0d9488;
+  color: #0f766e;
 }
 
 @keyframes slideUp {
@@ -66,14 +102,18 @@
 
 @media (max-width: 600px) {
   .banner {
-    flex-direction: column;
-    align-items: flex-start;
     gap: 12px;
     bottom: 16px;
+    padding: 16px;
   }
 
-  .btn {
+  .actions {
+    flex-direction: column;
+  }
+
+  .btn,
+  .btnGhost {
     width: 100%;
-    text-align: center;
+    min-width: 0;
   }
 }

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { AuthModalProvider } from '@/contexts/AuthModalContext'
 import { RouteConstructorProvider } from '@/contexts/RouteConstructorContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { CookieConsentProvider } from '@/contexts/CookieConsentContext'
 import App from './App'
 import './index.css'
 
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthModalProvider>
             <RouteConstructorProvider>
               <ToastProvider>
-                <App />
+                <CookieConsentProvider>
+                  <App />
+                </CookieConsentProvider>
               </ToastProvider>
             </RouteConstructorProvider>
           </AuthModalProvider>

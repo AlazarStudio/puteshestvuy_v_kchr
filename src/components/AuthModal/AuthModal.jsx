@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import LegalConsentFields from '@/components/LegalConsentFields/LegalConsentFields'
+import { buildRegistrationConsentRecord } from '@/lib/legal/consentRecord'
 import styles from './AuthModal.module.css'
 import authStyles from '@/app/login/auth.module.css'
 
@@ -19,6 +21,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
     password: '',
     name: '',
   })
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dataAccepted, setDataAccepted] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -30,6 +34,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
   const clearForms = () => {
     setLoginData({ login: '', password: '' })
     setRegisterData({ login: '', email: '', password: '', name: '' })
+    setTermsAccepted(false)
+    setDataAccepted(false)
     setError('')
   }
 
@@ -73,10 +79,18 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault()
+    // Дублирует нативный required: без обеих отметок регистрация невозможна
+    if (!termsAccepted || !dataAccepted) {
+      setError('Примите Пользовательское соглашение и дайте согласие на обработку персональных данных')
+      return
+    }
     setIsLoading(true)
     setError('')
     try {
-      await register(registerData)
+      await register({
+        ...registerData,
+        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted }),
+      })
       await new Promise((r) => setTimeout(r, SUCCESS_LOADER_MIN_MS))
       clearForms()
       onSuccess?.()
@@ -228,6 +242,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
                   autoComplete="name"
                 />
               </div>
+              <LegalConsentFields
+                terms={termsAccepted}
+                data={dataAccepted}
+                onTermsChange={setTermsAccepted}
+                onDataChange={setDataAccepted}
+              />
+
               <button type="submit" className={authStyles.submitBtn} disabled={isLoading}>
                 {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
               </button>
