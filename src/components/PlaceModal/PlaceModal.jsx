@@ -27,6 +27,9 @@ const formatReviewDate = (dateStr) => {
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
+/** Радиус блока «Места рядом»: всё, что дальше, не показываем */
+const NEARBY_MAX_KM = 30
+
 const hasTextContent = (html) => {
   if (!html || typeof html !== 'string') return false
   // Удаляем HTML-теги и проверяем, остался ли текст
@@ -41,7 +44,18 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
     return place.images.map((url) => ({ src: getImageUrl(url) }))
   }, [place?.images])
 
-  const nearbyPlaces = useMemo(() => place?.nearbyPlaces ?? [], [place?.nearbyPlaces])
+  // Места рядом: только в пределах NEARBY_MAX_KM, от ближайшего к дальнему.
+  // Места без координат оставляем в конце — расстояние неизвестно, но выбор админа сохраняем.
+  const nearbyPlaces = useMemo(() => {
+    const list = place?.nearbyPlaces ?? []
+    return list
+      .map((p) => ({
+        ...p,
+        distanceKm: haversineKm(place?.latitude, place?.longitude, p.latitude, p.longitude),
+      }))
+      .filter((p) => p.distanceKm === null || p.distanceKm <= NEARBY_MAX_KM)
+      .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
+  }, [place?.nearbyPlaces, place?.latitude, place?.longitude])
 
   const reviewsFromApi = useMemo(() => {
     if (!place?.reviews?.length) return []
@@ -582,9 +596,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                         {nearbyPlaces.length > 0 ? (
                           <div className={styles.sidebarPlaces}>
                             {nearbyPlaces.map((nearbyPlace) => {
-                              const distance = formatDistance(
-                                haversineKm(place.latitude, place.longitude, nearbyPlace.latitude, nearbyPlace.longitude)
-                              )
+                              const distance = formatDistance(nearbyPlace.distanceKm)
                               return (
                               <div
                                 key={nearbyPlace.id}
