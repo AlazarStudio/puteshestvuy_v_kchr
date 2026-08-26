@@ -70,13 +70,13 @@
   display: block;
 }
 
-.newsTabs {
+.sectionTabs {
   display: flex;
   gap: 10px;
   margin-bottom: -50px;
 }
 
-.newsTab {
+.sectionTab {
   padding: 10px 28px;
   border-radius: 30px;
   border: 2px solid #e5e7eb;
@@ -90,18 +90,18 @@
   white-space: nowrap;
 }
 
-.newsTab:hover {
+.sectionTab:hover {
   border-color: #156A60;
   color: #156A60;
 }
 
-.newsTabActive {
+.sectionTabActive {
   background: #156A60;
   border-color: #156A60;
   color: #fff;
 }
 
-.newsTabActive:hover {
+.sectionTabActive:hover {
   background: #0d5248;
   border-color: #0d5248;
   color: #fff;

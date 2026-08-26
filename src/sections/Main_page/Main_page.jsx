@@ -84,6 +84,7 @@ export default function Main_page() {
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT)
   const [newsTab, setNewsTab] = useState('news')
   const [events, setEvents] = useState([])
+  const [eventsTab, setEventsTab] = useState('upcoming')
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
   const [emergencyScrollId, setEmergencyScrollId] = useState(null)
   const [suggestEventOpen, setSuggestEventOpen] = useState(false)
@@ -112,15 +113,20 @@ export default function Main_page() {
     return () => { cancelled = true }
   }, [])
 
+  const isPastEvents = eventsTab === 'past'
+
   useEffect(() => {
     let cancelled = false
-    publicEventsAPI.getAll({ page: 1, limit: 4 })
+    publicEventsAPI.getAll({ page: 1, limit: 4, ...(isPastEvents ? { when: 'past' } : {}) })
       .then(({ data }) => {
         if (!cancelled) setEvents(data?.items || [])
       })
-      .catch(() => {})
+      // Список чистим: иначе после ошибки на экране останутся события другой вкладки
+      .catch(() => {
+        if (!cancelled) setEvents([])
+      })
     return () => { cancelled = true }
-  }, [])
+  }, [isPastEvents])
 
   return (
     <main className={styles.main}>
@@ -335,7 +341,26 @@ export default function Main_page() {
         })()}
 
         <CenterBlock>
-          <TitleButton title="Афиша событий" buttonLink="/events" />
+          <TitleButton title="Афиша событий" buttonLink={isPastEvents ? '/events?when=past' : '/events'} />
+        </CenterBlock>
+
+        <CenterBlock>
+          <div className={styles.sectionTabs}>
+            <button
+              type="button"
+              className={`${styles.sectionTab} ${!isPastEvents ? styles.sectionTabActive : ''}`}
+              onClick={() => setEventsTab('upcoming')}
+            >
+              Ближайшие
+            </button>
+            <button
+              type="button"
+              className={`${styles.sectionTab} ${isPastEvents ? styles.sectionTabActive : ''}`}
+              onClick={() => setEventsTab('past')}
+            >
+              Прошедшие
+            </button>
+          </div>
         </CenterBlock>
 
         {events.length > 0 ? (
@@ -349,10 +374,12 @@ export default function Main_page() {
         ) : (
           <CenterBlock>
             <div className={styles.eventsEmpty}>
-              <p>В ближайшее время событий не запланировано</p>
-              <button type="button" onClick={() => setSuggestEventOpen(true)}>
-                Предложить событие
-              </button>
+              <p>{isPastEvents ? 'Прошедших событий пока нет' : 'В ближайшее время событий не запланировано'}</p>
+              {!isPastEvents && (
+                <button type="button" onClick={() => setSuggestEventOpen(true)}>
+                  Предложить событие
+                </button>
+              )}
             </div>
           </CenterBlock>
         )}
@@ -388,17 +415,17 @@ export default function Main_page() {
         </CenterBlock>
 
         <CenterBlock>
-          <div className={styles.newsTabs}>
+          <div className={styles.sectionTabs}>
             <button
               type="button"
-              className={`${styles.newsTab} ${newsTab === 'news' ? styles.newsTabActive : ''}`}
+              className={`${styles.sectionTab} ${newsTab === 'news' ? styles.sectionTabActive : ''}`}
               onClick={() => setNewsTab('news')}
             >
               Новости
             </button>
             <button
               type="button"
-              className={`${styles.newsTab} ${newsTab === 'article' ? styles.newsTabActive : ''}`}
+              className={`${styles.sectionTab} ${newsTab === 'article' ? styles.sectionTabActive : ''}`}
               onClick={() => setNewsTab('article')}
             >
               Статьи
