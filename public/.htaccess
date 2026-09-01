@@ -1,5 +1,19 @@
 Options -MultiViews
 RewriteEngine On
+
+# SPA fallback: всё, что не файл и не папка — на index.html
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [QSA,L]
+
+# Dev-контур: dev.* — алиас того же docroot, что и боевые домены.
+# Страницам dev-хоста ставим запрет индексации (боевых хостов не касается:
+# заголовок вешается только при совпадении Host с ^dev\.).
+# Правильное закрытие двойника — отключить поддомен dev в панели Beget,
+# это подстраховка на уровне файлов. См. docs/deploy/dev-contour.md
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Host ^dev\. DEV_HOST
+</IfModule>
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow" env=DEV_HOST
+</IfModule>
