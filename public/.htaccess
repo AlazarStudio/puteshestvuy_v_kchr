@@ -16,4 +16,13 @@ RewriteRule ^ index.html [QSA,L]
 </IfModule>
 <IfModule mod_headers.c>
   Header set X-Robots-Tag "noindex, nofollow" env=DEV_HOST
+
+  # Защитные заголовки (аудит, раздел 07). Beget отдаёт статику через nginx
+  # мимо Apache, поэтому заголовки применяются к страницам (SPA-маршрутам) —
+  # для HSTS и антифрейминга этого достаточно. CSP вводим отдельно, когда
+  # соберём список сторонних доменов (Jivo, Translate, lidrekon, карты).
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
