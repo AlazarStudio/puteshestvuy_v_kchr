@@ -13,6 +13,29 @@ export const getImageUrl = (path) => {
   return `${BASE_URL}${path}`;
 };
 
+// Ширины уменьшенных копий, которые генерирует бэкенд
+export const IMAGE_VARIANT_WIDTHS = [400, 800, 1600, 2400];
+
+const RASTER_IMAGE_RE = /\.(jpe?g|png|webp)$/i;
+
+// Хелпер для получения уменьшенной копии изображения: /uploads/_v/{width}/{file}
+// Для внешних ссылок, svg/gif и файлов из public/ вариантов нет — отдаём оригинал
+export const getImageVariant = (path, width) => {
+  if (!path || !path.startsWith('/uploads') || path.startsWith('/uploads/_v/')) {
+    return getImageUrl(path);
+  }
+  const file = path.slice('/uploads/'.length);
+  if (!file || file.includes('/') || !RASTER_IMAGE_RE.test(file)) return getImageUrl(path);
+  return `${BASE_URL}/uploads/_v/${width}/${file}`;
+};
+
+// Абсолютный адрес бэкенда → сырой путь /uploads/... (сырые пути отдаём как есть).
+// Нужен там, где в компонент приходит уже склеенный getImageUrl адрес.
+export const toUploadsPath = (src) => {
+  if (!src || typeof src !== 'string') return src;
+  return src.startsWith(`${BASE_URL}/uploads/`) ? src.slice(BASE_URL.length) : src;
+};
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {

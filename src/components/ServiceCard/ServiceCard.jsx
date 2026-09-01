@@ -1,6 +1,7 @@
 
 
 import styles from './ServiceCard.module.css'
+import AppImage from '@/components/ui/AppImage'
 import { formatRating, formatReviews, hasRating } from '@/utils/rating'
 
 export default function ServiceCard({ img, name, rating = '—', reviewsCount = 0, isVerified = false }) {
@@ -10,7 +11,7 @@ export default function ServiceCard({ img, name, rating = '—', reviewsCount = 
 
   return (
     <div className={styles.card}>
-      <div className={styles.img}><img src={img} alt={name || ''} /></div>
+      <div className={styles.img}><AppImage src={img} alt={name || ''} /></div>
       <div className={styles.topLine}>
         {isVerified && (
           <div className={styles.verification}><img src="/verification.png" alt="" /></div>

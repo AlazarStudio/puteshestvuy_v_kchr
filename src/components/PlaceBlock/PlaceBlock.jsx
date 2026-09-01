@@ -6,6 +6,7 @@ import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import VisitedButton from '@/components/VisitedButton/VisitedButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
 import ShareButton from '@/components/ShareButton/ShareButton'
+import AppImage from '@/components/ui/AppImage'
 import styles from './PlaceBlock.module.css'
 import { formatRating, hasRating } from '@/utils/rating'
 
@@ -69,7 +70,8 @@ export default function PlaceBlock({ img, place, slug, title, desc, rating, feed
         onMouseLeave={handleMouseLeave}
       >
       <div className={styles.img}>
-        <motion.img
+        <AppImage
+          as={motion.img}
           src={img || '/placeholder.jpg'}
           alt={title ? `${title} — интересное место Карачаево-Черкесии` : ''}
           onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder.jpg' }}

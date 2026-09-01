@@ -6,14 +6,14 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
-import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import styles from './NewsGalleryBlock.module.css'
 
 function GalleryTile({ photo, mediaClass, onClick, children }) {
   return (
     <div className={styles.tile}>
       <div className={mediaClass} onClick={onClick}>
-        <img src={photo?.src} alt="" />
+        <AppImage src={photo?.src} alt="" />
         {children}
       </div>
       {photo?.author && <div className={styles.photoCaption}>Фото: {photo.author}</div>}
@@ -23,7 +23,7 @@ function GalleryTile({ photo, mediaClass, onClick, children }) {
 
 export default function NewsGalleryBlock({ images = [], authors, className }) {
   const photos = images.map((url) => ({
-    src: getImageUrl(url),
+    src: url,
     author: authors?.[url]?.trim() || '',
   }))
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -176,7 +176,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.galleryModalSlide}>
-                        <img src={photo.src} alt="" />
+                        <AppImage src={photo.src} alt="" variant="full" />
                         {hasAnyAuthor && (
                           <div className={styles.photoCaptionModal}>
                             {photo.author ? `Фото: ${photo.author}` : ''}
@@ -198,7 +198,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                       swiperRef.current?.swiper?.slideToLoop(index)
                     }}
                   >
-                    <img src={photo.src} alt="" />
+                    <AppImage src={photo.src} alt="" />
                   </div>
                 ))}
               </div>

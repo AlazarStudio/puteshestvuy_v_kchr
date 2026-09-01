@@ -16,6 +16,7 @@ import FavoriteButton from '../FavoriteButton/FavoriteButton'
 import VisitedButton from '../VisitedButton/VisitedButton'
 import ShareButton from '../ShareButton/ShareButton'
 import ParallaxImage from '../ParallaxImage'
+import AppImage from '@/components/ui/AppImage'
 import VkPlaylistWidget, { VK_PLAYLIST_PREFIX } from '../VkPlaylistWidget'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 import { haversineKm, formatDistance } from '@/utils/geo'
@@ -205,7 +206,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                   <>
                 {/* Главное изображение */}
                 <div className={styles.modalImage}>
-                  <img src={getImageUrl(place.images?.[0])} alt={place.title} />
+                  <AppImage src={place.images?.[0]} alt={place.title} variant="cover" eager />
                   {place?.id && (
                     <div className={styles.modalImageActions}>
                       <div className={styles.modalImageIcons} onClick={(e) => e.stopPropagation()}>
@@ -251,6 +252,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                             <div className={styles.galleryFull} onClick={() => openGallery(0)}>
                               <ParallaxImage
                                 src={photos[0]?.src}
+                                variant="card"
                                 alt="Фото 1"
                                 maxOffset={5}
                                 scale={1.03}
@@ -264,6 +266,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               <div className={styles.galleryHalf} onClick={() => openGallery(0)}>
                                 <ParallaxImage
                                   src={photos[0]?.src}
+                                  variant="card"
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
@@ -274,6 +277,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               <div className={styles.galleryHalf} onClick={() => openGallery(1)}>
                                 <ParallaxImage
                                   src={photos[1]?.src}
+                                  variant="card"
                                   alt="Фото 2"
                                   maxOffset={5}
                                   scale={1.03}
@@ -288,6 +292,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               <div className={styles.galleryThirdLeft} onClick={() => openGallery(0)}>
                                 <ParallaxImage
                                   src={photos[0]?.src}
+                                  variant="card"
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
@@ -299,6 +304,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <div className={styles.galleryThirdRightItem} onClick={() => openGallery(1)}>
                                   <ParallaxImage
                                     src={photos[1]?.src}
+                                    variant="card"
                                     alt="Фото 2"
                                     maxOffset={5}
                                     scale={1.03}
@@ -309,6 +315,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <div className={styles.galleryThirdRightItem} onClick={() => openGallery(2)}>
                                   <ParallaxImage
                                     src={photos[2]?.src}
+                                    variant="card"
                                     alt="Фото 3"
                                     maxOffset={5}
                                     scale={1.03}
@@ -324,6 +331,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               <div className={styles.galleryMain} onClick={() => openGallery(0)}>
                                 <ParallaxImage
                                   src={photos[0]?.src}
+                                  variant="card"
                                   alt="Фото 1"
                                   maxOffset={5}
                                   scale={1.03}
@@ -343,6 +351,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                       >
                                         <ParallaxImage
                                           src={photo.src}
+                                          variant="card"
                                           alt={`Фото ${photoIndex + 1}`}
                                           maxOffset={5}
                                           scale={1.03}
@@ -365,6 +374,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                       >
                                         <ParallaxImage
                                           src={photo.src}
+                                          variant="card"
                                           alt={`Фото ${photoIndex + 1}`}
                                           maxOffset={5}
                                           scale={1.03}
@@ -612,7 +622,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                     {distance}
                                   </div>
                                 )}
-                                <img src={getImageUrl(nearbyPlace.image)} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
+                                <AppImage src={nearbyPlace.image} alt={nearbyPlace.title} className={styles.sidebarPlaceImg} />
                                 <div className={styles.sidebarPlaceInfo}>
                                   <div className={`${styles.sidebarPlaceTitle} ${distance ? styles.sidebarPlaceTitleWithDistance : ''}`}>{nearbyPlace.title}</div>
                                   <div className={styles.sidebarPlaceLocation}>
@@ -693,7 +703,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.galleryModalSlide}>
-                        <img src={photo.src} alt={`Фото ${index + 1}`} />
+                        <AppImage src={photo.src} alt={`Фото ${index + 1}`} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -713,7 +723,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                       }
                     }}
                   >
-                    <img src={photo.src} alt={`Миниатюра ${index + 1}`} />
+                    <AppImage src={photo.src} alt={`Миниатюра ${index + 1}`} />
                   </div>
                 ))}
               </div>

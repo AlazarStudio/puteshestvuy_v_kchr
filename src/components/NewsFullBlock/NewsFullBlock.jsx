@@ -5,7 +5,9 @@ import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './NewsFullBlock.module.css'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import { Link } from 'react-router-dom'
-import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import { publicNewsAPI } from '@/lib/api'
+import { useImageVariant } from '@/lib/useImageVariant'
+import AppImage from '@/components/ui/AppImage'
 
 function formatDate(isoStr) {
   if (!isoStr) return ''
@@ -64,8 +66,9 @@ function NewsItemParallax({ item, formatDate, styles }) {
       onMouseLeave={handleMouseLeave}
     >
       <div className={styles.img}>
-        <motion.img 
-          src={getImageUrl(item.image || item.preview || item.images?.[0]) || '/new1.png'} 
+        <AppImage
+          as={motion.img}
+          src={item.image || item.preview || item.images?.[0]}
           alt={item.title}
           style={{
             x: xSpring,
@@ -112,7 +115,7 @@ export default function NewsFullBlock() {
   }, [])
 
   const [featured, ...rest] = news
-  const bgImage = getImageUrl(featured?.image || featured?.preview || featured?.images?.[0]) || '/newBG.png'
+  const bgImage = useImageVariant(featured?.image || featured?.preview || featured?.images?.[0], 1600)
 
   if (loading) {
     return (

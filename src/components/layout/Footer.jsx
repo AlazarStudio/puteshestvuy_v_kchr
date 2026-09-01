@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import CenterBlock from '../CenterBlock/CenterBlock'
 import { publicFooterAPI, feedbackAPI, getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
 import { LEGAL_PATHS } from '@/lib/legal'
 import { buildConsentRecord } from '@/lib/legal/consentRecord'
@@ -105,11 +106,11 @@ export default function Footer() {
       <CenterBlock>
         <div className={styles.footerTop}>
           <div className={styles.column}>
-            <div className={styles.img}><img src={getImageUrl(left.logo)} alt="Путешествуй КЧР" /></div>
+            <div className={styles.img}><AppImage src={left.logo} alt="Путешествуй КЧР" /></div>
             <div className={styles.social}>
               {(left.social || []).map((s, i) => (
                 <Link key={i} to={s.url || '#'} target="_blank" rel="noopener noreferrer" className={styles.imgBlock}>
-                  <img src={getImageUrl(s.icon)} alt={s.name || s.title || 'Соцсеть'} />
+                  <AppImage src={s.icon} alt={s.name || s.title || 'Соцсеть'} />
                 </Link>
               ))}
             </div>
@@ -239,7 +240,7 @@ export default function Footer() {
               const { url } = resolveLink(p)
               return (
                 <Link key={i} to={url || '#'} target="_blank" rel="noopener noreferrer">
-                  <img src={getImageUrl(p.image)} alt={p.name || p.title || 'Партнёр'} />
+                  <AppImage src={p.image} alt={p.name || p.title || 'Партнёр'} />
                 </Link>
               )
             })}

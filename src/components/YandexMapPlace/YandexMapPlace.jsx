@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Route, ExternalLink, X } from 'lucide-react';
-import { getImageUrl } from '@/lib/api';
+import AppImage from '@/components/ui/AppImage';
 
 const DEFAULT_CENTER = [43.5, 41.7];
 const DEFAULT_ZOOM = 14;
@@ -423,8 +423,8 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
                     top: '0'
                   }}
                 >
-                  <img
-                    src={getImageUrl(image)}
+                  <AppImage
+                    src={image}
                     alt=""
                     style={{
                       width: '100%',

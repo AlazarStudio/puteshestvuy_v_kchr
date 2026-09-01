@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { formatEventDateShort } from '@/utils/eventDate'
 import styles from './EventBlock.module.css'
 
@@ -10,7 +10,7 @@ export default function EventBlock({ event }) {
   return (
     <Link to={`/events/${event.slug}`} className={styles.card}>
       <div className={styles.imgWrap}>
-        {event.image && <img src={getImageUrl(event.image)} alt={event.title} />}
+        {event.image && <AppImage src={event.image} alt={event.title} />}
         {event.category && <span className={styles.category}>{event.category}</span>}
       </div>
       <div className={styles.body}>

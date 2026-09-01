@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './NewsBlock.module.css'
+import AppImage from '@/components/ui/AppImage'
 import { Link } from 'react-router-dom'
 import { generateSlug } from '@/utils/transliterate'
 
@@ -51,8 +52,9 @@ export default function NewsBlock({ title, date, tag = 'новости', descrip
       onMouseLeave={handleMouseLeave}
     >
       <div className={styles.newsImage}>
-        <motion.img 
-          src={image || '/new1.png'} 
+        <AppImage
+          as={motion.img}
+          src={image || '/new1.png'}
           alt={title}
           style={{
             x: xSpring,

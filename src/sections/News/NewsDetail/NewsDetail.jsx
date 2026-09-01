@@ -6,6 +6,7 @@ import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { Link } from 'react-router-dom'
 import { publicNewsAPI, getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { slugFromText } from '@/app/admin/components/NewsBlockEditor'
 import NewsGalleryBlock from '@/components/NewsGalleryBlock'
 import Seo from '@/components/Seo/Seo'
@@ -166,7 +167,7 @@ export default function NewsDetail({ slug }) {
         ]}
       />
       <div className={styles.heroImage}>
-        {heroImage && <img src={getImageUrl(heroImage)} alt={news.title} />}
+        {heroImage && <AppImage src={heroImage} alt={news.title} variant="cover" eager />}
         <div className={styles.heroOverlay}></div>
         <div className={styles.heroContent}>
           <CenterBlock>
@@ -223,7 +224,7 @@ export default function NewsDetail({ slug }) {
                   return (
                     <figure key={block.id} className={styles.imageFigure}>
                       <div className={styles.imageBlock}>
-                        <img src={getImageUrl(block.data.url)} alt="" />
+                        <AppImage src={block.data.url} alt="" variant="cover" />
                       </div>
                       {author && <figcaption className={styles.imageCaption}>Фото: {author}</figcaption>}
                     </figure>
@@ -300,7 +301,7 @@ export default function NewsDetail({ slug }) {
               {popularNews.map((item) => (
                 <Link to={`/news/${item.slug || item.id}`} key={item.id} className={styles.popularCard}>
                   <div className={styles.popularImage}>
-                    <img src={getImageUrl(item.image)} alt={item.title} />
+                    <AppImage src={item.image} alt={item.title} />
                   </div>
                   <div className={styles.popularInfo}>
                     <div className={styles.popularDate}>{formatDate(item.publishedAt)}</div>

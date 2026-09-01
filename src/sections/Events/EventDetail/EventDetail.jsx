@@ -7,6 +7,7 @@ import Seo from '@/components/Seo/Seo'
 import { breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl, truncate } from '@/lib/seo/config'
 import { publicEventsAPI, getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { formatEventDate } from '@/utils/eventDate'
 import styles from './EventDetail.module.css'
 
@@ -120,7 +121,7 @@ export default function EventDetail({ slug }) {
           <article className={styles.article}>
             {event.image && (
               <div className={styles.cover}>
-                <img src={getImageUrl(event.image)} alt={event.title} />
+                <AppImage src={event.image} alt={event.title} variant="cover" eager />
               </div>
             )}
 
@@ -166,7 +167,7 @@ export default function EventDetail({ slug }) {
                 <Link to={`/places/${event.place.slug || event.place.id}`} className={styles.placeCard}>
                   {event.place.image && (
                     <div className={styles.placeImage}>
-                      <img src={getImageUrl(event.place.image)} alt={event.place.title} />
+                      <AppImage src={event.place.image} alt={event.place.title} />
                     </div>
                   )}
                   <div className={styles.placeInfo}>

@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
-import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { formatRating, formatReviews, hasRating } from '@/utils/rating'
 
 export default function ServiceCardWithParallax({ 
@@ -61,8 +61,9 @@ export default function ServiceCardWithParallax({
       onMouseLeave={handleMouseLeave}
     >
       <div className={styles.serviceCardImg}>
-        <motion.img
-          src={getImageUrl(service.image || service.images?.[0]) || '/serviceImg1.png'}
+        <AppImage
+          as={motion.img}
+          src={service.image || service.images?.[0]}
           alt={service.title}
           style={{ 
             x: xSpring, 

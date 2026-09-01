@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
+import AppImage from '@/components/ui/AppImage'
 
 function parseProgramSteps(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return []
@@ -295,30 +296,30 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
             <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${a.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${a.galleryMain}`} onClick={() => openModal(0)}>
-                <img src={photos[0]?.src} alt="Фото активности 1" />
+                <AppImage src={photos[0]?.src} alt="Фото активности 1" />
               </div>
             )}
             {photos.length === 2 && (
               <>
                 <div className={`${styles.galleryHalf} ${a.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото активности 1" />
+                  <AppImage src={photos[0]?.src} alt="Фото активности 1" />
                 </div>
                 <div className={`${styles.galleryHalf} ${a.galleryMain}`} onClick={() => openModal(1)}>
-                  <img src={photos[1]?.src} alt="Фото активности 2" />
+                  <AppImage src={photos[1]?.src} alt="Фото активности 2" />
                 </div>
               </>
             )}
             {photos.length === 3 && (
               <>
                 <div className={`${styles.galleryThirdLeft} ${a.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото активности 1" />
+                  <AppImage src={photos[0]?.src} alt="Фото активности 1" />
                 </div>
                 <div className={styles.galleryThirdRight}>
                   <div className={`${styles.galleryThirdRightItem} ${a.galleryItem}`} onClick={() => openModal(1)}>
-                    <img src={photos[1]?.src} alt="Фото активности 2" />
+                    <AppImage src={photos[1]?.src} alt="Фото активности 2" />
                   </div>
                   <div className={`${styles.galleryThirdRightItem} ${a.galleryItem}`} onClick={() => openModal(2)}>
-                    <img src={photos[2]?.src} alt="Фото активности 3" />
+                    <AppImage src={photos[2]?.src} alt="Фото активности 3" />
                   </div>
                 </div>
               </>
@@ -326,7 +327,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
             {photos.length >= 4 && (
               <>
                 <div className={`${styles.galleryMain} ${a.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="Фото активности 1" />
+                  <AppImage src={photos[0]?.src} alt="Фото активности 1" />
                 </div>
                 <div className={styles.galleryGrid}>
                   <div className={styles.galleryGridRow}>
@@ -338,7 +339,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                           className={`${styles.galleryItem} ${a.galleryItem}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <img src={photo.src} alt={`Фото активности ${photoIndex + 1}`} />
+                          <AppImage src={photo.src} alt={`Фото активности ${photoIndex + 1}`} />
                         </div>
                       )
                     })}
@@ -353,7 +354,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                           className={`${styles.galleryItem} ${a.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <img src={photo.src} alt={`Фото активности ${photoIndex + 1}`} />
+                          <AppImage src={photo.src} alt={`Фото активности ${photoIndex + 1}`} />
                           {isLast && (
                             <div
                               className={`${styles.moreButton} ${a.moreButton}`}
@@ -381,7 +382,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
               <div id="main" className={`${styles.serviceHeader} ${a.serviceHeader}`}>
                 {avatarSrc && (
                   <div className={`${styles.serviceAvatar} ${a.serviceAvatar}`}>
-                    <img src={avatarSrc} alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
+                    <AppImage src={avatarSrc} alt="Аватар активности" className={`${styles.avatarImg} ${a.avatarImg}`} />
                   </div>
                 )}
                 <div className={styles.serviceInfo}>
@@ -712,7 +713,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.modalSlide}>
-                        <img src={photo.src} alt={`Фото активности ${index + 1}`} />
+                        <AppImage src={photo.src} alt={`Фото активности ${index + 1}`} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -733,7 +734,7 @@ export default function ActivityDetail({ serviceSlug, serviceData }) {
                       }
                     }}
                   >
-                    <img src={photo.src} alt={`Миниатюра активности ${index + 1}`} />
+                    <AppImage src={photo.src} alt={`Миниатюра активности ${index + 1}`} />
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
+import AppImage from '@/components/ui/AppImage'
 import styles from './ParallaxImage.module.css'
 
 /**
@@ -9,6 +10,7 @@ import styles from './ParallaxImage.module.css'
  * 
  * @param {string} src - URL изображения
  * @param {string} alt - Альтернативный текст для изображения
+ * @param {string} variant - Пресет ширин уменьшенных копий (card, cover, full)
  * @param {number} maxOffset - Максимальное смещение картинки в пикселях (по умолчанию 10)
  * @param {number} scale - Масштаб увеличения при наведении (по умолчанию 1.02)
  * @param {object} springConfig - Конфигурация пружины для плавности движения
@@ -27,6 +29,7 @@ import styles from './ParallaxImage.module.css'
 export default function ParallaxImage({
   src,
   alt = '',
+  variant = 'cover',
   maxOffset = 10,
   scale = 1.02,
   springConfig = { stiffness: 160, damping: 18, mass: 0.5 },
@@ -104,9 +107,11 @@ export default function ParallaxImage({
       {...props}
     >
       <div className={styles.imageWrapper}>
-        <motion.img
+        <AppImage
+          as={motion.img}
           src={src}
           alt={alt}
+          variant={variant}
           className={`${styles.image} ${imgClassName}`}
           style={{
             x: xSpring,

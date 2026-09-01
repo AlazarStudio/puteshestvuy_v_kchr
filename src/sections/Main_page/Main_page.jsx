@@ -16,6 +16,7 @@ import SuggestEventModal from '@/components/SuggestEventModal/SuggestEventModal'
 import MoveLines from '@/components/MoveLines/MoveLines'
 import ParallaxImage from '@/components/ParallaxImage'
 import CtaSection from '@/components/CtaSection/CtaSection'
+import AppImage from '@/components/ui/AppImage'
 import { publicHomeAPI, publicEventsAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import Seo from '@/components/Seo/Seo'
@@ -444,7 +445,7 @@ export default function Main_page() {
         <MoveLines />
 
         <div className={styles.imgBG}>
-          <img src={getImageUrl(homeContent.backgroundImage) || '/mountainBG.png'} alt="" />
+          <AppImage src={homeContent.backgroundImage} alt="" variant="cover" />
           <CtaSection
             title="Начните своё путешествие"
             text="Карачаево-Черкесия ждёт вас — горы, ущелья, водопады и гостеприимные люди. Узнайте больше о регионе, выберите интересные места и спланируйте свои маршруты."

@@ -4,6 +4,7 @@ import ImgFullWidthBlock from '@/components/ImgFullWidthBlock/ImgFullWidthBlock'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import PhotoLightbox from '@/components/PhotoLightbox'
 import UploadPhotoModal from '@/components/UploadPhotoModal'
+import AppImage from '@/components/ui/AppImage'
 import Seo from '@/components/Seo/Seo'
 import { collectionPage, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl } from '@/lib/seo/config'
@@ -133,7 +134,7 @@ export default function Gallery_page() {
                       className={styles.cardImg}
                       style={photo.width && photo.height ? { aspectRatio: `${photo.width} / ${photo.height}` } : undefined}
                     >
-                      <img src={getImageUrl(photo.url)} alt="" loading="lazy" />
+                      <AppImage src={photo.url} alt="" />
                     </div>
                     <div className={styles.cardCaption}>
                       <span className={styles.cardPlace}>{photo.placeCaption}</span>

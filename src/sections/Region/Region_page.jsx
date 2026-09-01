@@ -9,6 +9,8 @@ import PlaceBlock from '@/components/PlaceBlock/PlaceBlock'
 import GalleryPromoBlock from '@/components/GalleryPromoBlock'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import { publicRegionAPI, getImageUrl } from '@/lib/api'
+import { useImageVariant } from '@/lib/useImageVariant'
+import AppImage from '@/components/ui/AppImage'
 import SliderFullScreen from '@/components/SliderFullScreen/SliderFullScreen'
 import Seo from '@/components/Seo/Seo'
 import { touristDestination, breadcrumbList } from '@/lib/seo/schema'
@@ -226,6 +228,9 @@ export default function Region_page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Фон CTA — уменьшенная копия; хук вызываем до раннего возврата, чтобы не менять порядок хуков
+  const ctaBackgroundUrl = useImageVariant((content.cta || DEFAULT_CONTENT.cta).image, 1600)
+
   if (isLoading) {
     return (
       <main className={styles.main}>
@@ -312,7 +317,7 @@ export default function Region_page() {
                   <RichTextContent html={intro.content} className={styles.introRichText} />
                 </div>
                 <div className={styles.introImage}>
-                  <img src={getImageUrl(intro.image)} alt="Природа КЧР" />
+                  <AppImage src={intro.image} alt="Природа КЧР" variant="cover" />
                 </div>
               </div>
             </section>
@@ -373,7 +378,7 @@ export default function Region_page() {
                   {nature.cards.map((card, index) => (
                     <div key={index} className={styles.natureCard}>
                       <div className={styles.natureCardImg}>
-                        <img src={getImageUrl(card.image)} alt={card.title} />
+                        <AppImage src={card.image} alt={card.title} />
                       </div>
                       <div className={styles.natureCardContent}>
                         <h3>{card.title}</h3>
@@ -458,7 +463,7 @@ export default function Region_page() {
       {/* CTA */}
       <section
         className={styles.ctaSection}
-        style={cta.image ? { backgroundImage: `url(${getImageUrl(cta.image)})` } : undefined}
+        style={cta.image ? { backgroundImage: `url(${ctaBackgroundUrl})` } : undefined}
       >
         <div className={styles.ctaOverlay}></div>
         <div className={styles.ctaContent}>

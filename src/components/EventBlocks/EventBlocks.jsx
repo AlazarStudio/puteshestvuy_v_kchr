@@ -3,6 +3,7 @@ import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import NewsGalleryBlock from '@/components/NewsGalleryBlock'
 import { resolveLink } from '@/app/admin/components/LinkSelector/LinkSelector'
 import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { slugFromText } from '@/app/admin/components/NewsBlockEditor/NewsBlockEditor'
 import styles from './EventBlocks.module.css'
 
@@ -38,7 +39,7 @@ export default function EventBlocks({ blocks = [], poster }) {
           return (
             <figure key={block.id} className={styles.imageFigure}>
               <div className={styles.imageBlock}>
-                <img src={getImageUrl(block.data.url)} alt="" />
+                <AppImage src={block.data.url} alt="" variant="cover" />
               </div>
               {author && <figcaption className={styles.caption}>Фото: {author}</figcaption>}
             </figure>

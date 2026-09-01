@@ -1,4 +1,4 @@
-import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import styles from './MapObjectPopup.module.css'
 
 /**
@@ -17,7 +17,7 @@ export default function MapObjectPopup({ object, actionLabel = 'Подробне
 
       {object.image && (
         <div className={styles.image}>
-          <img src={getImageUrl(object.image)} alt="" />
+          <AppImage src={object.image} alt="" />
         </div>
       )}
 

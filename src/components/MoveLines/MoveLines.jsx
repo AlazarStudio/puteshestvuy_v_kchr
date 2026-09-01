@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import styles from './MoveLines.module.css'
-import { publicPlacesAPI, publicRoutesAPI, publicNewsAPI, getImageUrl } from '@/lib/api'
+import { publicPlacesAPI, publicRoutesAPI, publicNewsAPI } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 
 function shuffle(arr) {
   const a = [...arr]
@@ -53,25 +54,25 @@ export default function MoveLines() {
         const places = (placesRes.data?.items || []).map((p) => ({
           id: `place-${p.id}`,
           title: p.title,
-          image: getImageUrl(p.image || p.images?.[0]),
+          image: p.image || p.images?.[0],
           url: `/places/${p.slug || p.id}`,
         }))
         const routes = (routesRes.data?.items || []).map((r) => ({
           id: `route-${r.id}`,
           title: r.title,
-          image: getImageUrl(r.image || r.images?.[0]),
+          image: r.image || r.images?.[0],
           url: `/routes/${r.slug || r.id}`,
         }))
         const news = (newsRes.data?.items || []).map((n) => ({
           id: `news-${n.id}`,
           title: n.title,
-          image: getImageUrl(n.image || n.preview || n.images?.[0]),
+          image: n.image || n.preview || n.images?.[0],
           url: `/news/${n.slug || n.id}`,
         }))
         const articles = (articlesRes.data?.items || []).map((a) => ({
           id: `article-${a.id}`,
           title: a.title,
-          image: getImageUrl(a.image || a.preview || a.images?.[0]),
+          image: a.image || a.preview || a.images?.[0],
           url: `/news/${a.slug || a.id}`,
         }))
         combined.push(...places, ...routes, ...news, ...articles)
@@ -101,7 +102,7 @@ export default function MoveLines() {
     <Link to={item.url} className={styles.tag}>
       <span className={styles.tagText}>{item.title}</span>
       <div className={styles.circle}>
-        <img src={item.image} alt="" />
+        <AppImage src={item.image} alt="" />
       </div>
     </Link>
   )

@@ -15,6 +15,7 @@ import YandexMapRoute from '@/components/YandexMapRoute/YandexMapRoute'
 import ParallaxImage from '@/components/ParallaxImage'
 import ShareButton from '@/components/ShareButton/ShareButton'
 import { publicRoutesAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import { exportRoutePDF } from '@/utils/exportRoutePDF'
 import { formatRating, formatReviews, hasRating } from '@/utils/rating'
@@ -492,6 +493,7 @@ export default function RouteDetail({ routeSlug }) {
               <div className={styles.galleryFull} onClick={() => openModal(0)}>
                 <ParallaxImage
                   src={photos[0]?.src}
+                  variant="card"
                   alt="Фото 1"
                   maxOffset={10}
                   scale={1.03}
@@ -505,6 +507,7 @@ export default function RouteDetail({ routeSlug }) {
                 <div className={styles.galleryHalf} onClick={() => openModal(0)}>
                   <ParallaxImage
                     src={photos[0]?.src}
+                    variant="card"
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
@@ -515,6 +518,7 @@ export default function RouteDetail({ routeSlug }) {
                 <div className={styles.galleryHalf} onClick={() => openModal(1)}>
                   <ParallaxImage
                     src={photos[1]?.src}
+                    variant="card"
                     alt="Фото 2"
                     maxOffset={10}
                     scale={1.03}
@@ -529,6 +533,7 @@ export default function RouteDetail({ routeSlug }) {
                 <div className={styles.galleryThirdLeft} onClick={() => openModal(0)}>
                   <ParallaxImage
                     src={photos[0]?.src}
+                    variant="card"
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
@@ -540,6 +545,7 @@ export default function RouteDetail({ routeSlug }) {
                   <div className={styles.galleryThirdRightItem} onClick={() => openModal(1)}>
                     <ParallaxImage
                       src={photos[1]?.src}
+                      variant="card"
                       alt="Фото 2"
                       maxOffset={10}
                       scale={1.03}
@@ -550,6 +556,7 @@ export default function RouteDetail({ routeSlug }) {
                   <div className={styles.galleryThirdRightItem} onClick={() => openModal(2)}>
                     <ParallaxImage
                       src={photos[2]?.src}
+                      variant="card"
                       alt="Фото 3"
                       maxOffset={10}
                       scale={1.03}
@@ -565,6 +572,7 @@ export default function RouteDetail({ routeSlug }) {
                 <div className={styles.galleryMain} onClick={() => openModal(0)}>
                   <ParallaxImage
                     src={photos[0]?.src}
+                    variant="card"
                     alt="Фото 1"
                     maxOffset={10}
                     scale={1.03}
@@ -584,6 +592,7 @@ export default function RouteDetail({ routeSlug }) {
                         >
                           <ParallaxImage
                             src={photo.src}
+                            variant="card"
                             alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
@@ -606,6 +615,7 @@ export default function RouteDetail({ routeSlug }) {
                         >
                           <ParallaxImage
                             src={photo.src}
+                            variant="card"
                             alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
                             maxOffset={10}
                             scale={1.03}
@@ -792,7 +802,7 @@ export default function RouteDetail({ routeSlug }) {
                               <div className={styles.slideDesc} dangerouslySetInnerHTML={{ __html: place.description || '' }} />
                               <div className={styles.slideImg}>
                                 {mainImage ? (
-                                  <img src={getImageUrl(mainImage)} alt={place.title} />
+                                  <AppImage src={mainImage} alt={place.title} />
                                 ) : null}
                               </div>
                             </div>
@@ -1099,7 +1109,7 @@ export default function RouteDetail({ routeSlug }) {
                       return (
                         <SwiperSlide key={guide.id}>
                           <Link to={guideHref} className={styles.guideCard}>
-                            <div className={styles.guideCard_img}><img src={imgSrc} alt="" /></div>
+                            <div className={styles.guideCard_img}><AppImage src={imgSrc} alt="" /></div>
                             <div className={styles.guideCard_info}>
                               <div className={styles.guideCard_category}>Гид</div>
                               {(showRating || hasReviews) && (
@@ -1164,7 +1174,7 @@ export default function RouteDetail({ routeSlug }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.modalSlide}>
-                        <img src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
+                        <AppImage src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -1184,7 +1194,7 @@ export default function RouteDetail({ routeSlug }) {
                       }
                     }}
                   >
-                    <img src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
+                    <AppImage src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
                   </div>
                 ))}
               </div>

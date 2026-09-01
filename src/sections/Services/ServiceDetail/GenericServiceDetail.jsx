@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
+import AppImage from '@/components/ui/AppImage'
 
 const BreadcrumbArrow = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -208,30 +209,30 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
           <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${common.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                <img src={photos[0]?.src} alt="" />
+                <AppImage src={photos[0]?.src} alt="" />
               </div>
             )}
             {photos.length === 2 && (
               <>
                 <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="" />
+                  <AppImage src={photos[0]?.src} alt="" />
                 </div>
                 <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(1)}>
-                  <img src={photos[1]?.src} alt="" />
+                  <AppImage src={photos[1]?.src} alt="" />
                 </div>
               </>
             )}
             {photos.length === 3 && (
               <>
                 <div className={`${styles.galleryThirdLeft} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="" />
+                  <AppImage src={photos[0]?.src} alt="" />
                 </div>
                 <div className={styles.galleryThirdRight}>
                   <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(1)}>
-                    <img src={photos[1]?.src} alt="" />
+                    <AppImage src={photos[1]?.src} alt="" />
                   </div>
                   <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(2)}>
-                    <img src={photos[2]?.src} alt="" />
+                    <AppImage src={photos[2]?.src} alt="" />
                   </div>
                 </div>
               </>
@@ -239,13 +240,13 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
             {photos.length >= 4 && (
               <>
                 <div className={`${styles.galleryMain} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <img src={photos[0]?.src} alt="" />
+                  <AppImage src={photos[0]?.src} alt="" />
                 </div>
                 <div className={styles.galleryGrid}>
                   <div className={styles.galleryGridRow}>
                     {visiblePhotos.slice(1, 3).map((photo, index) => (
                       <div key={index} className={`${styles.galleryItem} ${common.galleryItem}`} onClick={() => openModal(index + 1)}>
-                        <img src={photo.src} alt="" />
+                        <AppImage src={photo.src} alt="" />
                       </div>
                     ))}
                   </div>
@@ -255,7 +256,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                       const isLast = photoIndex === 4 && showMoreButton
                       return (
                         <div key={photoIndex} className={`${styles.galleryItem} ${common.galleryItem} ${isLast ? styles.galleryItemLast : ''}`} onClick={() => openModal(photoIndex)}>
-                          <img src={photo.src} alt="" />
+                          <AppImage src={photo.src} alt="" />
                           {isLast && (
                             <div className={`${styles.moreButton} ${common.moreButton}`} onClick={(ev) => { ev.stopPropagation(); openModal(5); }}>
                               <img src="/morePhoto.png" alt="" />
@@ -275,7 +276,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
             <div className={`${styles.serviceBlock_content} ${common.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${common.serviceHeader}`}>
                 <div className={`${styles.serviceAvatar} ${common.serviceAvatar}`}>
-                  <img src={avatarImg} alt="" className={`${styles.avatarImg} ${common.avatarImg}`} />
+                  <AppImage src={avatarImg} alt="" className={`${styles.avatarImg} ${common.avatarImg}`} />
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>{categoryLabel}</div>
@@ -339,7 +340,7 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
                                 {room.images.map((src, imgIdx) => (
                                   <SwiperSlide key={imgIdx}>
                                     <div className={styles.roomSlideImgWrap}>
-                                      <img src={src} alt={`${room.name} — фото ${imgIdx + 1}`} />
+                                      <AppImage src={src} alt={`${room.name} — фото ${imgIdx + 1}`} />
                                     </div>
                                   </SwiperSlide>
                                 ))}
@@ -562,14 +563,14 @@ export default function GenericServiceDetail({ config, specificStyles = {}, serv
               <div className={styles.modalMain}>
                 <Swiper ref={swiperRef} modules={[Navigation]} navigation loop spaceBetween={20} slidesPerView={1} initialSlide={activeIndex} onSlideChange={handleSlideChange} className={styles.modalSwiper}>
                   {photos.map((photo, index) => (
-                    <SwiperSlide key={index}><div className={styles.modalSlide}><img src={photo.src} alt="" /></div></SwiperSlide>
+                    <SwiperSlide key={index}><div className={styles.modalSlide}><AppImage src={photo.src} alt="" variant="full" /></div></SwiperSlide>
                   ))}
                 </Swiper>
               </div>
               <div className={styles.modalThumbnails}>
                 {photos.map((photo, index) => (
                   <div key={index} className={`${styles.thumbnail} ${activeIndex === index ? styles.thumbnailActive : ''}`} onClick={() => { setActiveIndex(index); swiperRef.current?.swiper?.slideToLoop(index) }}>
-                    <img src={photo.src} alt="" />
+                    <AppImage src={photo.src} alt="" />
                   </div>
                 ))}
               </div>

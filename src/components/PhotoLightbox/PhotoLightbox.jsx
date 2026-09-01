@@ -7,6 +7,7 @@ import { X, Download } from 'lucide-react'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { downloadFile } from '@/lib/utils'
 import styles from './PhotoLightbox.module.css'
 
@@ -91,7 +92,7 @@ export default function PhotoLightbox({ photos = [], startIndex = 0, isOpen = fa
               {photos.map((photo) => (
                 <SwiperSlide key={photo.id}>
                   <div className={styles.slide}>
-                    <img src={getImageUrl(photo.url)} alt={photo.placeCaption || ''} />
+                    <AppImage src={photo.url} alt={photo.placeCaption || ''} variant="full" />
                   </div>
                 </SwiperSlide>
               ))}

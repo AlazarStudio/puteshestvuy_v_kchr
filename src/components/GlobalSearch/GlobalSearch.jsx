@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Search, MapPin, Map, Newspaper, Building2, Loader2 } from 'lucide-react'
-import { publicPlacesAPI, publicRoutesAPI, publicNewsAPI, publicServicesAPI, getImageUrl } from '@/lib/api'
+import { publicPlacesAPI, publicRoutesAPI, publicNewsAPI, publicServicesAPI } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { searchInObject, calculateSimilarity } from '@/lib/searchUtils'
 import styles from './GlobalSearch.module.css'
 
@@ -438,7 +439,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
                           </div>
                           {result.image && (
                             <div className={styles.resultImage}>
-                              <img src={getImageUrl(result.image)} alt={result.title} />
+                              <AppImage src={result.image} alt={result.title} />
                             </div>
                           )}
                         </div>

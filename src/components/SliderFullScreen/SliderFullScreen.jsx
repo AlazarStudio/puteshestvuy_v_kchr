@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import styles from './SliderFullScreen.module.css'
 import { publicPlacesAPI, publicHomeAPI, getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import RouteConstructorButton from '@/components/RouteConstructorButton/RouteConstructorButton'
@@ -59,7 +60,8 @@ function ThumbnailItem({ slide, placeHref, styles, maxOffset = 10, scale = 1.02 
       onMouseLeave={handleMouseLeave}
     >
       <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-        <motion.img
+        <AppImage
+          as={motion.img}
           src={slide.image}
           alt={slide.title}
           style={{
@@ -475,9 +477,11 @@ export default function SliderFullScreen({
             <div className={styles.image}>
               {slide.video && index === 0 ? (
                 <>
-                  <img
+                  <AppImage
                     src={slide.image}
                     alt={slide.title}
+                    variant="cover"
+                    eager={index === 0}
                     className={styles.mediaLayer}
                     style={{ opacity: showVideoOnCurrentSlide ? 0 : 1 }}
                   />
@@ -501,9 +505,10 @@ export default function SliderFullScreen({
                 </>
               ) : slide.video && outgoingWasShowingVideoRef.current && ((index === 1 && direction === 'prev') || (index === slides.length - 1 && direction === 'next')) ? (
                 <>
-                  <img
+                  <AppImage
                     src={slide.image}
                     alt={slide.title}
+                    variant="cover"
                     className={styles.mediaLayer}
                     style={{ opacity: outgoingVideoVisible ? 0 : 1 }}
                   />
@@ -518,7 +523,7 @@ export default function SliderFullScreen({
                   />
                 </>
               ) : (
-                <img src={slide.image} alt={slide.title} />
+                <AppImage src={slide.image} alt={slide.title} variant="cover" eager={index === 0} />
               )}
             </div>
             <div className={styles.content}>

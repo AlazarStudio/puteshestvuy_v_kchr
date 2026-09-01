@@ -12,9 +12,10 @@ import 'swiper/css/navigation';
 import { Navigation } from 'swiper/modules';
 import { Link } from 'react-router-dom';
 import { useRef } from 'react';
-import { publicNewsAPI, publicHomeAPI, getImageUrl } from '@/lib/api';
+import { publicNewsAPI, publicHomeAPI } from '@/lib/api';
+import AppImage from '@/components/ui/AppImage';
 
-function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
+function ParallaxSlide({ slide, isEven, patternColor, renderPattern, eager }) {
   const ref = useRef(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -54,9 +55,12 @@ function ParallaxSlide({ slide, isEven, patternColor, renderPattern }) {
       onMouseLeave={handleMouseLeave}
     >
       <div className={styles.img}>
-        <motion.img
+        <AppImage
+          as={motion.img}
           src={slide.imgSrc}
           alt={slide.title}
+          variant="cover"
+          eager={eager}
           style={{ x: xSpring, y: ySpring }}
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -110,7 +114,7 @@ export default function SwiperSliderMain() {
                       return {
                         id: fullArticle.id,
                         href: `/news/${fullArticle.slug || fullArticle.id}`,
-                        imgSrc: getImageUrl(fullArticle.images?.[0] || fullArticle.image || fullArticle.preview) || '/helpfull1.png',
+                        imgSrc: fullArticle.images?.[0] || fullArticle.image || fullArticle.preview,
                         title: fullArticle.title || '',
                       }
                     }
@@ -119,7 +123,7 @@ export default function SwiperSliderMain() {
                     return {
                       id: articleId,
                       href: `/news/${savedArticle.slug || articleId}`,
-                      imgSrc: getImageUrl(savedArticle.image) || '/helpfull1.png',
+                      imgSrc: savedArticle.image,
                       title: savedArticle.title || '',
                     }
                   })
@@ -141,7 +145,7 @@ export default function SwiperSliderMain() {
               setSlides(data.items.map((item) => ({
                 id: item.id,
                 href: `/news/${item.slug || item.id}`,
-                imgSrc: getImageUrl(item.images?.[0] || item.image || item.preview) || '/helpfull1.png',
+                imgSrc: item.images?.[0] || item.image || item.preview,
                 title: item.title || '',
               })))
             } else if (!cancelled) {
@@ -158,7 +162,7 @@ export default function SwiperSliderMain() {
                 setSlides(data.items.map((item) => ({
                   id: item.id,
                   href: `/news/${item.slug || item.id}`,
-                  imgSrc: getImageUrl(item.images?.[0] || item.image || item.preview) || '/helpfull1.png',
+                  imgSrc: item.images?.[0] || item.image || item.preview,
                   title: item.title || '',
                 })))
               } else if (!cancelled) {
@@ -222,6 +226,7 @@ export default function SwiperSliderMain() {
                   isEven={isEven}
                   patternColor={patternColor}
                   renderPattern={renderPattern}
+                  eager={index === 0}
                 />
               </SwiperSlide>
             )

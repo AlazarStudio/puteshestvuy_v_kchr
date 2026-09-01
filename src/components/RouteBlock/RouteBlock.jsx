@@ -10,7 +10,7 @@ import 'swiper/css'
 import 'swiper/css/navigation'
 import { Navigation } from 'swiper/modules'
 import { Link } from 'react-router-dom'
-import { getImageUrl } from '@/lib/api'
+import AppImage from '@/components/ui/AppImage'
 import { generateSlug } from '@/utils/transliterate'
 import { formatRating, hasRating } from '@/utils/rating'
 import { useRoutePlacesVisible } from '@/lib/useRoutePlacesVisible'
@@ -29,7 +29,6 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
     (route.id != null ? String(route.id) : '')
   if (!slug) return null
   const title = route.title || ''
-  const imageUrl = getImageUrl(route.images?.[0])
   const shortDesc = route.shortDescription || ''
   const duration = route.duration ?? ''
   const distance = route.distance != null && route.distance !== '' ? `${route.distance} км` : ''
@@ -42,14 +41,14 @@ export default function RouteBlock({ route: routeProp, title: titleProp, hideFav
     ? route.images.map((src, i) => (
         <SwiperSlide key={i}>
           <div className={styles.routeSlide}>
-            <img src={getImageUrl(src)} alt={title} />
+            <AppImage src={src} alt={title} />
           </div>
         </SwiperSlide>
       ))
     : [
         <SwiperSlide key={0}>
           <div className={styles.routeSlide}>
-            <img src={imageUrl || '/routeSlide1.png'} alt={title} />
+            <AppImage src={route.images?.[0]} alt={title} />
           </div>
         </SwiperSlide>,
       ]

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Camera } from 'lucide-react'
-import { getImageUrl } from '@/lib/api'
+import { useImageVariant } from '@/lib/useImageVariant'
 import styles from './GalleryPromoBlock.module.css'
 
 export default function GalleryPromoBlock({
@@ -9,10 +9,12 @@ export default function GalleryPromoBlock({
   buttonText = 'Перейти в фотогалерею',
   image = '',
 }) {
+  const backgroundUrl = useImageVariant(image, 1600)
+
   return (
     <div
       className={styles.block}
-      style={image ? { backgroundImage: `url(${getImageUrl(image)})` } : undefined}
+      style={image ? { backgroundImage: `url(${backgroundUrl})` } : undefined}
     >
       <div className={styles.overlay} />
       <div className={styles.content}>
