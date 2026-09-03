@@ -18,7 +18,7 @@ import ParallaxImage from '@/components/ParallaxImage'
 import CtaSection from '@/components/CtaSection/CtaSection'
 import AppImage from '@/components/ui/AppImage'
 import { publicHomeAPI, publicEventsAPI, getImageUrl } from '@/lib/api'
-import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
+import DynamicIcon from '@/components/ui/DynamicIcon'
 import Seo from '@/components/Seo/Seo'
 import { touristDestination } from '@/lib/seo/schema'
 import { absoluteUrl } from '@/lib/seo/config'
@@ -309,7 +309,7 @@ export default function Main_page() {
                               borderRadius: banner.buttonBorderRadius != null ? `${banner.buttonBorderRadius}px` : undefined,
                             }}
                           >
-                            {banner.buttonIconName && (() => { const IC = getMuiIconComponent(banner.buttonIconName); return IC ? <IC size={18} style={{ flexShrink: 0 }} /> : null; })()}
+                            {banner.buttonIconName && <DynamicIcon name={banner.buttonIconName} size={18} style={{ flexShrink: 0 }} />}
                             {!banner.buttonIconName && banner.buttonIcon && (
                               <img src={getImageUrl(banner.buttonIcon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
                             )}
@@ -327,7 +327,7 @@ export default function Main_page() {
                               borderRadius: banner.button2BorderRadius != null ? `${banner.button2BorderRadius}px` : undefined,
                             }}
                           >
-                            {banner.button2IconName && (() => { const IC = getMuiIconComponent(banner.button2IconName); return IC ? <IC size={18} style={{ flexShrink: 0 }} /> : null; })()}
+                            {banner.button2IconName && <DynamicIcon name={banner.button2IconName} size={18} style={{ flexShrink: 0 }} />}
                             {!banner.button2IconName && banner.button2Icon && (
                               <img src={getImageUrl(banner.button2Icon)} alt="" style={{ height: '1.2em', objectFit: 'contain', flexShrink: 0 }} />
                             )}

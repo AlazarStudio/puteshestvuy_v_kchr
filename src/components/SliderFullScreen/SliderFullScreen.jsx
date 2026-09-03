@@ -12,6 +12,8 @@ import RouteConstructorButton from '@/components/RouteConstructorButton/RouteCon
 import { formatRating, hasRating } from '@/utils/rating'
 
 const SLIDER_LIMIT = 6
+// Сколько мест максимум разбирать в ответе на поиск по названию выбранного места
+const PLACE_LOOKUP_LIMIT = 5
 const TIME_RUNNING = 500
 const IMAGE_DELAY_MS = 2000
 const FADE_DURATION_MS = 400
@@ -95,6 +97,48 @@ function makeIntroSlide(bgImage = '/mountainBG.png') {
   }
 }
 
+// Слайд из снимка, сохранённого в настройках главной: используется, пока/если
+// свежие данные места получить не удалось
+function savedPlaceToSlide(savedPlace) {
+  const placeId = savedPlace.placeId || savedPlace.id
+  return {
+    id: placeId,
+    slug: savedPlace.slug || placeId,
+    image: getImageUrl(savedPlace.image),
+    video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
+    place: savedPlace.location || '',
+    title: savedPlace.title || '',
+    rating: hasRating(savedPlace.rating) ? formatRating(savedPlace.rating) : null,
+    description: savedPlace.shortDescription || '',
+  }
+}
+
+// Освежаем данные ровно тех мест, которые показаны в слайдере. Выборки по списку
+// id у публичного API нет, а карточка места увеличивает счётчик просмотров, поэтому
+// ищем каждое место по сохранённому названию и сверяем результат по id.
+function fetchSavedPlace(savedPlace) {
+  const placeId = savedPlace.placeId || savedPlace.id
+  const title = (savedPlace.title || '').trim()
+  if (!placeId || !title) return Promise.resolve(null)
+  return publicPlacesAPI
+    .getAll({ search: title, limit: PLACE_LOOKUP_LIMIT })
+    .then((res) => {
+      const items = res.data?.items || res.data || []
+      return items.find((p) => p.id === placeId) || null
+    })
+    .catch(() => null)
+}
+
+function resolveSavedPlacesToSlides(sliderPlaces) {
+  return Promise.all(
+    sliderPlaces.map((savedPlace) =>
+      fetchSavedPlace(savedPlace).then((fullPlace) =>
+        fullPlace ? placeToSlide(fullPlace) : savedPlaceToSlide(savedPlace)
+      )
+    )
+  )
+}
+
 function placeToSlide(place) {
   const description = place.shortDescription || place.description || ''
   const mainImage = place.images?.[0] ?? place.image
@@ -150,28 +194,9 @@ export default function SliderFullScreen({
       setLoadingFalse()
       return
     }
-    publicPlacesAPI.getAll({ limit: 500 })
-      .then((res) => {
+    resolveSavedPlacesToSlides(sliderPlaces)
+      .then((list) => {
         if (cancelled.value) return
-        const allPlaces = res.data?.items || res.data || []
-        const placesMap = new Map(allPlaces.map(p => [p.id, p]))
-        const list = sliderPlaces
-          .map((savedPlace) => {
-            const placeId = savedPlace.placeId || savedPlace.id
-            const fullPlace = placesMap.get(placeId)
-            if (fullPlace) return placeToSlide(fullPlace)
-            return {
-              id: placeId,
-              slug: savedPlace.slug || placeId,
-              image: getImageUrl(savedPlace.image),
-              video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
-              place: savedPlace.location || '',
-              title: savedPlace.title || '',
-              rating: hasRating(savedPlace.rating) ? formatRating(savedPlace.rating) : null,
-              description: savedPlace.shortDescription || '',
-            }
-          })
-          .filter(Boolean)
         const finalSlides = list.length > 0 ? [introSlide, ...list] : [introSlide]
         setSlides(finalSlides)
         initialSlidesRef.current = finalSlides
@@ -216,33 +241,9 @@ export default function SliderFullScreen({
         if (sliderPlaces.length > 0) {
           const placeIds = sliderPlaces.map(p => p.placeId || p.id).filter(Boolean)
           if (placeIds.length > 0) {
-            return publicPlacesAPI.getAll({ limit: 500 })
-              .then((res) => {
+            return resolveSavedPlacesToSlides(sliderPlaces)
+              .then((list) => {
                 if (cancelled.value) return
-                const allPlaces = res.data?.items || res.data || []
-                const placesMap = new Map(allPlaces.map(p => [p.id, p]))
-
-                const list = sliderPlaces
-                  .map((savedPlace) => {
-                    const placeId = savedPlace.placeId || savedPlace.id
-                    const fullPlace = placesMap.get(placeId)
-
-                    if (fullPlace) {
-                      return placeToSlide(fullPlace)
-                    }
-
-                    return {
-                      id: placeId,
-                      slug: savedPlace.slug || placeId,
-                      image: getImageUrl(savedPlace.image),
-                      video: savedPlace.sliderVideo ? getImageUrl(savedPlace.sliderVideo) : null,
-                      place: savedPlace.location || '',
-                      title: savedPlace.title || '',
-                      rating: hasRating(savedPlace.rating) ? formatRating(savedPlace.rating) : null,
-                              description: savedPlace.shortDescription || '',
-                    }
-                  })
-                  .filter(Boolean)
 
                 if (list.length > 0) {
                   setSlides([introSlide, ...list])

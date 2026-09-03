@@ -51,44 +51,38 @@ const TAB_ORDER = [
   'Музеи',
 ]
 
+// Сколько карточек показываем в каждой категории
+const CARDS_PER_TAB = 4
+
 export default function ServiceTabBlock() {
   const [tabs, setTabs] = useState([])
-  const [servicesByCategory, setServicesByCategory] = useState({})
+  const [servicesByLabel, setServicesByLabel] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    publicServicesAPI.getAll({ limit: 500 })
-      .then(({ data }) => {
-        if (!cancelled && data?.items?.length) {
-          const byCategory = {}
-          data.items.forEach((s) => {
-            const cat = s.category || ''
-            if (cat) {
-              if (!byCategory[cat]) byCategory[cat] = []
-              byCategory[cat].push(s)
-            }
+    // По запросу на категорию: фильтрация и сортировка по популярности — на сервере,
+    // забираем ровно те карточки, которые показываем
+    Promise.all(
+      TAB_ORDER.map((label) =>
+        publicServicesAPI
+          .getAll({
+            category: FILTER_TO_CATEGORY[label],
+            sortBy: 'popularity',
+            limit: CARDS_PER_TAB,
           })
-
-          Object.keys(byCategory).forEach((cat) => {
-            byCategory[cat].sort((a, b) => (b.uniqueViewsCount ?? 0) - (a.uniqueViewsCount ?? 0))
-          })
-
-          setServicesByCategory(byCategory)
-          setTabs(TAB_ORDER.filter((label) => {
-            const cat = FILTER_TO_CATEGORY[label]
-            return cat && (byCategory[cat]?.length || 0) > 0
-          }))
-        } else if (!cancelled) {
-          setServicesByCategory({})
-          setTabs([])
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setServicesByCategory({})
-          setTabs([])
-        }
+          .then(({ data }) => data?.items || [])
+          .catch(() => [])
+      )
+    )
+      .then((results) => {
+        if (cancelled) return
+        const byLabel = {}
+        TAB_ORDER.forEach((label, index) => {
+          byLabel[label] = results[index]
+        })
+        setServicesByLabel(byLabel)
+        setTabs(TAB_ORDER.filter((label) => byLabel[label].length > 0))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -101,8 +95,7 @@ export default function ServiceTabBlock() {
   return (
     <section className={styles.service}>
       {tabs.map((label) => {
-        const category = FILTER_TO_CATEGORY[label]
-        const items = (servicesByCategory[category] || []).slice(0, 4)
+        const items = servicesByLabel[label] || []
         if (!items.length) return null
         return (
           <div key={label} className={styles.categorySection}>

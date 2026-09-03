@@ -97,11 +97,20 @@ export default function SwiperSliderMain() {
           // Загружаем полные данные статей по их ID, чтобы получить актуальные images[0]
           const articleIds = firstTimeArticles.map(a => a.articleId || a.id).filter(Boolean)
           if (articleIds.length > 0) {
-            return publicNewsAPI.getAll({ type: 'article', limit: 500 })
-              .then((res) => {
+            // Запрашиваем ровно выбранные статьи, а не весь список:
+            // карточка статьи не считает просмотры, так что берём её по id
+            return Promise.all(
+              articleIds.map((id) =>
+                publicNewsAPI.getByIdOrSlug(id)
+                  .then((res) => res.data)
+                  .catch(() => null)
+              )
+            )
+              .then((articles) => {
                 if (cancelled) return
-                const allArticles = res.data?.items || res.data || []
-                const articlesMap = new Map(allArticles.map(a => [a.id, a]))
+                const articlesMap = new Map(
+                  articles.filter(Boolean).map(a => [a.id, a])
+                )
 
                 // Используем выбранные статьи из настроек, но берем актуальные данные из API
                 const list = firstTimeArticles
