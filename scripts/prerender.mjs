@@ -32,6 +32,7 @@ const PAGE_BUDGET_MS = 30000 // общий бюджет на страницу (g
 const GOTO_TIMEOUT_MS = 12000 // networkidle2 может не наступить на /map (постоянные тайлы) — не съедаем весь бюджет
 const WAIT_ROOT_TIMEOUT_MS = 8000
 const NETWORK_IDLE_TIMEOUT_MS = 8000 // добор данных после монтирования (см. renderOnce)
+const HELMET_COMMIT_TIMEOUT_MS = 8000 // ожидание rAF-коммита <Seo> перед извлечением (см. renderOnce)
 // Спека просила «1 ретрай», но под конкурентной нагрузкой canonical-проверка
 // (см. комментарий у canonicalPathOf) периодически просит повторить заход —
 // с одним ретраем реальная доля неудач местами превышала допустимые 10%.
@@ -289,9 +290,24 @@ async function renderOnce(browser, baseUrl, urlPath) {
       // извлекаем то, что есть, а корректность снапшота перепроверяет
       // canonical-проверка ниже.
       await page.waitForNetworkIdle({ idleTime: 500, concurrency: 0, timeout: NETWORK_IDLE_TIMEOUT_MS }).catch(() => {})
+      // Отдельно дожидаемся самого коммита helmet (rAF, см. canonicalPathOf) —
+      // «root непуст» наступает раньше и не гарантирует, что <Seo> уже
+      // отрисовался. Не фатально: если не успеет, извлечение всё равно
+      // произойдёт, а canonical-проверка ниже поймает пустой headTagsHtml
+      // и отправит страницу на повтор.
+      await page
+        .waitForFunction(() => !!document.querySelector('link[rel="canonical"][data-rh]'), { timeout: HELMET_COMMIT_TIMEOUT_MS })
+        .catch(() => {})
       const result = await extractPage(page)
       const canonicalPath = canonicalPathOf(result.headTagsHtml)
-      if (canonicalPath !== null && normalizePath(canonicalPath) !== normalizePath(urlPath)) {
+      // Seo.jsx ставит canonical безусловно на КАЖДОЙ пререндеримой странице
+      // (включая NotFound для 404-пробы) — null здесь означает не «страницы
+      // без Seo», а «helmet ещё не закоммитил теги», то есть снапшот пустой
+      // и его нельзя записывать как есть.
+      if (canonicalPath === null) {
+        throw new Error('canonical не найден в извлечённых head-тегах — helmet не успел закоммитить')
+      }
+      if (normalizePath(canonicalPath) !== normalizePath(urlPath)) {
         throw new Error(`canonical не совпадает с запрошенным URL: ждали ${urlPath}, получили ${canonicalPath}`)
       }
       return result

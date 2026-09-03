@@ -15,6 +15,13 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(login|register|profile|admin(/.*)?|services/template(/.*)?)/?$ index.html [QSA,L]
 
+# 2б) Корневые страницы разделов: в норме их отдаёт пререндер (файл existует,
+#     сюда не доходим), но если dist собран без пререндера (обычный npm run build),
+#     разделы обязаны работать через SPA, а не падать в 404.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(places|routes|services|news|events|gallery|region|map)/?$ index.html [QSA,L]
+
 # 3) URL под известными префиксами динамического контента (места, маршруты,
 #    услуги, новости/статьи, события, юр. документы) вида /префикс/слаг, для
 #    которых на диске ещё нет пререндер-файла, — тоже на index.html (200), а
