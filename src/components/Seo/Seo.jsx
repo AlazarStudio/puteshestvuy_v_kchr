@@ -5,6 +5,30 @@ import {
   SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, absoluteUrl,
 } from '@/lib/seo/config'
 
+// description иногда приходит как rich-text HTML из редактора (Quill) —
+// например detailPlace.shortDescription передаётся сюда «как есть», без
+// truncate(). Без очистки такая разметка экранируется React прямо в атрибут
+// content и в meta description/og:description/twitter:description попадает
+// буквальный «&lt;p&gt;&lt;span style=...». Чистим централизованно здесь —
+// это закрывает баг сразу для всех страниц (места, маршруты, услуги,
+// новости), а не только там, где вызывающий код сам вызвал truncate().
+function cleanDescription(raw) {
+  if (!raw) return ''
+  const withoutTags = String(raw).replace(/<[^>]*>/g, ' ')
+  const decoded = withoutTags
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+  const collapsed = decoded.replace(/\s+/g, ' ').trim()
+  if (collapsed.length <= 200) return collapsed
+  const cut = collapsed.slice(0, 200)
+  const lastSpace = cut.lastIndexOf(' ')
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + '…'
+}
+
 export default function Seo({
   title,
   description,
@@ -18,7 +42,7 @@ export default function Seo({
   const canonicalPath = path ?? location.pathname
   const canonical = absoluteUrl(canonicalPath)
   const metaTitle = title || DEFAULT_TITLE
-  const metaDescription = description || DEFAULT_DESCRIPTION
+  const metaDescription = cleanDescription(description) || DEFAULT_DESCRIPTION
   const ogImage = image ? absoluteUrl(image) : DEFAULT_OG_IMAGE
   const scripts = (Array.isArray(jsonLd) ? jsonLd : [jsonLd]).filter(Boolean)
 
