@@ -19,4 +19,4 @@ Disallow: /services/template/
 Disallow: /*?page=
 Disallow: /*?search=
 
-Sitemap: https://xn--b1aahavh3aoehdhg3dg.xn--p1ai/sitemap.xml
+Sitemap: https://xn--e1aggnekdj1c.xn--p1ai/sitemap.xml

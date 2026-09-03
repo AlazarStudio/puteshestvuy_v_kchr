@@ -5,9 +5,9 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
-// TODO: домен на согласовании с SEO — временно оставлен путешествуйвкчр.рф,
-// хотя канонический сейчас посетикчр.рф (см. SITE_URL в src/lib/seo/config.js)
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://xn--b1aahavh3aoehdhg3dg.xn--p1ai').replace(/\/+$/, '')
+// посетикчр.рф — основной домен (решение заказчика 03.09.2026),
+// синхронно с SITE_URL в src/lib/seo/config.js
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://xn--e1aggnekdj1c.xn--p1ai').replace(/\/+$/, '')
 const API_URL = (process.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/+$/, '')
 
 const STATIC = [

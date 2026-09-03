@@ -1,6 +1,13 @@
 Options -MultiViews
 RewriteEngine On
 
+# Основной домен — посетикчр.рф (решение заказчика, 03.09.2026).
+# путешествуйвкчр.рф и www-варианты переадресуются 301 с сохранением пути и
+# query. dev.* сознательно не трогаем (закрыт noindex ниже, отключается в панели).
+RewriteCond %{HTTP_HOST} ^(www\.)?xn--b1aahavh3aoehdhg3dg\.xn--p1ai$ [NC,OR]
+RewriteCond %{HTTP_HOST} ^www\.xn--e1aggnekdj1c\.xn--p1ai$ [NC]
+RewriteRule ^(.*)$ https://xn--e1aggnekdj1c.xn--p1ai/$1 [R=301,L]
+
 # Пререндер лежит каталогами (/places/<слаг>/index.html). Без этого блока
 # mod_dir отвечает на /places редиректом 301 на /places/ и, стоя за
 # TLS-терминирующим прокси, строит Location через http:// (небезопасный хоп
