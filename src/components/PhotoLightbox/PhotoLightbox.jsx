@@ -92,7 +92,7 @@ export default function PhotoLightbox({ photos = [], startIndex = 0, isOpen = fa
               {photos.map((photo) => (
                 <SwiperSlide key={photo.id}>
                   <div className={styles.slide}>
-                    <AppImage src={photo.url} alt={photo.placeCaption || ''} variant="full" />
+                    <AppImage src={photo.url} alt={photo.placeCaption || 'Фотография из фотобанка'} variant="full" />
                   </div>
                 </SwiperSlide>
               ))}

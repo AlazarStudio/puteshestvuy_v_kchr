@@ -24,6 +24,7 @@ import Seo from '@/components/Seo/Seo'
 import { touristTrip, itemList, breadcrumbList } from '@/lib/seo/schema'
 import { absoluteUrl, truncate } from '@/lib/seo/config'
 import { parseYandexRoute } from '@/lib/yandexRoute'
+import { photoAlt } from '@/utils/imageAlt'
 
 function parseWhatToBring(str) {
   if (!str || typeof str !== 'string') return []
@@ -494,7 +495,7 @@ export default function RouteDetail({ routeSlug }) {
                 <ParallaxImage
                   src={photos[0]?.src}
                   variant="card"
-                  alt="Фото 1"
+                  alt={photoAlt(route.title, 1)}
                   maxOffset={10}
                   scale={1.03}
                   style={{ width: '100%', height: '100%' }}
@@ -508,7 +509,7 @@ export default function RouteDetail({ routeSlug }) {
                   <ParallaxImage
                     src={photos[0]?.src}
                     variant="card"
-                    alt="Фото 1"
+                    alt={photoAlt(route.title, 1)}
                     maxOffset={10}
                     scale={1.03}
                     style={{ width: '100%', height: '100%' }}
@@ -519,7 +520,7 @@ export default function RouteDetail({ routeSlug }) {
                   <ParallaxImage
                     src={photos[1]?.src}
                     variant="card"
-                    alt="Фото 2"
+                    alt={photoAlt(route.title, 2)}
                     maxOffset={10}
                     scale={1.03}
                     style={{ width: '100%', height: '100%' }}
@@ -534,7 +535,7 @@ export default function RouteDetail({ routeSlug }) {
                   <ParallaxImage
                     src={photos[0]?.src}
                     variant="card"
-                    alt="Фото 1"
+                    alt={photoAlt(route.title, 1)}
                     maxOffset={10}
                     scale={1.03}
                     style={{ width: '100%', height: '100%' }}
@@ -546,7 +547,7 @@ export default function RouteDetail({ routeSlug }) {
                     <ParallaxImage
                       src={photos[1]?.src}
                       variant="card"
-                      alt="Фото 2"
+                      alt={photoAlt(route.title, 2)}
                       maxOffset={10}
                       scale={1.03}
                       style={{ width: '100%', height: '100%' }}
@@ -557,7 +558,7 @@ export default function RouteDetail({ routeSlug }) {
                     <ParallaxImage
                       src={photos[2]?.src}
                       variant="card"
-                      alt="Фото 3"
+                      alt={photoAlt(route.title, 3)}
                       maxOffset={10}
                       scale={1.03}
                       style={{ width: '100%', height: '100%' }}
@@ -573,7 +574,7 @@ export default function RouteDetail({ routeSlug }) {
                   <ParallaxImage
                     src={photos[0]?.src}
                     variant="card"
-                    alt="Фото 1"
+                    alt={photoAlt(route.title, 1)}
                     maxOffset={10}
                     scale={1.03}
                     style={{ width: '100%', height: '100%' }}
@@ -593,7 +594,7 @@ export default function RouteDetail({ routeSlug }) {
                           <ParallaxImage
                             src={photo.src}
                             variant="card"
-                            alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
+                            alt={photoAlt(route.title, photoIndex + 1)}
                             maxOffset={10}
                             scale={1.03}
                             style={{ width: '100%', height: '100%' }}
@@ -616,7 +617,7 @@ export default function RouteDetail({ routeSlug }) {
                           <ParallaxImage
                             src={photo.src}
                             variant="card"
-                            alt={`${route.title} — фото маршрута ${photoIndex + 1}`}
+                            alt={photoAlt(route.title, photoIndex + 1)}
                             maxOffset={10}
                             scale={1.03}
                             style={{ width: '100%', height: '100%' }}
@@ -1109,7 +1110,7 @@ export default function RouteDetail({ routeSlug }) {
                       return (
                         <SwiperSlide key={guide.id}>
                           <Link to={guideHref} className={styles.guideCard}>
-                            <div className={styles.guideCard_img}><AppImage src={imgSrc} alt="" /></div>
+                            <div className={styles.guideCard_img}><AppImage src={imgSrc} alt={guide.title || 'Гид'} /></div>
                             <div className={styles.guideCard_info}>
                               <div className={styles.guideCard_category}>Гид</div>
                               {(showRating || hasReviews) && (
@@ -1174,7 +1175,7 @@ export default function RouteDetail({ routeSlug }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.modalSlide}>
-                        <AppImage src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} variant="full" />
+                        <AppImage src={photo.src} alt={photoAlt(route.title, index + 1)} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -1194,7 +1195,7 @@ export default function RouteDetail({ routeSlug }) {
                       }
                     }}
                   >
-                    <AppImage src={photo.src} alt={`${route.title} — фото маршрута ${index + 1}`} />
+                    <AppImage src={photo.src} alt={photoAlt(route.title, index + 1)} />
                   </div>
                 ))}
               </div>

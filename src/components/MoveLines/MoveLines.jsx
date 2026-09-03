@@ -15,7 +15,14 @@ function shuffle(arr) {
   return a
 }
 
-function duplicateItems(items, times = 4) {
+// Трек состоит из двух одинаковых копий списка и анимируется на -50%, то есть
+// ровно на ширину одной копии — этого достаточно для бесшовности. Список
+// размножаем только если он совсем короткий: иначе одна копия окажется уже
+// экрана и в ленте появится пустой разрыв.
+const MIN_ITEMS_PER_COPY = 12
+
+function duplicateItems(items) {
+  const times = Math.max(1, Math.ceil(MIN_ITEMS_PER_COPY / Math.max(items.length, 1)))
   const result = []
   for (let i = 0; i < times; i++) {
     items.forEach((item, idx) => {
@@ -94,9 +101,9 @@ export default function MoveLines() {
   }
 
   const [line1, line2, line3] = splitIntoLines(items, 3)
-  const line1Items = duplicateItems(line1, 4)
-  const line2Items = duplicateItems(line2, 4)
-  const line3Items = duplicateItems(line3, 4)
+  const line1Items = duplicateItems(line1)
+  const line2Items = duplicateItems(line2)
+  const line3Items = duplicateItems(line3)
 
   const Tag = ({ item }) => (
     <Link to={item.url} className={styles.tag}>

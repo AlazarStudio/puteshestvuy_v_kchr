@@ -18,6 +18,7 @@ import YandexMapPlace from '@/components/YandexMapPlace'
 import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import BookingModal from '@/components/BookingModal/BookingModal'
 import AppImage from '@/components/ui/AppImage'
+import { photoAlt, thumbAlt } from '@/utils/imageAlt'
 
 function buildContactsFromService(service) {
   const items = []
@@ -293,30 +294,30 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
           <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${g.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${g.galleryMain}`} onClick={() => openModal(0)}>
-                <AppImage src={photos[0]?.src} alt="Фото 1" />
+                <AppImage src={photos[0]?.src} alt={photoAlt(displayName, 1)} />
               </div>
             )}
             {photos.length === 2 && (
               <>
                 <div className={`${styles.galleryHalf} ${g.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(displayName, 1)} />
                 </div>
                 <div className={`${styles.galleryHalf} ${g.galleryMain}`} onClick={() => openModal(1)}>
-                  <AppImage src={photos[1]?.src} alt="Фото 2" />
+                  <AppImage src={photos[1]?.src} alt={photoAlt(displayName, 2)} />
                 </div>
               </>
             )}
             {photos.length === 3 && (
               <>
                 <div className={`${styles.galleryThirdLeft} ${g.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(displayName, 1)} />
                 </div>
                 <div className={styles.galleryThirdRight}>
                   <div className={`${styles.galleryThirdRightItem} ${g.galleryItem}`} onClick={() => openModal(1)}>
-                    <AppImage src={photos[1]?.src} alt="Фото 2" />
+                    <AppImage src={photos[1]?.src} alt={photoAlt(displayName, 2)} />
                   </div>
                   <div className={`${styles.galleryThirdRightItem} ${g.galleryItem}`} onClick={() => openModal(2)}>
-                    <AppImage src={photos[2]?.src} alt="Фото 3" />
+                    <AppImage src={photos[2]?.src} alt={photoAlt(displayName, 3)} />
                   </div>
                 </div>
               </>
@@ -324,7 +325,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
             {photos.length >= 4 && (
               <>
                 <div className={`${styles.galleryMain} ${g.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(displayName, 1)} />
                 </div>
                 <div className={styles.galleryGrid}>
                   <div className={styles.galleryGridRow}>
@@ -336,7 +337,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                           className={`${styles.galleryItem} ${g.galleryItem}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <AppImage src={photo.src} alt={`Фото ${photoIndex + 1}`} />
+                          <AppImage src={photo.src} alt={photoAlt(displayName, photoIndex + 1)} />
                         </div>
                       )
                     })}
@@ -351,7 +352,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                           className={`${styles.galleryItem} ${g.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <AppImage src={photo.src} alt={`Фото ${photoIndex + 1}`} />
+                          <AppImage src={photo.src} alt={photoAlt(displayName, photoIndex + 1)} />
                           {isLast && (
                             <div
                               className={`${styles.moreButton} ${g.moreButton}`}
@@ -379,7 +380,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
               <div id="main" className={`${styles.serviceHeader} ${g.serviceHeader}`}>
                 {avatarSrc && (
                   <div className={`${styles.serviceAvatar} ${g.serviceAvatar}`}>
-                    <AppImage src={avatarSrc} alt="Аватар" className={`${styles.avatarImg} ${g.avatarImg}`} />
+                    <AppImage src={avatarSrc} alt={displayName || ''} className={`${styles.avatarImg} ${g.avatarImg}`} />
                     {serviceData?.isVerified && (
                       <img src="/verification.png" alt="" className={styles.verificationBadge} />
                     )}
@@ -711,7 +712,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.modalSlide}>
-                        <AppImage src={photo.src} alt={`Фото ${index + 1}`} variant="full" />
+                        <AppImage src={photo.src} alt={photoAlt(displayName, index + 1)} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -730,7 +731,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                       }
                     }}
                   >
-                    <AppImage src={photo.src} alt={`Миниатюра ${index + 1}`} />
+                    <AppImage src={photo.src} alt={thumbAlt(index + 1)} />
                   </div>
                 ))}
               </div>

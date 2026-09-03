@@ -77,7 +77,7 @@ export default function RouteSeasoneBanner({ bgColor, patternColor, title, logo,
 
       </div>
       <div className={styles.logo}>
-        {logo && <AppImage src={logo} alt="" />}
+        {logo && <AppImage src={logo} alt={title || ''} />}
       </div>
       <div className={styles.patternTop}>
         <svg width="100%" height="238" viewBox="0 0 319 238" fill="none" xmlns="http://www.w3.org/2000/svg">

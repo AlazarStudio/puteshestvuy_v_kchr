@@ -115,6 +115,8 @@ export default function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        {/* 404 внутри layout: у страницы должны быть шапка и подвал */}
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Админ: логин без layout */}
@@ -142,9 +144,6 @@ export default function App() {
         <Route path="suggestions" element={<AdminSuggestionsPage />} />
         <Route path="gallery" element={<AdminGalleryPage />} />
       </Route>
-
-      {/* 404 */}
-      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

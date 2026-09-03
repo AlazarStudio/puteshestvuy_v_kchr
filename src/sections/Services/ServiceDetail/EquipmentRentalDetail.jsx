@@ -15,6 +15,7 @@ import { publicServicesAPI, getImageUrl } from '@/lib/api'
 import { getMuiIconComponent } from '@/app/admin/components/WhatToBringIcons'
 import YandexMapPlace from '@/components/YandexMapPlace'
 import AppImage from '@/components/ui/AppImage'
+import { photoAlt, thumbAlt } from '@/utils/imageAlt'
 
 function buildContactsFromService(service) {
   const items = []
@@ -237,30 +238,30 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
             <div className={`${styles.gallery} ${photos.length === 1 ? styles.galleryCount1 : photos.length === 2 ? styles.galleryCount2 : photos.length === 3 ? styles.galleryCount3 : ''} ${common.gallery}`}>
             {photos.length === 1 && (
               <div className={`${styles.galleryFull} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                <AppImage src={photos[0]?.src} alt="Фото проката 1" />
+                <AppImage src={photos[0]?.src} alt={photoAlt(serviceName, 1)} />
               </div>
             )}
             {photos.length === 2 && (
               <>
                 <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото проката 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(serviceName, 1)} />
                 </div>
                 <div className={`${styles.galleryHalf} ${common.galleryMain}`} onClick={() => openModal(1)}>
-                  <AppImage src={photos[1]?.src} alt="Фото проката 2" />
+                  <AppImage src={photos[1]?.src} alt={photoAlt(serviceName, 2)} />
                 </div>
               </>
             )}
             {photos.length === 3 && (
               <>
                 <div className={`${styles.galleryThirdLeft} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото проката 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(serviceName, 1)} />
                 </div>
                 <div className={styles.galleryThirdRight}>
                   <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(1)}>
-                    <AppImage src={photos[1]?.src} alt="Фото проката 2" />
+                    <AppImage src={photos[1]?.src} alt={photoAlt(serviceName, 2)} />
                   </div>
                   <div className={`${styles.galleryThirdRightItem} ${common.galleryItem}`} onClick={() => openModal(2)}>
-                    <AppImage src={photos[2]?.src} alt="Фото проката 3" />
+                    <AppImage src={photos[2]?.src} alt={photoAlt(serviceName, 3)} />
                   </div>
                 </div>
               </>
@@ -268,7 +269,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
             {photos.length >= 4 && (
               <>
                 <div className={`${styles.galleryMain} ${common.galleryMain}`} onClick={() => openModal(0)}>
-                  <AppImage src={photos[0]?.src} alt="Фото проката 1" />
+                  <AppImage src={photos[0]?.src} alt={photoAlt(serviceName, 1)} />
                 </div>
                 <div className={styles.galleryGrid}>
                   <div className={styles.galleryGridRow}>
@@ -278,7 +279,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                         className={`${styles.galleryItem} ${common.galleryItem}`}
                         onClick={() => openModal(index + 1)}
                       >
-                        <AppImage src={photo.src} alt={`Фото проката ${index + 2}`} />
+                        <AppImage src={photo.src} alt={photoAlt(serviceName, index + 2)} />
                       </div>
                     ))}
                   </div>
@@ -292,7 +293,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                           className={`${styles.galleryItem} ${common.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                           onClick={() => openModal(photoIndex)}
                         >
-                          <AppImage src={photo.src} alt={`Фото проката ${photoIndex + 1}`} />
+                          <AppImage src={photo.src} alt={photoAlt(serviceName, photoIndex + 1)} />
                           {isLast && (
                             <div
                               className={`${styles.moreButton} ${common.moreButton}`}
@@ -316,7 +317,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
             <div className={`${styles.serviceBlock_content} ${common.serviceBlock_content}`}>
               <div id="main" className={`${styles.serviceHeader} ${common.serviceHeader}`}>
                 <div className={`${styles.serviceAvatar} ${common.serviceAvatar}`}>
-                  <AppImage src={avatarSrc} alt="Прокат" className={`${styles.avatarImg} ${common.avatarImg}`} />
+                  <AppImage src={avatarSrc} alt={serviceName || ''} className={`${styles.avatarImg} ${common.avatarImg}`} />
                 </div>
                 <div className={styles.serviceInfo}>
                   <div className={`${styles.serviceCategory} ${common.serviceCategory}`}>Прокат оборудования</div>
@@ -547,7 +548,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                 <Swiper ref={swiperRef} modules={[Navigation]} navigation loop spaceBetween={20} slidesPerView={1} initialSlide={activeIndex} onSlideChange={handleSlideChange} className={styles.modalSwiper}>
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
-                      <div className={styles.modalSlide}><AppImage src={photo.src} alt={`Фото проката ${index + 1}`} variant="full" /></div>
+                      <div className={styles.modalSlide}><AppImage src={photo.src} alt={photoAlt(serviceName, index + 1)} variant="full" /></div>
                     </SwiperSlide>
                   ))}
                 </Swiper>
@@ -559,7 +560,7 @@ export default function EquipmentRentalDetail({ serviceSlug, serviceData }) {
                     className={`${styles.thumbnail} ${activeIndex === index ? styles.thumbnailActive : ''}`}
                     onClick={() => { setActiveIndex(index); swiperRef.current?.swiper?.slideToLoop(index) }}
                   >
-                    <AppImage src={photo.src} alt={`Миниатюра ${index + 1}`} />
+                    <AppImage src={photo.src} alt={thumbAlt(index + 1)} />
                   </div>
                 ))}
               </div>

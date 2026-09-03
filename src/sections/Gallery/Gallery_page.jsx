@@ -134,7 +134,7 @@ export default function Gallery_page() {
                       className={styles.cardImg}
                       style={photo.width && photo.height ? { aspectRatio: `${photo.width} / ${photo.height}` } : undefined}
                     >
-                      <AppImage src={photo.url} alt="" />
+                      <AppImage src={photo.url} alt={photo.placeCaption || 'Фотография из фотобанка'} />
                     </div>
                     <div className={styles.cardCaption}>
                       <span className={styles.cardPlace}>{photo.placeCaption}</span>

@@ -425,7 +425,7 @@ export default function YandexMapPlace({ latitude, longitude, title, location, i
                 >
                   <AppImage
                     src={image}
-                    alt=""
+                    alt={title || location || ''}
                     style={{
                       width: '100%',
                       height: '100%',

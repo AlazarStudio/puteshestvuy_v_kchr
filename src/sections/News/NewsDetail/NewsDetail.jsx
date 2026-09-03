@@ -224,7 +224,7 @@ export default function NewsDetail({ slug }) {
                   return (
                     <figure key={block.id} className={styles.imageFigure}>
                       <div className={styles.imageBlock}>
-                        <AppImage src={block.data.url} alt="" variant="cover" />
+                        <AppImage src={block.data.url} alt={news.title || ''} variant="cover" />
                       </div>
                       {author && <figcaption className={styles.imageCaption}>Фото: {author}</figcaption>}
                     </figure>
@@ -232,7 +232,7 @@ export default function NewsDetail({ slug }) {
                 }
                 if (block.type === 'gallery' && Array.isArray(block.data?.images) && block.data.images.length > 0) {
                   return (
-                    <NewsGalleryBlock key={block.id} images={block.data.images} authors={block.data.imageAuthors} />
+                    <NewsGalleryBlock key={block.id} images={block.data.images} authors={block.data.imageAuthors} title={news.title} />
                   )
                 }
                 if (block.type === 'quote' && (block.data?.content?.trim() || block.data?.text?.trim())) {

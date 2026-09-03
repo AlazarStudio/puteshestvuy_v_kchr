@@ -1,33 +1,44 @@
+/* Узкая полоса внизу экрана: плашка не должна перекрывать первый экран */
 .banner {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10001;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  padding: 20px 24px;
-  max-width: 720px;
-  width: calc(100% - 32px);
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   animation: slideUp 0.3s ease-out;
 }
 
+.inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 20px;
+}
+
+.copy {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
 .text {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #374151;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #4b5563;
   margin: 0;
 }
 
 .links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  font-size: 13px;
+  gap: 2px 18px;
+  margin-top: 4px;
+  font-size: 12px;
 }
 
 .link {
@@ -43,20 +54,19 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  flex: 0 1 auto;
 }
 
 /* «Принять все» и «Отклонить необязательные» оформлены одинаково: закон требует
    равнозначных действий, выделять принятие нельзя */
 .btn {
-  flex: 1 1 auto;
-  min-width: 180px;
   background: #0d9488;
   color: #fff;
   border: 1px solid #0d9488;
-  border-radius: 10px;
-  padding: 11px 22px;
-  font-size: 14px;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -70,13 +80,12 @@
 }
 
 .btnGhost {
-  flex: 0 0 auto;
   background: transparent;
   color: #0d9488;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 11px 22px;
-  font-size: 14px;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -92,28 +101,45 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(16px);
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 900px) {
+  /* На узком экране полоса становится столбиком, но не выше 40% экрана */
   .banner {
-    gap: 12px;
-    bottom: 16px;
-    padding: 16px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 14px 12px;
+  }
+
+  /* В колонке flex-basis попадает на высоту — растянуло бы полосу на пол-экрана */
+  .copy {
+    flex: 0 0 auto;
+  }
+
+  .text {
+    font-size: 12px;
   }
 
   .actions {
-    flex-direction: column;
+    gap: 6px;
   }
 
   .btn,
   .btnGhost {
-    width: 100%;
-    min-width: 0;
+    flex: 1 1 auto;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 }

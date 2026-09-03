@@ -20,6 +20,7 @@ import AppImage from '@/components/ui/AppImage'
 import VkPlaylistWidget, { VK_PLAYLIST_PREFIX } from '../VkPlaylistWidget'
 import { getImageUrl, publicPlacesAPI } from '@/lib/api'
 import { haversineKm, formatDistance } from '@/utils/geo'
+import { photoAlt, thumbAlt } from '@/utils/imageAlt'
 
 const formatReviewDate = (dateStr) => {
   if (!dateStr) return ''
@@ -253,7 +254,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                               <ParallaxImage
                                 src={photos[0]?.src}
                                 variant="card"
-                                alt="Фото 1"
+                                alt={photoAlt(place?.title, 1)}
                                 maxOffset={5}
                                 scale={1.03}
                                 style={{ width: '100%', height: '100%' }}
@@ -267,7 +268,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <ParallaxImage
                                   src={photos[0]?.src}
                                   variant="card"
-                                  alt="Фото 1"
+                                  alt={photoAlt(place?.title, 1)}
                                   maxOffset={5}
                                   scale={1.03}
                                   style={{ width: '100%', height: '100%' }}
@@ -278,7 +279,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <ParallaxImage
                                   src={photos[1]?.src}
                                   variant="card"
-                                  alt="Фото 2"
+                                  alt={photoAlt(place?.title, 2)}
                                   maxOffset={5}
                                   scale={1.03}
                                   style={{ width: '100%', height: '100%' }}
@@ -293,7 +294,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <ParallaxImage
                                   src={photos[0]?.src}
                                   variant="card"
-                                  alt="Фото 1"
+                                  alt={photoAlt(place?.title, 1)}
                                   maxOffset={5}
                                   scale={1.03}
                                   style={{ width: '100%', height: '100%' }}
@@ -305,7 +306,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   <ParallaxImage
                                     src={photos[1]?.src}
                                     variant="card"
-                                    alt="Фото 2"
+                                    alt={photoAlt(place?.title, 2)}
                                     maxOffset={5}
                                     scale={1.03}
                                     style={{ width: '100%', height: '100%' }}
@@ -316,7 +317,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                   <ParallaxImage
                                     src={photos[2]?.src}
                                     variant="card"
-                                    alt="Фото 3"
+                                    alt={photoAlt(place?.title, 3)}
                                     maxOffset={5}
                                     scale={1.03}
                                     style={{ width: '100%', height: '100%' }}
@@ -332,7 +333,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                 <ParallaxImage
                                   src={photos[0]?.src}
                                   variant="card"
-                                  alt="Фото 1"
+                                  alt={photoAlt(place?.title, 1)}
                                   maxOffset={5}
                                   scale={1.03}
                                   style={{ width: '100%', height: '100%' }}
@@ -352,7 +353,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                         <ParallaxImage
                                           src={photo.src}
                                           variant="card"
-                                          alt={`Фото ${photoIndex + 1}`}
+                                          alt={photoAlt(place?.title, photoIndex + 1)}
                                           maxOffset={5}
                                           scale={1.03}
                                           style={{ width: '100%', height: '100%' }}
@@ -375,7 +376,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                                         <ParallaxImage
                                           src={photo.src}
                                           variant="card"
-                                          alt={`Фото ${photoIndex + 1}`}
+                                          alt={photoAlt(place?.title, photoIndex + 1)}
                                           maxOffset={5}
                                           scale={1.03}
                                           style={{ width: '100%', height: '100%' }}
@@ -703,7 +704,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.galleryModalSlide}>
-                        <AppImage src={photo.src} alt={`Фото ${index + 1}`} variant="full" />
+                        <AppImage src={photo.src} alt={photoAlt(place?.title, index + 1)} variant="full" />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -723,7 +724,7 @@ export default function PlaceModal({ isOpen, place, onClose, onOpenPlace, isLoad
                       }
                     }}
                   >
-                    <AppImage src={photo.src} alt={`Миниатюра ${index + 1}`} />
+                    <AppImage src={photo.src} alt={thumbAlt(index + 1)} />
                   </div>
                 ))}
               </div>

@@ -86,6 +86,10 @@ export default function Main_page() {
   const [newsTab, setNewsTab] = useState('news')
   const [events, setEvents] = useState([])
   const [eventsTab, setEventsTab] = useState('upcoming')
+  // Первая выборка завершена: до неё блок не показываем, чтобы он не мигал
+  const [eventsResolved, setEventsResolved] = useState(false)
+  // null — ещё не спрашивали (активная вкладка непустая, спрашивать незачем)
+  const [hasOtherTabEvents, setHasOtherTabEvents] = useState(null)
   const [emergencyTabKey, setEmergencyTabKey] = useState(null)
   const [emergencyScrollId, setEmergencyScrollId] = useState(null)
   const [suggestEventOpen, setSuggestEventOpen] = useState(false)
@@ -118,16 +122,36 @@ export default function Main_page() {
 
   useEffect(() => {
     let cancelled = false
+    setHasOtherTabEvents(null)
     publicEventsAPI.getAll({ page: 1, limit: 4, ...(isPastEvents ? { when: 'past' } : {}) })
       .then(({ data }) => {
-        if (!cancelled) setEvents(data?.items || [])
+        if (cancelled) return null
+        const items = data?.items || []
+        setEvents(items)
+        if (items.length > 0) return null
+        // Активная вкладка пуста — дёшево проверяем вторую: если события есть там,
+        // блок остаётся на месте, у него есть переключатель
+        return publicEventsAPI
+          .getAll({ page: 1, limit: 1, ...(isPastEvents ? {} : { when: 'past' }) })
+          .then(({ data: other }) => {
+            if (!cancelled) setHasOtherTabEvents((other?.items || []).length > 0)
+          })
       })
       // Список чистим: иначе после ошибки на экране останутся события другой вкладки
       .catch(() => {
-        if (!cancelled) setEvents([])
+        if (!cancelled) {
+          setEvents([])
+          setHasOtherTabEvents(false)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setEventsResolved(true)
       })
     return () => { cancelled = true }
   }, [isPastEvents])
+
+  // Блок афиши скрываем целиком, только когда событий нет ни в одной вкладке
+  const showEvents = eventsResolved && (events.length > 0 || hasOtherTabEvents === true)
 
   return (
     <main className={styles.main}>
@@ -341,48 +365,52 @@ export default function Main_page() {
           );
         })()}
 
-        <CenterBlock>
-          <TitleButton title="Афиша событий" buttonLink={isPastEvents ? '/events?when=past' : '/events'} />
-        </CenterBlock>
+        {showEvents && (
+          <>
+            <CenterBlock>
+              <TitleButton title="Афиша событий" buttonLink={isPastEvents ? '/events?when=past' : '/events'} />
+            </CenterBlock>
 
-        <CenterBlock>
-          <div className={styles.sectionTabs}>
-            <button
-              type="button"
-              className={`${styles.sectionTab} ${!isPastEvents ? styles.sectionTabActive : ''}`}
-              onClick={() => setEventsTab('upcoming')}
-            >
-              Ближайшие
-            </button>
-            <button
-              type="button"
-              className={`${styles.sectionTab} ${isPastEvents ? styles.sectionTabActive : ''}`}
-              onClick={() => setEventsTab('past')}
-            >
-              Прошедшие
-            </button>
-          </div>
-        </CenterBlock>
-
-        {events.length > 0 ? (
-          <CenterBlock>
-            <section className={styles.flexBlock}>
-              {events.map((event) => (
-                <EventBlock key={event.id} event={event} />
-              ))}
-            </section>
-          </CenterBlock>
-        ) : (
-          <CenterBlock>
-            <div className={styles.eventsEmpty}>
-              <p>{isPastEvents ? 'Прошедших событий пока нет' : 'В ближайшее время событий не запланировано'}</p>
-              {!isPastEvents && (
-                <button type="button" onClick={() => setSuggestEventOpen(true)}>
-                  Предложить событие
+            <CenterBlock>
+              <div className={styles.sectionTabs}>
+                <button
+                  type="button"
+                  className={`${styles.sectionTab} ${!isPastEvents ? styles.sectionTabActive : ''}`}
+                  onClick={() => setEventsTab('upcoming')}
+                >
+                  Ближайшие
                 </button>
-              )}
-            </div>
-          </CenterBlock>
+                <button
+                  type="button"
+                  className={`${styles.sectionTab} ${isPastEvents ? styles.sectionTabActive : ''}`}
+                  onClick={() => setEventsTab('past')}
+                >
+                  Прошедшие
+                </button>
+              </div>
+            </CenterBlock>
+
+            {events.length > 0 ? (
+              <CenterBlock>
+                <section className={styles.flexBlock}>
+                  {events.map((event) => (
+                    <EventBlock key={event.id} event={event} />
+                  ))}
+                </section>
+              </CenterBlock>
+            ) : (
+              <CenterBlock>
+                <div className={styles.eventsEmpty}>
+                  <p>{isPastEvents ? 'Прошедших событий пока нет' : 'В ближайшее время событий не запланировано'}</p>
+                  {!isPastEvents && (
+                    <button type="button" onClick={() => setSuggestEventOpen(true)}>
+                      Предложить событие
+                    </button>
+                  )}
+                </div>
+              </CenterBlock>
+            )}
+          </>
         )}
 
         <section className={styles.servicesBand}>

@@ -17,7 +17,7 @@ export default function MapObjectPopup({ object, actionLabel = 'Подробне
 
       {object.image && (
         <div className={styles.image}>
-          <AppImage src={object.image} alt="" />
+          <AppImage src={object.image} alt={object.title || ''} />
         </div>
       )}
 

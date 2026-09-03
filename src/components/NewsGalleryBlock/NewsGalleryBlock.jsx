@@ -7,13 +7,14 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import AppImage from '@/components/ui/AppImage'
+import { photoAlt, thumbAlt } from '@/utils/imageAlt'
 import styles from './NewsGalleryBlock.module.css'
 
-function GalleryTile({ photo, mediaClass, onClick, children }) {
+function GalleryTile({ photo, alt, mediaClass, onClick, children }) {
   return (
     <div className={styles.tile}>
       <div className={mediaClass} onClick={onClick}>
-        <AppImage src={photo?.src} alt="" />
+        <AppImage src={photo?.src} alt={alt} />
         {children}
       </div>
       {photo?.author && <div className={styles.photoCaption}>Фото: {photo.author}</div>}
@@ -21,7 +22,7 @@ function GalleryTile({ photo, mediaClass, onClick, children }) {
   )
 }
 
-export default function NewsGalleryBlock({ images = [], authors, className }) {
+export default function NewsGalleryBlock({ images = [], authors, title, className }) {
   const photos = images.map((url) => ({
     src: url,
     author: authors?.[url]?.trim() || '',
@@ -70,30 +71,30 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
 
   const renderGallery = () => {
     if (count === 1) {
-      return <GalleryTile photo={photos[0]} mediaClass={styles.galleryFull} onClick={() => openModal(0)} />
+      return <GalleryTile photo={photos[0]} alt={photoAlt(title, 1)} mediaClass={styles.galleryFull} onClick={() => openModal(0)} />
     }
     if (count === 2) {
       return (
         <>
-          <GalleryTile photo={photos[0]} mediaClass={styles.galleryHalf} onClick={() => openModal(0)} />
-          <GalleryTile photo={photos[1]} mediaClass={styles.galleryHalf} onClick={() => openModal(1)} />
+          <GalleryTile photo={photos[0]} alt={photoAlt(title, 1)} mediaClass={styles.galleryHalf} onClick={() => openModal(0)} />
+          <GalleryTile photo={photos[1]} alt={photoAlt(title, 2)} mediaClass={styles.galleryHalf} onClick={() => openModal(1)} />
         </>
       )
     }
     if (count === 3) {
       return (
         <>
-          <GalleryTile photo={photos[0]} mediaClass={styles.galleryThirdLeft} onClick={() => openModal(0)} />
+          <GalleryTile photo={photos[0]} alt={photoAlt(title, 1)} mediaClass={styles.galleryThirdLeft} onClick={() => openModal(0)} />
           <div className={styles.galleryThirdRight}>
-            <GalleryTile photo={photos[1]} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(1)} />
-            <GalleryTile photo={photos[2]} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(2)} />
+            <GalleryTile photo={photos[1]} alt={photoAlt(title, 2)} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(1)} />
+            <GalleryTile photo={photos[2]} alt={photoAlt(title, 3)} mediaClass={styles.galleryThirdRightItem} onClick={() => openModal(2)} />
           </div>
         </>
       )
     }
     return (
       <>
-        <GalleryTile photo={photos[0]} mediaClass={styles.galleryMain} onClick={() => openModal(0)} />
+        <GalleryTile photo={photos[0]} alt={photoAlt(title, 1)} mediaClass={styles.galleryMain} onClick={() => openModal(0)} />
         <div className={styles.galleryGrid}>
           <div className={styles.galleryGridRow}>
             {visiblePhotos.slice(1, 3).map((photo, index) => {
@@ -102,6 +103,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                 <GalleryTile
                   key={photoIndex}
                   photo={photo}
+                  alt={photoAlt(title, photoIndex + 1)}
                   mediaClass={styles.galleryItem}
                   onClick={() => openModal(photoIndex)}
                 />
@@ -116,6 +118,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                 <GalleryTile
                   key={photoIndex}
                   photo={photo}
+                  alt={photoAlt(title, photoIndex + 1)}
                   mediaClass={`${styles.galleryItem} ${isLast ? styles.galleryItemLast : ''}`}
                   onClick={() => openModal(photoIndex)}
                 >
@@ -176,7 +179,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                   {photos.map((photo, index) => (
                     <SwiperSlide key={index}>
                       <div className={styles.galleryModalSlide}>
-                        <AppImage src={photo.src} alt="" variant="full" />
+                        <AppImage src={photo.src} alt={photoAlt(title, index + 1)} variant="full" />
                         {hasAnyAuthor && (
                           <div className={styles.photoCaptionModal}>
                             {photo.author ? `Фото: ${photo.author}` : ''}
@@ -198,7 +201,7 @@ export default function NewsGalleryBlock({ images = [], authors, className }) {
                       swiperRef.current?.swiper?.slideToLoop(index)
                     }}
                   >
-                    <AppImage src={photo.src} alt="" />
+                    <AppImage src={photo.src} alt={thumbAlt(index + 1)} />
                   </div>
                 ))}
               </div>
