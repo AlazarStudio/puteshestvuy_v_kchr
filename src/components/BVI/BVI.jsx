@@ -1,13 +1,13 @@
 import { loadAccessibilityStyles } from './BVIStyles'
 
-// Версия для слабовидящих подключает jQuery и библиотеку с lidrekon.ru.
-// Это внешние сервисы: до явного действия пользователя ни один запрос
-// к ним не уходит, поэтому загрузка начинается только по нажатию кнопки.
+// Версия для слабовидящих использует jQuery и библиотеку lidrekon.
+// Обе лежат в public/vendor/bvi, чтобы режим не зависел от чужих серверов.
+// Скрипты тяжёлые и нужны редко, поэтому грузятся только по нажатию кнопки.
 
 const JQUERY_ID = 'jquery-for-bvi'
-const JQUERY_SRC = 'https://code.jquery.com/jquery-3.7.1.min.js'
+const JQUERY_SRC = '/vendor/bvi/jquery-3.7.1.min.js'
 const WIDGET_ID = 'accessibility-script'
-const WIDGET_SRC = 'https://lidrekon.ru/slep/js/uhpv-full.min.js'
+const WIDGET_SRC = '/vendor/bvi/uhpv-full.min.js'
 
 let isLoaded = false
 let isLoading = false
@@ -52,7 +52,11 @@ export function loadAccessibility(onReady) {
     injectScript(WIDGET_ID, WIDGET_SRC, () => {
       isLoaded = true
       isLoading = false
-      pending.splice(0).forEach((callback) => callback?.())
+      // Виджет навешивает обработчик на кнопку в своём jQuery-ready.
+      // Ставим колбэки в ту же очередь, иначе первый клик уходит в пустоту.
+      const flush = () => pending.splice(0).forEach((callback) => callback?.())
+      if (window.jQuery) window.jQuery(flush)
+      else flush()
     })
   })
 }

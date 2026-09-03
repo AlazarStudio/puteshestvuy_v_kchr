@@ -142,6 +142,7 @@ export default function Footer() {
               <form onSubmit={handleFeedbackSubmit} method="post">
                 <input
                   type="text"
+                  aria-label={right.formPlaceholderName || 'Имя'}
                   placeholder={right.formPlaceholderName}
                   value={feedback.name}
                   onChange={(e) => setFeedback((p) => ({ ...p, name: e.target.value }))}
@@ -149,6 +150,7 @@ export default function Footer() {
                 />
                 <input
                   type="email"
+                  aria-label={right.formPlaceholderEmail || 'Электронная почта'}
                   placeholder={right.formPlaceholderEmail}
                   value={feedback.email}
                   onChange={(e) => setFeedback((p) => ({ ...p, email: e.target.value }))}
@@ -156,14 +158,16 @@ export default function Footer() {
                 />
                 <input
                   type="text"
+                  aria-label={right.formPlaceholderText || 'Сообщение'}
                   placeholder={right.formPlaceholderText}
                   value={feedback.text}
                   onChange={(e) => setFeedback((p) => ({ ...p, text: e.target.value }))}
                   required
                 />
                 <div className={styles.consents}>
-                  <label className={styles.consent}>
+                  <label className={styles.consent} htmlFor="footer-consent-terms">
                     <input
+                      id="footer-consent-terms"
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
@@ -184,8 +188,9 @@ export default function Footer() {
                     </a>
                   </p>
 
-                  <label className={styles.consent}>
+                  <label className={styles.consent} htmlFor="footer-consent-data">
                     <input
+                      id="footer-consent-data"
                       type="checkbox"
                       checked={dataAccepted}
                       onChange={(e) => setDataAccepted(e.target.checked)}

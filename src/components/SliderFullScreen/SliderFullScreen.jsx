@@ -599,11 +599,11 @@ export default function SliderFullScreen({
       {/* Кнопки навигации */}
       <div className={styles.arrows}>
         <div className={styles.buttons}>
-          <button onClick={handlePrev}>
-            <img src="/slider-arrow-left.png" alt="Prev slide" />
+          <button type="button" onClick={handlePrev} aria-label="Предыдущий слайд">
+            <img src="/slider-arrow-left.png" alt="" />
           </button>
-          <button onClick={handleNext}>
-            <img src="/slider-arrow-right.png" alt="Next slide" />
+          <button type="button" onClick={handleNext} aria-label="Следующий слайд">
+            <img src="/slider-arrow-right.png" alt="" />
           </button>
         </div>
         <div className={styles.line}>

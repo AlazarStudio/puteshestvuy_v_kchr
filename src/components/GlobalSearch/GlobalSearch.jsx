@@ -328,6 +328,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
               ref={inputRef}
               type="text"
               className={styles.searchInput}
+              aria-label="Поиск по сайту"
               placeholder="Поиск по сайту..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}

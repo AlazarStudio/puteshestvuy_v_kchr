@@ -1,9 +1,9 @@
 const STYLES_ID = 'accessibility-styles'
-const STYLES_HREF = 'https://lidrekon.ru/slep/css/special.min.css'
+const STYLES_HREF = '/vendor/bvi/special.min.css'
 
 /**
- * Таблица стилей версии для слабовидящих лежит на стороннем сервере, поэтому
- * подключается не при загрузке страницы, а только когда пользователь сам
+ * Таблица стилей версии для слабовидящих нужна только в этом режиме,
+ * поэтому подключается не при загрузке страницы, а когда пользователь сам
  * включает режим.
  */
 export function loadAccessibilityStyles() {

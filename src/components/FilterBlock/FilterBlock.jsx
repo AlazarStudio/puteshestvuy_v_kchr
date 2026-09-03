@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { calculateSimilarity } from '@/lib/searchUtils'
 import styles from './FilterBlock.module.css'
@@ -32,8 +32,11 @@ export default function FilterBlock({
   const hasSearch = typeof onSearchChange === 'function'
   const hasFilters = groupsWithOptions.length > 0 || groupsWithInputOnly.length > 0
 
+  // Префикс для id чекбоксов: связывает подпись с полем, когда блок на странице не один
+  const uid = useId()
+
   const [openKeys, setOpenKeys] = useState(initialOpenKeys)
-  
+
   // Автоматически открываем блоки с активными фильтрами
   useEffect(() => {
     const keysToOpen = {}
@@ -318,6 +321,7 @@ export default function FilterBlock({
                     <input
                       ref={searchInputRef}
                       type="text"
+                      aria-label={searchPlaceholder || 'Поиск'}
                       placeholder={searchPlaceholder}
                       value={searchQuery}
                       onChange={(e) => onSearchChange?.(e.target.value)}
@@ -384,17 +388,21 @@ export default function FilterBlock({
                 style={{ overflow: 'hidden' }}
               >
                 <div className={styles.checkBlock}>
-                  {group.options.map((v) => (
-                    <label key={v} className={styles.checkboxLabel}>
-                      <input
-                        type="checkbox"
-                        checked={(filters[group.key] || []).includes(v)}
-                        onChange={() => toggle(group.key, v)}
-                        className={styles.checkbox}
-                      />
-                      <span className={styles.checkboxText}>{v}</span>
-                    </label>
-                  ))}
+                  {group.options.map((v, optionIndex) => {
+                    const optionId = `${uid}-${group.key}-${optionIndex}`
+                    return (
+                      <label key={v} className={styles.checkboxLabel} htmlFor={optionId}>
+                        <input
+                          id={optionId}
+                          type="checkbox"
+                          checked={(filters[group.key] || []).includes(v)}
+                          onChange={() => toggle(group.key, v)}
+                          className={styles.checkbox}
+                        />
+                        <span className={styles.checkboxText}>{v}</span>
+                      </label>
+                    )
+                  })}
                 </div>
               </motion.div>
             )}
@@ -442,6 +450,7 @@ export default function FilterBlock({
                 <div className={styles.filterInput}>
                   <input
                     type="text"
+                    aria-label={`Введите значение для «${group.label}»`}
                     placeholder={`Введите значение для «${group.label}»`}
                     value={(filters[group.key] && filters[group.key][0]) || ''}
                     onChange={(e) => setInputFilter(group.key, e.target.value)}

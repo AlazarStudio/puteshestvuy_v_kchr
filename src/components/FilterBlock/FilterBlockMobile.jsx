@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { calculateSimilarity } from '@/lib/searchUtils'
 import styles from './FilterBlockMobile.module.css'
@@ -32,6 +32,9 @@ export default function FilterBlockMobile({
   )
   const hasSearch = typeof onSearchChange === 'function'
   const hasFilters = groupsWithOptions.length > 0 || groupsWithInputOnly.length > 0
+
+  // Префикс для id полей: связывает подпись с чекбоксом/радио внутри модалки
+  const uid = useId()
 
   const [isOpen, setIsOpen] = useState(false)
   const [openKeys, setOpenKeys] = useState(initialOpenKeys)
@@ -383,18 +386,22 @@ export default function FilterBlockMobile({
                           style={{ overflow: 'hidden' }}
                         >
                           <div className={styles.checkBlock}>
-                            {sortOptions.map((opt) => (
-                              <label key={opt.value} className={styles.checkboxLabel}>
-                                <input
-                                  type="radio"
-                                  name="mobileSort"
-                                  checked={sortBy === opt.value}
-                                  onChange={() => onSortChange(opt.value)}
-                                  className={styles.sortRadio}
-                                />
-                                <span className={styles.checkboxText}>{opt.label}</span>
-                              </label>
-                            ))}
+                            {sortOptions.map((opt) => {
+                              const sortId = `${uid}-sort-${opt.value}`
+                              return (
+                                <label key={opt.value} className={styles.checkboxLabel} htmlFor={sortId}>
+                                  <input
+                                    id={sortId}
+                                    type="radio"
+                                    name="mobileSort"
+                                    checked={sortBy === opt.value}
+                                    onChange={() => onSortChange(opt.value)}
+                                    className={styles.sortRadio}
+                                  />
+                                  <span className={styles.checkboxText}>{opt.label}</span>
+                                </label>
+                              )
+                            })}
                           </div>
                         </motion.div>
                       )}
@@ -439,6 +446,7 @@ export default function FilterBlockMobile({
                               <input
                                 ref={searchInputRef}
                                 type="text"
+                                aria-label={searchPlaceholder || 'Поиск'}
                                 placeholder={searchPlaceholder}
                                 value={searchQuery}
                                 onChange={(e) => onSearchChange?.(e.target.value)}
@@ -505,17 +513,21 @@ export default function FilterBlockMobile({
                           style={{ overflow: 'hidden' }}
                         >
                           <div className={styles.checkBlock}>
-                            {group.options.map((v) => (
-                              <label key={v} className={styles.checkboxLabel}>
-                                <input
-                                  type="checkbox"
-                                  checked={(filters[group.key] || []).includes(v)}
-                                  onChange={() => toggle(group.key, v)}
-                                  className={styles.checkbox}
-                                />
-                                <span className={styles.checkboxText}>{v}</span>
-                              </label>
-                            ))}
+                            {group.options.map((v, optionIndex) => {
+                              const optionId = `${uid}-${group.key}-${optionIndex}`
+                              return (
+                                <label key={v} className={styles.checkboxLabel} htmlFor={optionId}>
+                                  <input
+                                    id={optionId}
+                                    type="checkbox"
+                                    checked={(filters[group.key] || []).includes(v)}
+                                    onChange={() => toggle(group.key, v)}
+                                    className={styles.checkbox}
+                                  />
+                                  <span className={styles.checkboxText}>{v}</span>
+                                </label>
+                              )
+                            })}
                           </div>
                         </motion.div>
                       )}
@@ -563,6 +575,7 @@ export default function FilterBlockMobile({
                           <div className={styles.filterInput}>
                             <input
                               type="text"
+                              aria-label={`Введите значение для «${group.label}»`}
                               placeholder={`Введите значение для «${group.label}»`}
                               value={(filters[group.key] && filters[group.key][0]) || ''}
                               onChange={(e) => setInputFilter(group.key, e.target.value)}
