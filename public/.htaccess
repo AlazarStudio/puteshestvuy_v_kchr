@@ -1,6 +1,16 @@
 Options -MultiViews
 RewriteEngine On
 
+# Пререндер лежит каталогами (/places/<слаг>/index.html). Без этого блока
+# mod_dir отвечает на /places редиректом 301 на /places/ и, стоя за
+# TLS-терминирующим прокси, строит Location через http:// (небезопасный хоп
+# и лишний прыжок для каждого робота). Отдаём index.html каталога сразу,
+# внутренним рерайтом, без редиректа.
+DirectorySlash Off
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.+[^/])$ $1/index.html [L]
+
 # Порядок правил ниже критичен — см. docs (аудит №18, пререндер + честный 404).
 #
 # 1) Реальные файлы и каталоги (в т.ч. dist/<path>/index.html, записанные
