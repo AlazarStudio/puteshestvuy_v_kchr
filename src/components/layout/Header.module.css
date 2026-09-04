@@ -229,24 +229,43 @@
   opacity: 0.8;
 }
 
-/* Вход на карту: единственное цветное пятно в шапке — этим и выделяется,
-   подписи рядом нет, на неё в ряду не осталось места */
+/* Вход на карту: единственное цветное пятно в шапке. От 1200px — пилюля
+   с подписью, на 1001–1199px ряд иконок тесный, остаётся круг с иконкой */
 .mapButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  gap: 8px;
   height: 40px;
+  padding: 0 16px 0 12px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 9999px;
   background: #156A60;
   color: #fff;
+  font-size: 14px;
+  font-weight: 500;
   transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.mapButtonLabel {
+  white-space: nowrap;
 }
 
 .mapButton:hover {
   background: #10554D;
   transform: scale(1.05);
+}
+
+@media (max-width: 1199px) {
+  .mapButton {
+    width: 40px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .mapButtonLabel {
+    display: none;
+  }
 }
 
 .iconBadge {

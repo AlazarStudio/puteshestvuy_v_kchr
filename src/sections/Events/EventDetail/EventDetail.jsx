@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CenterBlock from '@/components/CenterBlock/CenterBlock'
 import EventBlocks from '@/components/EventBlocks/EventBlocks'
+import RichTextContent from '@/components/RichTextContent/RichTextContent'
 import YandexMapPlace from '@/components/YandexMapPlace'
 import Seo from '@/components/Seo/Seo'
 import { breadcrumbList } from '@/lib/seo/schema'
@@ -132,6 +133,12 @@ export default function EventDetail({ slug }) {
                 {meta.map((item, i) => (
                   <span key={i} className={styles.metaItem}>{item}</span>
                 ))}
+              </div>
+            )}
+
+            {event.shortDescription && (
+              <div className={styles.description}>
+                <RichTextContent html={event.shortDescription} />
               </div>
             )}
 

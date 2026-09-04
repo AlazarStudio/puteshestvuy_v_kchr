@@ -680,40 +680,17 @@ export default function Places_page() {
       <CenterBlock>
         <section className={styles.flexBlock}>
           {/* Desktop filter */}
-          <div className={styles.desktopFilter}>
-            <FilterBlock
-              filterGroups={placeFilterGroups}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchPlaceholder="Введите запрос"
-              suggestionsData={allPlacesForSearch || []}
-              getSuggestionTitle={(item) => item.title || item.name}
-              maxSuggestions={5}
-            />
-          </div>
-
-          {/* Mobile filter */}
-          <div className={styles.mobileFilter}>
-            <FilterBlockMobile
-              filterGroups={placeFilterGroups}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchPlaceholder="Введите запрос"
-              suggestionsData={allPlacesForSearch || []}
-              getSuggestionTitle={(item) => item.title || item.name}
-              maxSuggestions={5}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              sortOptions={[
-                { value: 'popularity', label: 'По популярности' },
-                { value: 'rating', label: 'По рейтингу' },
-              ]}
-            />
-          </div>
+          <FilterBlock
+            filterGroups={placeFilterGroups}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Введите запрос"
+            suggestionsData={allPlacesForSearch || []}
+            getSuggestionTitle={(item) => item.title || item.name}
+            maxSuggestions={5}
+          />
 
           <div className={styles.places}>
             <div className={styles.placesSort}>
@@ -722,6 +699,24 @@ export default function Places_page() {
                   ? 'Загрузка...'
                   : `Найдено ${total} ${total === 1 ? 'место' : total >= 2 && total <= 4 ? 'места' : 'мест'}`}
               </div>
+
+              <FilterBlockMobile
+                filterGroups={placeFilterGroups}
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Введите запрос"
+                suggestionsData={allPlacesForSearch || []}
+                getSuggestionTitle={(item) => item.title || item.name}
+                maxSuggestions={5}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                sortOptions={[
+                  { value: 'popularity', label: 'По популярности' },
+                  { value: 'rating', label: 'По рейтингу' },
+                ]}
+              />
 
               <div className={styles.placesSortSort}>
                 <div className={styles.title}>Сортировать:</div>

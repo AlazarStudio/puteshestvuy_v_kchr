@@ -6,11 +6,12 @@ import styles from './EventBlock.module.css'
 export default function EventBlock({ event }) {
   if (!event) return null
   const date = formatEventDateShort(event.startAt, event.endAt)
+  const img = event.cardImage || event.image
 
   return (
     <Link to={`/events/${event.slug}`} className={styles.card}>
       <div className={styles.imgWrap}>
-        {event.image && <AppImage src={event.image} alt={event.title} />}
+        {img && <AppImage src={img} alt={event.title} />}
         {event.category && <span className={styles.category}>{event.category}</span>}
       </div>
       <div className={styles.body}>

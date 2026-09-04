@@ -69,6 +69,13 @@
   color: #9ca3af;
 }
 
+.fieldHint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 140%;
+  color: #6b7280;
+}
+
 .error {
   background: #fef2f2;
   border: 1px solid #fecaca;

@@ -4,6 +4,8 @@
  */
 export const SERVICE_TYPE_FIELDS = {
   guide: [
+    { key: 'qualifications', label: 'Квалификации', type: 'dictionaryCheckboxes', dictionary: 'qualifications' },
+    { key: 'languages', label: 'Языки', type: 'dictionaryCheckboxes', dictionary: 'languages' },
     { key: 'aboutContent', label: 'О специалисте (описание)', type: 'richtext' },
     { key: 'contacts', label: 'Контакты', type: 'contactList' },
     { key: 'pricesInData', label: 'Услуги и цены (название — цена)', type: 'priceList' },

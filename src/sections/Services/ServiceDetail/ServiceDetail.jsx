@@ -19,6 +19,7 @@ import FavoriteButton from '@/components/FavoriteButton/FavoriteButton'
 import BookingModal from '@/components/BookingModal/BookingModal'
 import AppImage from '@/components/ui/AppImage'
 import { photoAlt, thumbAlt } from '@/utils/imageAlt'
+import { Check } from 'lucide-react'
 
 function buildContactsFromService(service) {
   const items = []
@@ -402,6 +403,21 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
                     </div>
                     <div className={`${styles.ratingFeedback} ${g.ratingFeedback}`}>{reviewsCountLabel}</div>
                   </div>
+                  {Array.isArray(serviceData?.data?.qualifications) && serviceData.data.qualifications.length > 0 && (
+                    <ul className={g.qualifications} aria-label="Квалификации">
+                      {serviceData.data.qualifications.map((item) => (
+                        <li key={item} className={g.qualification}>
+                          <span className={g.qualificationIcon} aria-hidden><Check size={12} strokeWidth={3} /></span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {Array.isArray(serviceData?.data?.languages) && serviceData.data.languages.length > 0 && (
+                    <div className={g.languages}>
+                      <span className={g.languagesLabel}>Языки:</span> {serviceData.data.languages.join(', ')}
+                    </div>
+                  )}
                 </div>
               </div>
 

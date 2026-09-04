@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, MapPinned } from 'lucide-react'
+import { ChevronDown, Map } from 'lucide-react'
 import styles from './Header.module.css'
 import GlobalSearch from '@/components/GlobalSearch/GlobalSearch'
 import { useRouteConstructor } from '@/contexts/RouteConstructorContext'
@@ -380,7 +380,8 @@ export default function Header() {
             aria-label="Карта объектов"
             title="Карта объектов Карачаево-Черкесии"
           >
-            <MapPinned size={22} aria-hidden />
+            <Map size={20} aria-hidden />
+            <span className={styles.mapButtonLabel}>Карта</span>
           </Link>
           <AccessibilityButton
             className={styles.iconButton}

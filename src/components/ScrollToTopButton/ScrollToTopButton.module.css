@@ -1,0 +1,38 @@
+/* Слева внизу; на телефоне там же стоит пузырь чата Jivo, поэтому на ≤768px кнопка поднята */
+.button {
+  position: fixed;
+  left: 20px;
+  bottom: 24px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background-color: #156A60;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(21, 106, 96, 0.4);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #10554D;
+}
+
+.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .button {
+    bottom: 96px;
+  }
+}

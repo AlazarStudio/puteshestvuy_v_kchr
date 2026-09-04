@@ -50,6 +50,7 @@ function getFormSnapshot(data) {
     registrationUrl: data.registrationUrl ?? '',
     shortDescription: data.shortDescription ?? '',
     image: data.image ?? '',
+    cardImage: data.cardImage ?? '',
     isActive: !!data.isActive,
     blocks: JSON.stringify(data.blocks || []),
   };
@@ -73,6 +74,7 @@ const initialFormData = () => ({
   registrationUrl: '',
   shortDescription: '',
   image: '',
+  cardImage: '',
   isActive: false,
   blocks: [],
 });
@@ -95,9 +97,11 @@ export default function EventEditPage() {
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [saveProgress, setSaveProgress] = useState({ open: false, steps: [], totalProgress: 0 });
   const [pendingImageFile, setPendingImageFile] = useState(null);
+  const [pendingCardImageFile, setPendingCardImageFile] = useState(null);
   const [pendingBlockFiles, setPendingBlockFiles] = useState({});
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [cropModalSrc, setCropModalSrc] = useState(null);
+  const [cropTarget, setCropTarget] = useState('cover');
   const [mapVisible, setMapVisible] = useState(true);
   const [determineLocationTrigger, setDetermineLocationTrigger] = useState(0);
   const [suggestion, setSuggestion] = useState(null);
@@ -107,16 +111,18 @@ export default function EventEditPage() {
   const cropUrlRef = useRef(null);
   const savedFormDataRef = useRef(null);
   const imageUploadRef = useRef(null);
+  const cardImageUploadRef = useRef(null);
 
   const isDirty = useMemo(() => {
     if (isNew) return false;
     if (!savedFormDataRef.current) return false;
     const hasPendingFiles = !!(
       pendingImageFile ||
+      pendingCardImageFile ||
       Object.keys(pendingBlockFiles).some((k) => pendingBlockFiles[k])
     );
     return !formSnapshotsEqual(formData, savedFormDataRef.current) || hasPendingFiles;
-  }, [isNew, formData, pendingImageFile, pendingBlockFiles]);
+  }, [isNew, formData, pendingImageFile, pendingCardImageFile, pendingBlockFiles]);
 
   const [imageDisplayUrl, setImageDisplayUrl] = useState('');
   useEffect(() => {
@@ -127,6 +133,16 @@ export default function EventEditPage() {
     }
     setImageDisplayUrl(formData.image ? getImageUrl(formData.image) : '');
   }, [pendingImageFile, formData.image]);
+
+  const [cardImageDisplayUrl, setCardImageDisplayUrl] = useState('');
+  useEffect(() => {
+    if (pendingCardImageFile) {
+      const u = URL.createObjectURL(pendingCardImageFile);
+      setCardImageDisplayUrl(u);
+      return () => URL.revokeObjectURL(u);
+    }
+    setCardImageDisplayUrl(formData.cardImage ? getImageUrl(formData.cardImage) : '');
+  }, [pendingCardImageFile, formData.cardImage]);
 
   const navigateToList = useCallback(() => {
     // Проверяем, есть ли сохраненная страница для возврата
@@ -175,6 +191,7 @@ export default function EventEditPage() {
         registrationUrl: data.registrationUrl ?? '',
         shortDescription: data.shortDescription ?? '',
         image: data.image ?? data.images?.[0] ?? '',
+        cardImage: data.cardImage ?? '',
         isActive: Boolean(data.isActive),
         blocks: Array.isArray(data.blocks) ? data.blocks : [],
       };
@@ -317,20 +334,30 @@ export default function EventEditPage() {
     setFormData((prev) => ({ ...prev, location: addr }));
   };
 
-  const handleMainImageFileSelect = (e) => {
+  const openCropForFile = (e, target) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
     if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
     const url = URL.createObjectURL(file);
     cropUrlRef.current = url;
+    setCropTarget(target);
     setCropModalSrc(url);
     setCropModalOpen(true);
   };
 
+  const handleMainImageFileSelect = (e) => openCropForFile(e, 'cover');
+
+  const handleCardImageFileSelect = (e) => openCropForFile(e, 'card');
+
   const handleCropComplete = (blob) => {
-    const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
-    setPendingImageFile(file);
+    const isCard = cropTarget === 'card';
+    const file = new File([blob], isCard ? 'card.jpg' : 'cover.jpg', { type: 'image/jpeg' });
+    if (isCard) {
+      setPendingCardImageFile(file);
+    } else {
+      setPendingImageFile(file);
+    }
     setCropModalOpen(false);
     setCropModalSrc(null);
     if (cropUrlRef.current) { URL.revokeObjectURL(cropUrlRef.current); cropUrlRef.current = null; }
@@ -354,20 +381,24 @@ export default function EventEditPage() {
     setError('');
 
     let imageUrl = formData.image;
+    let cardImageUrl = formData.cardImage;
     const blocksToSend = (formData.blocks || []).map((b) => ({ ...b, data: { ...b.data } }));
 
     const hasPreview = !!pendingImageFile;
+    const hasCardImage = !!pendingCardImageFile;
     const hasBlocks = Object.values(pendingBlockFiles).some((p) => p && (p.url || p.video || (p.images?.length ?? 0) > 0));
-    const totalWeight = (hasPreview ? 1 : 0) + (hasBlocks ? 1 : 0) + 1;
+    const totalWeight = (hasPreview ? 1 : 0) + (hasCardImage ? 1 : 0) + (hasBlocks ? 1 : 0) + 1;
     const initialSteps = [
       { label: 'Загрузка обложки', status: hasPreview ? 'pending' : 'done' },
+      { label: 'Загрузка фото карточки', status: hasCardImage ? 'pending' : 'done' },
       { label: 'Загрузка блоков контента', status: hasBlocks ? 'pending' : 'done' },
       { label: 'Сохранение данных', status: 'pending' },
     ];
-    if (hasPreview || hasBlocks) {
+    if (hasPreview || hasCardImage || hasBlocks) {
       const stepsWithActive = initialSteps.map((s, i) => {
         if (i === 0 && hasPreview) return { ...s, status: 'active' };
-        if (i === 1 && hasBlocks && !hasPreview) return { ...s, status: 'active' };
+        if (i === 1 && hasCardImage && !hasPreview) return { ...s, status: 'active' };
+        if (i === 2 && hasBlocks && !hasPreview && !hasCardImage) return { ...s, status: 'active' };
         return s;
       });
       setSaveProgress({ open: true, steps: stepsWithActive, totalProgress: 0 });
@@ -375,7 +406,7 @@ export default function EventEditPage() {
 
     const updateBlockUploadProgress = (percent, subLabel) => {
       setSaveProgress((prev) => {
-        const steps = prev.steps.map((s, i) => (i === 1 && s.status === 'active' ? { ...s, progress: percent, subLabel } : s));
+        const steps = prev.steps.map((s, i) => (i === 2 && s.status === 'active' ? { ...s, progress: percent, subLabel } : s));
         const completedWeight = steps.filter((s) => s.status === 'done').length;
         const activeStep = steps.find((s) => s.status === 'active');
         const activeProgress = activeStep?.progress ?? 0;
@@ -403,7 +434,28 @@ export default function EventEditPage() {
         });
         imageUrl = res.data?.url || imageUrl;
         setPendingImageFile(null);
-        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 0 ? { ...s, status: 'done' } : i === 1 && hasBlocks ? { ...s, status: 'active' } : s)), totalProgress: Math.round((1 / totalWeight) * 100) }));
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 0 ? { ...s, status: 'done' } : i === 1 && hasCardImage ? { ...s, status: 'active' } : i === 2 && hasBlocks && !hasCardImage ? { ...s, status: 'active' } : s)), totalProgress: Math.round((1 / totalWeight) * 100) }));
+      }
+
+      if (pendingCardImageFile) {
+        const fd = new FormData();
+        fd.append('file', pendingCardImageFile);
+        const res = await mediaAPI.upload(fd, {
+          onUploadProgress: (e) => {
+            const percent = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+            setSaveProgress((prev) => {
+              const steps = prev.steps.map((s, i) => (i === 1 && s.status === 'active' ? { ...s, progress: percent } : s));
+              const completedWeight = steps.filter((s) => s.status === 'done').length;
+              const activeStep = steps.find((s) => s.status === 'active');
+              const activeProgress = activeStep?.progress ?? 0;
+              const totalProgress = Math.round(((completedWeight + activeProgress / 100) / totalWeight) * 100);
+              return { ...prev, steps, totalProgress };
+            });
+          },
+        });
+        cardImageUrl = res.data?.url || cardImageUrl;
+        setPendingCardImageFile(null);
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : i === 2 && hasBlocks ? { ...s, status: 'active' } : s)), totalProgress: Math.round((((hasPreview ? 1 : 0) + 1) / totalWeight) * 100) }));
       }
 
       const blockEntries = Object.entries(pendingBlockFiles).filter(([, p]) => p && (p.url || p.video || (p.images?.length ?? 0) > 0));
@@ -469,10 +521,10 @@ export default function EventEditPage() {
         }
       }
       setPendingBlockFiles({});
-      if (hasBlocks) setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 1 ? { ...s, status: 'done' } : s)), totalProgress: Math.round(((hasPreview ? 1 : 0) + 1) / totalWeight * 100) }));
+      if (hasBlocks) setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'done' } : s)), totalProgress: Math.round(((hasPreview ? 1 : 0) + (hasCardImage ? 1 : 0) + 1) / totalWeight * 100) }));
 
-      if (hasPreview || hasBlocks) {
-        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'active' } : s)) }));
+      if (hasPreview || hasCardImage || hasBlocks) {
+        setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 3 ? { ...s, status: 'active' } : s)) }));
       }
 
       const dataToSend = {
@@ -489,6 +541,7 @@ export default function EventEditPage() {
         organizer: formData.organizer || null,
         registrationUrl: formData.registrationUrl || null,
         image: imageUrl || null,
+        cardImage: cardImageUrl || null,
         isActive: Boolean(formData.isActive),
         blocks: blocksToSend,
       };
@@ -496,8 +549,8 @@ export default function EventEditPage() {
       if (isNew) {
         const res = await eventsAPI.create(dataToSend);
         const created = res.data;
-        if (hasPreview || hasBlocks) {
-          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+        if (hasPreview || hasCardImage || hasBlocks) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 3 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
           setTimeout(() => {
             setSaveProgress({ open: false, steps: [], totalProgress: 0 });
             if (created?.id) {
@@ -517,11 +570,11 @@ export default function EventEditPage() {
         setTimeout(() => setShowToast(false), TOAST_DURATION_MS);
       } else {
         await eventsAPI.update(params.id, dataToSend);
-        const updated = { ...formData, image: imageUrl, blocks: blocksToSend };
+        const updated = { ...formData, image: imageUrl, cardImage: cardImageUrl, blocks: blocksToSend };
         savedFormDataRef.current = updated;
         setFormData(updated);
-        if (hasPreview || hasBlocks) {
-          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 2 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
+        if (hasPreview || hasCardImage || hasBlocks) {
+          setSaveProgress((prev) => ({ ...prev, steps: prev.steps.map((s, i) => (i === 3 ? { ...s, status: 'done' } : s)), totalProgress: 100 }));
           setTimeout(() => setSaveProgress({ open: false, steps: [], totalProgress: 0 }), 500);
         }
         setShowToast(true);
@@ -530,7 +583,7 @@ export default function EventEditPage() {
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       setError(err.response?.data?.message || 'Ошибка сохранения');
-      if (hasPreview || hasBlocks) {
+      if (hasPreview || hasCardImage || hasBlocks) {
         setSaveProgress((prev) => {
           const idx = prev.steps.findIndex((s) => s.status === 'active');
           const newSteps = prev.steps.map((s, i) => (i === idx ? { ...s, status: 'error' } : s));
@@ -800,7 +853,10 @@ export default function EventEditPage() {
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Краткое описание (для карточки)</label>
+          <label className={styles.formLabel}>Описание</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Показывается на странице события под датой и местом. Первые 160 символов уходят в SEO-описание.
+          </p>
           <RichTextEditor
             value={formData.shortDescription}
             onChange={(v) => setFormData((prev) => ({ ...prev, shortDescription: v }))}
@@ -812,7 +868,7 @@ export default function EventEditPage() {
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Обложка</label>
           <p className={styles.imageHint} style={{ marginBottom: 12 }}>
-            Отображается в шапке страницы события и на карточке в афише.
+            Отображается в шапке страницы события. На карточке используется, если не загружено фото для карточки.
           </p>
           <input
             ref={imageUploadRef}
@@ -838,6 +894,40 @@ export default function EventEditPage() {
             <div className={styles.imageUpload}>
               <label htmlFor="mainImageUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                 <Upload size={20} /> Загрузить обложку
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Фото для карточки</label>
+          <p className={styles.imageHint} style={{ marginBottom: 12 }}>
+            Квадрат 1:1. Показывается на карточке в афише и на главной. Если не загружено, используется обложка.
+          </p>
+          <input
+            ref={cardImageUploadRef}
+            type="file"
+            accept="image/*"
+            onChange={handleCardImageFileSelect}
+            style={{ display: 'none' }}
+            id="cardImageUpload"
+          />
+          {(cardImageDisplayUrl || formData.cardImage) ? (
+            <div className={styles.previewItem} style={{ maxWidth: 260, aspectRatio: '1/1', position: 'relative', overflow: 'hidden', borderRadius: 8 }}>
+              <img src={cardImageDisplayUrl || getImageUrl(formData.cardImage)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
+                <button type="button" onClick={() => cardImageUploadRef.current?.click()} className={styles.removeImage} title="Заменить">
+                  <Pencil size={14} />
+                </button>
+                <button type="button" onClick={() => { setFormData((prev) => ({ ...prev, cardImage: '' })); setPendingCardImageFile(null); }} className={styles.removeImage} title="Удалить">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.imageUpload}>
+              <label htmlFor="cardImageUpload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <Upload size={20} /> Загрузить фото для карточки
               </label>
             </div>
           )}
@@ -889,8 +979,8 @@ export default function EventEditPage() {
       <ImageCropModal
         open={cropModalOpen}
         imageSrc={cropModalSrc}
-        title="Обрезка обложки"
-        aspect={16 / 9}
+        title={cropTarget === 'card' ? 'Обрезка фото для карточки' : 'Обрезка обложки'}
+        aspect={cropTarget === 'card' ? 1 : 16 / 9}
         onComplete={handleCropComplete}
         onCancel={handleCropCancel}
       />

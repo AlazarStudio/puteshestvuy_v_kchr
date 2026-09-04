@@ -91,6 +91,7 @@ export default function RegisterPage() {
                 required
                 autoComplete="email"
               />
+              <p className={styles.fieldHint}>Подойдёт почта в зоне .ru, .рф, .su, а также vk.com и yandex.com</p>
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="password" className={styles.label}>Пароль</label>

@@ -1,6 +1,7 @@
 
 
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import LegalConsentFields from '@/components/LegalConsentFields/LegalConsentFields'
 import { buildRegistrationConsentRecord } from '@/lib/legal/consentRecord'
@@ -12,6 +13,7 @@ const TAB_REGISTER = 'register'
 const SUCCESS_LOADER_MIN_MS = 500
 
 export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB_LOGIN }) {
+  const navigate = useNavigate()
   const { login, register } = useAuth()
   const [tab, setTab] = useState(initialTab)
   const [loginData, setLoginData] = useState({ login: '', password: '' })
@@ -162,6 +164,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
                   autoComplete="current-password"
                 />
               </div>
+              <div className={styles.forgotRow}>
+                <button
+                  type="button"
+                  className={styles.switchLink}
+                  onClick={() => { handleClose(); navigate('/forgot-password') }}
+                >
+                  Забыли пароль?
+                </button>
+              </div>
               <button type="submit" className={authStyles.submitBtn} disabled={isLoading}>
                 {isLoading ? 'Вход...' : 'Войти'}
               </button>
@@ -213,6 +224,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
                   required
                   autoComplete="email"
                 />
+                <p className={authStyles.fieldHint}>Подойдёт почта в зоне .ru, .рф, .su, а также vk.com и yandex.com</p>
               </div>
               <div className={authStyles.formGroup}>
                 <label htmlFor="auth-reg-password" className={authStyles.label}>Пароль</label>

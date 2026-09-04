@@ -88,6 +88,8 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
 };
 
 // User API (profile + favorites, requires user token)
@@ -173,6 +175,12 @@ export const placeFiltersAPI = {
   replaceValue: (group, oldValue, newValue) =>
     api.post('/admin/place-filters/replace-value', { group, oldValue, newValue }),
   removeValue: (group, value) => api.post('/admin/place-filters/remove-value', { group, value }),
+};
+
+// Guide dictionary API (админка — справочники квалификаций и языков гида)
+export const guideDictionaryAPI = {
+  get: () => api.get('/admin/guide-dictionary'),
+  update: (data) => api.put('/admin/guide-dictionary', data),
 };
 
 // Route filters API (админка — управление опциями фильтров маршрутов)

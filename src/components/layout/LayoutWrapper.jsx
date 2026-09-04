@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import Header from './Header'
 import Footer from './Footer'
 import CookieBanner from '@/components/CookieBanner/CookieBanner'
+import ScrollToTopButton from '@/components/ScrollToTopButton/ScrollToTopButton'
 import { organization, website } from '@/lib/seo/schema'
 import styles from './LayoutWrapper.module.css'
 
@@ -179,6 +180,7 @@ export default function LayoutWrapper({ children }) {
         {children}
         <Footer />
         <CookieBanner />
+        {pathname !== '/map' && <ScrollToTopButton />}
       </div>
     </>
   )

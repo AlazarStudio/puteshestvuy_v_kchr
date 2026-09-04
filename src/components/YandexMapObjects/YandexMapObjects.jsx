@@ -85,11 +85,19 @@ export default function YandexMapObjects({ objects = [], visibleKeys, onSelect }
     managerRef.current = manager
     map.geoObjects.add(manager)
 
-    manager.objects.events.add('click', (e) => {
+    const selectByEvent = (e) => {
       const id = e.get('objectId')
       const obj = manager.objects.getById(id)
       if (obj?.properties?.payload) onSelectRef.current?.(obj.properties.payload)
-    })
+    }
+    manager.objects.events.add('click', selectByEvent)
+
+    // На десктопе попап открывается уже по наведению: он стоит в углу карты,
+    // а не у метки, поэтому курсору не нужно «догонять» его. На тач-устройствах
+    // mouseenter не приходит, там остаётся клик
+    if (window.matchMedia('(hover: hover)').matches) {
+      manager.objects.events.add('mouseenter', selectByEvent)
+    }
 
     return () => {
       map.destroy()

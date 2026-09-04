@@ -82,6 +82,13 @@
   color: #6b7280;
 }
 
+.forgotRow {
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
 .switchLink {
   background: none;
   border: none;

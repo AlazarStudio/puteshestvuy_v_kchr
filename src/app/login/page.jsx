@@ -90,6 +90,9 @@ export default function LoginPage() {
           </form>
           <div className={styles.authFooter}>
             <p>
+              <Link to="/forgot-password">Забыли пароль?</Link>
+            </p>
+            <p>
               Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
             </p>
             <Link to="/" className={styles.backLink}>На главную</Link>

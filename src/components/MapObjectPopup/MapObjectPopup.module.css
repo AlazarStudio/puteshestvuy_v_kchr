@@ -40,6 +40,15 @@
     color: #111;
 }
 
+.link {
+    cursor: pointer;
+}
+
+.link:focus-visible {
+    outline: 2px solid #156A60;
+    outline-offset: -2px;
+}
+
 .image {
     width: 100%;
     height: 140px;
@@ -53,11 +62,21 @@
     display: block;
 }
 
+/* Заголовок с локацией лежит внутри кликабельной зоны, поэтому отступы
+   карточки разделены между ним и телом — по вертикали сумма та же, что была
+   у одного .body */
+.titleRow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px 0;
+}
+
 .body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 16px 18px 18px;
+    padding: 8px 18px 18px;
 }
 
 .title {
@@ -82,6 +101,27 @@
     width: 12px;
     flex-shrink: 0;
     opacity: 0.5;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* Иконки этих кнопок белые: в карточках мест они лежат поверх фотографии.
+   Здесь фон карточки белый, поэтому кнопкам добавлена зелёная подложка —
+   на ней видны и белые контуры, и цветные активные состояния.
+   Сами модули кнопок не трогаем: в других местах они нужны прежними */
+.actions button {
+    background: #156A60;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.actions button:hover {
+    background: #10554D;
 }
 
 .action {

@@ -1,57 +1,37 @@
-/* Плавающая кнопка открытия фильтров (справа внизу) */
-.floatingButton {
-  display: none; /* По умолчанию скрыта, показывается только на мобилке */
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+/* Строчная кнопка открытия фильтров: стоит в строке «Найдено N» над списком */
+.inlineButton {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9999px;
   background-color: #156A60;
   color: #fff;
-  border: none;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(21, 106, 96, 0.4);
-  transition: all 0.3s ease;
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
 }
 
-.floatingButton:hover {
-  background-color: #0f5249;
-  box-shadow: 0 6px 16px rgba(21, 106, 96, 0.5);
-  transform: scale(1.05);
+.inlineButton:hover {
+  background-color: #10554D;
 }
 
-.floatingButton:active {
-  transform: scale(0.95);
-}
-
-.floatingButton svg {
-  width: 26px;
-  height: 26px;
-}
-
-.badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
+.inlineBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background-color: #ff4444;
-  color: #fff;
   border-radius: 10px;
-  font-size: 11px;
+  background-color: #fff;
+  color: #156A60;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Overlay для модального окна */
@@ -423,7 +403,7 @@
 
 /* Скрываем мобильную версию на экранах 1200px и выше */
 @media (min-width: 1200px) {
-  .floatingButton,
+  .inlineButton,
   .overlay,
   .modal {
     display: none !important;
@@ -432,25 +412,13 @@
 
 /* Показываем кнопку и модальное окно до 1199px включительно */
 @media (max-width: 1199px) {
-  .floatingButton {
-    display: flex;
+  .inlineButton {
+    display: inline-flex;
   }
 }
 
 /* Дополнительные стили для очень маленьких экранов */
 @media (max-width: 480px) {
-  .floatingButton {
-    bottom: 20px;
-    right: 20px;
-    width: 65px;
-    height: 65px;
-  }
-
-  .floatingButton svg {
-    width: 26px;
-    height: 26px;
-  }
-
   .modalHeader {
     padding: 16px;
   }

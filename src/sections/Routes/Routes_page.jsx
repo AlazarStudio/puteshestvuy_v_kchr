@@ -645,27 +645,27 @@ export default function Routes_page() {
             maxSuggestions={5}
           />
 
-          <FilterBlockMobile
-            filterGroups={routeFilterGroups}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Введите запрос"
-            suggestionsData={allRoutesForSearch || []}
-            getSuggestionTitle={(item) => item.title || item.name}
-            maxSuggestions={5}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            sortOptions={[
-              { value: 'popularity', label: 'По популярности' },
-              { value: 'difficulty', label: 'По сложности' },
-            ]}
-          />
-
           <div className={styles.routes}>
             <div ref={routesStartRef} className={styles.routesSort}>
               <div className={styles.routesSortFind}>Найдено {total} маршрутов</div>
+
+              <FilterBlockMobile
+                filterGroups={routeFilterGroups}
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Введите запрос"
+                suggestionsData={allRoutesForSearch || []}
+                getSuggestionTitle={(item) => item.title || item.name}
+                maxSuggestions={5}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                sortOptions={[
+                  { value: 'popularity', label: 'По популярности' },
+                  { value: 'difficulty', label: 'По сложности' },
+                ]}
+              />
 
               <div className={styles.routesSortSort}>
                 <div className={styles.title}>Сортировать:</div>

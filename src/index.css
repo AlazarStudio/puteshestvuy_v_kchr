@@ -38,6 +38,10 @@ body {
   height: 100%;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 /* Скрываем скролл до загрузки (JS потом уберёт когда загрузится) */
 body.loading {
   overflow: hidden;

@@ -26,6 +26,8 @@ const ServiceTemplateByType = lazy(() =>
 )
 const LoginPage = lazy(() => import('@/app/login/page'))
 const RegisterPage = lazy(() => import('@/app/register/page'))
+const ForgotPasswordPage = lazy(() => import('@/app/forgot-password/page'))
+const ResetPasswordPage = lazy(() => import('@/app/reset-password/page'))
 const ProfilePage = lazy(() => import('@/app/profile/page'))
 
 // Админка: самый тяжёлый кусок (редактор, кроппер, таблицы) — только по требованию
@@ -128,6 +130,8 @@ export default function App() {
           <Route path="legal/:slug" element={<LegalPageWrapper />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
           <Route path="profile" element={<ProfilePage />} />
           {/* 404 внутри layout: у страницы должны быть шапка и подвал */}
           <Route path="*" element={<NotFound />} />

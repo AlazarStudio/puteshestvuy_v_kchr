@@ -77,6 +77,12 @@
   color: #cbd5e1;
 }
 
+.description {
+  font-size: 16px;
+  line-height: 160%;
+  color: #1f2937;
+}
+
 .registerBtn {
   align-self: flex-start;
   padding: 14px 32px;

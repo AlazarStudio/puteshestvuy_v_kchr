@@ -22,14 +22,6 @@
   font-weight: 500;
 }
 
-/* фильтры: по умолчанию desktop */
-.desktopFilter {
-  display: block;
-}
-.mobileFilter {
-  display: none;
-}
-
 .flexBlock {
   display: flex;
   justify-content: space-between;
@@ -85,8 +77,30 @@
   }
 }
 
-/* Небольшие ноутбуки 1025–1600px */
-@media (min-width: 1025px) and (max-width: 1600px) {
+/* Ноутбуки 1025–1199px (без бокового фильтра) */
+@media (min-width: 1025px) and (max-width: 1199px) {
+  .flexBlock {
+    gap: 24px;
+    margin-bottom: 44px;
+    padding: 0 32px;
+  }
+
+  .places {
+    width: 100%;
+  }
+
+  .placesShow {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .placesSort {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+/* Небольшие ноутбуки 1200–1600px (с боковым фильтром) */
+@media (min-width: 1200px) and (max-width: 1600px) {
   .flexBlock {
     gap: 24px;
     margin-bottom: 44px;
@@ -111,7 +125,7 @@
   }
 
   .places {
-    width: 68%;
+    width: 100%;
   }
 
   .placesShow {
@@ -143,15 +157,6 @@
     width: 100%;
     max-width: 100%;
     padding: 0;
-  }
-
-  /* показываем мобильный фильтр, прячем десктопный */
-  .desktopFilter {
-    display: none;
-  }
-  .mobileFilter {
-    display: block;
-    width: 100%;
   }
 
   .flexBlock {

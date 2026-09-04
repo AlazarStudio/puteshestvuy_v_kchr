@@ -253,7 +253,7 @@ export default function FilterBlockMobile({
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target) &&
-        !event.target.closest(`.${styles.floatingButton}`)
+        !event.target.closest(`.${styles.inlineButton}`)
       ) {
         setIsOpen(false)
       }
@@ -281,21 +281,20 @@ export default function FilterBlockMobile({
 
   return (
     <>
-      {/* Плавающая кнопка открытия фильтров (справа внизу) */}
+      {/* Строчная кнопка открытия фильтров: стоит в строке «Найдено N» над списком */}
       <button
-        className={styles.floatingButton}
+        type="button"
+        className={styles.inlineButton}
         onClick={() => setIsOpen(true)}
         aria-label="Открыть фильтры"
       >
-        {activeFiltersCount > 0 && (
-          <span className={styles.badge}>{activeFiltersCount}</span>
-        )}
         <svg
-          width="24"
-          height="24"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          aria-hidden
         >
           <path
             d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"
@@ -305,6 +304,10 @@ export default function FilterBlockMobile({
             strokeLinejoin="round"
           />
         </svg>
+        <span>Фильтры</span>
+        {activeFiltersCount > 0 && (
+          <span className={styles.inlineBadge}>{activeFiltersCount}</span>
+        )}
       </button>
 
       {/* Модальное окно с фильтрами */}

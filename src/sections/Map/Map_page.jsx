@@ -191,6 +191,9 @@ export default function Map_page() {
             <div className={styles.popupWrap}>
               <MapObjectPopup
                 object={selected}
+                entityType={selected.layer === 'places' ? 'place' : 'service'}
+                entityId={selected.id}
+                place={selected}
                 actionLabel={selected.layer === 'places' ? 'Открыть место' : 'Открыть услугу'}
                 onAction={openObject}
                 onClose={() => setSelected(null)}

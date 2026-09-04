@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, BarChart3 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Building2, Star, Eye, EyeOff, ChevronLeft, ChevronRight, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, BarChart3, BookOpen } from 'lucide-react';
 import { servicesAPI, getImageUrl } from '@/lib/api';
-import { ConfirmModal, AlertModal } from '../components';
+import { ConfirmModal, AlertModal, GuideDictionaryModal } from '../components';
 import styles from '../admin.module.css';
 
 export default function ServicesPage() {
@@ -17,6 +17,7 @@ export default function ServicesPage() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '' });
   const [togglingId, setTogglingId] = useState(null);
+  const [dictionaryOpen, setDictionaryOpen] = useState(false);
   const searchDebounceRef = useRef(null);
 
   // Загружаем сохраненный limit из localStorage или используем значение по умолчанию
@@ -302,6 +303,9 @@ export default function ServicesPage() {
             <option value="Туроператор">Туроператор</option>
             <option value="ТИЦ">ТИЦ</option>
           </select>
+          <button type="button" onClick={() => setDictionaryOpen(true)} className={styles.addBtn}>
+            <BookOpen size={18} /> Справочники гида
+          </button>
           <Link to="/admin/services/new" className={styles.addBtn}><Plus size={18} /> Добавить услугу</Link>
         </div>
       </div>
@@ -507,6 +511,7 @@ export default function ServicesPage() {
         message={alertModal.message}
         onClose={() => setAlertModal({ open: false, title: '', message: '' })}
       />
+      <GuideDictionaryModal open={dictionaryOpen} onClose={() => setDictionaryOpen(false)} />
     </div>
   );
 }

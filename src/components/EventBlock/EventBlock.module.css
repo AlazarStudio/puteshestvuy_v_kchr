@@ -1,6 +1,6 @@
 .card {
     width: 100%;
-    height: 520px;
+    height: auto;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -19,7 +19,7 @@
 .imgWrap {
     position: relative;
     width: 100%;
-    height: 340px;
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
     background-color: #F1F3F8;
 }
@@ -89,14 +89,6 @@
 }
 
 @media (min-width: 320px) and (max-width: 1400px) {
-    .card {
-        height: 400px;
-    }
-
-    .imgWrap {
-        height: 240px;
-    }
-
     .body {
         padding: 16px;
     }

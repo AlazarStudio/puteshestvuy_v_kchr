@@ -606,32 +606,32 @@ export default function Services_page() {
             initialOpenKeys={{ service: true }}
           />
 
-          {/* Mobile filter */}
-          <FilterBlockMobile
-            filterGroups={computedFilterGroups}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Поиск по услугам..."
-            suggestionsData={allServicesForSearch || []}
-            getSuggestionTitle={(item) => item.title || item.name}
-            maxSuggestions={5}
-            initialOpenKeys={{ service: true }}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            sortOptions={[
-              { value: 'popularity', label: 'По популярности' },
-              { value: 'rating', label: 'По рейтингу' },
-              { value: 'reviews', label: 'По отзывам' },
-            ]}
-          />
-
           <div className={styles.services}>
             <div className={styles.servicesSort}>
               <div className={styles.servicesSortFind}>
                 Найдено {total} услуг
               </div>
+
+              {/* Mobile filter */}
+              <FilterBlockMobile
+                filterGroups={computedFilterGroups}
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Поиск по услугам..."
+                suggestionsData={allServicesForSearch || []}
+                getSuggestionTitle={(item) => item.title || item.name}
+                maxSuggestions={5}
+                initialOpenKeys={{ service: true }}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                sortOptions={[
+                  { value: 'popularity', label: 'По популярности' },
+                  { value: 'rating', label: 'По рейтингу' },
+                  { value: 'reviews', label: 'По отзывам' },
+                ]}
+              />
 
               <div className={styles.servicesSortSort}>
                 <div className={styles.title}>Сортировать:</div>

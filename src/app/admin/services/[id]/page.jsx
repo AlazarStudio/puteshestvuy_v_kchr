@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, X, Plus, Trash2, Eye, EyeOff, Map, ChevronLeft, ChevronRight, GripVertical, MapPin, Phone, Mail, Globe } from 'lucide-react';
-import { servicesAPI, mediaAPI, getImageUrl } from '@/lib/api';
+import { servicesAPI, mediaAPI, guideDictionaryAPI, getImageUrl } from '@/lib/api';
 import { normalizeManualRating, ratingFromReviews } from '@/utils/rating';
 import { serviceFamily } from '@/lib/mapFamilies';
 import YandexMapPicker from '@/components/YandexMapPicker';
@@ -160,6 +160,14 @@ export default function ServiceEditPage() {
   const [contactIconPickerIndex, setContactIconPickerIndex] = useState(null);
   const [contactIconSearch, setContactIconSearch] = useState('');
   const [contactIconGroup, setContactIconGroup] = useState('all');
+  /** Справочник гида: квалификации и языки, из которых админ отмечает нужные галочками */
+  const [guideDictionary, setGuideDictionary] = useState(null);
+
+  useEffect(() => {
+    guideDictionaryAPI.get()
+      .then((r) => setGuideDictionary(r.data))
+      .catch(() => setGuideDictionary({ qualifications: [], languages: [] }));
+  }, []);
 
   const reviewsRating = ratingFromReviews(approvedReviews);
 
@@ -1131,6 +1139,26 @@ export default function ServiceEditPage() {
             rows={5}
             placeholder="Один пункт на строку"
           />
+        );
+      }
+      case 'dictionaryCheckboxes': {
+        const selected = Array.isArray(value) ? value : [];
+        const options = guideDictionary?.[field.dictionary] ?? [];
+        // Значения, сохранённые на услуге, но удалённые из справочника, показываем в конце отмеченными — иначе они пропадут молча
+        const orphans = selected.filter((v) => !options.includes(v));
+        const all = [...options, ...orphans];
+        const toggle = (item) => setData(key, selected.includes(item) ? selected.filter((v) => v !== item) : [...selected, item]);
+        if (!guideDictionary) return <div className={styles.imageHint}>Загрузка справочника…</div>;
+        if (all.length === 0) return <div className={styles.imageHint}>Справочник пуст — заполните его на странице списка услуг, кнопка «Справочники гида».</div>;
+        return (
+          <div className={styles.filterCheckboxList}>
+            {all.map((item) => (
+              <label key={item} className={styles.filterCheckboxLabel}>
+                <input type="checkbox" checked={selected.includes(item)} onChange={() => toggle(item)} />
+                <span>{item}</span>
+              </label>
+            ))}
+          </div>
         );
       }
       case 'tagList': {
