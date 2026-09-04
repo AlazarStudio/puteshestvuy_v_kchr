@@ -269,9 +269,48 @@ function canonicalPathOf(headTagsHtml) {
   }
 }
 
+// Краулер — инструмент сборки, а не браузер пользователя: его origin
+// (127.0.0.1:<порт>) не входит в CORS-белый список API (FRONTEND_URL на
+// бэкенде), и бэкенд отвечает 500 на любой такой запрос, включая preflight.
+// Поэтому запросы к API_URL перехватываем и отвечаем из node: у fetch в node
+// нет CORS, а странице отдаём ответ с разрешающими заголовками. Заодно обход
+// перестаёт зависеть от CORS-настроек конкретного бэкенда.
+async function installApiProxy(page, baseUrl) {
+  await page.setRequestInterception(true)
+  page.on('request', async (req) => {
+    try {
+      const url = req.url()
+      if (!url.startsWith(API_URL)) return await req.continue()
+      const origin = req.headers()['origin'] || new URL(baseUrl).origin
+      const corsHeaders = {
+        'access-control-allow-origin': origin,
+        'access-control-allow-credentials': 'true',
+        'access-control-allow-headers': req.headers()['access-control-request-headers'] || 'authorization,content-type',
+        'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+      }
+      if (req.method() === 'OPTIONS') return await req.respond({ status: 204, headers: corsHeaders })
+      const headers = { ...req.headers() }
+      for (const h of ['origin', 'referer', 'host', 'cookie', 'content-length']) delete headers[h]
+      const res = await fetch(url, { method: req.method(), headers, body: req.postData() })
+      const body = Buffer.from(await res.arrayBuffer())
+      await req.respond({
+        status: res.status,
+        headers: { ...corsHeaders, 'content-type': res.headers.get('content-type') || 'application/json' },
+        body,
+      })
+    } catch {
+      // Страница могла закрыться по таймауту, пока мы ходили в сеть — respond
+      // и abort на мёртвом запросе бросают; глушим, чтобы не получить
+      // unhandled rejection и не уронить сборку.
+      await req.abort().catch(() => {})
+    }
+  })
+}
+
 async function renderOnce(browser, baseUrl, urlPath) {
   const page = await browser.newPage()
   try {
+    await installApiProxy(page, baseUrl)
     return await withTimeout(async () => {
       await page
         .goto(`${baseUrl}${urlPath}`, { waitUntil: 'networkidle2', timeout: GOTO_TIMEOUT_MS })
