@@ -103,3 +103,30 @@
         bottom: 16px;
     }
 }
+
+/* Телефон: карточка ~170px шириной, десктопные размеры шрифтов не помещаются */
+@media (max-width: 767px) {
+    .body {
+        padding: 12px;
+        gap: 6px;
+    }
+
+    .date {
+        font-size: 12px;
+    }
+
+    .title {
+        font-size: 13px;
+    }
+
+    .location {
+        font-size: 12px;
+    }
+
+    .category {
+        left: 12px;
+        bottom: 12px;
+        padding: 3px 10px;
+        font-size: 11px;
+    }
+}
