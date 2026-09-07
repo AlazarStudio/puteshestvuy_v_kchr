@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "ano-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/github/kchr-tourism", "run", "dev"],
+      "port": 5174
     }
   ]
 }
