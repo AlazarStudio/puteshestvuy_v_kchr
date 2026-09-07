@@ -16,9 +16,12 @@
   transition: opacity 0.2s, transform 0.2s, background 0.2s;
 }
 
-.btn:hover {
-  opacity: 0.9;
-  transform: scale(1.08);
+/* Только там, где есть наведение: на тач-экранах :hover залипает после тапа */
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
 }
 
 .icon {
