@@ -73,6 +73,8 @@ const pageConfig = [
   { path: '/map', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/login', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/register', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
+  { path: '/forgot-password', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
+  { path: '/reset-password', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
   { path: '/profile', initialColor: 'black', scrollThreshold: 1, enableScrollChange: false, backgroundColor: '#f1f3f8b7' },
 ]
 
