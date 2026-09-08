@@ -35,10 +35,12 @@ export function buildConsentRecord({ termsAccepted, dataAccepted }) {
   }
 }
 
-export function buildRegistrationConsentRecord({ termsAccepted, dataAccepted }) {
+export function buildRegistrationConsentRecord({ termsAccepted, dataAccepted, marketingAccepted = false }) {
   return {
     ...baseRecord('registration'),
     terms: documentRecord(terms, termsAccepted),
     dataProcessing: documentRecord(accountConsent, dataAccepted),
+    // Отдельного документа под рассылку нет, поэтому только факт отметки
+    marketing: { accepted: marketingAccepted },
   }
 }

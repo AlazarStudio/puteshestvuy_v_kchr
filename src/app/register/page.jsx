@@ -19,6 +19,7 @@ export default function RegisterPage() {
   })
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [dataAccepted, setDataAccepted] = useState(false)
+  const [marketingAccepted, setMarketingAccepted] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -40,7 +41,8 @@ export default function RegisterPage() {
     try {
       await register({
         ...formData,
-        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted }),
+        marketingConsent: marketingAccepted,
+        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted, marketingAccepted }),
       })
       navigate('/profile', { replace: true })
     } catch (err) {
@@ -124,8 +126,10 @@ export default function RegisterPage() {
             <LegalConsentFields
               terms={termsAccepted}
               data={dataAccepted}
+              marketing={marketingAccepted}
               onTermsChange={setTermsAccepted}
               onDataChange={setDataAccepted}
+              onMarketingChange={setMarketingAccepted}
             />
 
             <button type="submit" className={styles.submitBtn} disabled={isLoading}>

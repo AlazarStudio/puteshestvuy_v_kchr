@@ -586,6 +586,7 @@ export default function UsersPage() {
                       )}
                     </span>
                   </th>
+                  <th>Рассылка</th>
                   <th>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>Действия</span>
@@ -616,6 +617,7 @@ export default function UsersPage() {
                     <td>{getUserDisplayName(user)}</td>
                     <td>{getRoleBadge(user.role)}</td>
                     <td>{formatDate(user.createdAt)}</td>
+                    <td>{user.marketingConsent ? 'Да' : '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', position: 'relative' }}>
                         {/* Кнопки бана/разблокировки - для ADMIN и SUPERADMIN */}

@@ -25,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
   })
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [dataAccepted, setDataAccepted] = useState(false)
+  const [marketingAccepted, setMarketingAccepted] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -38,6 +39,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
     setRegisterData({ login: '', email: '', password: '', name: '' })
     setTermsAccepted(false)
     setDataAccepted(false)
+    setMarketingAccepted(false)
     setError('')
   }
 
@@ -91,7 +93,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
     try {
       await register({
         ...registerData,
-        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted }),
+        marketingConsent: marketingAccepted,
+        consent: buildRegistrationConsentRecord({ termsAccepted, dataAccepted, marketingAccepted }),
       })
       await new Promise((r) => setTimeout(r, SUCCESS_LOADER_MIN_MS))
       clearForms()
@@ -257,8 +260,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess, initialTab = TAB
               <LegalConsentFields
                 terms={termsAccepted}
                 data={dataAccepted}
+                marketing={marketingAccepted}
                 onTermsChange={setTermsAccepted}
                 onDataChange={setDataAccepted}
+                onMarketingChange={setMarketingAccepted}
               />
 
               <button type="submit" className={authStyles.submitBtn} disabled={isLoading}>
