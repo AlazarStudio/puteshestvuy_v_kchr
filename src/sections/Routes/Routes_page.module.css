@@ -226,12 +226,18 @@
   }
 
   .routesSort {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 12px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  .routesSortFind {
+    min-width: 0;
   }
 
   .selectWrapper {

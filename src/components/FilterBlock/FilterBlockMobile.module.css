@@ -419,6 +419,12 @@
 
 /* Дополнительные стили для очень маленьких экранов */
 @media (max-width: 480px) {
+  .inlineButton {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
   .modalHeader {
     padding: 16px;
   }

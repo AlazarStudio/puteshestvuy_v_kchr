@@ -177,10 +177,16 @@
   }
 
   .placesSort {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 12px;
     width: 100%;
+  }
+
+  .placesSortFind {
+    min-width: 0;
   }
 
   .selectWrapper {
