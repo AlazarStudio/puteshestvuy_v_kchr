@@ -77,4 +77,12 @@ RewriteRule ^ - [R=404,L]
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # HTML-оболочка не должна оседать в кэше браузера: без заголовка телефоны
+  # неделями держали старый index.html со старыми чанками (плавающая кнопка
+  # фильтра уже после её замены на строчную). Хэшированные ассеты в /assets
+  # nginx и так отдаёт с max-age, их это не касается.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
 </IfModule>
