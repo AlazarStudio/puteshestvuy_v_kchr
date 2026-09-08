@@ -133,7 +133,6 @@ export default function ProfilePage() {
     phone: '',
     firstName: '',
     lastName: '',
-    marketingConsent: false,
   })
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -183,7 +182,6 @@ export default function ProfilePage() {
       phone: user.phone || '',
       firstName: user.userInformation?.firstName ?? '',
       lastName: user.userInformation?.lastName ?? '',
-      marketingConsent: user.marketingConsent === true,
     })
   }, [user])
 
@@ -244,8 +242,8 @@ export default function ProfilePage() {
   }, [])
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
     setSaveError('')
   }
 
@@ -259,7 +257,6 @@ export default function ProfilePage() {
         name: fullNameFromParts || user.name,
         email: formData.email,
         phone: formData.phone,
-        marketingConsent: formData.marketingConsent,
         userInformation: {
           firstName: formData.firstName || null,
           lastName: formData.lastName || null,
@@ -1162,17 +1159,6 @@ export default function ProfilePage() {
                         className={styles.input}
                         placeholder="+7 (___) ___-__-__"
                       />
-                    </div>
-                    <div className={styles.formRow}>
-                      <label className={styles.checkboxRow}>
-                        <input
-                          type="checkbox"
-                          name="marketingConsent"
-                          checked={formData.marketingConsent}
-                          onChange={handleChange}
-                        />
-                        <span>Получать информационную и рекламную рассылку</span>
-                      </label>
                     </div>
                   </>
                 )}

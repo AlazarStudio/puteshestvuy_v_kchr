@@ -462,23 +462,6 @@
   font-size: 0.9rem;
 }
 
-.checkboxRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #374151;
-  font-size: 0.95rem;
-  cursor: pointer;
-}
-
-.checkboxRow input {
-  width: 17px;
-  height: 17px;
-  flex-shrink: 0;
-  accent-color: #156A60;
-  cursor: pointer;
-}
-
 .input,
 .inputDisabled {
   width: 100%;
