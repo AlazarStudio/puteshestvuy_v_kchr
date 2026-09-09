@@ -5,59 +5,58 @@ import AppImage from '@/components/ui/AppImage'
 import styles from './MapObjectPopup.module.css'
 
 /**
- * Карточка объекта поверх карты.
+ * Карточка объекта у метки на карте. Кликабельна целиком — ведёт на страницу
+ * объекта; кнопки действий гасят всплытие и никуда не уводят.
  * @param {object} object — точка карты: title, location, image
  * @param {string} entityType — 'place' | 'service', определяет набор действий
  * @param {number|string} entityId — id объекта для кнопок действий
  * @param {object} place — объект места целиком, нужен конструктору маршрута
- * @param {string} actionLabel — подпись кнопки перехода
- * @param {function} onAction — переход к объекту
- * @param {function} onClose — закрыть попап
+ * @param {string} placement — 'above' | 'below': с какой стороны метки стоит карточка
+ * @param {function} onOpen — переход к объекту
+ * @param {function} onMouseEnter — курсор перешёл на попап
+ * @param {function} onMouseLeave — курсор ушёл с попапа
  */
-export default function MapObjectPopup({ object, entityType, entityId, place, actionLabel = 'Подробнее', onAction, onClose }) {
+export default function MapObjectPopup({ object, entityType, entityId, place, placement = 'above', onOpen, onMouseEnter, onMouseLeave }) {
   if (!object) return null
 
   return (
-    <div className={styles.popup}>
-      <button type="button" className={styles.close} onClick={onClose} aria-label="Закрыть">×</button>
+    <div
+      className={`${styles.popup} ${placement === 'below' ? styles.popupBelow : ''}`}
+      role="link"
+      tabIndex={0}
+      aria-label={`Открыть: ${object.title}`}
+      onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter') onOpen?.() }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {object.image && (
+        <div className={styles.image}>
+          <AppImage src={object.image} alt={object.title || ''} />
+        </div>
+      )}
 
-      {/* Фотография и заголовок — одна кликабельная зона: она ведёт на страницу
-          объекта, кнопки действий ниже гасят всплытие и никуда не уводят */}
-      <div
-        className={styles.link}
-        role="link"
-        tabIndex={0}
-        onClick={onAction}
-        onKeyDown={(e) => { if (e.key === 'Enter') onAction?.() }}
-      >
-        {object.image && (
-          <div className={styles.image}>
-            <AppImage src={object.image} alt={object.title || ''} />
+      <div className={styles.titleRow}>
+        <div className={styles.title}>{object.title}</div>
+        {object.location && (
+          <div className={styles.location}>
+            <img src="/place_black.png" alt="" />
+            {object.location}
           </div>
         )}
-        <div className={styles.titleRow}>
-          <div className={styles.title}>{object.title}</div>
-          {object.location && (
-            <div className={styles.location}>
-              <img src="/place_black.png" alt="" />
-              {object.location}
-            </div>
-          )}
-        </div>
       </div>
 
-      <div className={styles.body}>
-        {entityId && (
-          <div className={styles.actions}>
-            {entityType === 'place' && <RouteConstructorButton placeId={entityId} place={place} />}
-            <FavoriteButton entityType={entityType} entityId={entityId} />
+      {entityId && (
+        <div className={styles.actions}>
+          <div className={styles.actionsLeft}>
             {entityType === 'place' && <VisitedButton entityType="place" entityId={entityId} />}
           </div>
-        )}
-        <button type="button" className={styles.action} onClick={onAction}>
-          {actionLabel}
-        </button>
-      </div>
+          <div className={styles.actionsRight}>
+            <FavoriteButton entityType={entityType} entityId={entityId} />
+            {entityType === 'place' && <RouteConstructorButton placeId={entityId} place={place} />}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

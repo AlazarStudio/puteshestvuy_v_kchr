@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import YandexMapObjects from '@/components/YandexMapObjects/YandexMapObjects'
 import MapObjectPopup from '@/components/MapObjectPopup/MapObjectPopup'
@@ -15,6 +15,38 @@ const LAYERS = [
   { key: 'services', label: 'Услуги' },
 ]
 
+// 52px иконки метки + 8px зазор до карточки
+const ANCHOR_GAP = 60
+// Отступ от краёв карты, за которые карточке нельзя вылезать
+const EDGE_GAP = 8
+// Курсору нужно время перейти с метки на попап, иначе он закроется по дороге
+const CLOSE_DELAY = 200
+
+/**
+ * Раскладка попапа у метки: горизонтальный сдвиг, чтобы карточка не вылезала
+ * за края карты, и переворот под метку, когда сверху не хватает места.
+ */
+function useAnchoredPopup(selected, wrapRef, popupRef) {
+  const [placement, setPlacement] = useState({ shiftX: 0, below: false })
+
+  useLayoutEffect(() => {
+    const anchor = selected?.anchor
+    const popup = popupRef.current
+    const wrap = wrapRef.current
+    if (!anchor || !popup || !wrap) return
+
+    const { width, height } = popup.getBoundingClientRect()
+    const half = width / 2
+    let shiftX = 0
+    if (anchor.x - half < EDGE_GAP) shiftX = EDGE_GAP - (anchor.x - half)
+    else if (anchor.x + half > wrap.clientWidth - EDGE_GAP) shiftX = wrap.clientWidth - EDGE_GAP - (anchor.x + half)
+
+    setPlacement({ shiftX, below: anchor.y - ANCHOR_GAP - height < 0 })
+  }, [selected, wrapRef, popupRef])
+
+  return placement
+}
+
 export default function Map_page() {
   const navigate = useNavigate()
   const [data, setData] = useState({ places: [], services: [] })
@@ -25,6 +57,11 @@ export default function Map_page() {
   const [selected, setSelected] = useState(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const filterRef = useRef(null)
+  const mapWrapRef = useRef(null)
+  const popupRef = useRef(null)
+  const closeTimerRef = useRef(null)
+  const overPopupRef = useRef(false)
+  const { shiftX, below } = useAnchoredPopup(selected, mapWrapRef, popupRef)
 
   useEffect(() => {
     let cancelled = false
@@ -116,6 +153,43 @@ export default function Map_page() {
     }
   }, [isFilterOpen])
 
+  useEffect(() => () => clearTimeout(closeTimerRef.current), [])
+
+  const cancelClose = () => clearTimeout(closeTimerRef.current)
+
+  const handleSelect = (payload, anchor) => {
+    cancelClose()
+    overPopupRef.current = false
+    setSelected({ payload, anchor })
+  }
+
+  // Закрытие с задержкой: курсор идёт с метки на попап через зазор,
+  // и мгновенное закрытие не дало бы до него добраться. Событие ухода
+  // с метки приходит от ymaps с задержкой, уже после входа курсора в
+  // попап, поэтому таймер закрытия проверяет флаг overPopupRef
+  const handleHoverEnd = () => {
+    cancelClose()
+    closeTimerRef.current = setTimeout(() => {
+      if (!overPopupRef.current) setSelected(null)
+    }, CLOSE_DELAY)
+  }
+
+  const handlePopupEnter = () => {
+    overPopupRef.current = true
+    cancelClose()
+  }
+
+  const handlePopupLeave = () => {
+    overPopupRef.current = false
+    handleHoverEnd()
+  }
+
+  const handleDismiss = () => {
+    cancelClose()
+    overPopupRef.current = false
+    setSelected(null)
+  }
+
   const toggleLayer = (key) => {
     setActiveLayers((prev) => {
       const next = new Set(prev)
@@ -136,8 +210,8 @@ export default function Map_page() {
 
   const openObject = () => {
     if (!selected) return
-    const path = selected.layer === 'places' ? `/places/${selected.slug}` : `/services/${selected.slug}`
-    navigate(path)
+    const { layer, slug } = selected.payload
+    navigate(layer === 'places' ? `/places/${slug}` : `/services/${slug}`)
   }
 
   const renderLegendItem = (family, enabled) => (
@@ -178,25 +252,36 @@ export default function Map_page() {
       <h1 className={styles.title}>Карта объектов</h1>
 
       <section className={styles.mapSection}>
-        <div className={styles.mapWrap}>
+        <div ref={mapWrapRef} className={styles.mapWrap}>
           {failed ? (
             <div className={styles.state}>Не удалось загрузить объекты карты</div>
           ) : loading ? (
             <div className={styles.state}>Загрузка…</div>
           ) : (
-            <YandexMapObjects objects={objects} visibleKeys={visibleKeys} onSelect={setSelected} />
+            <YandexMapObjects
+              objects={objects}
+              visibleKeys={visibleKeys}
+              onSelect={handleSelect}
+              onHoverEnd={handleHoverEnd}
+              onDismiss={handleDismiss}
+            />
           )}
 
-          {selected && (
-            <div className={styles.popupWrap}>
+          {selected?.anchor && (
+            <div
+              ref={popupRef}
+              className={`${styles.popupWrap} ${below ? styles.popupWrapBelow : ''}`}
+              style={{ left: selected.anchor.x, top: selected.anchor.y, '--shift-x': `${shiftX}px` }}
+            >
               <MapObjectPopup
-                object={selected}
-                entityType={selected.layer === 'places' ? 'place' : 'service'}
-                entityId={selected.id}
-                place={selected}
-                actionLabel={selected.layer === 'places' ? 'Открыть место' : 'Открыть услугу'}
-                onAction={openObject}
-                onClose={() => setSelected(null)}
+                object={selected.payload}
+                entityType={selected.payload.layer === 'places' ? 'place' : 'service'}
+                entityId={selected.payload.id}
+                place={selected.payload}
+                placement={below ? 'below' : 'above'}
+                onOpen={openObject}
+                onMouseEnter={handlePopupEnter}
+                onMouseLeave={handlePopupLeave}
               />
             </div>
           )}

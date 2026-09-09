@@ -1,57 +1,50 @@
 /* Оформление списано с попапа в YandexMapPlace: те же скругления, тень,
    подложка фотографии и типографика. Раскладка вертикальная — фотография
-   сверху, под ней заголовок, локация и кнопка перехода. */
+   сверху, под ней заголовок с локацией и ряд действий.
+   Позицию у метки задаёт обёртка .popupWrap в Map_page.module.css. */
 
 .popup {
-    position: absolute;
-    left: 0;
-    bottom: 0;
+    position: relative;
     width: 260px;
     max-width: calc(100vw - 40px);
     background: #fff;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    z-index: 10;
-}
-
-.close {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    z-index: 1;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    color: #64748b;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.close:hover {
-    background: #fff;
-    color: #111;
-}
-
-.link {
     cursor: pointer;
 }
 
-.link:focus-visible {
+.popup:focus-visible {
     outline: 2px solid #156A60;
-    outline-offset: -2px;
+    outline-offset: 2px;
 }
 
+/* Хвостик к метке. Обёртку сдвигает --shift-x, чтобы карточка не вылезла за
+   край карты, поэтому хвостик вычитает этот сдвиг и остаётся над меткой */
+.popup::after {
+    content: '';
+    position: absolute;
+    left: calc(50% - var(--shift-x, 0px));
+    bottom: -8px;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #fff;
+    border-bottom: 0;
+}
+
+/* Карточка под меткой — хвостик переезжает наверх */
+.popupBelow::after {
+    top: -8px;
+    bottom: auto;
+    border-top: 0;
+    border-bottom: 8px solid #fff;
+}
+
+/* Скругление у самой фотографии: overflow на корне карточки срезал бы хвостик */
 .image {
     width: 100%;
     height: 140px;
+    border-radius: 15px 15px 0 0;
+    overflow: hidden;
     background: #f1f5f9;
 }
 
@@ -62,21 +55,11 @@
     display: block;
 }
 
-/* Заголовок с локацией лежит внутри кликабельной зоны, поэтому отступы
-   карточки разделены между ним и телом — по вертикали сумма та же, что была
-   у одного .body */
 .titleRow {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 16px 18px 0;
-}
-
-.body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 18px 18px;
 }
 
 .title {
@@ -103,11 +86,20 @@
     opacity: 0.5;
 }
 
+/* «Я здесь был» слева отдельно, «хочу посетить» и конструктор — справа вместе */
 .actions {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    margin-top: 4px;
+    padding: 4px 18px 18px;
+}
+
+.actionsLeft,
+.actionsRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Иконки этих кнопок белые: в карточках мест они лежат поверх фотографии.
@@ -129,24 +121,6 @@
 .actions img {
     width: 20px;
     height: 21px;
-}
-
-.action {
-    width: 100%;
-    margin-top: 4px;
-    padding: 11px 20px;
-    border: none;
-    border-radius: 30px;
-    background: #156A60;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.action:hover {
-    background: #0d4a44;
 }
 
 @media (min-width: 320px) and (max-width: 1400px) {

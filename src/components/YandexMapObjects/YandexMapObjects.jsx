@@ -10,17 +10,24 @@ const DEFAULT_ZOOM = 8
  * @param {Array} objects — [{ id, coords: [lat, lng], iconHref, payload }],
  *                где payload несёт поля объекта плюс layer и familyKey
  * @param {Set} visibleKeys — ключи вида `слой:семейство`, которые сейчас показываются
- * @param {function} onSelect — клик по метке, получает payload точки
+ * @param {function} onSelect — клик или наведение на метку: (payload, anchor), где
+ *                anchor — { x, y } кончика метки относительно контейнера карты
+ * @param {function} onHoverEnd — курсор ушёл с метки (только на hover-устройствах)
+ * @param {function} onDismiss — клик по пустой карте либо начало перетаскивания/зума
  */
-export default function YandexMapObjects({ objects = [], visibleKeys, onSelect }) {
+export default function YandexMapObjects({ objects = [], visibleKeys, onSelect, onHoverEnd, onDismiss }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const managerRef = useRef(null)
   const onSelectRef = useRef(onSelect)
+  const onHoverEndRef = useRef(onHoverEnd)
+  const onDismissRef = useRef(onDismiss)
   const [scriptReady, setScriptReady] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
+  useEffect(() => { onHoverEndRef.current = onHoverEnd }, [onHoverEnd])
+  useEffect(() => { onDismissRef.current = onDismiss }, [onDismiss])
 
   // Загрузка API — копия блока из YandexMapRoute.jsx:56-98.
   // SCRIPT_ID тот же: он не даёт загрузить API Яндекса второй раз,
@@ -85,19 +92,36 @@ export default function YandexMapObjects({ objects = [], visibleKeys, onSelect }
     managerRef.current = manager
     map.geoObjects.add(manager)
 
+    // Пиксель точки объекта относительно контейнера: iconImageOffset [-21, -52]
+    // ставит кончик метки ровно в эту точку, к ней и привязывается попап
+    const anchorOf = (coords) => {
+      if (!coords || !containerRef.current) return null
+      const projection = map.options.get('projection')
+      const global = projection.toGlobalPixels(coords, map.getZoom())
+      const page = map.converter.globalToPage(global)
+      const rect = containerRef.current.getBoundingClientRect()
+      return { x: page[0] - rect.left, y: page[1] - rect.top }
+    }
+
     const selectByEvent = (e) => {
       const id = e.get('objectId')
       const obj = manager.objects.getById(id)
-      if (obj?.properties?.payload) onSelectRef.current?.(obj.properties.payload)
+      if (obj?.properties?.payload) onSelectRef.current?.(obj.properties.payload, anchorOf(obj.geometry?.coordinates))
     }
     manager.objects.events.add('click', selectByEvent)
 
-    // На десктопе попап открывается уже по наведению: он стоит в углу карты,
-    // а не у метки, поэтому курсору не нужно «догонять» его. На тач-устройствах
+    // На десктопе попап открывается уже по наведению и встаёт у самой метки
+    // с зазором 8px, задержку закрытия держит Map_page. На тач-устройствах
     // mouseenter не приходит, там остаётся клик
     if (window.matchMedia('(hover: hover)').matches) {
       manager.objects.events.add('mouseenter', selectByEvent)
+      manager.objects.events.add('mouseleave', () => onHoverEndRef.current?.())
     }
+
+    map.events.add('click', (e) => { if (e.get('target') === map) onDismissRef.current?.() })
+    // Перетаскивание и зум сдвигают метку, а якорь попапа посчитан заранее —
+    // он устареет уже на первом кадре, поэтому попап закрывается
+    map.events.add('actionbegin', () => onDismissRef.current?.())
 
     return () => {
       map.destroy()

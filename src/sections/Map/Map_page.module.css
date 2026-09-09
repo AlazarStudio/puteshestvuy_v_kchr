@@ -203,13 +203,19 @@
     text-align: center;
 }
 
-/* Попап растёт вверх и вправо от этого угла: у него самого
-   position: absolute; left: 0; bottom: 0 */
+/* Обёртку ставят в саму точку объекта (inline left/top), а трансформ
+   поднимает карточку над меткой: 52px иконки + 8px зазор.
+   --shift-x приходит из хука и удерживает карточку в границах карты */
 .popupWrap {
     position: absolute;
-    left: 16px;
-    bottom: 16px;
     z-index: 5;
+    pointer-events: auto;
+    transform: translate(calc(-50% + var(--shift-x, 0px)), calc(-100% - 60px));
+}
+
+/* Сверху не хватило места — карточка уходит под метку */
+.popupWrapBelow {
+    transform: translate(calc(-50% + var(--shift-x, 0px)), 8px);
 }
 
 @media (max-width: 768px) {
