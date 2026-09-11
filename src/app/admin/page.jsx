@@ -9,6 +9,7 @@ import {
   Plus
 } from 'lucide-react';
 import { statsAPI } from '@/lib/api';
+import AnalyticsBlock from './components/AnalyticsBlock';
 import styles from './admin.module.css';
 
 export default function AdminDashboard() {
@@ -82,6 +83,8 @@ export default function AdminDashboard() {
           );
         })}
       </div>
+
+      <AnalyticsBlock />
 
       <div className={styles.quickActions}>
         <h2>Быстрые действия</h2>

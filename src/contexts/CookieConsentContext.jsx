@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
-import { loadService, isServiceLoaded, clearGoogleTranslateCookies } from '@/lib/externalServices'
+import { loadService, isServiceLoaded, clearGoogleTranslateCookies, hasMetrika } from '@/lib/externalServices'
 
 const STORAGE_KEY = 'cookie_consent_v2'
 // Старый ключ хранил строку 'accepted' от баннера с единственной кнопкой.
@@ -19,6 +19,18 @@ export const OPTIONAL_SERVICES = [
     description:
       'Перевод интерфейса на английский язык. Поставщику передаются IP-адрес, сведения о браузере и устройстве, адрес страницы, дата и время.',
   },
+  // Метрика появляется в панели только когда задан номер счётчика (VITE_YANDEX_METRIKA_ID);
+  // до утверждения текста политики куки на проде он не задаётся
+  ...(hasMetrika
+    ? [
+        {
+          id: 'metrika',
+          title: 'Яндекс.Метрика',
+          description:
+            'Статистика посещаемости. Поставщику передаются IP-адрес, сведения о браузере и устройстве, адреса просмотренных страниц, источник перехода, дата и время; используются cookie _ym_uid и _ym_d сроком до 1 года.',
+        },
+      ]
+    : []),
 ]
 
 const NONE = OPTIONAL_SERVICES.reduce((acc, service) => ({ ...acc, [service.id]: false }), {})
@@ -30,7 +42,11 @@ function readStoredServices() {
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return null
-    return { ...NONE, ...(parsed.services || {}) }
+    // Появился сервис, о котором пользователь ещё не решал (например, Метрика) —
+    // решение считается неполным, баннер показывается заново
+    const decided = parsed.services || {}
+    if (OPTIONAL_SERVICES.some(({ id }) => !(id in decided))) return null
+    return { ...NONE, ...decided }
   } catch {
     return null
   }

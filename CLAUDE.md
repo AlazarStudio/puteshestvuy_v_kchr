@@ -22,6 +22,7 @@ There are no tests in this project.
 ```
 VITE_API_URL             # Backend API base URL (default: http://localhost:4000/api)
 VITE_YANDEX_MAPS_API_KEY # Yandex Maps API key
+VITE_YANDEX_METRIKA_ID  # Yandex Metrika counter id; empty = counter not loaded, no cookie-panel item
 ```
 
 The dev server proxies `/uploads` → `http://localhost:5000` (static file server separate from the API).

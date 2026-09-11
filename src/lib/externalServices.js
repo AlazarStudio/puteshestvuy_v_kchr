@@ -2,9 +2,14 @@
 // подключаются отсюда только после выбора пользователя в cookie-панели:
 // до согласия внешнему поставщику не должен уходить даже IP-адрес.
 
+// Номер счётчика приходит из окружения сборки; без него Метрика не регистрируется вовсе
+const METRIKA_ID = Number(import.meta.env.VITE_YANDEX_METRIKA_ID) || 0
+export const hasMetrika = METRIKA_ID > 0
+
 const SOURCES = {
   jivo: 'https://code.jivo.ru/widget/9cDG32AjU8',
   googleTranslate: 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit',
+  metrika: 'https://mc.yandex.ru/metrika/tag.js',
 }
 
 const GOOGLE_TRANSLATE_CONTAINER = 'google_translate_element'
@@ -12,6 +17,7 @@ const GOOGLE_TRANSLATE_CONTAINER = 'google_translate_element'
 const loaded = {
   jivo: false,
   googleTranslate: false,
+  metrika: false,
 }
 
 function injectScript(id, src, { async = false } = {}) {
@@ -38,9 +44,28 @@ function loadGoogleTranslate() {
   injectScript('googleTranslate', SOURCES.googleTranslate)
 }
 
+// Стандартная заглушка Метрики: вызовы ym() до загрузки tag.js копятся в очереди и
+// проигрываются после. defer: true отключает автоматический хит — в SPA страницы
+// меняются без перезагрузки, поэтому хиты шлём сами (первый здесь, дальше trackPageView)
+function loadMetrika() {
+  if (!hasMetrika) return
+  window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments) }
+  window.ym.l = Date.now()
+  injectScript('metrika', SOURCES.metrika, { async: true })
+  window.ym(METRIKA_ID, 'init', {
+    defer: true,
+    clickmap: true,
+    trackLinks: true,
+    accurateTrackBounce: true,
+    webvisor: false,
+  })
+  trackPageView(window.location.href)
+}
+
 const LOADERS = {
   jivo: loadJivo,
   googleTranslate: loadGoogleTranslate,
+  metrika: loadMetrika,
 }
 
 export function loadService(id) {
@@ -59,4 +84,11 @@ export function clearGoogleTranslateCookies() {
   const expires = new Date(0).toUTCString()
   document.cookie = `googtrans=; expires=${expires}; path=/`
   document.cookie = `googtrans=; expires=${expires}; path=/; domain=${window.location.hostname}`
+}
+
+// Админка в статистику не попадает: её страницы засоряли бы «Топ страниц» на дашборде
+export function trackPageView(url) {
+  if (!loaded.metrika || typeof window.ym !== 'function') return
+  if (window.location.pathname.startsWith('/admin')) return
+  window.ym(METRIKA_ID, 'hit', url, { title: document.title })
 }

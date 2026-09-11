@@ -280,6 +280,7 @@ export const mediaAPI = {
 // Statistics API
 export const statsAPI = {
   getDashboard: () => api.get('/admin/stats'),
+  getAnalytics: () => api.get('/admin/stats/analytics'),
 };
 
 // Region API (страница «О регионе»)

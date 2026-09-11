@@ -9,6 +9,7 @@ import Footer from './Footer'
 import CookieBanner from '@/components/CookieBanner/CookieBanner'
 import ScrollToTopButton from '@/components/ScrollToTopButton/ScrollToTopButton'
 import { organization, website } from '@/lib/seo/schema'
+import { trackPageView } from '@/lib/externalServices'
 import styles from './LayoutWrapper.module.css'
 
 export default function LayoutWrapper({ children }) {
@@ -118,6 +119,7 @@ export default function LayoutWrapper({ children }) {
 
     if (currentRoute !== prev) {
       prevRoute.current = currentRoute
+      trackPageView(window.location.href)
       const elapsed = Date.now() - navigationStartRef.current
       const remaining = Math.max(0, PRELOADER_MIN_MS - elapsed)
       const timer = setTimeout(() => setIsNavigating(false), remaining)
