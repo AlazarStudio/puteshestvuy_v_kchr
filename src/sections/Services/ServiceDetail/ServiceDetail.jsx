@@ -102,7 +102,7 @@ export default function ServiceDetail({ serviceSlug, serviceData }) {
       date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '',
       rating: r.rating ?? 5,
       text: r.text || '',
-      avatar: r.authorAvatar || '',
+      avatar: r.authorAvatar ? getImageUrl(r.authorAvatar) : '',
     }))
   }, [serviceData?.reviews])
 

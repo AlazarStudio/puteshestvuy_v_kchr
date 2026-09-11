@@ -103,7 +103,7 @@ export function buildGenericServiceConfig(service) {
           : '',
         rating: r.rating ?? 5,
         text: r.text || '',
-        avatar: r.authorAvatar || '',
+        avatar: r.authorAvatar ? getImageUrl(r.authorAvatar) : '',
       }))
     : null
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Star, Check, X, Trash2, Map, MapPin, Building2, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, Eye } from 'lucide-react';
-import { reviewsAPI } from '@/lib/api';
+import { reviewsAPI, getImageUrl } from '@/lib/api';
 import { ConfirmModal, AlertModal, ReviewDetailModal } from '../components';
 import styles from '../admin.module.css';
 
@@ -403,7 +403,7 @@ export default function ReviewsPage() {
                   <td>
                     <div className={styles.cellInner} style={{ gap: '10px' }}>
                       <img
-                        src={review.authorAvatar || '/no-avatar.png'}
+                        src={review.authorAvatar ? getImageUrl(review.authorAvatar) : '/no-avatar.png'}
                         alt={review.authorName}
                         style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                       />

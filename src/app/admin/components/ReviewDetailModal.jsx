@@ -1,6 +1,6 @@
 
-
 import { X, Star, Map, MapPin, Building2, Calendar, User } from 'lucide-react';
+import { getImageUrl } from '@/lib/api';
 import styles from './Modal.module.css';
 
 export default function ReviewDetailModal({ open, review, onClose }) {
@@ -88,7 +88,7 @@ export default function ReviewDetailModal({ open, review, onClose }) {
               <div className={styles.reviewDetailValue}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <img
-                    src={review.authorAvatar || '/no-avatar.png'}
+                    src={review.authorAvatar ? getImageUrl(review.authorAvatar) : '/no-avatar.png'}
                     alt={review.authorName}
                     style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
                   />
