@@ -330,9 +330,15 @@
   transform: translateY(-8px) rotate(-45deg);
 }
 
+.mobileLangSwitcher {
+  display: none;
+  flex-shrink: 0;
+}
+
 /* Кнопка поиска в шапке (мобильные) */
 .mobileSearchButton {
   display: none;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 44px;
@@ -549,13 +555,18 @@
     display: none;
   }
 
-  .mobileSearchButton {
+  .mobileLangSwitcher {
     display: flex;
     margin-left: auto;
   }
 
+  .mobileSearchButton {
+    display: flex;
+  }
+
   .burgerButton {
     display: flex;
+    flex-shrink: 0;
     margin-left: 4px;
   }
 
@@ -573,11 +584,11 @@
 @media (max-width: 768px) {
   .container {
     padding: 1rem 16px 1rem 26px;
-    gap: 1rem;
+    gap: 8px;
   }
 
   .logo {
-    min-width: auto;
+    min-width: 0;
     max-width: 140px;
   }
 
@@ -854,30 +865,15 @@
   opacity: 1;
 }
 
-.burgerLangSwitcher {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f3f8;
-}
-
-.burgerLangSwitcher .langInner {
+.mobileLangSwitcher .langInner {
   flex-direction: row;
+  min-height: 44px;
   height: auto;
   overflow: visible;
   gap: 6px;
 }
 
-.burgerLangSwitcher .langActive {
-  font-size: 15px;
-  color: #156A60;
-  line-height: 1.5;
-}
-
-.burgerLangSwitcher .langInactiveBtn {
-  font-size: 15px;
-  color: #374151;
-  line-height: 1.5;
-  opacity: 1;
+.mobileLangSwitcher .langInactiveBtn {
+  min-width: 24px;
+  min-height: 44px;
 }

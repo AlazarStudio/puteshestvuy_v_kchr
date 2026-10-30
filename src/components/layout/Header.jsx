@@ -350,6 +350,8 @@ export default function Header() {
 
         </nav>
 
+        <LangSwitcher className={styles.mobileLangSwitcher} />
+
         {/* Кнопка поиска (мобильные) — дублирует десктопную лупу */}
         <button
           type="button"
@@ -501,7 +503,6 @@ export default function Header() {
             <img src="/bvi.png" alt="" width={20} height={20} />
             <span>Версия для слабовидящих</span>
           </button>
-          <LangSwitcher className={styles.burgerLangSwitcher} />
           <Link to="/profile?tab=routes-constructor" className={styles.burgerIconItem} onClick={closeBurger}>
             <img src="/konst_tours.png" alt="" width={20} height={21} />
             <span>Конструктор маршрутов {placeIds.length > 0 && <>({placeIds.length})</>}</span>
